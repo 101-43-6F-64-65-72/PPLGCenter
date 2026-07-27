@@ -31,3 +31,4 @@ D:\.SCHOOL\StudentCenter\backend\StudentCenter.Api\obj\Debug\net10.0\refint\Stud
 D:\.SCHOOL\StudentCenter\backend\StudentCenter.Api\obj\Debug\net10.0\StudentCenter.Api.pdb
 D:\.SCHOOL\StudentCenter\backend\StudentCenter.Api\obj\Debug\net10.0\StudentCenter.Api.genruntimeconfig.cache
 D:\.SCHOOL\StudentCenter\backend\StudentCenter.Api\obj\Debug\net10.0\ref\StudentCenter.Api.dll
+D:\.SCHOOL\StudentCenter\backend\StudentCenter.Api\obj\Debug\net10.0\StudentCenter.Api.sourcelink.json
