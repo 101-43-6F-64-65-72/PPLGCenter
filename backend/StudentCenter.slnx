@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="StudentCenter.Api/StudentCenter.Api.csproj" />
+  <Project Path="StudentCenter.Application/StudentCenter.Application.csproj" />
+  <Project Path="StudentCenter.Domain/StudentCenter.Domain.csproj" />
+  <Project Path="StudentCenter.Infrastructure/StudentCenter.Infrastructure.csproj" />
+</Solution>

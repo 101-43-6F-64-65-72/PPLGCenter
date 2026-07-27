@@ -8,6 +8,16 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.10">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StudentCenter.Application\StudentCenter.Application.csproj" />
+    <ProjectReference Include="..\StudentCenter.Domain\StudentCenter.Domain.csproj" />
+    <ProjectReference Include="..\StudentCenter.Infrastructure\StudentCenter.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
