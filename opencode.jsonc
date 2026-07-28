@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "provider": {
+    "9router": {
+      "npm": "@ai-sdk/openai-compatible",
+
+      "options": {
+        "baseURL": "http://localhost:20128/v1",
+        "apiKey": "sk-1838980bfd7a3387-lsycfj-76062cb7"
+      },
+
+      "models": {
+        "combomain": {
+          "name": "combomain"
+        }
+      }
+    }
+  },
+
+  "model": "9router/combomain"
+}

@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Announcement> Announcements => Set<Announcement>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
