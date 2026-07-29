@@ -3,23 +3,33 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   const handleNavClick = (e, targetId) => {
     e.preventDefault();
     setMobileMenuOpen(false);
-    
-    if (targetId === "home") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+
+    const targetPath = targetId === "home" ? "/" : `/#${targetId}`;
+
+    if (pathname === "/") {
+      if (targetId === "home") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
     }
 
-    const element = document.getElementById(targetId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    router.push(targetPath);
   };
 
   return (
@@ -41,7 +51,7 @@ export default function Navbar() {
             />
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-gray-900 font-bold text-lg sm:text-xl tracking-tight group-hover:text-[#00B929] transition-colors">
+            <span className="text-gray-900 font-bold text-lg sm:text-xl tracking-tight group-hover:text-[#2c1ee8] transition-colors">
               SMK Negeri 2
             </span>
             <span className="text-gray-800 font-normal text-base sm:text-lg">
@@ -56,28 +66,28 @@ export default function Navbar() {
             <a
               href="#home"
               onClick={(e) => handleNavClick(e, "home")}
-              className="text-gray-900 font-medium text-base lg:text-lg hover:text-[#00B929] transition-colors cursor-pointer"
+              className="text-gray-900 font-medium text-base lg:text-lg hover:text-[#2c1ee8] transition-colors cursor-pointer"
             >
               Beranda
             </a>
             <a
               href="#extracurricular"
               onClick={(e) => handleNavClick(e, "extracurricular")}
-              className="text-gray-800 font-medium text-base lg:text-lg hover:text-[#00B929] transition-colors cursor-pointer"
+              className="text-gray-800 font-medium text-base lg:text-lg hover:text-[#2c1ee8] transition-colors cursor-pointer"
             >
               Ekstrakurikuler
             </a>
             <a
               href="#mading"
               onClick={(e) => handleNavClick(e, "mading")}
-              className="text-gray-800 font-medium text-base lg:text-lg hover:text-[#00B929] transition-colors cursor-pointer"
+              className="text-gray-800 font-medium text-base lg:text-lg hover:text-[#2c1ee8] transition-colors cursor-pointer"
             >
               Mading
             </a>
             <a
               href="#contact"
               onClick={(e) => handleNavClick(e, "contact")}
-              className="text-gray-800 font-medium text-base lg:text-lg hover:text-[#00B929] transition-colors cursor-pointer"
+              className="text-gray-800 font-medium text-base lg:text-lg hover:text-[#2c1ee8] transition-colors cursor-pointer"
             >
               Kontak
             </a>
@@ -87,7 +97,7 @@ export default function Navbar() {
           <div className="hidden md:block">
             <Link
               href="/login"
-              className="inline-flex items-center justify-center border-2 border-[#00B929] text-[#00B929] hover:bg-[#00B929] hover:text-white font-semibold text-base lg:text-lg px-8 py-2.5 rounded-full transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-95"
+              className="inline-flex items-center justify-center border-2 border-[#2c1ee8] text-[#2c1ee8] hover:bg-[#2c1ee8] hover:text-white font-semibold text-base lg:text-lg px-8 py-2.5 rounded-full transition-all duration-300 hover:shadow-md hover:scale-[1.02] active:scale-95"
             >
               Login
             </Link>
@@ -158,7 +168,7 @@ export default function Navbar() {
           </a>
           <Link
             href="/login"
-            className="w-full text-center border-2 border-[#00B929] text-[#00B929] font-semibold text-base py-2.5 rounded-full mt-2"
+            className="w-full text-center border-2 border-[#2c1ee8] text-[#2c1ee8] font-semibold text-base py-2.5 rounded-full mt-2"
             onClick={() => setMobileMenuOpen(false)}
           >
             Login

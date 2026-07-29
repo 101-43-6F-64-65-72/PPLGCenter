@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import ExtracurricularSection from "@/components/ExtracurricularSection";
+import FacilityCatalogSection from "@/components/FacilityCatalogSection";
 import { ensureAssets } from "@/lib/ensure-assets";
 
 export default function Home() {
@@ -13,6 +14,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col overflow-x-hidden pt-20 lg:pt-24">
           <Hero />
           <ExtracurricularSection />
+          <FacilityCatalogSection />
       </main>
     </div>
   );
