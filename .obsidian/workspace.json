@@ -28,6 +28,16 @@
               "icon": "lucide-git-fork",
               "title": "Graph view"
             }
+          },
+          {
+            "id": "b93fcf7a6989eadf",
+            "type": "leaf",
+            "state": {
+              "type": "galaxy-view",
+              "state": {},
+              "icon": "orbit",
+              "title": "Galaxy view"
+            }
           }
         ],
         "currentTab": 1

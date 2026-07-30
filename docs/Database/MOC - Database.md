@@ -28,6 +28,7 @@ Map of Content for the Supabase PostgreSQL database layer.
 - [[Entity - Notification]]
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
+- [[Entity - Proposal]]
 
 ## Migrations
 

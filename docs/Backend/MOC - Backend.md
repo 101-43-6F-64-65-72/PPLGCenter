@@ -31,6 +31,7 @@ Map of Content for the ASP.NET Core backend.
 - [[Entity - Notification]]
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
+- [[Entity - Proposal]]
 
 ## Services
 
@@ -43,6 +44,7 @@ Map of Content for the ASP.NET Core backend.
 - [[Feature - Digital Bulletin Board]] (AnnouncementCommentService, AnnouncementReactionService)
 - [[Feature - Notification]] (NotificationService)
 - [[Feature - Facility Booking]] (FacilityService, BookingService)
+- [[Feature - Proposals]] (ProposalService)
 
 ## API
 

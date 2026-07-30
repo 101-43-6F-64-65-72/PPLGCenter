@@ -21,12 +21,12 @@ Map of Content for all StudentCenter features and modules.
 - [[Feature - Digital Bulletin Board]]
 - [[Feature - Notification]]
 - [[Feature - Facility Booking]]
+- [[Feature - Proposals]]
 
 ## Planned
 
 - [[Feature - Dashboard]]
 - [[Feature - Extracurricular]]
-- [[Feature - Proposals]]
 - [[Feature - Profile]]
 
 ## Cross-Cutting

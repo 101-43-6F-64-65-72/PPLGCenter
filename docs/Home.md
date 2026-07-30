@@ -66,6 +66,7 @@ aliases:
 - [[Entity - Notification]]
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
+- [[Entity - Proposal]]
 
 ### Features
 

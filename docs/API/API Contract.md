@@ -129,7 +129,12 @@ The following payloads are final:
 | POST | `/api/facilities` | Create facility (Admin only) |
 | PUT | `/api/facilities/{id}` | Update facility (Admin only) |
 | DELETE | `/api/facilities/{id}` | Delete facility (Admin only) |
-| POST | `/api/v1/proposals` | Submit proposal |
+| GET | `/api/proposals` | List proposals (authenticated) |
+| GET | `/api/proposals/{id}` | Get proposal by ID (authenticated) |
+| POST | `/api/proposals` | Submit proposal (OSIS only) |
+| PUT | `/api/proposals/{id}` | Update proposal (OSIS own, pending only) |
+| DELETE | `/api/proposals/{id}` | Delete proposal (OSIS own, pending only) |
+| PATCH | `/api/proposals/{id}/review` | Review proposal (Admin, Teacher only) |
 | GET | `/api/v1/elections` | List elections |
 | GET | `/api/dashboard` | Dashboard summary (authenticated) |
 | GET | `/api/users` | List users (Admin only) |

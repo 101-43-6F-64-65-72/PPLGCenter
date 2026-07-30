@@ -192,6 +192,24 @@ StudentCenter uses **Supabase PostgreSQL** accessed via Entity Framework Core wi
 
 **Indexes**: `IX_FacilityBookings_FacilityId`, `IX_FacilityBookings_BookedByUserId`, `IX_FacilityBookings_StartTime`, `IX_FacilityBookings_EndTime`, `IX_FacilityBookings_Status`
 
+### Proposals
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| Id | uuid | PK, default `gen_random_uuid()` |
+| Title | varchar(300) | NOT NULL |
+| Description | varchar(2000) | NOT NULL |
+| FileUrl | varchar(500) | NOT NULL |
+| Status | integer | NOT NULL (enum) |
+| RejectionReason | varchar(1000) | nullable |
+| SubmittedByUserId | uuid | NOT NULL, FK → Users.Id (RESTRICT) |
+| ReviewedByUserId | uuid | nullable, FK → Users.Id (RESTRICT) |
+| CreatedAt | timestamptz | NOT NULL, default `now()` |
+| UpdatedAt | timestamptz | NOT NULL, default `now()` |
+| ReviewedAt | timestamptz | nullable |
+
+**Indexes**: `IX_Proposals_SubmittedByUserId`, `IX_Proposals_Status`, `IX_Proposals_CreatedAt`, `IX_Proposals_ReviewedByUserId`
+
 ## ERD
 
 See [[Database ERD]] for the visual diagram.
@@ -211,6 +229,7 @@ Entity configurations use EF Core Fluent API:
 - `NotificationConfiguration` → [[Entity - Notification]]
 - `FacilityConfiguration` → [[Entity - Facility]]
 - `FacilityBookingConfiguration` → [[Entity - Facility Booking]]
+- `ProposalConfiguration` → [[Entity - Proposal]]
 
 ## Seeding
 
@@ -231,4 +250,5 @@ Entity configurations use EF Core Fluent API:
 - [[Entity - Notification]]
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
+- [[Entity - Proposal]]
 - [[MOC - Database]]

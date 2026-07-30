@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Facility> Facilities => Set<Facility>();
     public DbSet<FacilityBooking> FacilityBookings => Set<FacilityBooking>();
+    public DbSet<Proposal> Proposals => Set<Proposal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
