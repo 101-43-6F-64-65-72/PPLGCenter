@@ -1,0 +1,352 @@
+{
+  "bloom": {
+    "strength": 0.35,
+    "radius": 0.35,
+    "threshold": 0.22
+  },
+  "physics": {
+    "repel": 170,
+    "linkDistance": 55,
+    "linkStrength": 1.1,
+    "centerPull": 0.05,
+    "flatten": 0.55,
+    "coreGravity": 0.1,
+    "spiral": 0.02
+  },
+  "look": {
+    "nodeSize": 1,
+    "linkOpacity": 0.14,
+    "linkCurve": 0.35,
+    "twinkle": 0.5,
+    "sizeBy": "degree"
+  },
+  "space": {
+    "nebula": 0.35,
+    "fieldStars": 0.25,
+    "clusterClouds": 0.3
+  },
+  "cruise": true,
+  "cruiseSpeed": 1,
+  "showUnresolved": false,
+  "showOrphans": true,
+  "showTags": false,
+  "tagLens": null,
+  "colorByTag": false,
+  "showTagHubs": false,
+  "tagHubLimit": 20,
+  "hiddenFolders": [],
+  "filterQuery": "",
+  "showGhostEdges": false,
+  "showStarfield": true,
+  "colorTheme": "hubble",
+  "qualityOverride": "auto",
+  "preset": "deep-space",
+  "activePreset": "galaxy",
+  "customPresets": [],
+  "language": "auto",
+  "panelSections": {
+    "filter": true,
+    "nav": true,
+    "look": true,
+    "space": true,
+    "bloom": true
+  },
+  "panelWidth": 300,
+  "hintsSeen": false,
+  "selectionDepth": 1,
+  "tour": {
+    "speed": 1
+  },
+  "colorGroups": [
+    {
+      "query": "path:docs",
+      "color": "#46d4dc"
+    },
+    {
+      "query": "path:frontend",
+      "color": "#ffc35c"
+    }
+  ],
+  "positionCache": {
+    "README.md": [
+      124.2,
+      0,
+      217.8
+    ],
+    "frontend/README.md": [
+      -291.4,
+      -0.1,
+      76.2
+    ],
+    "frontend/docs/project-context.md": [
+      232,
+      0,
+      150.9
+    ],
+    "frontend/docs/frontend-architect.md": [
+      211.4,
+      0,
+      -215.9
+    ],
+    "frontend/docs/component-agent.md": [
+      27.6,
+      0,
+      255.3
+    ],
+    "frontend/docs/api-agreement.md": [
+      -86.8,
+      -0.1,
+      250.5
+    ],
+    "docs/Engineering/MOC - Engineering.md": [
+      -45.8,
+      25.5,
+      40.9
+    ],
+    "docs/Engineering/Quality Checklist.md": [
+      -33.4,
+      -0.6,
+      92.2
+    ],
+    "docs/Engineering/AI Collaboration.md": [
+      -33.4,
+      -23,
+      63.2
+    ],
+    "docs/Engineering/Prompt Library.md": [
+      -2.9,
+      -29.2,
+      7.7
+    ],
+    "docs/Engineering/Backend Standards.md": [
+      -90.4,
+      -22.6,
+      44.8
+    ],
+    "docs/Engineering/Feature Template.md": [
+      -56.7,
+      -23.2,
+      6.2
+    ],
+    "docs/Engineering/Definition of Done.md": [
+      -83.3,
+      14.9,
+      36.7
+    ],
+    "docs/Project/Roadmap.md": [
+      96.7,
+      -16.7,
+      -45.2
+    ],
+    "docs/Project/Quality Audit.md": [
+      11,
+      7.8,
+      44.9
+    ],
+    "docs/Project/Project Plan.md": [
+      64.9,
+      -0.8,
+      -2.1
+    ],
+    "docs/Project/Glossary.md": [
+      -38.2,
+      18.4,
+      -69.9
+    ],
+    "docs/Logs/Daily Log.md": [
+      -42.4,
+      -22.6,
+      -37.8
+    ],
+    "docs/Home.md": [
+      -8.7,
+      12.5,
+      -22.2
+    ],
+    "docs/Frontend/MOC - Frontend.md": [
+      100.3,
+      7.8,
+      -5.9
+    ],
+    "docs/Frontend/Component Guidelines.md": [
+      99.9,
+      5.3,
+      89.6
+    ],
+    "docs/Frontend/Landing Page.md": [
+      106.6,
+      -6.9,
+      49.2
+    ],
+    "docs/Frontend/Frontend Project Context.md": [
+      144.2,
+      -0.2,
+      -42
+    ],
+    "docs/Frontend/Frontend Overview.md": [
+      51.4,
+      6.3,
+      58.1
+    ],
+    "docs/Frontend/Frontend Architecture Rules.md": [
+      142.9,
+      3.9,
+      39.2
+    ],
+    "docs/Features/MOC - Features.md": [
+      67.8,
+      5.5,
+      -152.6
+    ],
+    "docs/Features/Feature - User Management.md": [
+      4.5,
+      1.7,
+      -159.5
+    ],
+    "docs/Features/Feature - School Calendar.md": [
+      110.9,
+      23.8,
+      -73.5
+    ],
+    "docs/Features/Feature - Proposals.md": [
+      117.3,
+      1.8,
+      -122.9
+    ],
+    "docs/Features/Feature - Profile.md": [
+      64.2,
+      -22.8,
+      -77.4
+    ],
+    "docs/Features/Feature - Facility Booking.md": [
+      129.8,
+      -9,
+      -96
+    ],
+    "docs/Features/Feature - Extracurricular.md": [
+      83.5,
+      19.2,
+      -99.8
+    ],
+    "docs/Features/Feature - Digital Bulletin Board.md": [
+      54.8,
+      25.9,
+      -65.9
+    ],
+    "docs/Features/Feature - Dashboard.md": [
+      75.7,
+      -22.4,
+      -113.4
+    ],
+    "docs/Features/Feature - Authentication.md": [
+      31.3,
+      -4.4,
+      -94.8
+    ],
+    "docs/Entities/Entity - User.md": [
+      -88.2,
+      -17,
+      -145.2
+    ],
+    "docs/Entities/Entity - Announcement.md": [
+      -101.3,
+      23.4,
+      -117
+    ],
+    "docs/Decisions/Decisions.md": [
+      -67,
+      15.5,
+      -34.6
+    ],
+    "docs/Database/MOC - Database.md": [
+      -153.1,
+      14.5,
+      -105.4
+    ],
+    "docs/Database/Migrations.md": [
+      -130.3,
+      -9.7,
+      -117.2
+    ],
+    "docs/Database/Database Schema.md": [
+      -90.7,
+      7.9,
+      -171.2
+    ],
+    "docs/Database/Database ERD.md": [
+      -35,
+      11,
+      -148.1
+    ],
+    "docs/Backend/User Roles.md": [
+      8,
+      -20.3,
+      -131.4
+    ],
+    "docs/Backend/MOC - Backend.md": [
+      -95,
+      16.5,
+      -67.5
+    ],
+    "docs/Backend/JWT.md": [
+      -115.8,
+      -23.2,
+      -85.7
+    ],
+    "docs/Backend/Backend Overview.md": [
+      -168.8,
+      2.8,
+      -2.1
+    ],
+    "docs/Backend/Authentication.md": [
+      -60.7,
+      -14.8,
+      -107.2
+    ],
+    "docs/Backend/Announcements.md": [
+      -0.6,
+      22.4,
+      -112.2
+    ],
+    "docs/Architecture/Tech Stack.md": [
+      -75.4,
+      12.9,
+      67.1
+    ],
+    "docs/Architecture/Request Pipeline.md": [
+      -126.3,
+      -14.2,
+      0.4
+    ],
+    "docs/Architecture/Dependency Rules.md": [
+      -177.4,
+      -2.5,
+      -40
+    ],
+    "docs/Architecture/MOC - Architecture.md": [
+      -135.2,
+      25.5,
+      -19.6
+    ],
+    "docs/Architecture/Clean Architecture.md": [
+      -120.4,
+      -16.5,
+      -35.4
+    ],
+    "docs/Architecture/Architecture.md": [
+      -143.7,
+      2.2,
+      54.6
+    ],
+    "docs/API/API Contract.md": [
+      22.2,
+      -5.2,
+      -45
+    ],
+    "AGENTS.md": [
+      291.5,
+      0,
+      -7.7
+    ]
+  }
+}

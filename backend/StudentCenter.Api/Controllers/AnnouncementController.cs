@@ -11,11 +11,19 @@ namespace StudentCenter.Api.Controllers;
 public class AnnouncementController : ControllerBase
 {
     private readonly IAnnouncementService _announcementService;
+    private readonly IAnnouncementCommentService _commentService;
+    private readonly IAnnouncementReactionService _reactionService;
     private readonly ICurrentUserService _currentUserService;
 
-    public AnnouncementController(IAnnouncementService announcementService, ICurrentUserService currentUserService)
+    public AnnouncementController(
+        IAnnouncementService announcementService,
+        IAnnouncementCommentService commentService,
+        IAnnouncementReactionService reactionService,
+        ICurrentUserService currentUserService)
     {
         _announcementService = announcementService;
+        _commentService = commentService;
+        _reactionService = reactionService;
         _currentUserService = currentUserService;
     }
 
@@ -79,5 +87,85 @@ public class AnnouncementController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Announcement not found"));
 
         return Ok(ApiResponse<object>.Ok("Announcement deleted successfully"));
+    }
+
+    [Authorize]
+    [HttpGet("feed")]
+    public async Task<IActionResult> GetFeed(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? category = null)
+    {
+        var result = await _announcementService.GetFeedAsync(page, pageSize, category);
+        return Ok(ApiResponse<PagedResult<AnnouncementFeedResponse>>.Ok("Feed retrieved successfully", result));
+    }
+
+    [Authorize]
+    [HttpPost("{id:guid}/comments")]
+    public async Task<IActionResult> AddComment(Guid id, [FromBody] CommentRequest request)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var result = await _commentService.AddCommentAsync(id, request, userId.Value);
+        return Ok(ApiResponse<CommentResponse>.Ok("Comment added successfully", result));
+    }
+
+    [Authorize]
+    [HttpGet("{id:guid}/comments")]
+    public async Task<IActionResult> GetComments(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var result = await _commentService.GetCommentsAsync(id, page, pageSize);
+        return Ok(ApiResponse<PagedResult<CommentResponse>>.Ok("Comments retrieved successfully", result));
+    }
+
+    [Authorize]
+    [HttpDelete("~/api/comments/{id:guid}")]
+    public async Task<IActionResult> DeleteComment(Guid id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var userRole = _currentUserService.Role ?? string.Empty;
+
+        var result = await _commentService.DeleteCommentAsync(id, userId.Value, userRole);
+
+        if (!result)
+            return NotFound(ApiResponse<object>.Fail("Comment not found"));
+
+        return Ok(ApiResponse<object>.Ok("Comment deleted successfully"));
+    }
+
+    [Authorize]
+    [HttpPost("{id:guid}/reactions")]
+    public async Task<IActionResult> React(Guid id, [FromBody] ReactionRequest request)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        await _reactionService.ToggleReactionAsync(id, request.Type, userId.Value);
+        return Ok(ApiResponse<object>.Ok("Reaction registered successfully"));
+    }
+
+    [Authorize]
+    [HttpDelete("{id:guid}/reactions")]
+    public async Task<IActionResult> RemoveReaction(Guid id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var result = await _reactionService.RemoveReactionAsync(id, userId.Value);
+
+        if (!result)
+            return NotFound(ApiResponse<object>.Fail("Reaction not found"));
+
+        return Ok(ApiResponse<object>.Ok("Reaction removed successfully"));
     }
 }

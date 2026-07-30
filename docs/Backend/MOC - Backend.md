@@ -22,12 +22,27 @@ Map of Content for the ASP.NET Core backend.
 
 - [[Entity - User]]
 - [[Entity - Announcement]]
+- [[Entity - Material]]
+- [[Entity - Assignment]]
+- [[Entity - Submission]]
+- [[Entity - Calendar Event]]
+- [[Entity - Announcement Comment]]
+- [[Entity - Announcement Reaction]]
+- [[Entity - Notification]]
+- [[Entity - Facility]]
+- [[Entity - Facility Booking]]
 
 ## Services
 
 - [[Authentication]] (UserService, JwtService, CurrentUserService)
 - [[JWT]] (Token generation and validation)
-- [[Announcements]] (AnnouncementService)
+- [[Announcements]] (AnnouncementService, AnnouncementCommentService, AnnouncementReactionService)
+- [[Feature - Materials]] (MaterialService)
+- [[Feature - Assignment]] (AssignmentService, SubmissionService)
+- [[Feature - School Calendar]] (CalendarService)
+- [[Feature - Digital Bulletin Board]] (AnnouncementCommentService, AnnouncementReactionService)
+- [[Feature - Notification]] (NotificationService)
+- [[Feature - Facility Booking]] (FacilityService, BookingService)
 
 ## API
 

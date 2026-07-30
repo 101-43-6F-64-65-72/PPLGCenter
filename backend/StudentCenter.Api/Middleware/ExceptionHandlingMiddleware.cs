@@ -21,11 +21,31 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            await HandleValidationExceptionAsync(context, ex);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception occurred during the request.");
             await HandleExceptionAsync(context);
         }
+    }
+
+    private static async Task HandleValidationExceptionAsync(HttpContext context, System.ComponentModel.DataAnnotations.ValidationException ex)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+        var response = ApiResponse<object>.Fail(ex.Message);
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        var json = JsonSerializer.Serialize(response, options);
+        await context.Response.WriteAsync(json);
     }
 
     private static async Task HandleExceptionAsync(HttpContext context)

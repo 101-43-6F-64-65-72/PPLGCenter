@@ -19,6 +19,15 @@ Map of Content for the Supabase PostgreSQL database layer.
 
 - [[Entity - User]]
 - [[Entity - Announcement]]
+- [[Entity - Material]]
+- [[Entity - Assignment]]
+- [[Entity - Submission]]
+- [[Entity - Calendar Event]]
+- [[Entity - Announcement Comment]]
+- [[Entity - Announcement Reaction]]
+- [[Entity - Notification]]
+- [[Entity - Facility]]
+- [[Entity - Facility Booking]]
 
 ## Migrations
 

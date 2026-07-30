@@ -61,6 +61,67 @@ public class AnnouncementService : IAnnouncementService
         };
     }
 
+    public async Task<PagedResult<AnnouncementFeedResponse>> GetFeedAsync(int page, int pageSize, string? category)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var query = _context.Set<Announcement>()
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(category))
+        {
+            query = query.Where(a => a.Category == category);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(a => a.IsPinned)
+            .ThenByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new AnnouncementFeedResponse
+            {
+                Id = a.Id,
+                Title = a.Title,
+                Content = a.Content,
+                Category = a.Category,
+                CoverImageUrl = a.CoverImageUrl,
+                IsPinned = a.IsPinned,
+                CreatedAt = a.CreatedAt,
+                UpdatedAt = a.UpdatedAt,
+                CreatedByUserId = a.CreatedByUserId,
+                CreatedByUserName = a.CreatedByUser.FullName,
+                ReactionCount = a.Reactions.Count,
+                CommentCount = a.Comments.Count,
+                LatestComments = a.Comments
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(3)
+                    .Select(c => new CommentResponse
+                    {
+                        Id = c.Id,
+                        Content = c.Content,
+                        CreatedAt = c.CreatedAt,
+                        AnnouncementId = c.AnnouncementId,
+                        UserId = c.UserId,
+                        UserName = c.User.FullName
+                    })
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return new PagedResult<AnnouncementFeedResponse>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+    }
+
     public async Task<AnnouncementResponse?> GetAnnouncementByIdAsync(Guid id)
     {
         var announcement = await _context.Set<Announcement>()

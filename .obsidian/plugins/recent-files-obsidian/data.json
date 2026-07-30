@@ -1,0 +1,28 @@
+{
+  "recentFiles": [
+    {
+      "basename": "Component Guidelines",
+      "path": "docs/Frontend/Component Guidelines.md"
+    },
+    {
+      "basename": "AGENTS",
+      "path": "AGENTS.md"
+    },
+    {
+      "basename": "Home",
+      "path": "docs/Home.md"
+    },
+    {
+      "basename": "Untitled",
+      "path": "Untitled.base"
+    },
+    {
+      "basename": "Architecture",
+      "path": "docs/Architecture/Architecture.md"
+    }
+  ],
+  "omittedPaths": [],
+  "omittedTags": [],
+  "updateOn": "file-open",
+  "omitBookmarks": false
+}

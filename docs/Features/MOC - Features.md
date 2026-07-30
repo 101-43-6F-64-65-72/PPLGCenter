@@ -14,14 +14,18 @@ Map of Content for all StudentCenter features and modules.
 
 - [[Feature - Authentication]]
 - [[Feature - Announcements]]
+- [[Feature - User Management]]
+- [[Feature - Materials]]
+- [[Feature - Assignment]]
+- [[Feature - School Calendar]]
+- [[Feature - Digital Bulletin Board]]
+- [[Feature - Notification]]
+- [[Feature - Facility Booking]]
 
 ## Planned
 
 - [[Feature - Dashboard]]
-- [[Feature - Digital Bulletin Board]]
-- [[Feature - School Calendar]]
 - [[Feature - Extracurricular]]
-- [[Feature - Facility Booking]]
 - [[Feature - Proposals]]
 - [[Feature - Profile]]
 

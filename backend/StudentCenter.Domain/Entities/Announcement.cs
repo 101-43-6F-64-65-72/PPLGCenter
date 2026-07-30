@@ -12,4 +12,6 @@ public class Announcement
     public DateTime UpdatedAt { get; set; }
     public Guid CreatedByUserId { get; set; }
     public User CreatedByUser { get; set; } = null!;
+    public ICollection<AnnouncementComment> Comments { get; set; } = new List<AnnouncementComment>();
+    public ICollection<AnnouncementReaction> Reactions { get; set; } = new List<AnnouncementReaction>();
 }

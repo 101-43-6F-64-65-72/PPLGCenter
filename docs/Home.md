@@ -57,19 +57,41 @@ aliases:
 
 - [[Entity - User]]
 - [[Entity - Announcement]]
+- [[Entity - Material]]
+- [[Entity - Assignment]]
+- [[Entity - Submission]]
+- [[Entity - Calendar Event]]
+- [[Entity - Announcement Comment]]
+- [[Entity - Announcement Reaction]]
+- [[Entity - Notification]]
+- [[Entity - Facility]]
+- [[Entity - Facility Booking]]
 
 ### Features
 
 - [[Feature - Authentication]]
 - [[Feature - Announcements]]
+- [[Feature - User Management]]
 - [[Feature - Dashboard]]
-- [[Feature - Digital Bulletin Board]]
+- [[Feature - Materials]]
+- [[Feature - Assignment]]
 - [[Feature - School Calendar]]
+- [[Feature - Digital Bulletin Board]]
+- [[Feature - Notification]]
 - [[Feature - Extracurricular]]
 - [[Feature - Facility Booking]]
 - [[Feature - Proposals]]
 - [[Feature - Profile]]
 - [[MOC - Features]]
+
+### Engineering
+
+- [[Definition of Done]]
+- [[Feature Template]]
+- [[Backend Standards]]
+- [[Prompt Library]]
+- [[AI Collaboration]]
+- [[Quality Checklist]]
 
 ### Decisions
 
@@ -97,6 +119,7 @@ aliases:
 | Frontend | [[MOC - Frontend]] |
 | Database | [[MOC - Database]] |
 | Features | [[MOC - Features]] |
+| Engineering | [[MOC - Engineering]] |
 
 ---
 
