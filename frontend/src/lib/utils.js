@@ -1,0 +1,28 @@
+/**
+ * Helper to resolve valid image URLs from backend REST API responses
+ * Handles full URLs (https://...), relative paths (/uploads/...), and fallback images.
+ */
+export const resolveImageUrl = (src, fallback = "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200&auto=format&fit=crop") => {
+  if (!src) return fallback;
+  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/")) {
+    return src;
+  }
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+  return `${baseUrl}/${src}`;
+};
+
+/**
+ * Format ISO datetime string to Indonesian localized date format
+ */
+export const formatDate = (dateString) => {
+  if (!dateString) return "Terbaru";
+  try {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch (e) {
+    return "Terbaru";
+  }
+};

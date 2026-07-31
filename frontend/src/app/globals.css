@@ -5,6 +5,11 @@
   --foreground: #111827;
 }
 
+html {
+  /* Slightly shrink overall UI scale across the whole site (14.5px base instead of 16px) */
+  font-size: 90.625% !important;
+}
+
 html,
 body {
   background-color: #ffffff !important;

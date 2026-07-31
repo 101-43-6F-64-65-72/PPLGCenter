@@ -1,25 +1,37 @@
 import Navbar from "@/components/Navbar";
 import ExtracurricularCard from "@/components/ExtracurricularCard";
 
-const cardImages = [
-  "/images/dummypic.jpg",
-  "/images/dummypic.jpg",
-  "/images/dummypic.jpg",
-  "/images/dummypic.jpg",
+const items = [
+  { id: 1, imageSrc: "/images/dummypic.jpg", title: "Basketball" },
+  { id: 2, imageSrc: "/images/dummypic.jpg", title: "Voli" },
+  { id: 3, imageSrc: "/images/dummypic.jpg", title: "Futsal" },
+  { id: 4, imageSrc: "/images/dummypic.jpg", title: "Pramuka" },
 ];
 
 export default function EkstrakurikulerPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
+    <>
       <Navbar />
 
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cardImages.map((src, index) => (
-            <ExtracurricularCard key={index} imageSrc={src} />
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-12 pb-16">
+        <div
+          className="
+            grid gap-8 sm:gap-10 lg:gap-8
+            grid-cols-2
+            sm:grid-cols-3
+            lg:grid-cols-5
+          "
+        >
+          {items.map((item) => (
+            <ExtracurricularCard
+              key={item.id}
+              imageSrc={item.imageSrc}
+              title={item.title}
+              alt={item.title}
+            />
           ))}
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }

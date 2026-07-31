@@ -4,6 +4,7 @@ using StudentCenter.Api.Models.Responses;
 namespace StudentCenter.Api.Controllers;
 
 [ApiController]
+[Route("")]
 [Route("api")]
 public class HomeController : ControllerBase
 {

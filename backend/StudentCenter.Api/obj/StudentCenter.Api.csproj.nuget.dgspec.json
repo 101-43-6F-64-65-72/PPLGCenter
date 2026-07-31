@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Api\\StudentCenter.Api.csproj": {}
+    "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\studentcenter.api\\StudentCenter.Api.csproj": {}
   },
   "projects": {
-    "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Api\\StudentCenter.Api.csproj": {
+    "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\studentcenter.api\\StudentCenter.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Api\\StudentCenter.Api.csproj",
+        "projectUniqueName": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\studentcenter.api\\StudentCenter.Api.csproj",
         "projectName": "StudentCenter.Api",
-        "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Api\\StudentCenter.Api.csproj",
-        "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Api\\obj\\",
+        "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\studentcenter.api\\StudentCenter.Api.csproj",
+        "packagesPath": "C:\\Users\\asus\\.nuget\\packages\\",
+        "outputPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\studentcenter.api\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Lenovo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\asus\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -27,14 +27,14 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj": {
-                "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj"
+              "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj": {
+                "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj"
               },
-              "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
-                "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj"
+              "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
+                "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj"
               },
-              "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj": {
-                "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj"
+              "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj": {
+                "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj"
               }
             }
           }
@@ -504,17 +504,17 @@
         }
       }
     },
-    "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj": {
+    "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj",
+        "projectUniqueName": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj",
         "projectName": "StudentCenter.Application",
-        "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj",
-        "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\obj\\",
+        "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj",
+        "packagesPath": "C:\\Users\\asus\\.nuget\\packages\\",
+        "outputPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Lenovo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\asus\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -527,8 +527,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
-                "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj"
+              "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
+                "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj"
               }
             }
           }
@@ -843,17 +843,17 @@
         }
       }
     },
-    "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
+    "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj",
+        "projectUniqueName": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj",
         "projectName": "StudentCenter.Domain",
-        "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj",
-        "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\obj\\",
+        "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj",
+        "packagesPath": "C:\\Users\\asus\\.nuget\\packages\\",
+        "outputPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Lenovo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\asus\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -1178,17 +1178,17 @@
         }
       }
     },
-    "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj": {
+    "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj",
+        "projectUniqueName": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj",
         "projectName": "StudentCenter.Infrastructure",
-        "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Infrastructure\\obj\\",
+        "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Infrastructure\\StudentCenter.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\asus\\.nuget\\packages\\",
+        "outputPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Lenovo\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\asus\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
@@ -1201,11 +1201,11 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj": {
-                "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj"
+              "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj": {
+                "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Application\\StudentCenter.Application.csproj"
               },
-              "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
-                "projectPath": "D:\\.SCHOOL\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj"
+              "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj": {
+                "projectPath": "D:\\PKL ENUMA\\KERJA!\\SchoolProject\\StudentCenter\\backend\\StudentCenter.Domain\\StudentCenter.Domain.csproj"
               }
             }
           }

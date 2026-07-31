@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import ExtracurricularSection from "@/components/ExtracurricularSection";
+import MadingSection from "@/components/MadingSection";
 import FacilityCatalogSection from "@/components/FacilityCatalogSection";
 import { ensureAssets } from "@/lib/ensure-assets";
 
@@ -9,11 +10,12 @@ export default function Home() {
   ensureAssets();
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       <Navbar />
       <main className="flex-1 flex flex-col overflow-x-hidden pt-20 lg:pt-24">
           <Hero />
           <ExtracurricularSection />
+          <MadingSection />
           <FacilityCatalogSection />
       </main>
     </div>
