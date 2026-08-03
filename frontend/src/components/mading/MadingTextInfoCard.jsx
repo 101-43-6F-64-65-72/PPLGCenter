@@ -22,12 +22,11 @@ export default function MadingTextInfoCard({ themeColor = "blue" }) {
         {/* Left Side: Action Image */}
         <div className="lg:col-span-5 relative h-[180px] sm:h-[230px] w-full rounded-[18px] sm:rounded-[24px] overflow-hidden shadow-md">
           <Image
-            src="https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop"
+            src="/images/tempat/lapangansmkn2ska.jpg"
             alt="Text Info Action"
             fill
             sizes="(max-width: 1024px) 100vw, 450px"
             className="object-cover"
-            unoptimized
           />
           {/* Subtle gradient overlay to match reference layout */}
           <div className={`absolute inset-0 ${fadeOverlay} hidden lg:block`}></div>
@@ -36,13 +35,11 @@ export default function MadingTextInfoCard({ themeColor = "blue" }) {
         {/* Right Side: Text Info Title & Description */}
         <div className="lg:col-span-7 flex flex-col justify-center items-start pr-0 lg:pr-4">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white mb-3 uppercase tracking-tight leading-none drop-shadow-sm">
-            TEXT INFO
+            INFORMASI MADING DIGITAL
           </h2>
 
           <p className="text-xs sm:text-sm lg:text-base text-white/95 leading-relaxed font-normal max-w-xl">
-            Kolese De Britto menyediakan beragam kegiatan ekstrakurikuler yang
-            dirancang untuk mengembangkan potensi siswa di luar kegiatan
-            akademik. Mulai dari bidang olahraga, seni dan budaya, sains da...
+            SMK Negeri 2 Surakarta menyediakan beragam kegiatan ekstrakurikuler dan pengumuman resmi yang dirancang untuk mengembangkan potensi serta kreativitas siswa di luar kegiatan akademik.
           </p>
         </div>
       </div>

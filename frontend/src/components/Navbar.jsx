@@ -18,8 +18,13 @@ export default function Navbar() {
 
   const navItems = [
     { name: "Beranda", path: "/" },
+    { name: "Fasilitas", path: "/fasilitas" },
     { name: "Ekstrakurikuler", path: "/ekstrakurikuler" },
     { name: "Mading", path: "/mading" },
+    { name: "Proposal", path: "/proposal" },
+    { name: "Panel OSIS", path: "/osis" },
+    { name: "Panel Guru", path: "/guru" },
+    { name: "Panel Admin", path: "/admin" },
   ];
 
   const handleNavClick = (e, item) => {
@@ -53,6 +58,24 @@ export default function Navbar() {
       return;
     }
 
+    if (item.path === "/proposal") {
+      if (pathname === "/proposal") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push("/proposal");
+      }
+      return;
+    }
+
+    if (item.path === "/osis") {
+      if (pathname === "/osis") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push("/osis");
+      }
+      return;
+    }
+
     router.push(item.path);
   };
 
@@ -71,7 +94,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md py-3 px-4 sm:px-8 lg:px-12 border-b border-gray-100 shadow-sm transition-all duration-300">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md py-3 px-4 sm:px-8 lg:px-12 border-b border-gray-100 shadow-sm transition-all duration-300">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           {/* Left Side: Logo & School Name */}
           <Link
@@ -79,7 +102,7 @@ export default function Navbar() {
             onClick={(e) => handleNavClick(e, navItems[0])}
             className="flex items-center gap-3.5 group cursor-pointer"
           >
-            <div className="relative w-10 h-12 flex-shrink-0 transition-transform group-hover:scale-105">
+            <div className="relative h-12 w-10 shrink-0 transition-transform group-hover:scale-105">
               <Image
                 src="/images/logo.png"
                 alt="SMK Negeri 2 Surakarta Logo"

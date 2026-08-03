@@ -1,38 +1,37 @@
 import apiClient from "@/lib/api";
-import { API_ROUTES } from "@/constants/apiRoutes";
 
 /**
- * Pure Production Club (Extracurricular) Service
- * Directly communicates with .NET REST API endpoints without any client-side dummy data.
+ * Pure Production Extracurricular Club Service matching API Contract V1 (/api/v1/clubs)
+ * Communicates directly with .NET REST API without client-side mock data.
  */
 export const clubService = {
   /**
-   * Fetch list of extracurricular clubs from backend REST API
-   * @param {Object} params - { page, pageSize, search }
+   * Fetch list of extracurricular clubs
    */
   async getClubs(params = {}) {
-    const queryParams = new URLSearchParams();
-
-    if (params.page) queryParams.append("page", params.page);
-    if (params.pageSize) queryParams.append("pageSize", params.pageSize);
-    if (params.search) queryParams.append("search", params.search);
-
-    const queryString = queryParams.toString();
-    const endpoint = queryString
-      ? `${API_ROUTES.CLUBS.LIST}?${queryString}`
-      : API_ROUTES.CLUBS.LIST;
-
-    const response = await apiClient.get(endpoint);
-    return response;
+    try {
+      const response = await apiClient.get("/clubs", { params });
+      if (response && response.data) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.warn("Backend /clubs endpoint error:", error?.message);
+      return [];
+    }
   },
 
   /**
-   * Fetch single club detail by ID from backend REST API
-   * @param {string|number} id
+   * Fetch single club detail by ID
    */
   async getClubById(id) {
-    const response = await apiClient.get(API_ROUTES.CLUBS.DETAIL(id));
-    return response;
+    try {
+      const response = await apiClient.get(`/clubs/${id}`);
+      return response?.data || null;
+    } catch (error) {
+      console.warn(`Backend /clubs/${id} endpoint error:`, error?.message);
+      return null;
+    }
   },
 };
 

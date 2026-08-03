@@ -43,4 +43,12 @@ Documenting answers and technical alignment between **Backend (.NET Clean Archit
 | **4** | **API Response Standard?** | Unwrapped via Axios response interceptor (`{ success, statusCode, message, data }`). |
 | **5** | **Cache Strategy?** | **TanStack Query** (`staleTime: 3-5 mins`, `keepPreviousData: true`). |
 | **6** | **Error Handling?** | Centralized error formatting (400, 401, 403, 404, 422, 500), auto-logout on 401, `ErrorAlert` UI. |
-| **7** | **UI States?** | All data pages support 4 UI states: **Loading Skeleton**, **Empty State ("Ups...")**, **Error Alert**, **Success Grid**. |
+---
+
+## 5. Proposal & Booking Approval Workflow
+
+| Module | Verification Flow | Approval Rules |
+| :--- | :--- | :--- |
+| **Peminjaman Fasilitas (`/bookings`)** | `Submitted` ➔ `Menunggu Verifikasi Guru / Admin` ➔ `Disetujui / Ditolak` | **Verifikasi OSIS bersifat Opsional**. Persetujuan utama dilakukan oleh Guru dan Admin (Super Admin/Waka Kesiswaan). |
+| **Pengajuan Proposal (`/proposals`)** | `Submitted` ➔ `[Opsional: Review OSIS]` ➔ `Menunggu Acc Guru & Admin` ➔ `Disetujui` | OSIS dapat memberikan rekomendasi/catatan awal (opsional), namun eksekusi approval resmi adalah wewenang Guru dan Admin. |
+

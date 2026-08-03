@@ -2,7 +2,7 @@
  * Helper to resolve valid image URLs from backend REST API responses
  * Handles full URLs (https://...), relative paths (/uploads/...), and fallback images.
  */
-export const resolveImageUrl = (src, fallback = "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200&auto=format&fit=crop") => {
+export const resolveImageUrl = (src, fallback = "/images/dummypic.jpg") => {
   if (!src) return fallback;
   if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/")) {
     return src;
