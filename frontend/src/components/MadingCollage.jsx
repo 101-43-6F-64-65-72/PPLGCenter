@@ -7,12 +7,11 @@ export default function MadingCollage() {
       {/* Top Image Container */}
       <div className="relative h-[130px] sm:h-[160px] w-full overflow-hidden bg-gray-100">
         <Image
-          src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&auto=format&fit=crop"
+          src="/images/aulasmkn2ska.jpg"
           alt="Suasana Ruang Mading Sekolah"
           fill
           sizes="(max-width: 768px) 100vw, 420px"
           className="object-cover transition-transform duration-500 hover:scale-105"
-          unoptimized
         />
       </div>
 
@@ -42,12 +41,11 @@ export default function MadingCollage() {
       {/* Bottom Image Container */}
       <div className="relative h-[130px] sm:h-[160px] w-full overflow-hidden bg-gray-100">
         <Image
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop"
+          src="/images/tempat/halamandepansmkn2ska.jpg"
           alt="Siswa Membaca Mading Sekolah"
           fill
           sizes="(max-width: 768px) 100vw, 420px"
           className="object-cover transition-transform duration-500 hover:scale-105"
-          unoptimized
         />
       </div>
     </div>

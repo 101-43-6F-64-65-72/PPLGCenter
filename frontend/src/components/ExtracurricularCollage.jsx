@@ -4,23 +4,23 @@ import Image from 'next/image';
 export default function ExtracurricularCollage() {
   const images = [
     {
-      src: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=600&auto=format&fit=crop',
+      src: '/images/tempat/lapangansmkn2ska.jpg',
       alt: 'Ekstrakurikuler Olahraga Basketball',
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform -rotate-1 hover:rotate-0 transition-transform duration-300',
     },
     {
-      src: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=600&auto=format&fit=crop',
-      alt: 'Ekstrakurikuler Seni Musik Band',
+      src: '/images/paskibra.jpg',
+      alt: 'Ekstrakurikuler Paskibra',
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform rotate-2 hover:rotate-0 transition-transform duration-300',
     },
     {
-      src: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=600&auto=format&fit=crop',
-      alt: 'Ekstrakurikuler Sains dan Teknologi Lab',
+      src: '/images/pmr.jpg',
+      alt: 'Ekstrakurikuler PMR',
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform rotate-1 hover:rotate-0 transition-transform duration-300',
     },
     {
-      src: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=600&auto=format&fit=crop',
-      alt: 'Ekstrakurikuler Organisasi dan Kebersamaan',
+      src: '/images/pramuka.jpg',
+      alt: 'Ekstrakurikuler Pramuka',
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform -rotate-2 hover:rotate-0 transition-transform duration-300',
     },
   ];

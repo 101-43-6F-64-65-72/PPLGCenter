@@ -43,15 +43,11 @@ export default function AnnouncementDetailPage({ params }) {
   };
 
   // Main announcement article
-  const announcement = data?.data || {
-    id: id || "1",
-    title: "Judul Aritikel",
-    image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=1200&auto=format&fit=crop",
-    content: "Kolese De Britto menyediakan beragam kegiatan ekstrakurikuler yang dirancang untuk mengembangkan potensi siswa di luar kegiatan akademik. Mulai dari bidang olahraga, seni dan budaya, sains dan teknologi, hingga organisasi, setiap ekstrakurikuler menjadi wadah bagi siswa untuk mengasah bakat, membangun karakter, serta mengembangkan kemampuan kepemimpinan, kerja sama, dan kreativitas. 676767676767\n\nrata kanan kiri ae gen rapi? tetot",
-    createdAt: "2026-07-18T10:00:00Z",
-    author: "Redaksi Sekolah",
-    category: "Olahraga",
-  };
+  const announcement = data?.data || null;
+
+  if (isLoading || !announcement) {
+    return <AnnouncementDetailSkeleton />;
+  }
 
   const formattedDate = formatDate(announcement.createdAt);
   const coverImage = resolveImageUrl(announcement.imageUrl || announcement.image);
@@ -62,32 +58,7 @@ export default function AnnouncementDetailPage({ params }) {
   const estimatedReadTime = Math.max(1, Math.ceil(wordCount / 200));
 
   // Filter out current article to display up to 3 related recommendations
-  const allArticles = listData?.data || [
-    {
-      id: "2",
-      title: "Pameran Robotika AI & Internet of Things Hasil Karya Siswa",
-      summary: "Siswa jurusan Teknik Komputer & Jaringan berhasil memamerkan inovasi sistem pertanian pintar berbasis IoT.",
-      image: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=800&auto=format&fit=crop",
-      category: "Sains & Teknologi",
-      author: "Tim Lab Robotik",
-    },
-    {
-      id: "3",
-      title: "Pentas Seni Nusantara: Memperkuat Karakter dan Seni Budaya",
-      summary: "Sanggar Seni Budaya sekolah menggelar pertunjukan tari kolosal tradisional dan teater musik.",
-      image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop",
-      category: "Seni & Budaya",
-      author: "Jurnalistik Seni",
-    },
-    {
-      id: "4",
-      title: "Musyawarah Kerja OSIS & MPK: Pelantikan Pengurus Periode Baru",
-      summary: "Pelantikan resmi pengurus OSIS dan MPK periode 2026/2027 berlangsung khidmat.",
-      image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop",
-      category: "Organisasi",
-      author: "Humas OSIS",
-    },
-  ];
+  const allArticles = listData?.data || [];
 
   const relatedArticles = allArticles
     .filter((item) => String(item.id) !== String(announcement.id))

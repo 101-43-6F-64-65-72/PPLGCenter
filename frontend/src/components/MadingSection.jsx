@@ -82,7 +82,7 @@ export default function MadingSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 sm:gap-5 items-center relative z-10 my-auto">
                   <div className="sm:col-span-5 relative aspect-[4/3] sm:aspect-square w-full rounded-[16px] sm:rounded-[18px] overflow-hidden shadow-sm">
                     <Image
-                      src={featuredArticle.image || "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop"}
+                      src={featuredArticle.image || featuredArticle.imageUrl || "/images/dummypic.jpg"}
                       alt={featuredArticle.title}
                       fill
                       sizes="(max-width: 640px) 100vw, 240px"
@@ -126,7 +126,7 @@ export default function MadingSection() {
                   className="lg:col-span-5 relative rounded-[22px] sm:rounded-[28px] overflow-hidden shadow-md group cursor-pointer min-h-[250px] sm:min-h-[280px] lg:min-h-full flex flex-col justify-end p-5 sm:p-6 hover:shadow-xl transition-all duration-300"
                 >
                   <Image
-                    src={highlightArticle.image || "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=800&auto=format&fit=crop"}
+                    src={highlightArticle.image || highlightArticle.imageUrl || "/images/dummypic.jpg"}
                     alt={highlightArticle.title}
                     fill
                     sizes="(max-width: 1024px) 100vw, 400px"
@@ -170,7 +170,7 @@ export default function MadingSection() {
           >
             <div className="relative h-48 sm:h-60 w-full bg-gray-900">
               <Image
-                src={selectedArticle.image || "https://images.unsplash.com/photo-1546519638-68e109498ffc?q=80&w=800&auto=format&fit=crop"}
+                src={selectedArticle.image || selectedArticle.imageUrl || "/images/dummypic.jpg"}
                 alt={selectedArticle.title}
                 fill
                 className="object-cover"
