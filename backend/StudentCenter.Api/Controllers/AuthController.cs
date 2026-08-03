@@ -6,6 +6,9 @@ using StudentCenter.Api.Models.Responses;
 
 namespace StudentCenter.Api.Controllers;
 
+/// <summary>
+/// Manages user authentication and authorization operations.
+/// </summary>
 [ApiController]
 [Route("api/auth")]
 public class AuthController : ControllerBase
@@ -13,13 +16,27 @@ public class AuthController : ControllerBase
     private readonly IUserService _userService;
     private readonly ICurrentUserService _currentUserService;
 
+    /// <summary>
+    /// Initializes a new instance of the AuthController.
+    /// </summary>
     public AuthController(IUserService userService, ICurrentUserService currentUserService)
     {
         _userService = userService;
         _currentUserService = currentUserService;
     }
 
+    /// <summary>
+    /// Authenticates a user and returns a JWT token.
+    /// </summary>
+    /// <param name="request">The login credentials.</param>
+    /// <returns>A JWT token upon successful authentication.</returns>
+    /// <response code="200">Login successful, returns token.</response>
+    /// <response code="401">Invalid credentials.</response>
+    /// <response code="403">Account is inactive.</response>
     [HttpPost("login")]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var result = await _userService.LoginAsync(request);
@@ -34,8 +51,16 @@ public class AuthController : ControllerBase
         };
     }
 
+    /// <summary>
+    /// Retrieves the current authenticated user's information.
+    /// </summary>
+    /// <returns>The authenticated user's details.</returns>
+    /// <response code="200">User information retrieved successfully.</response>
+    /// <response code="401">User not authenticated.</response>
     [Authorize]
     [HttpGet("me")]
+    [ProducesResponseType(typeof(ApiResponse<CurrentUserResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public IActionResult Me()
     {
         var userId = _currentUserService.UserId;

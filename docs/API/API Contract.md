@@ -135,6 +135,14 @@ The following payloads are final:
 | PUT | `/api/proposals/{id}` | Update proposal (OSIS own, pending only) |
 | DELETE | `/api/proposals/{id}` | Delete proposal (OSIS own, pending only) |
 | PATCH | `/api/proposals/{id}/review` | Review proposal (Admin, Teacher only) |
+| GET | `/api/extracurriculars` | List extracurriculars (authenticated) |
+| GET | `/api/extracurriculars/{id}` | Get extracurricular detail (authenticated) |
+| POST | `/api/extracurriculars` | Create extracurricular (Admin, Teacher) |
+| PUT | `/api/extracurriculars/{id}` | Update extracurricular (Admin, Teacher own) |
+| DELETE | `/api/extracurriculars/{id}` | Delete extracurricular (Admin, Teacher own) |
+| POST | `/api/extracurriculars/{id}/join` | Join extracurricular (Student only) |
+| DELETE | `/api/extracurriculars/{id}/leave` | Leave extracurricular (Student only) |
+| GET | `/api/extracurriculars/{id}/members` | List members (authenticated) |
 | GET | `/api/v1/elections` | List elections |
 | GET | `/api/dashboard` | Dashboard summary (authenticated) |
 | GET | `/api/users` | List users (Admin only) |
@@ -161,10 +169,20 @@ The following payloads are final:
 | GET | `/api/notifications/unread-count` | Get unread count (authenticated) |
 | PATCH | `/api/notifications/{id}/read` | Mark notification as read (authenticated) |
 | PATCH | `/api/notifications/read-all` | Mark all read (authenticated) |
+| GET | `/api/search` | Global search (authenticated) |
+| GET | `/api/announcements/search` | Search announcements (authenticated) |
+| GET | `/api/assignments/search` | Search assignments (authenticated) |
+| GET | `/api/attendance` | List attendance (authenticated) |
+| GET | `/api/attendance/{id}` | Get attendance by ID (authenticated) |
+| GET | `/api/attendance/student/{studentId}` | Get student attendance (authenticated) |
+| GET | `/api/attendance/date/{date}` | Get attendance by date (authenticated) |
+| POST | `/api/attendance` | Record attendance (Teacher, Admin) |
+| PUT | `/api/attendance/{id}` | Update attendance (Teacher own, Admin all) |
+| DELETE | `/api/attendance/{id}` | Delete attendance (Teacher own, Admin all) |
 
 ## Resource Naming
 
-All endpoints use **plural** nouns: `/users`, `/announcements`, `/events`, `/clubs`, `/facilities`, `/bookings`, `/proposals`, `/elections`, `/materials`, `/assignments`, `/submissions`, `/calendar`, `/notifications`, `/facilities`, `/bookings`.
+All endpoints use **plural** nouns: `/users`, `/announcements`, `/events`, `/clubs`, `/facilities`, `/bookings`, `/proposals`, `/extracurriculars`, `/elections`, `/materials`, `/assignments`, `/submissions`, `/calendar`, `/notifications`, `/search`, `/attendance`.
 
 ## File Upload Rules
 

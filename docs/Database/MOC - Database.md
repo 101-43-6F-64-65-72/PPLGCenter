@@ -29,6 +29,9 @@ Map of Content for the Supabase PostgreSQL database layer.
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
 - [[Entity - Proposal]]
+- [[Entity - Extracurricular]]
+- [[Entity - Extracurricular Member]]
+- [[Entity - Attendance]]
 
 ## Migrations
 

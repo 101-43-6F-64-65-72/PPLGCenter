@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
+using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Infrastructure.Services;
@@ -9,10 +11,14 @@ namespace StudentCenter.Infrastructure.Services;
 public class AnnouncementService : IAnnouncementService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<AnnouncementService> _logger;
 
-    public AnnouncementService(AppDbContext context)
+    public AnnouncementService(AppDbContext context, INotificationService notificationService, ILogger<AnnouncementService> logger)
     {
         _context = context;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
     public async Task<PagedResult<AnnouncementResponse>> GetAnnouncementsAsync(int page, int pageSize, string? category)
@@ -22,6 +28,7 @@ public class AnnouncementService : IAnnouncementService
         if (pageSize > 100) pageSize = 100;
 
         var query = _context.Set<Announcement>()
+            .AsNoTracking()
             .Include(a => a.CreatedByUser)
             .AsQueryable();
 
@@ -125,6 +132,7 @@ public class AnnouncementService : IAnnouncementService
     public async Task<AnnouncementResponse?> GetAnnouncementByIdAsync(Guid id)
     {
         var announcement = await _context.Set<Announcement>()
+            .AsNoTracking()
             .Include(a => a.CreatedByUser)
             .FirstOrDefaultAsync(a => a.Id == id);
 
@@ -165,6 +173,23 @@ public class AnnouncementService : IAnnouncementService
         await _context.SaveChangesAsync();
 
         var user = await _context.Set<User>().FindAsync(userId);
+
+        var allUserIds = await _context.Set<User>()
+            .AsNoTracking()
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        if (allUserIds.Count > 0)
+        {
+            await _notificationService.NotifyUsersAsync(
+                allUserIds,
+                $"New Announcement: {announcement.Title}",
+                announcement.Content,
+                NotificationType.Announcement,
+                announcement.Id.ToString(),
+                "Announcement"
+            );
+        }
 
         return new AnnouncementResponse
         {
@@ -226,5 +251,57 @@ public class AnnouncementService : IAnnouncementService
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    public async Task<PagedResult<AnnouncementResponse>> SearchAsync(int page, int pageSize, string? keyword = null, bool? isPinned = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
+
+        var query = _context.Set<Announcement>()
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var searchTerm = keyword.ToLower();
+            query = query.Where(a => a.Title.ToLower().Contains(searchTerm) || a.Content.ToLower().Contains(searchTerm));
+        }
+
+        if (isPinned.HasValue)
+        {
+            query = query.Where(a => a.IsPinned == isPinned.Value);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(a => a.IsPinned)
+            .ThenByDescending(a => a.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new AnnouncementResponse
+            {
+                Id = a.Id,
+                Title = a.Title,
+                Content = a.Content,
+                Category = a.Category,
+                CoverImageUrl = a.CoverImageUrl,
+                IsPinned = a.IsPinned,
+                CreatedAt = a.CreatedAt,
+                UpdatedAt = a.UpdatedAt,
+                CreatedByUserId = a.CreatedByUserId,
+                CreatedByUserName = a.CreatedByUser.FullName
+            })
+            .ToListAsync();
+
+        return new PagedResult<AnnouncementResponse>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 }

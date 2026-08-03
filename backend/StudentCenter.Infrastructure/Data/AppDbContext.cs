@@ -21,6 +21,9 @@ public class AppDbContext : DbContext
     public DbSet<Facility> Facilities => Set<Facility>();
     public DbSet<FacilityBooking> FacilityBookings => Set<FacilityBooking>();
     public DbSet<Proposal> Proposals => Set<Proposal>();
+    public DbSet<Extracurricular> Extracurriculars => Set<Extracurricular>();
+    public DbSet<ExtracurricularMember> ExtracurricularMembers => Set<ExtracurricularMember>();
+    public DbSet<Attendance> Attendances => Set<Attendance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

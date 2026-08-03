@@ -10,4 +10,5 @@ public interface IAnnouncementService
     Task<AnnouncementResponse> CreateAnnouncementAsync(CreateAnnouncementRequest request, Guid userId);
     Task<AnnouncementResponse?> UpdateAnnouncementAsync(Guid id, UpdateAnnouncementRequest request);
     Task<bool> DeleteAnnouncementAsync(Guid id);
+    Task<PagedResult<AnnouncementResponse>> SearchAsync(int page, int pageSize, string? keyword = null, bool? isPinned = null);
 }

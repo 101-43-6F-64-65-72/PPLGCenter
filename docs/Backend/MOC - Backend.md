@@ -32,6 +32,9 @@ Map of Content for the ASP.NET Core backend.
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
 - [[Entity - Proposal]]
+- [[Entity - Extracurricular]]
+- [[Entity - Extracurricular Member]]
+- [[Entity - Attendance]]
 
 ## Services
 
@@ -45,6 +48,7 @@ Map of Content for the ASP.NET Core backend.
 - [[Feature - Notification]] (NotificationService)
 - [[Feature - Facility Booking]] (FacilityService, BookingService)
 - [[Feature - Proposals]] (ProposalService)
+- [[Feature - Extracurricular]] (ExtracurricularService)
 
 ## API
 

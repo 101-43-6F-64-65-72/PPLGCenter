@@ -22,11 +22,13 @@ Map of Content for all StudentCenter features and modules.
 - [[Feature - Notification]]
 - [[Feature - Facility Booking]]
 - [[Feature - Proposals]]
+- [[Feature - Extracurricular]]
+- [[Feature - Search]]
+- [[Feature - Attendance]]
 
 ## Planned
 
 - [[Feature - Dashboard]]
-- [[Feature - Extracurricular]]
 - [[Feature - Profile]]
 
 ## Cross-Cutting

@@ -67,6 +67,9 @@ aliases:
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
 - [[Entity - Proposal]]
+- [[Entity - Extracurricular]]
+- [[Entity - Extracurricular Member]]
+- [[Entity - Attendance]]
 
 ### Features
 
@@ -82,6 +85,7 @@ aliases:
 - [[Feature - Extracurricular]]
 - [[Feature - Facility Booking]]
 - [[Feature - Proposals]]
+- [[Feature - Search]]
 - [[Feature - Profile]]
 - [[MOC - Features]]
 

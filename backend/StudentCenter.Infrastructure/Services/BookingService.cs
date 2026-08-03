@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
@@ -10,10 +11,14 @@ namespace StudentCenter.Infrastructure.Services;
 public class BookingService : IBookingService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<BookingService> _logger;
 
-    public BookingService(AppDbContext context)
+    public BookingService(AppDbContext context, INotificationService notificationService, ILogger<BookingService> logger)
     {
         _context = context;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
     public async Task<PagedResult<BookingResponse>> GetBookingsAsync(int page, int pageSize, Guid? facilityId, Guid? userId, BookingStatus? status)
@@ -167,12 +172,41 @@ public class BookingService : IBookingService
         if (booking is null)
             return null;
 
+        if (booking.Status != BookingStatus.Pending)
+            throw new InvalidOperationException("Only pending bookings can be updated.");
+
+        if (request.Status != BookingStatus.Approved && request.Status != BookingStatus.Rejected)
+            throw new InvalidOperationException("Invalid status transition.");
+
         booking.Status = request.Status;
         booking.RejectionReason = request.Status == BookingStatus.Rejected ? request.RejectionReason : null;
         booking.ApprovedOrRejectedByUserId = approverId;
         booking.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        if (request.Status == BookingStatus.Approved)
+        {
+            await _notificationService.NotifyUserAsync(
+                booking.BookedByUserId,
+                $"Booking Approved: {booking.Facility.Name}",
+                $"Your booking for {booking.Facility.Name} from {booking.StartTime:yyyy-MM-dd HH:mm} to {booking.EndTime:yyyy-MM-dd HH:mm} has been approved.",
+                NotificationType.Booking,
+                booking.Id.ToString(),
+                "Booking"
+            );
+        }
+        else if (request.Status == BookingStatus.Rejected)
+        {
+            await _notificationService.NotifyUserAsync(
+                booking.BookedByUserId,
+                $"Booking Rejected: {booking.Facility.Name}",
+                $"Your booking for {booking.Facility.Name} has been rejected. Reason: {request.RejectionReason}",
+                NotificationType.Booking,
+                booking.Id.ToString(),
+                "Booking"
+            );
+        }
 
         var approver = await _context.Set<User>().FindAsync(approverId);
 

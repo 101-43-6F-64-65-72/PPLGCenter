@@ -71,16 +71,30 @@ await _notificationService.NotifyUsersAsync(
 );
 ```
 
+## Current Integrations (Phase 019)
+
+Notifications are now triggered automatically from the following workflows:
+
+| Trigger | Event | Recipients | Type |
+|---------|-------|-----------|------|
+| Assignment Created | New assignment published | All Students | `Assignment` |
+| Submission Graded | Grade posted | Student who submitted | `Grade` |
+| Proposal Approved | OSIS proposal approved | Proposal submitter | `Proposal` |
+| Proposal Rejected | OSIS proposal rejected | Proposal submitter | `Proposal` |
+| Facility Booking Approved | Booking confirmed | Requester | `Booking` |
+| Facility Booking Rejected | Booking declined | Requester | `Booking` |
+| Announcement Published | New announcement | All Users | `Announcement` |
+
 ### Notification Types
 
-- `Assignment` (0)
-- `Announcement` (1)
-- `Calendar` (2)
-- `Proposal` (3)
-- `Booking` (4)
-- `Grade` (5)
-- `System` (6)
-- `Other` (7)
+- `Assignment` (0) - Assignment creation, due date reminders
+- `Announcement` (1) - Announcement publications
+- `Calendar` (2) - Calendar events (future)
+- `Proposal` (3) - OSIS proposal workflow
+- `Booking` (4) - Facility booking approvals/rejections
+- `Grade` (5) - Assignment grading
+- `System` (6) - System-level alerts (future)
+- `Other` (7) - Miscellaneous
 
 ## Implementation
 

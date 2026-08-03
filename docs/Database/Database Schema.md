@@ -210,6 +210,49 @@ StudentCenter uses **Supabase PostgreSQL** accessed via Entity Framework Core wi
 
 **Indexes**: `IX_Proposals_SubmittedByUserId`, `IX_Proposals_Status`, `IX_Proposals_CreatedAt`, `IX_Proposals_ReviewedByUserId`
 
+### Extracurriculars
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| Id | uuid | PK, default `gen_random_uuid()` |
+| Name | varchar(200) | NOT NULL |
+| Description | varchar(1000) | NOT NULL |
+| ImageUrl | varchar(500) | nullable |
+| Category | varchar(100) | NOT NULL |
+| MaxMembers | integer | NOT NULL |
+| IsActive | boolean | NOT NULL, default `true` |
+| ManagedByUserId | uuid | NOT NULL, FK → Users.Id (RESTRICT) |
+| CreatedAt | timestamptz | NOT NULL, default `now()` |
+| UpdatedAt | timestamptz | NOT NULL, default `now()` |
+
+**Indexes**: `IX_Extracurriculars_Name`, `IX_Extracurriculars_Category`, `IX_Extracurriculars_IsActive`, `IX_Extracurriculars_ManagedByUserId`, `IX_Extracurriculars_CreatedAt`
+
+### ExtracurricularMembers
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| Id | uuid | PK, default `gen_random_uuid()` |
+| ExtracurricularId | uuid | NOT NULL, FK → Extracurriculars.Id (CASCADE) |
+| StudentId | uuid | NOT NULL, FK → Users.Id (RESTRICT) |
+| JoinedAt | timestamptz | NOT NULL, default `now()` |
+
+**Indexes**: `IX_ExtracurricularMembers_ExtracurricularId`, `IX_ExtracurricularMembers_StudentId`, `IX_ExtracurricularMembers_ExtracurricularId_StudentId` (unique), `IX_ExtracurricularMembers_JoinedAt`
+
+### Attendances
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| Id | uuid | PK, default `gen_random_uuid()` |
+| StudentId | uuid | NOT NULL, FK → Users.Id (RESTRICT) |
+| AttendanceDate | timestamptz | NOT NULL |
+| Status | integer | NOT NULL (enum) |
+| Notes | varchar(1000) | nullable |
+| RecordedByUserId | uuid | NOT NULL, FK → Users.Id (RESTRICT) |
+| CreatedAt | timestamptz | NOT NULL, default `now()` |
+| UpdatedAt | timestamptz | NOT NULL, default `now()` |
+
+**Indexes**: `IX_Attendances_StudentId`, `IX_Attendances_AttendanceDate`, `IX_Attendances_Status`, `IX_Attendances_RecordedByUserId`, `IX_Attendances_StudentId_AttendanceDate` (unique)
+
 ## ERD
 
 See [[Database ERD]] for the visual diagram.
@@ -230,6 +273,9 @@ Entity configurations use EF Core Fluent API:
 - `FacilityConfiguration` → [[Entity - Facility]]
 - `FacilityBookingConfiguration` → [[Entity - Facility Booking]]
 - `ProposalConfiguration` → [[Entity - Proposal]]
+- `ExtracurricularConfiguration` → [[Entity - Extracurricular]]
+- `ExtracurricularMemberConfiguration` → [[Entity - Extracurricular Member]]
+- `AttendanceConfiguration` → [[Entity - Attendance]]
 
 ## Seeding
 
@@ -251,4 +297,6 @@ Entity configurations use EF Core Fluent API:
 - [[Entity - Facility]]
 - [[Entity - Facility Booking]]
 - [[Entity - Proposal]]
+- [[Entity - Extracurricular]]
+- [[Entity - Extracurricular Member]]
 - [[MOC - Database]]

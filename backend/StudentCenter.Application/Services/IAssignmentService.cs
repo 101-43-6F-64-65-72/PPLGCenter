@@ -9,4 +9,5 @@ public interface IAssignmentService
     Task<AssignmentResponse> CreateAssignmentAsync(CreateAssignmentRequest request, Guid userId);
     Task<AssignmentResponse?> UpdateAssignmentAsync(Guid id, UpdateAssignmentRequest request, Guid userId, string userRole);
     Task<bool> DeleteAssignmentAsync(Guid id, Guid userId, string userRole);
+    Task<PagedResult<AssignmentResponse>> SearchAsync(int page, int pageSize, string? keyword = null, string? subject = null, string? grade = null, DateTime? dueBefore = null, DateTime? dueAfter = null);
 }

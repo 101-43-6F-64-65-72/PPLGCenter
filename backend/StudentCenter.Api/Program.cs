@@ -7,6 +7,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Infrastructure.Data;
 using StudentCenter.Infrastructure.Data.Seeders;
 using StudentCenter.Infrastructure.Services;
+using Microsoft.AspNetCore.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,9 @@ builder.Services.AddScoped<ISubmissionService, SubmissionService>();
 builder.Services.AddScoped<ICalendarService, CalendarService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProposalService, ProposalService>();
+builder.Services.AddScoped<IExtracurricularService, ExtracurricularService>();
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["SecretKey"]!;
@@ -58,9 +62,54 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevelopmentPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+
+    options.AddPolicy("ProductionPolicy", policy =>
+    {
+        var productionOrigin = builder.Configuration["AllowedOrigins:Production"] ?? "https://studentcenter.example.com";
+        policy.WithOrigins(productionOrigin)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddHealthChecks();
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
 var app = builder.Build();
 
+app.UseResponseCompression();
+app.MapHealthChecks("/health");
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Student Center API v1.0");
+        options.RoutePrefix = string.Empty;
+    });
+}
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+var corsPolicy = app.Environment.IsDevelopment() ? "DevelopmentPolicy" : "ProductionPolicy";
+app.UseCors(corsPolicy);
 
 await SeedAdminData.SeedAsync(app.Services);
 

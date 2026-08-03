@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
+using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Infrastructure.Services;
@@ -9,10 +10,12 @@ namespace StudentCenter.Infrastructure.Services;
 public class SubmissionService : ISubmissionService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public SubmissionService(AppDbContext context)
+    public SubmissionService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<SubmissionResponse> SubmitAsync(Guid assignmentId, SubmitAssignmentRequest request, Guid studentId)
@@ -23,6 +26,9 @@ public class SubmissionService : ISubmissionService
 
         if (assignment is null)
             throw new KeyNotFoundException("Assignment not found.");
+
+        if (DateTime.UtcNow > assignment.DueDate)
+            throw new InvalidOperationException("Assignment submission is past the due date.");
 
         var existing = await _context.Set<Submission>()
             .AsNoTracking()
@@ -136,13 +142,22 @@ public class SubmissionService : ISubmissionService
             return null;
 
         if (userRole != "Admin" && submission.Assignment.CreatedByUserId != userId)
-            throw new UnauthorizedAccessException("You can only grade submissions for your own assignments.");
+            throw new UnauthorizedAccessException("You are not authorized to grade this submission.");
 
         submission.Score = request.Score;
         submission.Feedback = request.Feedback;
         submission.GradedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        await _notificationService.NotifyUserAsync(
+            submission.StudentId,
+            $"Assignment Graded: {submission.Assignment.Title}",
+            $"Your submission has been graded. Score: {submission.Score}/{submission.Assignment.MaxScore}. Feedback: {submission.Feedback}",
+            NotificationType.Grade,
+            submission.Id.ToString(),
+            "Submission"
+        );
 
         return new SubmissionResponse
         {

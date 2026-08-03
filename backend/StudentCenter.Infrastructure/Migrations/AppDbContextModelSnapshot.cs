@@ -205,6 +205,55 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.ToTable("Assignments", (string)null);
                 });
 
+            modelBuilder.Entity("StudentCenter.Domain.Entities.Attendance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("AttendanceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttendanceDate");
+
+                    b.HasIndex("RecordedByUserId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("StudentId", "AttendanceDate")
+                        .IsUnique();
+
+                    b.ToTable("Attendances", (string)null);
+                });
+
             modelBuilder.Entity("StudentCenter.Domain.Entities.CalendarEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -265,6 +314,100 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.HasIndex("StartDate");
 
                     b.ToTable("CalendarEvents", (string)null);
+                });
+
+            modelBuilder.Entity("StudentCenter.Domain.Entities.Extracurricular", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<Guid>("ManagedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("MaxMembers")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("ManagedByUserId");
+
+                    b.HasIndex("Name");
+
+                    b.ToTable("Extracurriculars", (string)null);
+                });
+
+            modelBuilder.Entity("StudentCenter.Domain.Entities.ExtracurricularMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ExtracurricularId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExtracurricularId");
+
+                    b.HasIndex("JoinedAt");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("ExtracurricularId", "StudentId")
+                        .IsUnique();
+
+                    b.ToTable("ExtracurricularMembers", (string)null);
                 });
 
             modelBuilder.Entity("StudentCenter.Domain.Entities.Facility", b =>
@@ -706,6 +849,25 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
+            modelBuilder.Entity("StudentCenter.Domain.Entities.Attendance", b =>
+                {
+                    b.HasOne("StudentCenter.Domain.Entities.User", "RecordedByUser")
+                        .WithMany()
+                        .HasForeignKey("RecordedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("StudentCenter.Domain.Entities.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("RecordedByUser");
+
+                    b.Navigation("Student");
+                });
+
             modelBuilder.Entity("StudentCenter.Domain.Entities.CalendarEvent", b =>
                 {
                     b.HasOne("StudentCenter.Domain.Entities.User", "CreatedByUser")
@@ -715,6 +877,36 @@ namespace StudentCenter.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("StudentCenter.Domain.Entities.Extracurricular", b =>
+                {
+                    b.HasOne("StudentCenter.Domain.Entities.User", "ManagedByUser")
+                        .WithMany()
+                        .HasForeignKey("ManagedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ManagedByUser");
+                });
+
+            modelBuilder.Entity("StudentCenter.Domain.Entities.ExtracurricularMember", b =>
+                {
+                    b.HasOne("StudentCenter.Domain.Entities.Extracurricular", "Extracurricular")
+                        .WithMany("Members")
+                        .HasForeignKey("ExtracurricularId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("StudentCenter.Domain.Entities.User", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Extracurricular");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("StudentCenter.Domain.Entities.FacilityBooking", b =>
@@ -812,6 +1004,11 @@ namespace StudentCenter.Infrastructure.Migrations
             modelBuilder.Entity("StudentCenter.Domain.Entities.Assignment", b =>
                 {
                     b.Navigation("Submissions");
+                });
+
+            modelBuilder.Entity("StudentCenter.Domain.Entities.Extracurricular", b =>
+                {
+                    b.Navigation("Members");
                 });
 #pragma warning restore 612, 618
         }

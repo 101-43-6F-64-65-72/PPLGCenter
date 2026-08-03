@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
@@ -9,10 +10,12 @@ namespace StudentCenter.Infrastructure.Services;
 public class FacilityService : IFacilityService
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<FacilityService> _logger;
 
-    public FacilityService(AppDbContext context)
+    public FacilityService(AppDbContext context, ILogger<FacilityService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<PagedResult<FacilityResponse>> GetFacilitiesAsync(int page, int pageSize, bool? isActive)

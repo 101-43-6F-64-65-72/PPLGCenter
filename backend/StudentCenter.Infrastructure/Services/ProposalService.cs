@@ -10,10 +10,12 @@ namespace StudentCenter.Infrastructure.Services;
 public class ProposalService : IProposalService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public ProposalService(AppDbContext context)
+    public ProposalService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<PagedResult<ProposalResponse>> GetProposalsAsync(int page, int pageSize, Guid? userId = null, ProposalStatus? status = null)
@@ -222,6 +224,29 @@ public class ProposalService : IProposalService
         proposal.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        if (request.Status == ProposalStatus.Approved)
+        {
+            await _notificationService.NotifyUserAsync(
+                proposal.SubmittedByUserId,
+                "Proposal Approved",
+                $"Your proposal \"{proposal.Title}\" has been approved.",
+                NotificationType.Proposal,
+                proposal.Id.ToString(),
+                "Proposal"
+            );
+        }
+        else if (request.Status == ProposalStatus.Rejected)
+        {
+            await _notificationService.NotifyUserAsync(
+                proposal.SubmittedByUserId,
+                "Proposal Rejected",
+                $"Your proposal \"{proposal.Title}\" has been rejected. Reason: {request.RejectionReason}",
+                NotificationType.Proposal,
+                proposal.Id.ToString(),
+                "Proposal"
+            );
+        }
 
         var reviewerUser = reviewer;
 

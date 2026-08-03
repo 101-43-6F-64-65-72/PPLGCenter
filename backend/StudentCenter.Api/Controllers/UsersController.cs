@@ -7,6 +7,9 @@ using StudentCenter.Api.Models.Responses;
 
 namespace StudentCenter.Api.Controllers;
 
+/// <summary>
+/// Manages user administration operations (Admin only).
+/// </summary>
 [Authorize(Roles = "Admin")]
 [ApiController]
 [Route("api/users")]
