@@ -113,8 +113,14 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Login Form */}
-          <LoginForm onSuccess={handleSuccess} />
+          {/* Login Form inside Suspense boundary */}
+          <React.Suspense fallback={
+            <div className="p-6 text-center text-sm font-medium text-white/80 animate-pulse">
+              Memuat formulir login...
+            </div>
+          }>
+            <LoginForm onSuccess={handleSuccess} />
+          </React.Suspense>
         </MotionDiv>
       </div>
     </div>
