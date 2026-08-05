@@ -7,7 +7,6 @@ using StudentCenter.Application.Services;
 using StudentCenter.Infrastructure.Data;
 using StudentCenter.Infrastructure.Data.Seeders;
 using StudentCenter.Infrastructure.Services;
-using Microsoft.AspNetCore.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
