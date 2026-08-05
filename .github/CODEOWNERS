@@ -1,0 +1,6 @@
+# Enterprise Code Owners for StudentCenter
+*       @studentcenter-core-team
+/backend/ @studentcenter-backend-team
+/frontend/ @studentcenter-frontend-team
+/infra/ @studentcenter-devops-team
+/.github/ @studentcenter-devops-team

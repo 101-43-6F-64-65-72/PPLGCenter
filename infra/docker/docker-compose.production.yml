@@ -1,0 +1,110 @@
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: studentcenter-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: studentcenter
+      POSTGRES_USER: studentcenter_prod
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studentcenter_prod -d studentcenter"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: studentcenter-backend-prod
+    restart: unless-stopped
+    read_only: false
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET__FILE=/run/secrets/jwt_secret
+      - JWT_ISSUER=${JWT_ISSUER:-StudentCenter}
+      - JWT_AUDIENCE=${JWT_AUDIENCE:-StudentCenterApp}
+      - CORS__AllowedOrigins=${ALLOWED_ORIGINS:-https://studentcenter.smkn2surakarta.sch.id}
+    secrets:
+      - db_password
+      - jwt_secret
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: studentcenter-frontend-prod
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-https://studentcenter.smkn2surakarta.sch.id}
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  nginx:
+    image: nginx:alpine
+    container_name: studentcenter-proxy-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/security.conf:/etc/nginx/security.conf:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+
+volumes:
+  postgres_prod_data:
+  certbot_certs:

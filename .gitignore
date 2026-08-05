@@ -47,12 +47,25 @@ CodeCoverage/
 # MSBuild Binary and Structured Log
 *.binlog
 
-# MSTest test Results
+# MSTest & Playwright Test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
+pw-results/
+playwright-report/
 
-# NUnit
-*.VisualState.xml
-TestResult.xml
-nunit-*.xml
+# Local Secrets & Security Files
+secrets/
+*.pem
+*.pfx
+
+# Temporary Logs & Recovery Files
+*.log
+status-before-recovery.txt
+frontend/e2e/*.sql
+
+
+# Node / Next.js Outputs
+node_modules/
+.next/
+
 
