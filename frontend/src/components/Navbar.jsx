@@ -23,8 +23,12 @@ export default function Navbar() {
     { name: "Fasilitas", path: "/fasilitas" },
     { name: "Ekstrakurikuler", path: "/ekstrakurikuler" },
     { name: "Mading", path: "/mading" },
-    { name: "Proposal", path: "/proposal" },
   ];
+
+  // Add Proposal menu only for authenticated users
+  if (isAuthenticated) {
+    baseNavItems.push({ name: "Proposal", path: "/proposal" });
+  }
 
   if (isAuthenticated) {
     if (userRole === "admin") {

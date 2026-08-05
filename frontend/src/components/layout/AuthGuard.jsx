@@ -20,12 +20,9 @@ export const AuthGuard = ({ children, allowedRoles = null }) => {
   const { isAuthenticated, loading, role, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-<<<<<<< HEAD
 
   const userRole = role || user?.role || "Student";
-=======
   const isDev = process.env.NODE_ENV === "development";
->>>>>>> c6427a23d5c889fa58b1e0348c871c51ae22edb1
 
   useEffect(() => {
     if (!isDev && !loading && !isAuthenticated) {

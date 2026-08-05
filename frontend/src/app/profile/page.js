@@ -31,36 +31,15 @@ function ProfileContent() {
   const { user, role, logout, fetchProfile } = useAuth();
   const fileInputRef = useRef(null);
 
-<<<<<<< HEAD
   // Active sub-tab state ('info' | 'password')
   const [activeTab, setActiveTab] = useState("info");
-=======
-  // Development preview only.
-  // Remove when backend authentication is fully integrated.
-  const previewUser = {
-    name: "Administrator",
-    email: "admin@studentcenter.id",
-    identifier: "admin@studentcenter.id",
-    avatar: "",
-  };
-  const currentUser = user ?? previewUser;
->>>>>>> c6427a23d5c889fa58b1e0348c871c51ae22edb1
 
   // Profile Form States
   const [avatarPreview, setAvatarPreview] = useState(null);
-<<<<<<< HEAD
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-=======
-  const [formName, setFormName] = useState(null);
-  const [formIdentifier, setFormIdentifier] = useState(null);
-  const [address, setAddress] = useState("");
-
-  const name = formName ?? (currentUser.fullName || currentUser.name || "Administrator");
-  const identifier = formIdentifier ?? (currentUser.email || currentUser.identifier || "admin@studentcenter.id");
->>>>>>> c6427a23d5c889fa58b1e0348c871c51ae22edb1
 
   // Password Change States
   const [oldPassword, setOldPassword] = useState("");
@@ -72,6 +51,7 @@ function ProfileContent() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Sync state automatically with authenticated user context
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (user) {
       setFullName(user.fullName || user.name || "");
@@ -83,6 +63,7 @@ function ProfileContent() {
       }
     }
   }, [user]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Saved profile header display values (from context)
   const savedName = user?.fullName || user?.name || "Pengguna Student Center";
@@ -271,11 +252,7 @@ function ProfileContent() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm font-medium text-gray-500 sm:text-base">
-<<<<<<< HEAD
-                  ID / NIS / Email: <span className="font-semibold text-gray-900">{savedEmail}</span>
-=======
-                  Email / NIS: <span className="font-semibold text-gray-900">{identifier}</span>
->>>>>>> c6427a23d5c889fa58b1e0348c871c51ae22edb1
+                  Email / NIS: <span className="font-semibold text-gray-900">{savedEmail}</span>
                 </p>
               </div>
             </div>
@@ -319,7 +296,6 @@ function ProfileContent() {
           </button>
         </div>
 
-<<<<<<< HEAD
         {/* Status Toast Alert */}
         {statusMessage.text && (
           <div
@@ -342,21 +318,9 @@ function ProfileContent() {
             >
               ✕
             </button>
-=======
-        <div className="space-y-5">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700">Nama</label>
-            <input
-              value={name}
-              onChange={(event) => setFormName(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              placeholder="Masukkan nama"
-            />
->>>>>>> c6427a23d5c889fa58b1e0348c871c51ae22edb1
           </div>
         )}
 
-<<<<<<< HEAD
         {/* Tab 1: Informasi Profil Form */}
         {activeTab === "info" && (
           <form onSubmit={handleSaveProfile} className="space-y-5">
@@ -388,17 +352,6 @@ function ProfileContent() {
                 />
               </div>
             </div>
-=======
-          <div>
-            <label className="block text-sm font-semibold text-gray-700">NIS</label>
-            <input
-              value={identifier}
-              onChange={(event) => setFormIdentifier(event.target.value)}
-              className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              placeholder="Masukkan NIS"
-            />
-          </div>
->>>>>>> c6427a23d5c889fa58b1e0348c871c51ae22edb1
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
