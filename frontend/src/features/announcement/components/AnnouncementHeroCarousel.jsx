@@ -48,9 +48,11 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
   }, []);
 
   // Reset slide when items prop changes
-  useEffect(() => {
+  const [prevItems, setPrevItems] = useState(items);
+  if (prevItems !== items) {
+    setPrevItems(items);
     setCurrentSlide(0);
-  }, [items]);
+  }
 
   const changeSlide = useCallback(
     (newIndex) => {

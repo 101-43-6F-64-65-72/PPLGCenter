@@ -13,18 +13,18 @@ export const AuthGuard = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-
-  // Development preview only.
-  // Remove after backend authentication is fully integrated.
-  if (process.env.NODE_ENV === "development") {
-    return children;
-  }
+  const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!isDev && !loading && !isAuthenticated) {
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
     }
-  }, [isAuthenticated, loading, pathname, router]);
+  }, [isDev, isAuthenticated, loading, pathname, router]);
+
+  // Development preview only.
+  if (isDev) {
+    return children;
+  }
 
   if (loading) {
     return (

@@ -121,7 +121,7 @@ export default function OsisFacilityTab() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h4 className="text-base font-extrabold text-gray-900">
-                    "{b.activityName}"
+                    &quot;{b.activityName}&quot;
                   </h4>
                   <div className="flex items-center gap-3 text-xs text-gray-600">
                     <span className="font-bold text-[#2c1ee8]">{b.facilityTitle}</span>

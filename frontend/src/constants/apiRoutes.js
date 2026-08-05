@@ -4,23 +4,23 @@
 
 export const API_ROUTES = {
   AUTH: {
-    LOGIN: "/auth/login",
-    LOGOUT: "/auth/logout",
+    LOGIN: "/api/auth/login",
+    LOGOUT: "/api/auth/logout",
   },
   PROFILE: {
-    GET: "/profile",
-    UPDATE: "/profile",
+    GET: "/api/auth/me",
+    UPDATE: "/api/auth/me",
   },
   ANNOUNCEMENTS: {
-    LIST: "/announcements",
-    DETAIL: (id) => `/announcements/${id}`,
+    LIST: "/api/announcements",
+    DETAIL: (id) => `/api/announcements/${id}`,
   },
   CLUBS: {
-    LIST: "/clubs",
-    DETAIL: (id) => `/clubs/${id}`,
+    LIST: "/api/clubs",
+    DETAIL: (id) => `/api/clubs/${id}`,
   },
   BOOKINGS: {
-    LIST: "/bookings",
-    CREATE: "/bookings",
+    LIST: "/api/bookings",
+    CREATE: "/api/bookings",
   },
 };

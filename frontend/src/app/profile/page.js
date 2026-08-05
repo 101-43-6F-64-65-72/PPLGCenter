@@ -30,16 +30,20 @@ function ProfileContent() {
   // Development preview only.
   // Remove when backend authentication is fully integrated.
   const previewUser = {
-    name: "Pleton Ganteng",
-    identifier: "676767",
+    name: "Administrator",
+    email: "admin@studentcenter.id",
+    identifier: "admin@studentcenter.id",
     avatar: "",
   };
   const currentUser = user ?? previewUser;
 
   const [avatarPreview, setAvatarPreview] = useState(null);
-  const [name, setName] = useState(currentUser.name || "");
-  const [identifier, setIdentifier] = useState(currentUser.identifier || "");
-  const [address, setAddress] = useState(""); // TODO: replace address from backend
+  const [formName, setFormName] = useState(null);
+  const [formIdentifier, setFormIdentifier] = useState(null);
+  const [address, setAddress] = useState("");
+
+  const name = formName ?? (currentUser.fullName || currentUser.name || "Administrator");
+  const identifier = formIdentifier ?? (currentUser.email || currentUser.identifier || "admin@studentcenter.id");
 
   React.useEffect(() => {
     return () => {
@@ -132,7 +136,7 @@ function ProfileContent() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm font-medium text-gray-500 sm:text-base">
-                  ID / NIS: <span className="font-semibold text-gray-900">{identifier}</span>
+                  Email / NIS: <span className="font-semibold text-gray-900">{identifier}</span>
                 </p>
               </div>
             </div>
@@ -161,7 +165,7 @@ function ProfileContent() {
             <label className="block text-sm font-semibold text-gray-700">Nama</label>
             <input
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => setFormName(event.target.value)}
               className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               placeholder="Masukkan nama"
             />
@@ -171,7 +175,7 @@ function ProfileContent() {
             <label className="block text-sm font-semibold text-gray-700">NIS</label>
             <input
               value={identifier}
-              onChange={(event) => setIdentifier(event.target.value)}
+              onChange={(event) => setFormIdentifier(event.target.value)}
               className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               placeholder="Masukkan NIS"
             />

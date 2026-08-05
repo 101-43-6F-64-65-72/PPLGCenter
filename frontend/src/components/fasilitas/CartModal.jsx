@@ -161,7 +161,7 @@ export default function CartModal({
                     Pengajuan Kolektif Berhasil!
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Pengajuan <strong>{cartItems.length} fasilitas/barang</strong> oleh <strong>{finalOrgDisplay}</strong> untuk kegiatan <strong>"{activityName}"</strong> telah berhasil dikirim.
+                    Pengajuan <strong>{cartItems.length} fasilitas/barang</strong> oleh <strong>{finalOrgDisplay}</strong> untuk kegiatan <strong>&quot;{activityName}&quot;</strong> telah berhasil dikirim.
                   </p>
                 </div>
 
@@ -198,7 +198,7 @@ export default function CartModal({
                     </div>
                     <h3 className="text-lg font-bold text-gray-800">Daftar Pinjaman Masih Kosong</h3>
                     <p className="text-xs text-gray-500 max-w-xs mx-auto">
-                      Pilih fasilitas atau peralatan yang ingin dipinjam dari katalog, lalu klik "+ Tambah".
+                      Pilih fasilitas atau peralatan yang ingin dipinjam dari katalog, lalu klik &quot;+ Tambah&quot;.
                     </p>
                   </div>
                 ) : (

@@ -18,7 +18,9 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
   const [addedToast, setAddedToast] = useState(false);
 
   // Reset state on modal open/close
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (prevIsOpen !== isOpen) {
+    setPrevIsOpen(isOpen);
     if (!isOpen) {
       setStep(1);
       setSelectedSlots([]);
@@ -30,7 +32,7 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
       setIsSuccess(false);
       setAddedToast(false);
     }
-  }, [isOpen]);
+  }
 
   if (!isOpen || !facility) return null;
 
@@ -172,7 +174,7 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   Pengajuan Peminjaman Berhasil!
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Permohonan peminjaman <strong>{facility.title}</strong> oleh <strong>{finalOrgDisplay}</strong> untuk kegiatan <strong>"{activityName}"</strong> telah berhasil dikirim.
+                  Permohonan peminjaman <strong>{facility.title}</strong> oleh <strong>{finalOrgDisplay}</strong> untuk kegiatan <strong>&quot;{activityName}&quot;</strong> telah berhasil dikirim.
                 </p>
               </div>
 

@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 
 export const TEST_ADMIN = {
   email: 'admin@studentcenter.id',
-  password: 'admin1234',
+  password: 'Admin123!',
 };
 
 export async function login(page, credentials = TEST_ADMIN) {

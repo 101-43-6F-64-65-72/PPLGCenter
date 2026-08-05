@@ -25,15 +25,15 @@ export const LoginForm = () => {
 
       {/* Identifier Input (NIS/NISN/NIP) */}
       <Input
-        label="School ID (NIS / NISN / NIP)"
-        name="identifier"
-        type="text"
-        placeholder="Contoh: 22010928 atau 19850310..."
+        label="Email"
+        name="email"
+        type="email"
+        placeholder="Contoh: admin@studentcenter.id"
         isRequired
         variant="dark"
         leftIcon={<User className="w-5 h-5 text-[#2c1ee8]" />}
-        error={errors.identifier?.message}
-        {...register("identifier")}
+        error={errors.email?.message}
+        {...register("email")}
       />
 
       {/* Password Input */}

@@ -55,4 +55,5 @@ const createMotionProxy = () => {
 export const motion = motionImport || createMotionProxy();
 export const AnimatePresence = animatePresenceImport || (({ children }) => <>{children}</>);
 
-export default { motion, AnimatePresence };
+const motionModule = { motion, AnimatePresence };
+export default motionModule;

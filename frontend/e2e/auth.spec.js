@@ -29,7 +29,7 @@ test('auth flow capture', async ({ page }) => {
 
   await page.goto('/login');
   await page.locator('input[name="email"]').fill('admin@studentcenter.id');
-  await page.locator('input[name="password"]').fill('admin1234');
+  await page.locator('input[name="password"]').fill('Admin123!');
   await page.getByRole('button', { name: /masuk ke student center/i }).click();
   await expect(page).toHaveURL(/\/profile/);
 
