@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
@@ -12,27 +13,44 @@ public static class SeedAdminData
     {
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var configuration = scope.ServiceProvider.GetService<IConfiguration>();
         var passwordHasher = new PasswordHasher<User>();
 
-        await context.Database.MigrateAsync();
-
-        if (await context.Users.AnyAsync(u => u.Role == UserRole.Admin))
-            return;
-
-        var admin = new User
+        if (context.Database.IsRelational())
         {
-            Id = Guid.NewGuid(),
-            FullName = "Administrator",
-            Email = "admin@studentcenter.id",
-            Role = UserRole.Admin,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+            await context.Database.MigrateAsync();
+        }
 
-        admin.PasswordHash = passwordHasher.HashPassword(admin, "Admin123!");
+        var defaultPassword = configuration?["DEFAULT_ADMIN_PASSWORD"]?.Trim();
+        if (string.IsNullOrWhiteSpace(defaultPassword))
+        {
+            defaultPassword = "Admin123!";
+        }
 
-        context.Users.Add(admin);
+        var admin = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@studentcenter.id" || u.Role == UserRole.Admin);
+
+        if (admin is null)
+        {
+            admin = new User
+            {
+                Id = Guid.NewGuid(),
+                FullName = "Administrator",
+                Email = "admin@studentcenter.id",
+                Role = UserRole.Admin,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            context.Users.Add(admin);
+        }
+
+        admin.FullName = "Administrator";
+        admin.Email = "admin@studentcenter.id";
+        admin.Role = UserRole.Admin;
+        admin.IsActive = true;
+        admin.PasswordHash = passwordHasher.HashPassword(admin, defaultPassword);
+        admin.UpdatedAt = DateTime.UtcNow;
+
         await context.SaveChangesAsync();
     }
 }

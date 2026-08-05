@@ -1,0 +1,37 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(http_requests_received_total[5m])",
+          "legendFormat": "{{method}} {{path}}"
+        }
+      ]
+    },
+    {
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "process_cpu_seconds_total",
+          "legendFormat": "CPU Time"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["studentcenter", "observability"],
+  "title": "StudentCenter Production Dashboard",
+  "version": 1
+}
