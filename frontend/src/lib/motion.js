@@ -29,7 +29,7 @@ const createMotionProxy = () => {
     {},
     {
       get: (_, prop) => {
-        return React.forwardRef(({ children, className, style, onClick, ...props }, ref) => {
+        const MotionComponent = React.forwardRef(({ children, className, style, onClick, ...props }, ref) => {
           const Tag = prop || "div";
           // Filter out motion-specific props if native Motion module is hydrating
           const cleanProps = { ...props };
@@ -45,6 +45,8 @@ const createMotionProxy = () => {
             </Tag>
           );
         });
+        MotionComponent.displayName = `MotionProxy(${prop || "div"})`;
+        return MotionComponent;
       },
     }
   );
