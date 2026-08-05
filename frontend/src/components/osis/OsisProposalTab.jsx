@@ -89,8 +89,13 @@ export default function OsisProposalTab({ proposals = [], onStatusUpdate }) {
     if (onStatusUpdate) {
       onStatusUpdate(selectedProposal.id, newStatus, noteText);
     }
-    selectedProposal.status = newStatus;
-    selectedProposal.notes = noteText || selectedProposal.notes;
+    setFetchedProposals((prev) =>
+      prev.map((p) =>
+        p.id === selectedProposal.id
+          ? { ...p, status: newStatus, notes: noteText || p.notes }
+          : p
+      )
+    );
     setSelectedProposal(null);
     setNoteText("");
   };

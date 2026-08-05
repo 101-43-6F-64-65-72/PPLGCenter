@@ -55,7 +55,15 @@ export const AuthProvider = ({ children }) => {
 
   // Check session on initial mount
   useEffect(() => {
-    fetchProfile();
+    let isMounted = true;
+    queueMicrotask(async () => {
+      if (isMounted) {
+        await fetchProfile();
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [fetchProfile]);
 
   /**
@@ -66,9 +74,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authService.login(credentials);
 
-      if (res?.success || res?.token) {
+      if (res?.success || res?.token || res?.data?.token) {
         const token = res.data?.token || res.token;
-        const userData = res.data?.user || res.user;
+        const userData = res.data?.user || res.user || (res.data?.email ? res.data : null);
 
         if (token) {
           setStoredToken(token);

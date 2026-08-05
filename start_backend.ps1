@@ -1,12 +1,12 @@
 if (-not $env:DATABASE_URL) {
-    $env:DATABASE_URL = "Host=localhost;Port=5432;Database=studentcenter;Username=studentcenter;Password=sc_test_pw_2026"
+    $env:DATABASE_URL = "Host=db.ryskvrqcrytmdsorviie.supabase.co;Port=5432;Database=postgres;Username=postgres.ryskvrqcrytmdsorviie;SSL Mode=Require;Trust Server Certificate=true"
 }
 $env:JWT_SECRET="akjhgfdrtyjnmnbytghytfvbnjykbrcr"
 $env:JWT_ISSUER="StudentCenter"
 $env:JWT_AUDIENCE="StudentCenterApp"
 $env:JWT_EXPIRATION_MINUTES="60"
 $env:CORS__AllowedOrigins="http://localhost:3000"
-$env:DEFAULT_ADMIN_PASSWORD="admin1234"
+$env:DEFAULT_ADMIN_PASSWORD="Admin123!"
 
 $requiredVars = @("DATABASE_URL", "JWT_SECRET")
 foreach ($var in $requiredVars) {

@@ -25,15 +25,22 @@ export const LoginForm = () => {
 
       {/* Identifier Input (NIS/NISN/NIP/Email) */}
       <Input
+<<<<<<< HEAD
         label="ID Akun (NIS/NISN Siswa | NIP Guru | Email Admin)"
         name="identifier"
         type="text"
         placeholder="Masukkan NIS/NISN (Siswa), NIP (Guru), atau Email"
+=======
+        label="Email"
+        name="email"
+        type="email"
+        placeholder="Contoh: admin@studentcenter.id"
+>>>>>>> c6427a23d5c889fa58b1e0348c871c51ae22edb1
         isRequired
         variant="dark"
         leftIcon={<User className="w-5 h-5 text-[#2c1ee8]" />}
-        error={errors.identifier?.message}
-        {...register("identifier")}
+        error={errors.email?.message}
+        {...register("email")}
       />
 
       {/* Password Input */}

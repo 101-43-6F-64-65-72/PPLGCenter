@@ -10,6 +10,6 @@ test.describe('Module 6: Extracurricular', () => {
     await expect(page.getByRole('heading', { name: 'EKSTRAKURIKULER' })).toBeVisible();
 
     // Check description text
-    await expect(page.locator('text=Ekstrakurikuler adalah kegiatan yang dilakukan di luar jam pelajaran')).toBeVisible();
+    await expect(page.locator('text=Wadah pengembangan minat, bakat, dan potensi diri siswa SMKN 2 Surakarta')).toBeVisible();
   });
 });

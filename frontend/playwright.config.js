@@ -30,7 +30,7 @@ export default defineConfig({
         ...process.env,
         DATABASE_URL: process.env.DATABASE_URL || 'Host=db.ryskvrqcrytmdsorviie.supabase.co;Port=5432;Database=postgres;Username=postgres.ryskvrqcrytmdsorviie;SSL Mode=Require;Trust Server Certificate=true',
         JWT_SECRET: process.env.JWT_SECRET || 'akjhgfdrtyjnmnbytghytfvbnjykbrcr',
-        DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || 'admin1234',
+        DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || 'Admin123!',
       },
     },
     {

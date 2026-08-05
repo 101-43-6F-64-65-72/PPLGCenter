@@ -22,19 +22,7 @@ export default function MadingCollage() {
           preserveAspectRatio="none"
           className="w-full h-6 sm:h-7 text-white fill-current block filter drop-shadow-[0_-1px_2px_rgba(0,0,0,0.05)]"
         >
-          <path d="
-            M 0,24 
-            L 0,12 
-            L 16,12 L 16,0 L 36,0 L 36,12 
-            L 66,12 L 66,0 L 86,0 L 86,12 
-            L 116,12 L 116,0 L 136,0 L 136,12 
-            L 166,12 L 166,0 L 186,0 L 186,12 
-            L 216,12 L 216,0 L 236,0 L 236,12 
-            L 266,12 L 266,0 L 286,0 L 286,12 
-            L 316,12 L 316,0 L 336,0 L 336,12 
-            L 366,12 L 366,0 L 386,0 L 386,12 
-            L 400,12 L 400,24 Z
-          " />
+          <path d="M 0,24 L 0,12 L 16,12 L 16,0 L 36,0 L 36,12 L 66,12 L 66,0 L 86,0 L 86,12 L 116,12 L 116,0 L 136,0 L 136,12 L 166,12 L 166,0 L 186,0 L 186,12 L 216,12 L 216,0 L 236,0 L 236,12 L 266,12 L 266,0 L 286,0 L 286,12 L 316,12 L 316,0 L 336,0 L 336,12 L 366,12 L 366,0 L 386,0 L 386,12 L 400,12 L 400,24 Z" />
         </svg>
       </div>
 

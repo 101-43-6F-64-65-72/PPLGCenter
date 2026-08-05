@@ -4,10 +4,10 @@ import { z } from "zod";
  * Zod validation schema for Login form
  */
 export const loginSchema = z.object({
-  identifier: z
+  email: z
     .string()
-    .min(1, { message: "NIS / NISN / NIP wajib diisi" })
-    .min(4, { message: "NIS / NISN / NIP minimal 4 karakter" }),
+    .min(1, { message: "Email wajib diisi" })
+    .email({ message: "Format email tidak valid" }),
   password: z
     .string()
     .min(1, { message: "Password wajib diisi" })

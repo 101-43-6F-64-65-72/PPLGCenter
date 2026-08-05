@@ -12,7 +12,7 @@ test('auth flow trace', async ({ page }) => {
   // 2. Navigation & Actions
   await page.goto('/login');
   await page.locator('input[name="email"]').fill('admin@studentcenter.id');
-  await page.locator('input[name="password"]').fill('admin1234');
+  await page.locator('input[name="password"]').fill('Admin123!');
   
   console.log('TRACE_ACTION=click_login');
   await page.getByRole('button', { name: /masuk ke student center/i }).click();

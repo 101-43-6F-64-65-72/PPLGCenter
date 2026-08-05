@@ -26,7 +26,7 @@ export const useLogin = () => {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      identifier: "",
+      email: "",
       password: "",
     },
   });

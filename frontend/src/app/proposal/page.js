@@ -18,7 +18,7 @@ export default function ProposalPage() {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [uploadError, setUploadError] = useState("");
     const [isDragging, setIsDragging] = useState(false);
-    const [proposals, setProposals] = useState([]);
+    const [proposals, setProposals] = useState(loadProposalsFromStorage);
     const [formErrors, setFormErrors] = useState({});
     const [successMessage, setSuccessMessage] = useState("");
     const [editingProposalId, setEditingProposalId] = useState(null);
@@ -70,10 +70,6 @@ export default function ProposalPage() {
             console.warn("Gagal menyimpan proposal ke Local Storage", error);
         }
     }
-
-    useEffect(() => {
-        setProposals(loadProposalsFromStorage());
-    }, []);
 
     const handleFieldChange = (event) => {
         const { name, value } = event.target;

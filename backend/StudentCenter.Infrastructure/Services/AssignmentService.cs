@@ -224,7 +224,7 @@ public class AssignmentService : IAssignmentService
         if (!string.IsNullOrWhiteSpace(keyword))
         {
             var searchTerm = keyword.ToLower();
-            query = query.Where(a => a.Title.ToLower().Contains(searchTerm) || a.Description.ToLower().Contains(searchTerm));
+            query = query.Where(a => a.Title.ToLower().Contains(searchTerm) || (a.Description != null && a.Description.ToLower().Contains(searchTerm)));
         }
 
         if (!string.IsNullOrWhiteSpace(subject))
