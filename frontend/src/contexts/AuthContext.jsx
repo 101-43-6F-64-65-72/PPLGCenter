@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   /**
-   * Fetch authenticated user profile using stored JWT token
+   * Fetch authenticated user profile using stored JWT token from database
    */
   const fetchProfile = useCallback(async () => {
     const token = getStoredToken();
@@ -27,12 +27,18 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const res = await profileService.getProfile();
+      let userData = null;
       if (res?.success && res?.data) {
-        setUser(res.data);
-        setRole(res.data.role || "Student");
+        userData = res.data;
       } else if (res?.user) {
-        setUser(res.user);
-        setRole(res.user.role || "Student");
+        userData = res.user;
+      } else if (res?.data) {
+        userData = res.data;
+      }
+
+      if (userData) {
+        setUser(userData);
+        setRole(userData.role || "Student");
       } else {
         setUser(null);
         setRole(null);

@@ -35,7 +35,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [scrollY, setScrollY] = useState(0);
 
-  const slides = items.length > 0 ? items : [];
+  const slides = Array.isArray(items) && items.length > 0 ? items : [];
 
   // Parallax Scroll Effect Handler
   useEffect(() => {
@@ -154,7 +154,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
           }}
         >
           <Image
-            src={resolveImageUrl(slide.imageUrl || slide.image)}
+            src={resolveImageUrl(slide.coverImageUrl || slide.imageUrl || slide.image)}
             alt={slide.title}
             fill
             sizes="100vw"
@@ -189,11 +189,6 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
               </h1>
 
               <div className="flex flex-wrap items-center gap-2.5 text-xs sm:text-sm text-blue-100 font-medium mb-3.5 drop-shadow">
-                <span className="text-green-400 font-bold flex items-center gap-1">
-                  <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-                  {slide.rating || "4.9 ★"}
-                </span>
-                <span className="w-1 h-1 rounded-full bg-blue-200" />
                 <span className="border border-blue-400/50 px-2 py-0.5 rounded text-[11px] font-semibold text-white bg-blue-900/60 backdrop-blur-md">
                   {slide.category || "Berita Utama"}
                 </span>

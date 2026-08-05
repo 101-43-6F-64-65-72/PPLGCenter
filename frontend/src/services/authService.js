@@ -11,7 +11,11 @@ export const authService = {
    * @param {Object} credentials - { identifier, password }
    */
   async login(credentials) {
-    const response = await apiClient.post(API_ROUTES.AUTH.LOGIN, credentials);
+    const payload = {
+      email: credentials.email || credentials.identifier,
+      password: credentials.password,
+    };
+    const response = await apiClient.post(API_ROUTES.AUTH.LOGIN, payload);
     return response;
   },
 

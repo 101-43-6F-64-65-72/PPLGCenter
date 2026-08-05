@@ -2,10 +2,14 @@
 
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import AuthGuard from "@/components/layout/AuthGuard";
+import { USER_ROLES } from "@/constants/userRoles";
 import AdminStatCards from "@/components/admin/AdminStatCards";
 import AdminProposalTab from "@/components/admin/AdminProposalTab";
 import AdminFacilityTab from "@/components/admin/AdminFacilityTab";
 import AdminAnnouncementsTab from "@/components/admin/AdminAnnouncementsTab";
+import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import {
   LayoutDashboard,
   FileCheck,
@@ -17,10 +21,19 @@ import {
 } from "lucide-react";
 
 export default function AdminPanelPage() {
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'proposals' | 'facilities' | 'announcements'
+  return (
+    <AuthGuard allowedRoles={[USER_ROLES.ADMIN]}>
+      <AdminPanelContent />
+    </AuthGuard>
+  );
+}
+
+function AdminPanelContent() {
+  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'proposals' | 'facilities' | 'announcements' | 'users'
 
   const tabs = [
     { id: "overview", label: "Overview Admin", icon: LayoutDashboard },
+    { id: "users", label: "Kelola & Registrasi Akun", icon: Users },
     { id: "proposals", label: "Persetujuan Proposal Final", icon: FileCheck },
     { id: "facilities", label: "Kelola Sarpras & Booking", icon: Building2 },
     { id: "announcements", label: "Publikasi Mading", icon: Newspaper },
@@ -103,6 +116,7 @@ export default function AdminPanelPage() {
           </div>
         )}
 
+        {activeTab === "users" && <AdminUsersTab />}
         {activeTab === "proposals" && <AdminProposalTab />}
         {activeTab === "facilities" && <AdminFacilityTab />}
         {activeTab === "announcements" && <AdminAnnouncementsTab />}

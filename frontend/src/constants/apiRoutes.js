@@ -8,8 +8,8 @@ export const API_ROUTES = {
     LOGOUT: "/auth/logout",
   },
   PROFILE: {
-    GET: "/profile",
-    UPDATE: "/profile",
+    GET: "/auth/me",
+    UPDATE: "/auth/me",
   },
   ANNOUNCEMENTS: {
     LIST: "/announcements",

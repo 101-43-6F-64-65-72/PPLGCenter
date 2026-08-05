@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { ArrowRight, Clock, Star } from "@/components/common/Icons";
+import { ArrowRight, Pin } from "@/components/common/Icons";
 import { resolveImageUrl, formatDate } from "@/lib/utils";
 
 export const AnnouncementCard = ({ announcement, onClick }) => {
@@ -14,12 +14,11 @@ export const AnnouncementCard = ({ announcement, onClick }) => {
     author,
     createdBy,
     createdAt,
-    readTime = "4 Min",
-    rating = "4.9 ★",
+    isPinned,
   } = announcement;
 
   const formattedDate = formatDate(createdAt);
-  const coverImage = resolveImageUrl(imageUrl || image);
+  const coverImage = resolveImageUrl(announcement.coverImageUrl || imageUrl || image);
   const authorName = author || createdBy || "Redaksi Sekolah";
 
   return (
@@ -42,10 +41,10 @@ export const AnnouncementCard = ({ announcement, onClick }) => {
             {category || "Pengumuman"}
           </span>
 
-          {rating && (
-            <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-300 text-xs font-bold px-2.5 py-1 rounded-full border border-white/10 flex items-center gap-1">
-              <Star className="w-3 h-3 fill-amber-300" />
-              {rating}
+          {isPinned && (
+            <span className="absolute top-3 right-3 bg-amber-500 text-white text-[10px] sm:text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-amber-400">
+              <Pin className="w-3 h-3 fill-current" />
+              <span>Disematkan</span>
             </span>
           )}
         </div>
@@ -53,10 +52,6 @@ export const AnnouncementCard = ({ announcement, onClick }) => {
         <div className="p-5 sm:p-6">
           <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-2.5">
             <span>{formattedDate}</span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {readTime} baca
-            </span>
           </div>
 
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug mb-3 group-hover:text-[#1d4ed8] transition-colors line-clamp-2">

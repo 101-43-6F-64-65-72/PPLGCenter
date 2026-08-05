@@ -23,7 +23,7 @@ try {
     const f = require("framer-motion");
     motionImport = f.motion;
     animatePresenceImport = f.AnimatePresence;
-  } catch (e2) {}
+  } catch (e2) { }
 }
 
 const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, ref) => (
@@ -80,8 +80,22 @@ export default function MadingPage() {
     search: debouncedSearch,
   });
 
-  const announcements = data?.data || [];
-  const meta = data?.meta || { totalPages: 1, totalItems: announcements.length, page: currentPage };
+  let announcements = [];
+  if (Array.isArray(data?.data?.items)) {
+    announcements = data.data.items;
+  } else if (Array.isArray(data?.data)) {
+    announcements = data.data;
+  } else if (Array.isArray(data?.items)) {
+    announcements = data.items;
+  } else if (Array.isArray(data)) {
+    announcements = data;
+  }
+
+  const meta = {
+    totalPages: data?.data?.totalPages || data?.meta?.totalPages || 1,
+    totalItems: data?.data?.totalCount || data?.meta?.totalItems || announcements.length,
+    page: currentPage,
+  };
 
   const categories = [
     "Semua",
@@ -89,6 +103,8 @@ export default function MadingPage() {
     "Sains & Teknologi",
     "Seni & Budaya",
     "Organisasi",
+    "Artikel",
+    "Hiburan",
   ];
 
   return (
@@ -97,7 +113,7 @@ export default function MadingPage() {
 
       {/* Hero Banner Section with Motion Animations */}
       <section className="w-full h-screen relative flex flex-col justify-center overflow-hidden">
-        <AnnouncementHeroCarousel items={announcements.slice(0, 3)} />
+        <AnnouncementHeroCarousel items={Array.isArray(announcements) ? announcements.slice(0, 3) : []} />
       </section>
 
       {/* Main Catalog Section */}
@@ -134,11 +150,10 @@ export default function MadingPage() {
                 <button
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}
-                  className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer ${
-                    activeCategory === cat
+                  className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer ${activeCategory === cat
                       ? "bg-[#1d4ed8] text-white shadow-md shadow-blue-500/20 scale-105"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200/60"
-                  }`}
+                    }`}
                 >
                   {cat}
                 </button>
@@ -227,11 +242,10 @@ export default function MadingPage() {
                     <button
                       key={pNum}
                       onClick={() => setCurrentPage(pNum)}
-                      className={`w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        currentPage === pNum
+                      className={`w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer ${currentPage === pNum
                           ? "bg-[#1d4ed8] text-white shadow-sm"
                           : "border border-gray-200 text-gray-700 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {pNum}
                     </button>

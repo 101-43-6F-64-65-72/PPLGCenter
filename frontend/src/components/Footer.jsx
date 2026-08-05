@@ -11,7 +11,7 @@ const footerLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-r from-black-800 via-black-700 to-black-600 text-white">
+    <footer className="bg-gradient-to-r from-black via-black to-black text-white">
       <div className="mx-auto max-w-7xl px-6 py-12 sm:px-8 lg:px-12">
         <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
           <div>

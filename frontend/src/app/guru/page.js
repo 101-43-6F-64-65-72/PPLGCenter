@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import AuthGuard from "@/components/layout/AuthGuard";
+import { USER_ROLES } from "@/constants/userRoles";
 import GuruStatCards from "@/components/guru/GuruStatCards";
 import GuruProposalTab from "@/components/guru/GuruProposalTab";
 import GuruFacilityTab from "@/components/guru/GuruFacilityTab";
@@ -16,6 +19,14 @@ import {
 } from "lucide-react";
 
 export default function GuruPanelPage() {
+  return (
+    <AuthGuard allowedRoles={[USER_ROLES.TEACHER, USER_ROLES.ADMIN]}>
+      <GuruPanelContent />
+    </AuthGuard>
+  );
+}
+
+function GuruPanelContent() {
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'proposals' | 'facilities'
 
   const tabs = [

@@ -2,6 +2,9 @@
 
 import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import AuthGuard from "@/components/layout/AuthGuard";
+import { USER_ROLES } from "@/constants/userRoles";
 import OsisStatCards from "@/components/osis/OsisStatCards";
 import OsisProposalTab from "@/components/osis/OsisProposalTab";
 import OsisFacilityTab from "@/components/osis/OsisFacilityTab";
@@ -18,6 +21,14 @@ import {
 } from "lucide-react";
 
 export default function OsisPanelPage() {
+  return (
+    <AuthGuard allowedRoles={[USER_ROLES.OSIS, USER_ROLES.ADMIN]}>
+      <OsisPanelContent />
+    </AuthGuard>
+  );
+}
+
+function OsisPanelContent() {
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'proposals' | 'facilities' | 'announcements'
 
   const tabs = [

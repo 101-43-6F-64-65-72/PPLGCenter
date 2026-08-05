@@ -10,8 +10,8 @@ export const USER_ROLES = {
 };
 
 export const ROLE_LABELS = {
-  [USER_ROLES.STUDENT]: "Siswa",
-  [USER_ROLES.OSIS]: "Pengurus OSIS",
-  [USER_ROLES.TEACHER]: "Guru / Pembina",
-  [USER_ROLES.ADMIN]: "Administrator / Waka Kesiswaan",
+  [USER_ROLES.STUDENT]: "Siswa Biasa",
+  [USER_ROLES.OSIS]: "Pengurus OSIS / Ekskul",
+  [USER_ROLES.TEACHER]: "Pembina Ekskul / Guru",
+  [USER_ROLES.ADMIN]: "Admin (Waka Kesiswaan)",
 };

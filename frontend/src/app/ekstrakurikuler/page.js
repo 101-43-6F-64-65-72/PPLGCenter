@@ -1,67 +1,87 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { extracurricularService } from "@/services/extracurricularService";
 
 // TODO: Integrasi API daftar ekstrakurikuler
 // TODO: Integrasi halaman detail ekstrakurikuler
 // TODO: Integrasi jumlah anggota dari backend
 
-const categoriesData = [
-  {
-    id: "olahraga",
-    title: "Olahraga",
-    subtitle: "Kegiatan fisik dan olah tubuh untuk menjaga kebugaran serta melatih kerja sama tim.",
-    badgeBg: "bg-blue-50 text-[#2c1ee8] border-blue-200/80",
-    items: [
-      { id: "basket", name: "Basket", category: "Olahraga", maxMember: 30 },
-      { id: "futsal", name: "Futsal", category: "Olahraga", maxMember: 25 },
-      { id: "voli", name: "Voli", category: "Olahraga", maxMember: 30 },
-      { id: "badminton", name: "Badminton", category: "Olahraga", maxMember: 20 },
-    ],
-  },
-  {
-    id: "seni-budaya",
-    title: "Seni & Budaya",
-    subtitle: "Wadah pengekspresian keindahan, kreativitas, dan pengembangan seni serta budaya.",
-    badgeBg: "bg-[#eef2ff] text-[#2c1ee8] border-[#c7d2fe]/80",
-    items: [
-      { id: "teater", name: "Teater", category: "Seni & Budaya", maxMember: 35 },
-      { id: "paduan-suara", name: "Paduan Suara", category: "Seni & Budaya", maxMember: 40 },
-      { id: "band", name: "Band", category: "Seni & Budaya", maxMember: 15 },
-      { id: "creativity-corner", name: "Creativity Corner", category: "Seni & Budaya", maxMember: 25 },
-    ],
-  },
-  {
-    id: "organisasi",
-    title: "Organisasi",
-    subtitle: "Pengembangan jiwa kepemimpinan, kepedulian sosial, keagamaan, dan kedisiplinan siswa.",
-    badgeBg: "bg-sky-50 text-[#2c1ee8] border-sky-200/80",
-    items: [
-      { id: "osis", name: "OSIS", category: "Organisasi", maxMember: 40 },
-      { id: "pmr", name: "PMR", category: "Organisasi", maxMember: 30 },
-      { id: "pramuka", name: "Pramuka", category: "Organisasi", maxMember: 50 },
-      { id: "paskibra", name: "Paskibra", category: "Organisasi", maxMember: 35 },
-      { id: "elmobpela", name: "ELMOBPELA", category: "Organisasi", maxMember: 20 },
-      { id: "pks", name: "PKS", category: "Organisasi", maxMember: 25 },
-      { id: "rohkat", name: "ROHKAT", category: "Organisasi", maxMember: 20 },
-      { id: "rohkris", name: "ROHKRIS", category: "Organisasi", maxMember: 20 },
-      { id: "rohis", name: "ROHIS", category: "Organisasi", maxMember: 25 },
-    ],
-  },
-];
-
 export default function EkstrakurikulerPage() {
+  const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState("semua");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
-  const totalExtracurriculars = categoriesData.reduce(
+  useEffect(() => {
+    async function fetchFromApi() {
+      setIsLoading(true);
+      try {
+        const response = await extracurricularService.getExtracurriculars();
+
+        let apiItems = [];
+        if (response && Array.isArray(response.data?.items)) {
+          apiItems = response.data.items;
+        } else if (response && Array.isArray(response.items)) {
+          apiItems = response.items;
+        } else if (Array.isArray(response)) {
+          apiItems = response;
+        }
+
+        if (apiItems && apiItems.length > 0) {
+          const categoryGroups = {};
+          apiItems.forEach((item) => {
+            const catName = item.category || "Umum";
+            const catId = catName.toLowerCase().replace(/[^a-z0-9]/g, "-");
+
+            if (!categoryGroups[catId]) {
+              categoryGroups[catId] = {
+                id: catId,
+                title: catName,
+                badgeBg: catName.toLowerCase().includes("olahraga")
+                  ? "bg-blue-50 text-[#2c1ee8] border-blue-200/80"
+                  : catName.toLowerCase().includes("seni")
+                  ? "bg-[#eef2ff] text-[#2c1ee8] border-[#c7d2fe]/80"
+                  : "bg-sky-50 text-[#2c1ee8] border-sky-200/80",
+                items: [],
+              };
+            }
+
+            categoryGroups[catId].items.push({
+              id: item.id || item.name?.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+              name: item.name,
+              category: item.category || catName,
+              maxMember: item.maxMembers || 30,
+              currentMembers: item.currentMembers || 0,
+              description: item.description || "Kegiatan ekstrakurikuler SMKN 2 Surakarta.",
+              imageUrl: item.imageUrl || null,
+            });
+          });
+
+          setCategories(Object.values(categoryGroups));
+        } else {
+          setCategories([]);
+        }
+      } catch (err) {
+        console.error("Error fetching extracurriculars:", err);
+        setCategories([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchFromApi();
+  }, []);
+
+  const totalExtracurriculars = categories.reduce(
     (acc, cat) => acc + cat.items.length,
     0
   );
 
-  const filteredCategories = categoriesData
+  const filteredCategories = categories
     .map((cat) => {
       const isCategoryMatch =
         activeCategory === "semua" || cat.id === activeCategory;
@@ -85,7 +105,7 @@ export default function EkstrakurikulerPage() {
         {/* Header Hero Section */}
         <section className="overflow-hidden rounded-3xl border border-blue-100 bg-linear-to-br from-[#f7f8ff] via-white to-[#eef2ff] p-6 sm:p-8 lg:p-10 shadow-sm relative">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-[#2c1ee8]/5 blur-3xl pointer-events-none" />
-          
+
           <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] items-center relative z-10">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-[#c7d2fe] bg-white/90 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2c1ee8] shadow-2xs backdrop-blur-xs">
@@ -102,7 +122,7 @@ export default function EkstrakurikulerPage() {
                 Pilih kegiatan yang sesuai dengan passion Anda dan bergabunglah bersama komunitas sekolah!
               </p>
 
-              {/* Filter Tabs */}
+              {/* Filter Tabs Dynamic */}
               <div className="mt-6 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -115,7 +135,7 @@ export default function EkstrakurikulerPage() {
                 >
                   Semua ({totalExtracurriculars})
                 </button>
-                {categoriesData.map((cat) => (
+                {categories.map((cat) => (
                   <button
                     key={cat.id}
                     type="button"
@@ -142,7 +162,7 @@ export default function EkstrakurikulerPage() {
                 </div>
                 <div>
                   <p className="text-base font-bold text-gray-900">Program Ekskul Terintegrasi</p>
-                  <p className="text-xs text-gray-500">Temukan & kembangkan bakat terbaikmu</p>
+                  <p className="text-xs text-gray-500">Pilih ekstrakurikuler dan lihat detail lengkap</p>
                 </div>
               </div>
 
@@ -169,18 +189,14 @@ export default function EkstrakurikulerPage() {
                 )}
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="mt-4 grid grid-cols-2 gap-2 text-center">
                 <div className="rounded-xl border border-blue-100 bg-[#f8faff] p-2.5">
                   <div className="text-lg font-black text-[#2c1ee8]">{totalExtracurriculars}</div>
                   <div className="text-[11px] font-medium text-gray-500">Total Ekskul</div>
                 </div>
                 <div className="rounded-xl border border-blue-100 bg-[#f8faff] p-2.5">
-                  <div className="text-lg font-black text-[#2c1ee8]">3</div>
+                  <div className="text-lg font-black text-[#2c1ee8]">{categories.length}</div>
                   <div className="text-[11px] font-medium text-gray-500">Kategori</div>
-                </div>
-                <div className="rounded-xl border border-blue-100 bg-[#f8faff] p-2.5">
-                  <div className="text-lg font-black text-[#2c1ee8]">495</div>
-                  <div className="text-[11px] font-medium text-gray-500">Kapasitas Total</div>
                 </div>
               </div>
             </div>
@@ -189,7 +205,12 @@ export default function EkstrakurikulerPage() {
 
         {/* Categories & Cards Section */}
         <div className="mt-10 space-y-12">
-          {filteredCategories.length > 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#2c1ee8] border-t-transparent" />
+              <p className="text-sm font-semibold text-gray-600">Memuat data ekstrakurikuler...</p>
+            </div>
+          ) : filteredCategories.length > 0 ? (
             filteredCategories.map((category) => (
               <section key={category.id} className="space-y-4">
                 {/* Category Header */}
@@ -206,9 +227,6 @@ export default function EkstrakurikulerPage() {
                     <h2 className="mt-1 text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
                       {category.title}
                     </h2>
-                    <p className="text-xs sm:text-sm text-gray-500">
-                      {category.subtitle}
-                    </p>
                   </div>
                 </div>
 
@@ -220,24 +238,29 @@ export default function EkstrakurikulerPage() {
                       className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-2 hover:border-[#2c1ee8]/50 hover:shadow-2xl hover:shadow-[#2c1ee8]/15"
                     >
                       <div>
-                        {/* Placeholder Gambar (Proportional 16:10 aspect ratio) */}
+                        {/* Placeholder Foto (Aspect 16:10) */}
                         <div className="relative mb-4.5 aspect-16/10 w-full overflow-hidden rounded-xl border border-blue-100/70 bg-linear-to-br from-slate-100 via-blue-50/60 to-indigo-100/50 p-4 flex flex-col justify-between group-hover:scale-[1.02] transition-transform duration-300">
-                          <div className="flex items-center justify-between">
-                            <span className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-white/95 px-3 py-1 text-xs font-bold text-[#2c1ee8] shadow-2xs backdrop-blur-xs">
-                              {item.category}
-                            </span>
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow-2xs">
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                          </div>
+                          {item.imageUrl ? (
+                            <img
+                              src={item.imageUrl}
+                              alt={item.name}
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-white/95 px-3 py-1 text-xs font-bold text-[#2c1ee8] shadow-2xs backdrop-blur-xs">
+                                  {item.category}
+                                </span>
+                              </div>
 
-                          <div className="flex items-center justify-center py-2.5">
-                            <div className="rounded-xl bg-white/85 px-4 py-2 text-center text-xs sm:text-sm font-semibold text-gray-600 backdrop-blur-xs border border-white/80 shadow-2xs">
-                              📷 Foto belum tersedia
-                            </div>
-                          </div>
+                              <div className="flex items-center justify-center py-2.5">
+                                <div className="rounded-xl bg-white/85 px-4 py-2 text-center text-xs sm:text-sm font-semibold text-gray-600 backdrop-blur-xs border border-white/80 shadow-2xs">
+                                  📷 Foto belum tersedia
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
 
                         {/* Nama Ekstrakurikuler */}
@@ -248,7 +271,7 @@ export default function EkstrakurikulerPage() {
                         {/* Informasi Kategori & Max Member */}
                         <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/90 p-4 text-sm space-y-2.5">
                           <div className="flex items-center justify-between text-gray-500">
-                            <span className="font-medium text-gray-500">Kategori</span>
+                            <span className="font-medium text-gray-500 font-medium">Kategori</span>
                             <span className="font-semibold text-gray-800 truncate max-w-[140px] text-right">
                               {item.category}
                             </span>
@@ -262,21 +285,17 @@ export default function EkstrakurikulerPage() {
                         </div>
                       </div>
 
-                      {/* Tombol Lihat Detail (Sementara Disabled / TODO) */}
+                      {/* Tombol Lihat Detail (Navigasi Dynamic Route /ekstrakurikuler/[slug]) */}
                       <div className="mt-5 pt-1">
-                        <button
-                          type="button"
-                          disabled
-                          onClick={() => {
-                            // TODO: Integrasi halaman detail ekstrakurikuler
-                          }}
-                          className="w-full rounded-xl bg-slate-100 py-3 px-4 text-sm font-bold text-slate-400 border border-slate-200 cursor-not-allowed group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-[#2c1ee8] transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs"
+                        <Link
+                          href={`/ekstrakurikuler/${item.id}`}
+                          className="w-full rounded-xl bg-slate-100 py-3 px-4 text-sm font-bold text-[#2c1ee8] border border-blue-200 hover:bg-[#2c1ee8] hover:text-white hover:border-[#2c1ee8] transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
                         >
                           <span>Lihat Detail</span>
                           <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                           </svg>
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   ))}
@@ -291,16 +310,6 @@ export default function EkstrakurikulerPage() {
               <p className="mt-1 text-xs text-gray-500">
                 Coba gunakan kata kunci pencarian yang berbeda atau hapus filter.
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveCategory("semua");
-                }}
-                className="mt-4 rounded-xl bg-[#2c1ee8] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
-              >
-                Reset Pencarian
-              </button>
             </div>
           )}
         </div>
@@ -310,3 +319,4 @@ export default function EkstrakurikulerPage() {
     </div>
   );
 }
+

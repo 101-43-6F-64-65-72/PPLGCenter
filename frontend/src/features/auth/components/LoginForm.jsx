@@ -23,12 +23,12 @@ export const LoginForm = () => {
         />
       )}
 
-      {/* Identifier Input (NIS/NISN/NIP) */}
+      {/* Identifier Input (NIS/NISN/NIP/Email) */}
       <Input
-        label="School ID (NIS / NISN / NIP)"
+        label="ID Akun (NIS/NISN Siswa | NIP Guru | Email Admin)"
         name="identifier"
         type="text"
-        placeholder="Contoh: 22010928 atau 19850310..."
+        placeholder="Masukkan NIS/NISN (Siswa), NIP (Guru), atau Email"
         isRequired
         variant="dark"
         leftIcon={<User className="w-5 h-5 text-[#2c1ee8]" />}

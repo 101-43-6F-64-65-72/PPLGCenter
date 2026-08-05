@@ -4,10 +4,10 @@
  */
 export const resolveImageUrl = (src, fallback = "/images/dummypic.jpg") => {
   if (!src) return fallback;
-  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/")) {
+  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/") || src.startsWith("data:")) {
     return src;
   }
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5051/api";
   return `${baseUrl}/${src}`;
 };
 

@@ -5,18 +5,18 @@ import {
   Newspaper,
   Plus,
   Search,
-  CheckCircle2,
   Trash2,
-  Eye,
-  ShieldCheck,
-  Calendar,
   Send
 } from "lucide-react";
 import announcementService from "@/services/announcementService";
+import uploadImageToCloudinary from "@/services/cloudinaryService";
+import ImageCropUploader from "@/components/common/ImageCropUploader";
 
 export default function AdminAnnouncementsTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -27,43 +27,87 @@ export default function AdminAnnouncementsTab() {
 
   const [announcements, setAnnouncements] = useState([]);
 
+  const handleCroppedImage = async (dataUrl) => {
+    // Store data URL for preview only — don't save to state yet
+    setIsUploading(true);
+    setCoverImageUrl(""); // reset while uploading
+    try {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], "mading-cover.jpg", { type: "image/jpeg" });
+      const uploadedUrl = await uploadImageToCloudinary(file);
+      // Only store if we got a valid HTTPS URL back
+      if (uploadedUrl && uploadedUrl.startsWith("https://")) {
+        setCoverImageUrl(uploadedUrl);
+      } else {
+        // Cloudinary preset not configured — keep empty, backend won't reject
+        setCoverImageUrl("");
+      }
+    } catch {
+      setCoverImageUrl("");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const fetchAnnouncements = () => {
+    announcementService
+      .getAnnouncements()
+      .then((res) => {
+        let list = [];
+        if (Array.isArray(res?.data?.items)) list = res.data.items;
+        else if (Array.isArray(res?.data)) list = res.data;
+        else if (Array.isArray(res?.items)) list = res.items;
+        else if (Array.isArray(res)) list = res;
+        setAnnouncements(list);
+      })
+      .catch(() => {});
+  };
+
   React.useEffect(() => {
-    announcementService.getAnnouncements().then((res) => {
-      if (res && Array.isArray(res.data)) setAnnouncements(res.data);
-    });
+    fetchAnnouncements();
   }, []);
 
   const filtered = announcements.filter(
     (a) =>
-      a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.category.toLowerCase().includes(searchQuery.toLowerCase())
+      (a.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (a.category || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateSubmit = (e) => {
+  const handleCreateSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim()) return;
 
-    const newAnnouncement = {
-      id: `ann-${Date.now()}`,
+    // Only send coverImageUrl if it's a real HTTPS URL (Cloudinary CDN)
+    // Sending a Data URL or empty string with [Url] validator causes 400
+    const validCoverUrl =
+      coverImageUrl && coverImageUrl.startsWith("https://")
+        ? coverImageUrl
+        : undefined;
+
+    const payload = {
       title: formData.title.trim(),
-      category: formData.category,
-      author: "Super Admin / Waka Kesiswaan",
-      date: new Date().toISOString().split("T")[0],
-      status: "Published",
+      content: formData.content.trim(),
+      category: formData.category || "Informasi Sekolah",
+      isPinned: false,
+      ...(validCoverUrl ? { coverImageUrl: validCoverUrl } : {}),
     };
 
-    announcementService.createAnnouncement(newAnnouncement).catch((err) => {
+    try {
+      await announcementService.createAnnouncement(payload);
+      fetchAnnouncements();
+    } catch (err) {
       console.warn("Async announcement creation warning:", err);
-    });
-
-    setAnnouncements([newAnnouncement, ...announcements]);
-    setFormData({ title: "", category: "Informasi Sekolah", summary: "", content: "" });
-    setIsCreateOpen(false);
+    } finally {
+      setFormData({ title: "", category: "Informasi Sekolah", summary: "", content: "" });
+      setCoverImageUrl("");
+      setIsCreateOpen(false);
+    }
   };
 
   const handleDelete = (id) => {
     if (window.confirm("Apakah Anda yakin ingin menghapus pengumuman ini dari mading digital?")) {
-      setAnnouncements(announcements.filter((a) => a.id !== id));
+      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
     }
   };
 
@@ -177,8 +221,19 @@ export default function AdminAnnouncementsTab() {
                   <option value="Akademik">Akademik</option>
                   <option value="Seni & Budaya">Seni & Budaya</option>
                   <option value="Olahraga">Olahraga</option>
+                  <option value="Artikel">Artikel</option>
+                  <option value="Hiburan">Hiburan</option>
                 </select>
               </div>
+
+              {/* Image Upload with Crop */}
+              <ImageCropUploader
+                label="Gambar Sampul Mading"
+                onCropped={handleCroppedImage}
+              />
+              {isUploading && (
+                <p className="text-xs text-indigo-600 font-semibold animate-pulse">Mengunggah gambar ke Cloudinary...</p>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">

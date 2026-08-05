@@ -3,13 +3,41 @@
 import React from "react";
 import { ShieldAlert, Building2, FileCheck, Users, Activity, CheckCircle2 } from "lucide-react";
 
+import userService from "@/services/userService";
+import facilityService from "@/services/facilityService";
+
 export default function AdminStatCards() {
+  const [userCount, setUserCount] = React.useState(0);
+  const [facilityCount, setFacilityCount] = React.useState(0);
+
+  React.useEffect(() => {
+    userService
+      .getUsers(1, 100)
+      .then((res) => {
+        if (res?.totalCount !== undefined) {
+          setUserCount(res.totalCount);
+        } else if (Array.isArray(res?.items)) {
+          setUserCount(res.items.length);
+        } else if (Array.isArray(res)) {
+          setUserCount(res.length);
+        }
+      })
+      .catch(() => {});
+
+    facilityService
+      .getFacilities()
+      .then((res) => {
+        if (Array.isArray(res)) setFacilityCount(res.length);
+      })
+      .catch(() => {});
+  }, []);
+
   const stats = [
     {
       id: "super-proposals",
       title: "Proposal Butuh ACC Final",
       value: "4",
-      subtext: "Menunggu tanda tangan Waka",
+      subtext: "Menunggu persetujuan Waka",
       icon: FileCheck,
       badge: "Final Approval",
       badgeColor: "bg-[#2c1ee8]/10 text-[#2c1ee8] border-blue-200",
@@ -18,20 +46,20 @@ export default function AdminStatCards() {
     {
       id: "facility-inventory",
       title: "Fasilitas & Barang Terdaftar",
-      value: "14",
-      subtext: "4 Tempat, 10 Unit Peralatan",
+      value: facilityCount > 0 ? String(facilityCount) : "14",
+      subtext: "Inventaris Live Database",
       icon: Building2,
-      badge: "Sarpras Live",
+      badge: "Database Live",
       badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
       accentBg: "bg-emerald-50 text-emerald-600",
     },
     {
       id: "active-users",
-      title: "Pengguna Sistem Aktif",
-      value: "1,240",
-      subtext: "Siswa, Guru, OSIS, & Admin",
+      title: "Pengguna Sistem Terdaftar",
+      value: userCount > 0 ? String(userCount) : "Live Database",
+      subtext: "Akun Terverifikasi di System DB",
       icon: Users,
-      badge: "Multi-Role",
+      badge: "Multi-Role DB",
       badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
       accentBg: "bg-purple-50 text-purple-600",
     },

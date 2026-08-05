@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import { useAnnouncement } from "@/features/announcement/hooks/useAnnouncement";
 import { useAnnouncements } from "@/features/announcement/hooks/useAnnouncements";
 import AnnouncementDetailSkeleton from "@/features/announcement/components/AnnouncementDetailSkeleton";
-import { ArrowLeft, FileText, Download, User } from "@/components/common/Icons";
+import { ArrowLeft, FileText, Download, User, Shield, Pin } from "@/components/common/Icons";
 import { resolveImageUrl, formatDate } from "@/lib/utils";
 
 export default function AnnouncementDetailPage({ params }) {
@@ -43,26 +43,37 @@ export default function AnnouncementDetailPage({ params }) {
   };
 
   // Main announcement article
-  const announcement = data?.data || null;
+  const announcement = data?.data?.id ? data.data : (data?.data || data || null);
 
   if (isLoading || !announcement) {
     return <AnnouncementDetailSkeleton />;
   }
 
   const formattedDate = formatDate(announcement.createdAt);
-  const coverImage = resolveImageUrl(announcement.imageUrl || announcement.image);
+  const coverImage = resolveImageUrl(announcement.coverImageUrl || announcement.imageUrl || announcement.image);
   const authorName = announcement.author || announcement.createdBy || announcement.authorName || "Redaksi Sekolah";
 
   // Calculate dynamic reading time based on word count
   const wordCount = (announcement.content || announcement.summary || "").split(/\s+/).length;
   const estimatedReadTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  // Filter out current article to display up to 3 related recommendations
-  const allArticles = listData?.data || [];
+  // Safely extract allArticles array for recommendations
+  let allArticles = [];
+  if (Array.isArray(listData?.data?.items)) {
+    allArticles = listData.data.items;
+  } else if (Array.isArray(listData?.data)) {
+    allArticles = listData.data;
+  } else if (Array.isArray(listData?.items)) {
+    allArticles = listData.items;
+  } else if (Array.isArray(listData)) {
+    allArticles = listData;
+  }
 
-  const relatedArticles = allArticles
-    .filter((item) => String(item.id) !== String(announcement.id))
-    .slice(0, 3);
+  const relatedArticles = Array.isArray(allArticles)
+    ? allArticles
+      .filter((item) => String(item.id) !== String(announcement.id))
+      .slice(0, 3)
+    : [];
 
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
@@ -111,10 +122,15 @@ export default function AnnouncementDetailPage({ params }) {
                   <span className="bg-blue-50 text-[#1d4ed8] font-semibold text-xs px-3 py-0.5 rounded-full border border-blue-100">
                     {announcement.category || "Pengumuman"}
                   </span>
-                  <span className="text-gray-300">•</span>
-                  <span className="text-gray-500 font-medium">
-                    {estimatedReadTime} min baca
-                  </span>
+                  {announcement.isPinned && (
+                    <>
+                      <span className="text-gray-300">•</span>
+                      <span className="bg-amber-50 text-amber-800 font-extrabold text-xs px-3 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                        <Pin className="w-3 h-3 text-amber-600 fill-current" />
+                        Disematkan
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {/* Share Link Action */}
