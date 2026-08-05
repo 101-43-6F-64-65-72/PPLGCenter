@@ -19,16 +19,24 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'powershell -ExecutionPolicy Bypass -File start_backend.ps1',
+      command: process.platform === 'win32'
+        ? 'powershell -ExecutionPolicy Bypass -File start_backend.ps1'
+        : 'dotnet run --project backend/StudentCenter.Api --launch-profile http',
       url: 'http://localhost:5051/health',
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       cwd: '..',
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL || 'Host=db.ryskvrqcrytmdsorviie.supabase.co;Port=5432;Database=postgres;Username=postgres.ryskvrqcrytmdsorviie;SSL Mode=Require;Trust Server Certificate=true',
+        JWT_SECRET: process.env.JWT_SECRET || 'akjhgfdrtyjnmnbytghytfvbnjykbrcr',
+        DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || 'admin1234',
+      },
     },
     {
       command: 'npm run dev',
       url: frontendURL,
-      reuseExistingServer: true,
+      reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       cwd: '.',
       env: {
