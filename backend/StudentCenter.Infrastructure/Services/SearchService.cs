@@ -64,7 +64,7 @@ public class SearchService : ISearchService
     {
         var results = await _context.Set<Material>()
             .AsNoTracking()
-            .Where(m => m.Title.ToLower().Contains(keyword) || m.Description.ToLower().Contains(keyword))
+            .Where(m => m.Title.ToLower().Contains(keyword) || (m.Description != null && m.Description.ToLower().Contains(keyword)))
             .OrderByDescending(m => m.UploadedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -86,7 +86,7 @@ public class SearchService : ISearchService
     {
         var results = await _context.Set<Assignment>()
             .AsNoTracking()
-            .Where(a => a.Title.ToLower().Contains(keyword) || a.Description.ToLower().Contains(keyword))
+            .Where(a => a.Title.ToLower().Contains(keyword) || (a.Description != null && a.Description.ToLower().Contains(keyword)))
             .OrderByDescending(a => a.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -108,7 +108,7 @@ public class SearchService : ISearchService
     {
         var results = await _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.Title.ToLower().Contains(keyword) || c.Description.ToLower().Contains(keyword))
+            .Where(c => c.Title.ToLower().Contains(keyword) || (c.Description != null && c.Description.ToLower().Contains(keyword)))
             .OrderByDescending(c => c.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -130,7 +130,7 @@ public class SearchService : ISearchService
     {
         var results = await _context.Set<Facility>()
             .AsNoTracking()
-            .Where(f => f.IsActive && (f.Name.ToLower().Contains(keyword) || f.Description.ToLower().Contains(keyword)))
+            .Where(f => f.IsActive && (f.Name.ToLower().Contains(keyword) || (f.Description != null && f.Description.ToLower().Contains(keyword))))
             .OrderBy(f => f.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
