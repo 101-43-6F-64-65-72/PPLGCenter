@@ -30,36 +30,80 @@ export default function ProposalPage() {
   const [editingProposalId, setEditingProposalId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingExtracurriculars, setIsLoadingExtracurriculars] = useState(true);
+  const [extracurricularError, setExtracurricularError] = useState("");
 
-  // Fetch Extracurriculars from API for dropdown
-  useEffect(() => {
-    async function loadExtracurriculars() {
-      try {
-        const res = await extracurricularService.getExtracurriculars();
-        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-          setExtracurriculars(res.data);
-        }
-      } catch (err) {
-        // Safe catch
-      }
+  // Fetch Extracurricular memberships for authenticated user
+  const loadExtracurricularMemberships = React.useCallback(async () => {
+    const userId = user?.id || user?.Id;
+    if (!userId) {
+      setExtracurriculars([]);
+      setIsLoadingExtracurriculars(false);
+      return;
     }
-    loadExtracurriculars();
-  }, []);
 
-  // Fetch Proposals list directly from Backend REST API
-  const fetchProposals = async () => {
+    setIsLoadingExtracurriculars(true);
+    setExtracurricularError("");
+
     try {
-      const res = await proposalService.getProposals();
+      const res = await extracurricularService.getUserMemberships(userId);
+      if (res && res.success) {
+        setExtracurriculars(res.data || []);
+      } else {
+        setExtracurricularError("Gagal memuat daftar ekstrakurikuler Anda.");
+        setExtracurriculars([]);
+      }
+    } catch (err) {
+      setExtracurricularError("Gagal memuat data ekstrakurikuler Anda.");
+      setExtracurriculars([]);
+    } finally {
+      setIsLoadingExtracurriculars(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (isAuthenticated && (user?.id || user?.Id)) {
+      loadExtracurricularMemberships();
+    }
+  }, [isAuthenticated, user, loadExtracurricularMemberships]);
+
+  // Fetch Proposals list belonging strictly to the currently authenticated user
+  const fetchProposals = async () => {
+    const currentUserId = user?.id || user?.Id;
+    if (!currentUserId) {
+      setProposals([]);
+      return;
+    }
+
+    try {
+      // 1. Pass currentUserId to REST API endpoint (GET /api/proposals?userId={currentUserId})
+      const res = await proposalService.getProposals({ userId: currentUserId });
       if (res && res.success && Array.isArray(res.data)) {
-        const mapped = res.data.map((item) => {
+        // 2. Client-side defensive filter to ensure strictly only current user's proposals are mapped
+        const userProposalsOnly = res.data.filter((item) => {
+          const itemUserId = item.submittedByUserId || item.SubmittedByUserId;
+          if (!itemUserId) return true; // Accept if backend already filtered and omitted user ID
+          return String(itemUserId).toLowerCase() === String(currentUserId).toLowerCase();
+        });
+
+        const mapped = userProposalsOnly.map((item) => {
           let org = "Ekstrakurikuler";
           let rawTitle = item.title || item.Title || "";
 
           // Extract [Organization] tag if present in title
-          const tagMatch = rawTitle.match(/^\[(.*?)\]\s*(.*)$/);
+          const tagMatch = rawTitle.match(/^\[+(.*?)\]+\s*(.*)$/);
           if (tagMatch) {
-            org = tagMatch[1];
-            rawTitle = tagMatch[2];
+            org = tagMatch[1].replace(/\[SEED\]\s*/i, "").trim() || "Ekstrakurikuler";
+            rawTitle = tagMatch[2].trim() || rawTitle;
+          }
+
+          const statusVal = item.status ?? item.Status ?? 0;
+          const reviewerName = item.reviewedByUserName || item.ReviewedByUserName || "";
+          let statusText = "Menunggu Review";
+          if (statusVal === 1 || statusVal === "Approved") {
+            statusText = reviewerName ? `Disetujui oleh ${reviewerName}` : "Disetujui Admin";
+          } else if (statusVal === 2 || statusVal === "Rejected") {
+            statusText = reviewerName ? `Ditolak oleh ${reviewerName}` : "Ditolak Admin";
           }
 
           return {
@@ -67,10 +111,11 @@ export default function ProposalPage() {
             organization: org,
             title: rawTitle,
             description: item.description || item.Description,
-            status: item.status || item.Status || "Menunggu Review",
+            status: statusText,
             createdAt: item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID") : "Baru saja",
             files: item.fileUrl ? [{ id: "1", name: "Dokumen Proposal.pdf", url: item.fileUrl }] : [],
             fileUrl: item.fileUrl || "",
+            submittedByUserId: item.submittedByUserId || item.SubmittedByUserId,
           };
         });
         setProposals(mapped);
@@ -83,10 +128,12 @@ export default function ProposalPage() {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && (user?.id || user?.Id)) {
       fetchProposals();
+    } else if (!isAuthenticated) {
+      setProposals([]);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const handleFieldChange = (event) => {
     const { name, value } = event.target;
@@ -299,7 +346,6 @@ export default function ProposalPage() {
     setSuccessMessage("");
 
     try {
-      // Step 1: Upload File to Cloudinary CDN
       let fileUrl = "";
       const fileToUpload = selectedFiles[0];
 
@@ -313,7 +359,6 @@ export default function ProposalPage() {
         throw new Error("Gagal mengunggah dokumen proposal. Coba pilih file PDF kembali.");
       }
 
-      // Step 2: Directly POST or PUT payload to REST API /api/proposals
       const fullTitle = `[${organization}] ${formData.title.trim()}`;
       const payload = {
         title: fullTitle,
@@ -336,7 +381,6 @@ export default function ProposalPage() {
         );
         await fetchProposals();
 
-        // Reset form
         setFormData({
           organization: "",
           selectedOrganization: "",
@@ -367,73 +411,78 @@ export default function ProposalPage() {
       <AuthGuard>
         <Navbar />
 
-        <main className="mx-auto flex w-full max-w-6xl flex-col px-4 py-24 sm:px-6 lg:px-8 lg:py-28">
-          <section className="rounded-4xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2C1EE8]">
-                Pengajuan Proposal
-              </div>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-                Pengajuan Proposal
-              </h1>
-              <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
-                Ajukan proposal kegiatan secara digital. Proposal ini akan diverifikasi oleh Pembina/Guru dan Super Admin.
+        <main className="mx-auto flex w-full max-w-5xl flex-col px-4 py-24 sm:px-6 lg:px-8 lg:py-28 space-y-8">
+          {/* Header Banner */}
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2C1EE8]">
+              Pengajuan Proposal
+            </div>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              Pengajuan Proposal Digital
+            </h1>
+            <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
+              Ajukan proposal kegiatan ekstrakurikuler & OSIS secara digital. Proposal ini akan diverifikasi oleh Pembina/Guru dan Admin Sekolah.
+            </p>
+          </div>
+
+          {/* SECTION 1: Form Pengajuan Proposal (Full Width Hero Card) */}
+          <section className="rounded-[32px] border border-gray-100 bg-[#FAFBFF] p-6 shadow-sm sm:p-8 lg:p-10">
+            <div className="mb-6 border-b border-gray-100 pb-4">
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900">Form Pengajuan Proposal</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Isi detail kegiatan dan lampirkan dokumen proposal PDF Anda.
               </p>
             </div>
 
-            <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-[28px] border border-gray-100 bg-[#FAFBFF] p-5 shadow-sm sm:p-6">
-                <div className="mb-5">
-                  <h2 className="text-xl font-semibold text-gray-900">Form Pengajuan</h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Isi detail kegiatan dan lampirkan proposal PDF Anda.
-                  </p>
-                </div>
-
-                {successMessage && (
-                  <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 font-semibold">
-                    {successMessage}
-                  </div>
-                )}
-
-                <ProposalForm
-                  formData={formData}
-                  onFieldChange={handleFieldChange}
-                  onSubmit={handleSubmit}
-                  selectedFiles={selectedFiles}
-                  onFileSelect={handleFileSelect}
-                  onRemoveFile={handleRemoveFile}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  isDragging={isDragging}
-                  uploadError={uploadError}
-                  formErrors={formErrors}
-                  isEditing={isEditing}
-                  onCancelEdit={cancelEdit}
-                  extracurriculars={extracurriculars}
-                  isSubmitting={isSubmitting}
-                />
+            {successMessage && (
+              <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 font-semibold">
+                {successMessage}
               </div>
+            )}
 
-              <div className="rounded-[28px] border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">Proposal Saya</h2>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Daftar proposal yang sudah Anda ajukan.
-                    </p>
-                  </div>
-                </div>
+            <ProposalForm
+              formData={formData}
+              onFieldChange={handleFieldChange}
+              onSubmit={handleSubmit}
+              selectedFiles={selectedFiles}
+              onFileSelect={handleFileSelect}
+              onRemoveFile={handleRemoveFile}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              isDragging={isDragging}
+              uploadError={uploadError}
+              formErrors={formErrors}
+              isEditing={isEditing}
+              onCancelEdit={cancelEdit}
+              extracurriculars={extracurriculars}
+              isLoadingExtracurriculars={isLoadingExtracurriculars}
+              extracurricularError={extracurricularError}
+              onRetryLoadExtracurriculars={loadExtracurricularMemberships}
+              isSubmitting={isSubmitting}
+            />
+          </section>
 
-                <ProposalList
-                  proposals={proposals}
-                  onEdit={handleEditProposal}
-                  onDelete={handleDeleteProposal}
-                  onRemoveFile={handleRemoveProposalFile}
-                />
+          {/* SECTION 2: Proposal Saya (Full Width Horizontal List Below Form) */}
+          <section className="rounded-[32px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-black text-gray-900">Proposal Saya</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Daftar dan riwayat pemantauan status proposal yang telah Anda ajukan.
+                </p>
+              </div>
+              <div className="text-xs font-bold text-gray-400 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100 w-fit self-start sm:self-auto">
+                Total Proposal: <span className="text-gray-900 font-black">{proposals.length}</span>
               </div>
             </div>
+
+            <ProposalList
+              proposals={proposals}
+              onEdit={handleEditProposal}
+              onDelete={handleDeleteProposal}
+              onRemoveFile={handleRemoveProposalFile}
+            />
           </section>
         </main>
       </AuthGuard>

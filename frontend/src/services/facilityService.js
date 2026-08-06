@@ -7,19 +7,25 @@ import { API_ROUTES } from "@/constants/apiRoutes";
  */
 export const facilityService = {
   /**
-   * Fetch all facilities & equipment items
+   * Fetch all facilities (Places)
    * GET /api/facilities
    */
   async getFacilities(params = {}) {
     const endpoint = API_ROUTES.FACILITIES.LIST;
     try {
       const response = await apiClient.get(endpoint, { params });
-      if (response && response.data) {
-        return response.data;
-      }
-      return { places: [], items: [] };
+      const items = response?.data?.items || response?.items || response?.data || (Array.isArray(response) ? response : []);
+      return {
+        success: true,
+        data: items,
+        raw: response,
+      };
     } catch (error) {
-      return { places: [], items: [] };
+      return {
+        success: false,
+        data: [],
+        message: error?.message || "Gagal memuat data fasilitas",
+      };
     }
   },
 
@@ -45,7 +51,11 @@ export const facilityService = {
     const endpoint = API_ROUTES.BOOKINGS.CREATE;
     try {
       const response = await apiClient.post(endpoint, bookingPayload);
-      return response;
+      return {
+        success: true,
+        data: response?.data || response,
+        message: response?.message || "Peminjaman fasilitas berhasil diajukan",
+      };
     } catch (error) {
       return {
         success: false,
@@ -62,9 +72,16 @@ export const facilityService = {
     const endpoint = API_ROUTES.BOOKINGS.LIST;
     try {
       const response = await apiClient.get(endpoint, { params });
-      return response?.data || [];
+      const items = response?.data?.items || response?.items || response?.data || (Array.isArray(response) ? response : []);
+      return {
+        success: true,
+        data: items,
+      };
     } catch (error) {
-      return [];
+      return {
+        success: false,
+        data: [],
+      };
     }
   },
 
@@ -76,7 +93,10 @@ export const facilityService = {
     const endpoint = `/api/bookings/${bookingId}/status`;
     try {
       const response = await apiClient.put(endpoint, { status, rejectionReason });
-      return response;
+      return {
+        success: true,
+        data: response?.data || response,
+      };
     } catch (error) {
       return { success: false, message: error?.message || "Gagal memperbarui status booking" };
     }

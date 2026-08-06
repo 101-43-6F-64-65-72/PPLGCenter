@@ -34,7 +34,7 @@ export default function AdminStatCards() {
 
   const stats = [
     {
-      id: "super-proposals",
+      id: "admin-proposals",
       title: "Proposal Butuh ACC Final",
       value: "4",
       subtext: "Menunggu persetujuan Waka",

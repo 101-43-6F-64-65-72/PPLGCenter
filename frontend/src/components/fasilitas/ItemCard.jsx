@@ -14,7 +14,7 @@ export default function ItemCard({
 }) {
   const [isHovered, setIsHovered] = useState(false);
 
-  const isAvailable = stock > 0 && status.toLowerCase() === "tersedia";
+  const isAvailable = stock > 0 && (status || "").toLowerCase() === "tersedia";
 
   return (
     <motion.div

@@ -2,24 +2,18 @@ import React from "react";
 
 export function FacilityCardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-[220px] sm:w-[240px] h-[340px] rounded-3xl bg-gray-200 animate-pulse overflow-hidden relative border border-gray-100 flex flex-col justify-end p-5">
-      <div className="absolute inset-0 bg-gradient-to-t from-gray-300 via-gray-200/50 to-transparent" />
-      <div className="relative z-10 space-y-3">
-        <div className="h-6 w-3/4 bg-gray-300 rounded-md" />
-        <div className="h-4 w-1/2 bg-gray-300 rounded-md" />
+    <div className="rounded-3xl border border-gray-200 bg-white p-5 space-y-4 animate-pulse">
+      <div className="aspect-16/10 w-full rounded-2xl bg-slate-200" />
+      <div className="space-y-2">
+        <div className="h-4 w-1/3 bg-slate-200 rounded-md" />
+        <div className="h-6 w-3/4 bg-slate-200 rounded-md" />
+        <div className="h-4 w-full bg-slate-100 rounded-md" />
       </div>
+      <div className="h-10 w-full bg-slate-200 rounded-xl" />
     </div>
   );
 }
 
 export function ItemCardSkeleton() {
-  return (
-    <div className="flex-shrink-0 w-[180px] sm:w-[210px] h-[280px] rounded-3xl bg-gray-200 animate-pulse overflow-hidden relative border border-gray-100 flex flex-col justify-end p-4">
-      <div className="absolute inset-0 bg-gradient-to-t from-gray-300 via-gray-200/50 to-transparent" />
-      <div className="relative z-10 space-y-2">
-        <div className="h-5 w-2/3 bg-gray-300 rounded-md" />
-        <div className="h-3 w-1/3 bg-gray-300 rounded-md" />
-      </div>
-    </div>
-  );
+  return <FacilityCardSkeleton />;
 }

@@ -91,7 +91,7 @@ export default function OsisFacilityTab() {
 
         <div className="flex items-center gap-2 text-xs font-extrabold text-[#2c1ee8] bg-blue-50 px-4 py-2 rounded-2xl border border-blue-100">
           <ShieldCheck className="w-4 h-4" />
-          <span>Alur Verifikasi Utama: Guru & Super Admin (Review OSIS Opsional)</span>
+          <span>Alur Verifikasi Utama: Guru & Admin (Review OSIS Opsional)</span>
         </div>
       </div>
 
@@ -193,11 +193,11 @@ export default function OsisFacilityTab() {
                 Tolak
               </button>
               <button
-                onClick={() => handleUpdateStatus(selectedBooking.id, "Diteruskan ke Guru & Super Admin")}
+                onClick={() => handleUpdateStatus(selectedBooking.id, "Diteruskan ke Guru & Admin")}
                 className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer flex items-center gap-1.5"
               >
                 <ShieldCheck className="w-4 h-4" />
-                <span>Verifikasi & Teruskan ke Guru & Super Admin</span>
+                <span>Verifikasi & Teruskan ke Guru & Admin</span>
               </button>
             </div>
           </div>

@@ -108,6 +108,9 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setRole(null);
       if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("studentcenter:pinned-proposals");
+        } catch (e) {}
         window.location.href = "/login";
       }
     }

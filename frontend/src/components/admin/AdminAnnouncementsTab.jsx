@@ -140,7 +140,7 @@ export default function AdminAnnouncementsTab() {
             <Newspaper className="w-5 h-5 text-[#2c1ee8]" />
             <span>Manajemen Mading Digital ({filtered.length})</span>
           </h3>
-          <span className="text-xs text-gray-500 font-medium">Publikasi Super Admin</span>
+          <span className="text-xs text-gray-500 font-medium">Publikasi Admin</span>
         </div>
 
         <div className="divide-y divide-gray-100">

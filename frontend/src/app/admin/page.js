@@ -29,7 +29,7 @@ export default function AdminPanelPage() {
 }
 
 function AdminPanelContent() {
-  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'proposals' | 'facilities' | 'announcements' | 'users'
+  const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'users' | 'proposals' | 'facilities' | 'announcements'
 
   const tabs = [
     { id: "overview", label: "Overview Admin", icon: LayoutDashboard },
@@ -85,7 +85,7 @@ function AdminPanelContent() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? "bg-[#2c1ee8] text-white shadow-md shadow-blue-500/20"
+                      ? "bg-[#2c1ee8] text-white shadow-md shadow-[#2c1ee8]/20"
                       : "bg-gray-100/80 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
@@ -121,6 +121,7 @@ function AdminPanelContent() {
         {activeTab === "facilities" && <AdminFacilityTab />}
         {activeTab === "announcements" && <AdminAnnouncementsTab />}
       </main>
+      <Footer />
     </div>
   );
 }

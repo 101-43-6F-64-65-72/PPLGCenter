@@ -7,7 +7,6 @@ import {
   X,
   Trash2,
   Clock,
-  Send,
   ShieldCheck,
   Users,
   AlertCircle,
@@ -16,7 +15,8 @@ import {
   ArrowLeft,
   ChevronRight
 } from "lucide-react";
-import facilityService from "@/services/facilityService";
+import bookingService from "@/services/bookingService";
+import OrganizationSelect from "@/components/common/OrganizationSelect";
 
 export default function CartModal({
   isOpen,
@@ -32,28 +32,18 @@ export default function CartModal({
   const [activityName, setActivityName] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const registeredOrganizations = [
-    "OSIS SMKN 2 Surakarta",
-    "PRAMUKA (Gudep SMKN 2)",
-    "PMR (Palang Merah Remaja)",
-    "PASKIBRA",
-    "ROHIS / IRMAS",
-    "ROHKRIS",
-    "TEATER & KESENIAN",
-    "EKSTRAKURIKULER OLAHRAGA",
-    "PERWAKILAN KELAS / JURUSAN",
-    "Lainnya (Ketik Manual)",
-  ];
+
 
   const handleNextToForm = () => {
     if (cartItems.length === 0) return;
     setStep(2);
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
@@ -74,18 +64,49 @@ export default function CartModal({
     }
 
     setErrors({});
+    setIsSubmitting(true);
 
-    // Send bulk booking request to endpoint via facilityService
-    facilityService.createBooking({
-      organization: finalOrg,
-      activityName: activityName.trim(),
-      description: description.trim(),
-      items: cartItems,
-    }).catch((err) => {
-      console.warn("Async bulk booking sync warning:", err);
-    });
+    let fullPurpose = `[${finalOrg}] ${activityName.trim()}: ${description.trim()}`;
+    if (fullPurpose.length > 500) {
+      fullPurpose = fullPurpose.substring(0, 497) + "...";
+    }
 
-    setStep(3);
+    const slotHours = {
+      1: { start: 7, end: 9 },
+      2: { start: 9, end: 11 },
+      3: { start: 11, end: 12 },
+      4: { start: 12, end: 13 },
+      5: { start: 13, end: 14 },
+      6: { start: 14, end: 15 },
+      7: { start: 15, end: 17 },
+    };
+
+    try {
+      for (const item of cartItems) {
+        const selectedDate = item.bookingDate || new Date().toISOString().split("T")[0];
+        const selectedSlots = item.selectedSlots || [1];
+        const firstSlotId = selectedSlots[0];
+        const lastSlotId = selectedSlots[selectedSlots.length - 1] || firstSlotId;
+
+        const startHour = slotHours[firstSlotId]?.start ?? 7;
+        const endHour = slotHours[lastSlotId]?.end ?? (startHour + 1);
+
+        const startTimeIso = new Date(`${selectedDate}T${String(startHour).padStart(2, "0")}:00:00Z`).toISOString();
+        const endTimeIso = new Date(`${selectedDate}T${String(endHour).padStart(2, "0")}:00:00Z`).toISOString();
+
+        await bookingService.createBooking({
+          facilityId: item.facilityId,
+          purpose: fullPurpose,
+          startTime: startTimeIso,
+          endTime: endTimeIso,
+        });
+      }
+      setStep(3);
+    } catch (err) {
+      setErrors({ submit: "Gagal memproses beberapa pengajuan dalam keranjang." });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCloseAll = () => {
@@ -131,10 +152,10 @@ export default function CartModal({
               </div>
               <div>
                 <h2 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
-                  Daftar Peminjaman
+                  Daftar Peminjaman Fasilitas
                 </h2>
                 <p className="text-xs text-gray-500">
-                  {cartItems.length} fasilitas/barang terpilih untuk diajukan sekaligus
+                  {cartItems.length} fasilitas terpilih untuk diajukan sekaligus
                 </p>
               </div>
             </div>
@@ -161,7 +182,7 @@ export default function CartModal({
                     Pengajuan Kolektif Berhasil!
                   </h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Pengajuan <strong>{cartItems.length} fasilitas/barang</strong> oleh <strong>{finalOrgDisplay}</strong> untuk kegiatan <strong>&quot;{activityName}&quot;</strong> telah berhasil dikirim.
+                    Pengajuan <strong>{cartItems.length} fasilitas</strong> oleh <strong>{finalOrgDisplay}</strong> untuk kegiatan <strong>&quot;{activityName}&quot;</strong> telah berhasil dikirim.
                   </p>
                 </div>
 
@@ -178,7 +199,7 @@ export default function CartModal({
 
                 <div className="p-3.5 bg-blue-50/90 rounded-2xl text-xs text-[#2c1ee8] font-medium border border-blue-100 flex items-center gap-3 text-left">
                   <ShieldCheck className="w-6 h-6 flex-shrink-0" />
-                  <span>Pengajuan ini telah diteruskan secara otomatis ke <strong>Guru</strong> dan <strong>Super Admin</strong> untuk proses verifikasi.</span>
+                  <span>Pengajuan ini telah diteruskan secara otomatis ke <strong>Guru</strong> dan <strong>Admin</strong> untuk proses verifikasi.</span>
                 </div>
 
                 <button
@@ -198,7 +219,7 @@ export default function CartModal({
                     </div>
                     <h3 className="text-lg font-bold text-gray-800">Daftar Pinjaman Masih Kosong</h3>
                     <p className="text-xs text-gray-500 max-w-xs mx-auto">
-                      Pilih fasilitas atau peralatan yang ingin dipinjam dari katalog, lalu klik &quot;+ Tambah&quot;.
+                      Pilih fasilitas tempat yang ingin dipinjam dari katalog, lalu klik &quot;+ Tambah&quot;.
                     </p>
                   </div>
                 ) : (
@@ -271,7 +292,7 @@ export default function CartModal({
                   <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <div>
                     <strong className="block text-sm font-bold mb-0.5">Pengajuan 1-Kali (Kolektif):</strong>
-                    Formulir di bawah ini mencakup <strong>{cartItems.length} fasilitas/barang</strong> yang telah Anda pilih dan akan diteruskan ke <strong>Guru</strong> & <strong>Super Admin</strong> (peninjauan OSIS bersifat opsional).
+                    Formulir di bawah ini mencakup <strong>{cartItems.length} fasilitas</strong> yang telah Anda pilih dan akan diteruskan ke <strong>Guru</strong> & <strong>Admin</strong>.
                   </div>
                 </div>
 
@@ -290,50 +311,27 @@ export default function CartModal({
                   </div>
                 </div>
 
+                {/* Submit Error Notice */}
+                {errors.submit && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                    <span>{errors.submit}</span>
+                  </div>
+                )}
+
                 {/* Single Form for All Cart Items */}
                 <form onSubmit={handleFormSubmit} className="space-y-4">
-                  {/* 1. Nama Organisasi Terdaftar */}
-                  <div>
-                    <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Nama Organisasi Terdaftar <span className="text-rose-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={organization}
-                        onChange={(e) => {
-                          setOrganization(e.target.value);
-                          if (errors.organization) setErrors({ ...errors, organization: null });
-                        }}
-                        className={`w-full px-4 py-3 rounded-2xl border bg-gray-50/50 focus:bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all appearance-none cursor-pointer ${
-                          errors.organization ? "border-rose-400 focus:border-rose-500" : "border-gray-200 focus:border-[#2c1ee8]"
-                        }`}
-                      >
-                        <option value="" disabled>-- Pilih Organisasi / Ekstrakurikuler --</option>
-                        {registeredOrganizations.map((org) => (
-                          <option key={org} value={org}>
-                            {org}
-                          </option>
-                        ))}
-                      </select>
-                      <Users className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-
-                    {organization === "Lainnya (Ketik Manual)" && (
-                      <input
-                        type="text"
-                        placeholder="Masukkan nama organisasi/kelas anda..."
-                        value={customOrg}
-                        onChange={(e) => setCustomOrg(e.target.value)}
-                        className="mt-2.5 w-full px-4 py-2.5 rounded-2xl border border-gray-200 bg-white text-sm focus:outline-none focus:border-[#2c1ee8] focus:ring-2 focus:ring-[#2c1ee8]/20"
-                      />
-                    )}
-                    {errors.organization && (
-                      <p className="text-xs text-rose-500 font-medium mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        {errors.organization}
-                      </p>
-                    )}
-                  </div>
+                  <OrganizationSelect
+                    value={organization}
+                    customValue={customOrg}
+                    onChange={(val) => {
+                      setOrganization(val);
+                      if (errors.organization) setErrors({ ...errors, organization: null });
+                    }}
+                    onCustomChange={(val) => setCustomOrg(val)}
+                    error={errors.organization}
+                    label="Nama Organisasi Terdaftar"
+                  />
 
                   {/* 2. Nama Kegiatan */}
                   <div>
@@ -360,13 +358,19 @@ export default function CartModal({
                     )}
                   </div>
 
-                  {/* 3. Deskripsi Kegiatan */}
+                  {/* 3. Deskripsi / Tujuan Peminjaman (Purpose) */}
                   <div>
-                    <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Deskripsi Kegiatan <span className="text-rose-500">*</span>
-                    </label>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider">
+                        Tujuan & Deskripsi Peminjaman <span className="text-rose-500">*</span>
+                      </label>
+                      <span className="text-[11px] text-gray-400 font-medium">
+                        {description.length}/500 karakter
+                      </span>
+                    </div>
                     <textarea
                       rows={3}
+                      maxLength={400}
                       placeholder="Jelaskan secara ringkas peruntukan peminjaman seluruh fasilitas di keranjang..."
                       value={description}
                       onChange={(e) => {
@@ -390,16 +394,18 @@ export default function CartModal({
                     <button
                       type="button"
                       onClick={() => setStep(1)}
+                      disabled={isSubmitting}
                       className="px-6 py-3 rounded-2xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
                     >
                       Batal / Kelola Daftar
                     </button>
                     <button
                       type="submit"
-                      className="inline-flex items-center gap-2 px-8 py-3 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-sm rounded-2xl shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+                      disabled={isSubmitting}
+                      className="inline-flex items-center gap-2 px-8 py-3 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-sm rounded-2xl shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <Send className="w-4 h-4" />
-                      <span>Kirim Pengajuan Kolektif</span>
+                      <span>{isSubmitting ? "Mengirim..." : "Kirim Pengajuan Kolektif"}</span>
                     </button>
                   </div>
                 </form>

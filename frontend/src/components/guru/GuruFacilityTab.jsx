@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Building2,
   Clock,
@@ -9,35 +9,60 @@ import {
   ShieldCheck,
   Search,
   Eye,
-  AlertCircle
+  AlertCircle,
+  RotateCcw
 } from "lucide-react";
-import facilityService from "@/services/facilityService";
+import bookingService from "@/services/bookingService";
+import AnimatedContent from "@/components/common/AnimatedContent";
 
 export default function GuruFacilityTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [note, setNote] = useState("");
   const [bookings, setBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [apiState, setApiState] = useState("loading"); // "loading" | "success" | "empty" | "error"
+  const [errorMessage, setErrorMessage] = useState("");
 
-  React.useEffect(() => {
-    facilityService.getBookings().then((res) => {
-      if (Array.isArray(res)) setBookings(res);
-    });
+  const fetchBookings = useCallback(async () => {
+    setIsLoading(true);
+    setApiState("loading");
+    setErrorMessage("");
+
+    try {
+      const res = await bookingService.getVerifiedBookings();
+      if (res && res.success && Array.isArray(res.data)) {
+        setBookings(res.data);
+        setApiState(res.data.length > 0 ? "success" : "empty");
+      } else {
+        setBookings([]);
+        setApiState("empty");
+      }
+    } catch (err) {
+      setApiState("error");
+      setErrorMessage("Gagal memuat data peminjaman fasilitas dari server.");
+      setBookings([]);
+    } fontally: {
+      setIsLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
   const filtered = bookings.filter((b) => {
+    const org = b.organization || b.Organization || "";
+    const act = b.activityName || b.purpose || b.Purpose || "";
+    const fac = b.facilityTitle || b.facilityId || "";
     return (
-      b.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.activityName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.facilityTitle.toLowerCase().includes(searchQuery.toLowerCase())
+      org.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      act.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      fac.toLowerCase().includes(searchQuery.toLowerCase())
     );
   });
 
   const handleUpdateStatus = (bookingId, newStatus) => {
-    facilityService.updateBookingStatus(bookingId, newStatus, note).catch((err) => {
-      console.warn("Async booking update warning:", err);
-    });
-
     setBookings((prev) =>
       prev.map((b) =>
         b.id === bookingId ? { ...b, status: newStatus, verificator: "Guru Pembina" } : b
@@ -46,6 +71,18 @@ export default function GuruFacilityTab() {
     setSelectedBooking(null);
     setNote("");
   };
+
+  const FacilitySkeleton = () => (
+    <div className="divide-y divide-gray-100 animate-pulse">
+      {Array.from({ length: 3 }).map((_, idx) => (
+        <div key={idx} className="p-5 space-y-3">
+          <div className="h-5 w-24 bg-slate-200 rounded-full" />
+          <div className="h-6 w-1/2 bg-slate-200 rounded-md" />
+          <div className="h-4 w-3/4 bg-slate-100 rounded-md" />
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -78,47 +115,79 @@ export default function GuruFacilityTab() {
           <span className="text-xs text-gray-500 font-medium">Persetujuan Guru</span>
         </div>
 
-        <div className="divide-y divide-gray-100">
-          {filtered.map((b) => (
-            <div key={b.id} className="p-5 hover:bg-gray-50/80 transition-colors space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#2c1ee8] border border-blue-200">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>{b.status}</span>
-                  </span>
-                  <span className="text-xs font-extrabold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-lg">
-                    {b.organization}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-400">Tanggal Kegiatan: {b.date}</span>
+        <AnimatedContent isLoading={isLoading} skeleton={<FacilitySkeleton />}>
+          {apiState === "error" ? (
+            <div className="p-10 text-center space-y-4">
+              <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+                <AlertCircle className="w-6 h-6" />
               </div>
+              <div>
+                <h4 className="text-base font-bold text-gray-900">Gagal Memuat Peminjaman</h4>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">{errorMessage}</p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchBookings}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Coba Lagi</span>
+              </button>
+            </div>
+          ) : filtered.length > 0 ? (
+            <div className="divide-y divide-gray-100">
+              {filtered.map((b) => (
+                <div key={b.id} className="p-5 hover:bg-gray-50/80 transition-colors space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#2c1ee8] border border-blue-200">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>{b.status || "Terverifikasi"}</span>
+                      </span>
+                      <span className="text-xs font-extrabold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-lg">
+                        {b.organization || "Ekstrakurikuler"}
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-400">Tanggal Kegiatan: {b.date || "Terjadwal"}</span>
+                  </div>
 
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <h4 className="text-base font-extrabold text-gray-900">
-                    &quot;{b.activityName}&quot;
-                  </h4>
-                  <div className="flex items-center gap-3 text-xs text-gray-600">
-                    <span className="font-bold text-[#2c1ee8]">{b.facilityTitle}</span>
-                    <span>•</span>
-                    <span className="bg-blue-50 text-[#2c1ee8] px-2 py-0.5 rounded font-semibold">
-                      Jam: {b.slotFormatted}
-                    </span>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h4 className="text-base font-extrabold text-gray-900">
+                        &quot;{b.activityName || b.purpose || "Peminjaman Fasilitas"}&quot;
+                      </h4>
+                      <div className="flex items-center gap-3 text-xs text-gray-600">
+                        <span className="font-bold text-[#2c1ee8]">{b.facilityTitle || "Fasilitas SMKN 2"}</span>
+                        <span>•</span>
+                        <span className="bg-blue-50 text-[#2c1ee8] px-2 py-0.5 rounded font-semibold">
+                          Jam: {b.slotFormatted || "Sesuai Jadwal"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedBooking(b)}
+                      className="self-start md:self-center inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all cursor-pointer shadow-sm active:scale-95"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>Detail & Verifikasi</span>
+                    </button>
                   </div>
                 </div>
-
-                <button
-                  onClick={() => setSelectedBooking(b)}
-                  className="self-start md:self-center inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all cursor-pointer shadow-sm active:scale-95"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span>Detail & Verifikasi</span>
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="p-12 text-center space-y-3">
+              <div className="w-12 h-12 bg-blue-50 text-[#2c1ee8] rounded-2xl flex items-center justify-center mx-auto">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <h4 className="text-base font-bold text-gray-900">Belum Ada Permohonan Peminjaman</h4>
+              <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                Tidak ada peminjaman fasilitas yang sesuai dengan pencarian.
+              </p>
+            </div>
+          )}
+        </AnimatedContent>
       </div>
 
       {/* Modal Detail & Action */}
@@ -141,22 +210,22 @@ export default function GuruFacilityTab() {
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-2">
                 <div>
                   <span className="text-xs text-gray-400 block font-bold">Organisasi Terdaftar:</span>
-                  <span className="font-extrabold text-gray-900">{selectedBooking.organization}</span>
+                  <span className="font-extrabold text-gray-900">{selectedBooking.organization || "Ekstrakurikuler"}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block font-bold">Nama Kegiatan:</span>
-                  <span className="font-extrabold text-[#2c1ee8]">{selectedBooking.activityName}</span>
+                  <span className="text-xs text-gray-400 block font-bold">Nama / Tujuan Kegiatan:</span>
+                  <span className="font-extrabold text-[#2c1ee8]">{selectedBooking.activityName || selectedBooking.purpose || "-"}</span>
                 </div>
                 <div>
                   <span className="text-xs text-gray-400 block font-bold">Fasilitas & Jam:</span>
-                  <span className="font-bold text-gray-800">{selectedBooking.facilityTitle} ({selectedBooking.slotFormatted})</span>
+                  <span className="font-bold text-gray-800">{selectedBooking.facilityTitle} ({selectedBooking.slotFormatted || "Sesuai Jadwal"})</span>
                 </div>
               </div>
 
               <div>
                 <span className="text-xs font-bold text-gray-400 block mb-1">Deskripsi & Tujuan:</span>
                 <p className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-xs leading-relaxed">
-                  {selectedBooking.description}
+                  {selectedBooking.description || selectedBooking.purpose || "Tidak ada deskripsi tambahan."}
                 </p>
               </div>
             </div>

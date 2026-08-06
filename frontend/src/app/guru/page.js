@@ -12,9 +12,7 @@ import {
   LayoutDashboard,
   FileText,
   Building2,
-  Award,
   ShieldCheck,
-  Users,
   GraduationCap
 } from "lucide-react";
 
@@ -115,6 +113,7 @@ function GuruPanelContent() {
         {activeTab === "proposals" && <GuruProposalTab />}
         {activeTab === "facilities" && <GuruFacilityTab />}
       </main>
+      <Footer />
     </div>
   );
 }

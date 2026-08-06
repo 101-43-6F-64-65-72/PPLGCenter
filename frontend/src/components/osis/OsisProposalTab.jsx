@@ -27,7 +27,38 @@ export default function OsisProposalTab({ proposals = [], onStatusUpdate }) {
   React.useEffect(() => {
     if (proposals.length === 0) {
       proposalService.getProposals().then((res) => {
-        if (Array.isArray(res)) setFetchedProposals(res);
+        if (res && res.success && Array.isArray(res.data)) {
+          const mapped = res.data.map((item) => {
+            let org = "Ekstrakurikuler";
+            let rawTitle = item.title || item.Title || "";
+            const tagMatch = rawTitle.match(/^\[+(.*?)\]+\s*(.*)$/);
+            if (tagMatch) {
+              org = tagMatch[1].replace(/\[SEED\]\s*/i, "").trim() || "Ekstrakurikuler";
+              rawTitle = tagMatch[2].trim() || rawTitle;
+            }
+
+            const statusVal = item.status ?? item.Status ?? 0;
+            const reviewerName = item.reviewedByUserName || item.ReviewedByUserName || "";
+            let statusText = "Menunggu OSIS";
+            if (statusVal === 1 || statusVal === "Approved") {
+              statusText = reviewerName ? `Disetujui oleh ${reviewerName}` : "Disetujui";
+            } else if (statusVal === 2 || statusVal === "Rejected") {
+              statusText = reviewerName ? `Ditolak oleh ${reviewerName}` : "Ditolak";
+            }
+
+            return {
+              id: item.id || item.Id,
+              organization: org,
+              title: rawTitle,
+              description: item.description || item.Description || "",
+              status: statusText,
+              submittedDate: item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID") : "Baru saja",
+              fileName: "Dokumen_Proposal.pdf",
+              fileUrl: item.fileUrl || item.FileUrl || "",
+            };
+          });
+          setFetchedProposals(mapped);
+        }
       });
     }
   }, [proposals]);
@@ -67,7 +98,7 @@ export default function OsisProposalTab({ proposals = [], onStatusUpdate }) {
       return (
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#2c1ee8] border border-blue-200">
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span>Diteruskan ke Guru & Super Admin</span>
+          <span>Diteruskan ke Guru & Admin</span>
         </span>
       );
     }
@@ -264,10 +295,10 @@ export default function OsisProposalTab({ proposals = [], onStatusUpdate }) {
                 Minta Revisi
               </button>
               <button
-                onClick={() => handleActionStatus("Diteruskan ke Guru & Super Admin")}
+                onClick={() => handleActionStatus("Diteruskan ke Guru & Admin")}
                 className="px-5 py-2.5 rounded-xl text-xs font-bold bg-blue-50 text-[#2c1ee8] hover:bg-blue-100 transition-colors cursor-pointer"
               >
-                Teruskan ke Guru & Super Admin
+                Teruskan ke Guru & Admin
               </button>
               <button
                 onClick={() => handleActionStatus("Disetujui")}

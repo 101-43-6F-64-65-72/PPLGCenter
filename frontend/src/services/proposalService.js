@@ -13,11 +13,22 @@ export const proposalService = {
   async getProposals(params = {}) {
     const endpoint = API_ROUTES.PROPOSALS.LIST;
     try {
-      const response = await apiClient.get(endpoint, { params });
-      const items = response?.data?.items || response?.items || response?.data || (Array.isArray(response) ? response : []);
+      const response = await apiClient.get(endpoint, {
+        params: { pageSize: 100, ...params },
+      });
+
+      // Backend returns ApiResponse<PagedResult<ProposalResponse>>
+      // response structure: { success: true, data: { items: [...], totalCount, page, pageSize } }
+      const rawData = response?.data || response;
+      const items =
+        rawData?.items ||
+        rawData?.Items ||
+        (Array.isArray(rawData) ? rawData : (Array.isArray(response) ? response : []));
+
       return {
         success: true,
-        data: items,
+        data: Array.isArray(items) ? items : [],
+        totalCount: rawData?.totalCount || rawData?.TotalCount || (Array.isArray(items) ? items.length : 0),
         raw: response,
       };
     } catch (error) {
@@ -103,14 +114,31 @@ export const proposalService = {
   /**
    * Review proposal status (Admin / Teacher only)
    * PATCH /api/proposals/:id/review
+   * Body: { status: 0|1|2, rejectionReason }
    */
-  async updateProposalStatus(proposalId, status, rejectionReason = "") {
+  async reviewProposal(proposalId, statusValue, rejectionReason = "") {
     const endpoint = API_ROUTES.PROPOSALS.REVIEW(proposalId);
     try {
-      const response = await apiClient.patch(endpoint, { status, rejectionReason });
+      let statusEnum = statusValue;
+      if (typeof statusValue === "string") {
+        if (statusValue.toLowerCase().includes("disetujui") || statusValue.toLowerCase().includes("approved")) {
+          statusEnum = 1; // Approved
+        } else if (statusValue.toLowerCase().includes("ditolak") || statusValue.toLowerCase().includes("rejected")) {
+          statusEnum = 2; // Rejected
+        } else {
+          statusEnum = 0; // Pending
+        }
+      }
+
+      const response = await apiClient.patch(endpoint, {
+        status: statusEnum,
+        rejectionReason: rejectionReason || null,
+      });
+
       return {
         success: true,
         data: response?.data || response,
+        message: response?.message || "Status proposal berhasil diperbarui",
       };
     } catch (error) {
       const statusCode = error?.statusCode || error?.response?.status || 500;
@@ -120,6 +148,10 @@ export const proposalService = {
         message: error?.message || "Gagal memperbarui status proposal",
       };
     }
+  },
+
+  async updateProposalStatus(proposalId, statusValue, rejectionReason = "") {
+    return this.reviewProposal(proposalId, statusValue, rejectionReason);
   },
 };
 

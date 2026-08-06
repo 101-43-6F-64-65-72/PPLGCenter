@@ -1,131 +1,67 @@
 "use client";
 
-import React, { useRef } from "react";
-import Link from "next/link";
+import React from "react";
 import FacilityCard from "./FacilityCard";
-import ItemCard from "./ItemCard";
-import { FacilityCardSkeleton, ItemCardSkeleton } from "./FacilitySkeleton";
+import { FacilityCardSkeleton } from "./FacilitySkeleton";
+import AnimatedContent from "@/components/common/AnimatedContent";
 
 export default function FacilitySection({
-  title = "TEMPAT",
-  seeAllHref = "#",
+  title = "FASILITAS TEMPAT",
   items = [],
-  type = "facility", // 'facility' | 'item'
   isLoading = false,
   onItemAction,
-  onSeeAllClick,
 }) {
-  const scrollRef = useRef(null);
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollAmount = clientWidth * 0.75;
-      scrollRef.current.scrollTo({
-        left: direction === "left" ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
-        behavior: "smooth",
-      });
-    }
-  };
+  const skeletonGrid = (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
+      {Array.from({ length: 4 }).map((_, idx) => (
+        <FacilityCardSkeleton key={idx} />
+      ))}
+    </div>
+  );
 
   return (
     <section className="w-full py-6 sm:py-8">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-5 px-1 sm:px-2">
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-gray-900 uppercase">
-          {title}
-        </h2>
-
-        <div className="flex items-center gap-3">
-          {/* Scroll Navigation Buttons for Desktop */}
-          <div className="hidden sm:flex items-center gap-1.5 mr-2">
-            <button
-              onClick={() => scroll("left")}
-              className="p-2 rounded-full border border-gray-200 hover:border-gray-400 hover:bg-gray-50 text-gray-700 transition-colors cursor-pointer"
-              aria-label="Scroll Kiri"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              onClick={() => scroll("right")}
-              className="p-2 rounded-full border border-gray-200 hover:border-gray-400 hover:bg-gray-50 text-gray-700 transition-colors cursor-pointer"
-              aria-label="Scroll Kanan"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
-          <Link
-            href={seeAllHref}
-            onClick={(e) => {
-              if (onSeeAllClick) {
-                e.preventDefault();
-                onSeeAllClick();
-              }
-            }}
-            className="group flex items-center gap-1.5 text-base sm:text-lg font-semibold text-[#2c1ee8] hover:text-[#2218a3] transition-colors cursor-pointer"
-          >
-            <span>Lihat semua</span>
-            <svg
-              className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-1 stroke-[2.5]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </Link>
+      <div className="flex items-center justify-between mb-6 px-1">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 uppercase">
+            {title}
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-gray-500 font-medium">
+            Pilih tempat atau ruangan sekolah yang ingin Anda pinjam
+          </p>
         </div>
       </div>
 
-      {/* Horizontal Scrollable Container */}
-      <div
-        ref={scrollRef}
-        className="flex items-center gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 px-1 sm:px-2 scrollbar-none scroll-smooth"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {isLoading ? (
-          // Render Skeletons
-          Array.from({ length: 4 }).map((_, idx) =>
-            type === "facility" ? (
-              <FacilityCardSkeleton key={idx} />
-            ) : (
-              <ItemCardSkeleton key={idx} />
-            )
-          )
-        ) : items.length > 0 ? (
-          items.map((item) =>
-            type === "facility" ? (
+      {/* Grid Container wrapped in AnimatedContent */}
+      <AnimatedContent isLoading={isLoading} skeleton={skeletonGrid}>
+        {items.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
+            {items.map((item) => (
               <FacilityCard
                 key={item.id}
-                title={item.title}
+                title={item.title || item.name}
+                location={item.location}
+                capacity={item.capacity}
+                status={item.status}
                 time={item.time}
-                status={item.status}
                 imageSrc={item.imageSrc}
                 onActionClick={() => onItemAction && onItemAction(item)}
               />
-            ) : (
-              <ItemCard
-                key={item.id}
-                title={item.title}
-                category={item.category}
-                stock={item.stock}
-                status={item.status}
-                imageSrc={item.imageSrc}
-                onActionClick={() => onItemAction && onItemAction(item)}
-              />
-            )
-          )
+            ))}
+          </div>
         ) : (
-          <div className="w-full text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-            <p className="text-gray-500 font-medium">Tidak ada data {title.toLowerCase()} ditemukan.</p>
+          <div className="w-full text-center py-12 bg-gray-50/80 rounded-3xl border border-dashed border-gray-200">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#2c1ee8] mb-3">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <p className="text-gray-700 font-bold text-sm">Tidak ada fasilitas tempat ditemukan</p>
+            <p className="text-gray-500 text-xs mt-1">Coba gunakan kata kunci pencarian yang berbeda.</p>
           </div>
         )}
-      </div>
+      </AnimatedContent>
     </section>
   );
 }

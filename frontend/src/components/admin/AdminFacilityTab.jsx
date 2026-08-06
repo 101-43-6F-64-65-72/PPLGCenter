@@ -43,7 +43,7 @@ export default function AdminFacilityTab() {
 
     setBookings((prev) =>
       prev.map((b) =>
-        b.id === bookingId ? { ...b, status: newStatus, verificator: "Super Admin Sarpras" } : b
+        b.id === bookingId ? { ...b, status: newStatus, verificator: "Admin Sarpras" } : b
       )
     );
     setSelectedBooking(null);
@@ -130,7 +130,7 @@ export default function AdminFacilityTab() {
           <div className="bg-white w-full max-w-xl rounded-3xl p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <h3 className="text-lg font-black text-gray-900">
-                Persetujuan Final Sarpras Super Admin
+                Persetujuan Final Sarpras Admin
               </h3>
               <button
                 onClick={() => setSelectedBooking(null)}
@@ -166,13 +166,13 @@ export default function AdminFacilityTab() {
 
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
-                onClick={() => handleUpdateStatus(selectedBooking.id, "Ditolak Super Admin")}
+                onClick={() => handleUpdateStatus(selectedBooking.id, "Ditolak Admin")}
                 className="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
               >
                 Tolak Peminjaman
               </button>
               <button
-                onClick={() => handleUpdateStatus(selectedBooking.id, "Disetujui Super Admin")}
+                onClick={() => handleUpdateStatus(selectedBooking.id, "Disetujui Admin")}
                 className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-4 h-4" />
