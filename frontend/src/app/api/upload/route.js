@@ -15,20 +15,42 @@ export async function POST(request) {
       return Response.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Convert file to base64
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
+    const mimeType = file.type || "application/pdf";
+    const isImage = mimeType.startsWith("image/");
 
-    const result = await cloudinary.uploader.upload(base64, {
-      folder: "studentcenter/mading",
-      resource_type: "image",
-      transformation: [{ width: 1280, height: 720, crop: "fill", quality: "auto" }],
+    const uploadOptions = {
+      folder: isImage ? "studentcenter/mading" : "studentcenter/proposals",
+      resource_type: isImage ? "image" : "raw",
+      use_filename: true,
+      unique_filename: true,
+    };
+
+    if (isImage) {
+      uploadOptions.transformation = [{ width: 1280, height: 720, crop: "fill", quality: "auto" }];
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        uploadOptions,
+        (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+      uploadStream.end(buffer);
     });
 
     return Response.json({ url: result.secure_url });
   } catch (error) {
-    console.error("Cloudinary server-side upload error:", error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error("Server-side upload error:", error?.message || error);
+    return Response.json(
+      { error: error?.message || "Gagal mengunggah file dokumen." },
+      { status: 500 }
+    );
   }
 }

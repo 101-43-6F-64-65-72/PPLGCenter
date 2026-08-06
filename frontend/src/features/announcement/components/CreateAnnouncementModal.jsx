@@ -27,21 +27,19 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
 
   if (!isOpen) return null;
 
-  const handleCroppedImage = async (dataUrl) => {
+  const handleCroppedImage = async (dataUrl, metadata) => {
     setImageUrl(dataUrl); // instant preview as fallback
     setIsUploading(true);
     setUploadSuccessMsg("");
     try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], "mading-cover.jpg", { type: "image/jpeg" });
+      const file = metadata?.croppedFile || (await fetch(dataUrl).then((r) => r.blob()).then((blob) => new File([blob], "mading-cover.jpg", { type: "image/jpeg" })));
       const uploadedUrl = await uploadImageToCloudinary(file);
       if (uploadedUrl) {
         setImageUrl(uploadedUrl);
-        setUploadSuccessMsg("✓ Gambar berhasil diunggah ke Cloudinary CDN!");
+        setUploadSuccessMsg("✓ Gambar berhasil diunggah!");
       }
     } catch {
-      setErrorMsg("Gagal mengunggah ke Cloudinary, gambar lokal digunakan.");
+      setErrorMsg("Gagal mengunggah");
     } finally {
       setIsUploading(false);
     }
@@ -97,7 +95,7 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/35 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-5 bg-gradient-to-r from-[#2c1ee8] to-blue-700 text-white flex items-center justify-between">

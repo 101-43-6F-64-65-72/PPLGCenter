@@ -10,7 +10,8 @@ import useAuth from "@/hooks/useAuth";
 /**
  * Custom hook encapsulating all Login Form logic & submission
  */
-export const useLogin = () => {
+export const useLogin = (options = {}) => {
+  const { onSuccess } = options;
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
@@ -26,7 +27,7 @@ export const useLogin = () => {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
     },
   });
@@ -36,19 +37,33 @@ export const useLogin = () => {
       setErrorMessage("");
       setIsSubmitting(true);
       await login(data);
+      if (typeof onSuccess === "function") {
+        onSuccess();
+      }
       router.push(callbackUrl);
     } catch (error) {
-      setErrorMessage(
-        error.message || "Gagal masuk. Silakan periksa NIS/NIP dan password Anda."
-      );
+      const backendMessage =
+        error?.response?.data?.message ||
+        error?.data?.message ||
+        error?.message ||
+        "Gagal masuk. Silakan periksa ID Akun dan password Anda.";
+      setErrorMessage(backendMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const onInvalid = (formErrors) => {
+    const firstError =
+      formErrors?.identifier?.message ||
+      formErrors?.password?.message ||
+      "Mohon isi ID Akun dan Password dengan benar.";
+    setErrorMessage(firstError);
+  };
+
   return {
     register,
-    handleSubmit: handleSubmit(onSubmit),
+    handleSubmit: handleSubmit(onSubmit, onInvalid),
     errors,
     isSubmitting,
     errorMessage,

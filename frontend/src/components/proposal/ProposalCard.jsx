@@ -71,18 +71,18 @@ export default function ProposalCard({
                       {Math.max(1, Math.round(file.size / 1024))} KB
                     </p>
                   </div>
-                  {file.url ? (
+                  {file.url && file.url.startsWith("http") ? (
                     <a
                       href={file.url}
                       target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center rounded-full border border-[#2C1EE8] px-3 py-2 text-sm font-semibold text-[#2C1EE8] transition hover:bg-[#EEF2FF]"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center rounded-full border border-[#2C1EE8] px-4 py-2 text-xs font-bold text-[#2C1EE8] hover:bg-[#2C1EE8] hover:text-white transition-all shadow-2xs"
                     >
-                      Lihat
+                      Lihat Dokumen
                     </a>
                   ) : (
-                    <span className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-500">
-                      Lihat
+                    <span className="inline-flex items-center justify-center rounded-full border border-gray-200 bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-400">
+                      Tidak Tersedia
                     </span>
                   )}
                   <button

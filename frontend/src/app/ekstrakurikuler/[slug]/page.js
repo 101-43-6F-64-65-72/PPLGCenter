@@ -1,256 +1,89 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { extracurricularService } from "@/services/extracurricularService";
+import useAuth from "@/hooks/useAuth";
 
 // TODO: Integrasi data detail ekstrakurikuler dari backend
 // TODO: Integrasi jadwal latihan dari backend
 // TODO: Integrasi foto ekstrakurikuler
 // TODO: Integrasi data pembina ekstrakurikuler
 
-const extracurricularDetails = {
-  basket: {
-    name: "Basket",
-    category: "Olahraga",
-    maxMember: 30,
-    description:
-      "Ekstrakurikuler Basket melatih kemampuan bermain bola basket, kerja sama tim, disiplin, serta sportivitas melalui latihan rutin dan pertandingan antar sekolah.",
-    schedule: {
-      day: "Rabu & Jumat",
-      time: "15.30 - 17.00 WIB",
-      location: "Lapangan Basket SMKN 2 Surakarta",
-    },
-    instructor: "Drs. Budi Santoso",
-  },
-  futsal: {
-    name: "Futsal",
-    category: "Olahraga",
-    maxMember: 25,
-    description:
-      "Ekstrakurikuler Futsal bertujuan mengembangkan teknik bermain, kekompakan tim, kebugaran fisik, dan semangat kompetisi dalam olahraga futsal.",
-    schedule: {
-      day: "Selasa & Kamis",
-      time: "15.30 - 17.30 WIB",
-      location: "Lapangan Futsal SMKN 2 Surakarta",
-    },
-    instructor: "Eko Prasetyo, S.Pd.",
-  },
-  voli: {
-    name: "Voli",
-    category: "Olahraga",
-    maxMember: 30,
-    description:
-      "Ekstrakurikuler Voli membina kemampuan teknik dasar bola voli, komunikasi tim, serta membentuk karakter sportif dan percaya diri.",
-    schedule: {
-      day: "Senin & Rabu",
-      time: "15.30 - 17.00 WIB",
-      location: "Lapangan Olahraga Utama",
-    },
-    instructor: "Agus Wijaya, S.Or.",
-  },
-  badminton: {
-    name: "Badminton",
-    category: "Olahraga",
-    maxMember: 20,
-    description:
-      "Ekstrakurikuler Badminton melatih keterampilan bermain bulu tangkis, kecepatan, ketepatan, serta daya tahan fisik siswa.",
-    schedule: {
-      day: "Kamis & Sabtu",
-      time: "15.00 - 17.00 WIB",
-      location: "Aula Gedung Olahraga Sekolah",
-    },
-    instructor: "Rina Kusuma, S.Pd.",
-  },
-  teater: {
-    name: "Teater",
-    category: "Seni & Budaya",
-    maxMember: 35,
-    description:
-      "Ekstrakurikuler Teater mengembangkan kemampuan akting, public speaking, kreativitas, dan kerja sama dalam pertunjukan seni.",
-    schedule: {
-      day: "Rabu & Sabtu",
-      time: "15.30 - 17.30 WIB",
-      location: "Aula Seni & Budaya",
-    },
-    instructor: "Bambang Kurniawan, S.Sn.",
-  },
-  "paduan-suara": {
-    name: "Paduan Suara",
-    category: "Seni & Budaya",
-    maxMember: 40,
-    description:
-      "Ekstrakurikuler Paduan Suara melatih teknik vokal, harmonisasi, serta kekompakan dalam bernyanyi bersama.",
-    schedule: {
-      day: "Selasa & Jumat",
-      time: "15.30 - 17.00 WIB",
-      location: "Ruang Musik Utama",
-    },
-    instructor: "Siti Rahmawati, S.Pd.",
-  },
-  band: {
-    name: "Band",
-    category: "Seni & Budaya",
-    maxMember: 15,
-    description:
-      "Ekstrakurikuler Band menjadi wadah bagi siswa untuk mengembangkan bakat musik, bermain alat musik, dan tampil dalam berbagai acara sekolah.",
-    schedule: {
-      day: "Senin & Kamis",
-      time: "15.30 - 17.30 WIB",
-      location: "Studio Musik Sekolah",
-    },
-    instructor: "Hendra Wijaya, S.Kom.",
-  },
-  "creativity-corner": {
-    name: "Creativity Corner",
-    category: "Seni & Budaya",
-    maxMember: 25,
-    description:
-      "Ekstrakurikuler Creativity Corner berfokus pada fotografi dan videografi untuk mengembangkan kreativitas, editing, dokumentasi, dan pembuatan konten digital.",
-    schedule: {
-      day: "Rabu",
-      time: "15.30 - 17.30 WIB",
-      location: "Lab Multimedia SMKN 2",
-    },
-    instructor: "Dimas Anggara, S.ST.",
-  },
-  osis: {
-    name: "OSIS",
-    category: "Organisasi",
-    maxMember: 40,
-    description:
-      "OSIS merupakan organisasi siswa yang berperan dalam mengembangkan kepemimpinan, tanggung jawab, serta menyelenggarakan berbagai kegiatan sekolah.",
-    schedule: {
-      day: "Senin & Jumat",
-      time: "15.30 - 17.30 WIB",
-      location: "Ruang Sekretariat OSIS",
-    },
-    instructor: "Pembina Kesiswaan",
-  },
-  pmr: {
-    name: "PMR",
-    category: "Organisasi",
-    maxMember: 30,
-    description:
-      "PMR melatih siswa mengenai pertolongan pertama, kepedulian sosial, kesehatan, serta kesiapsiagaan dalam membantu sesama.",
-    schedule: {
-      day: "Selasa",
-      time: "15.30 - 17.00 WIB",
-      location: "Ruang Unit PMR",
-    },
-    instructor: "Sri Wahyuni, S.Kep.",
-  },
-  pramuka: {
-    name: "Pramuka",
-    category: "Organisasi",
-    maxMember: 50,
-    description:
-      "Pramuka membentuk karakter disiplin, mandiri, tanggung jawab, kepemimpinan, dan kecintaan terhadap alam.",
-    schedule: {
-      day: "Jumat",
-      time: "14.00 - 16.30 WIB",
-      location: "Lapangan Utama SMKN 2 Surakarta",
-    },
-    instructor: "Pembina Gugus Depan",
-  },
-  paskibra: {
-    name: "Paskibra",
-    category: "Organisasi",
-    maxMember: 35,
-    description:
-      "Paskibra melatih kedisiplinan, kepemimpinan, kekompakan, dan kemampuan baris-berbaris secara profesional.",
-    schedule: {
-      day: "Rabu & Sabtu",
-      time: "15.30 - 17.30 WIB",
-      location: "Lapangan Upacara SMKN 2 Surakarta",
-    },
-    instructor: "Pelatih Paskibra",
-  },
-  elmobpela: {
-    name: "ELMOBPELA",
-    category: "Organisasi",
-    maxMember: 20,
-    description:
-      "ELMOBPELA merupakan ekstrakurikuler pecinta alam yang berfokus pada kegiatan pendakian, konservasi lingkungan, survival, dan cinta alam.",
-    schedule: {
-      day: "Kamis",
-      time: "15.30 - 17.30 WIB",
-      location: "Basecamp Pecinta Alam SMKN 2",
-    },
-    instructor: "Tim Pembina Lingkungan",
-  },
-  pks: {
-    name: "PKS",
-    category: "Organisasi",
-    maxMember: 25,
-    description:
-      "PKS membina siswa dalam menjaga ketertiban, keamanan lingkungan sekolah, serta meningkatkan rasa tanggung jawab.",
-    schedule: {
-      day: "Senin & Kamis",
-      time: "15.30 - 17.00 WIB",
-      location: "Pos Keamanan Sekolah",
-    },
-    instructor: "Pelatih PKS",
-  },
-  rohkat: {
-    name: "ROHKAT",
-    category: "Organisasi",
-    maxMember: 20,
-    description:
-      "ROHKAT menjadi wadah pembinaan iman Katolik melalui kegiatan kerohanian, pelayanan, dan pengembangan karakter positif.",
-    schedule: {
-      day: "Jumat",
-      time: "12.30 - 14.00 WIB",
-      location: "Ruang Kerohanian Katolik",
-    },
-    instructor: "Pembina Agama Katolik",
-  },
-  rohkris: {
-    name: "ROHKRIS",
-    category: "Organisasi",
-    maxMember: 20,
-    description:
-      "ROHKRIS membimbing siswa Kristen dalam memperdalam iman, persekutuan, pelayanan, serta kegiatan rohani di sekolah.",
-    schedule: {
-      day: "Jumat",
-      time: "12.30 - 14.00 WIB",
-      location: "Ruang Persekutuan Kristen",
-    },
-    instructor: "Pembina Agama Kristen",
-  },
-  rohis: {
-    name: "ROHIS",
-    category: "Organisasi",
-    maxMember: 25,
-    description:
-      "ROHIS merupakan organisasi kerohanian Islam yang membina akhlak, ibadah, kajian keislaman, dan kepemimpinan siswa.",
-    schedule: {
-      day: "Jumat",
-      time: "13.00 - 15.00 WIB",
-      location: "Masjid SMKN 2 Surakarta",
-    },
-    instructor: "Pembina Agama Islam",
-  },
-};
-
 export default function ExtracurricularDetailPage() {
   const params = useParams();
   const slug = params?.slug?.toString()?.toLowerCase();
+  const { user, isAuthenticated } = useAuth();
 
-  const data = extracurricularDetails[slug] || {
-    name: slug ? slug.toUpperCase() : "Ekstrakurikuler",
-    category: "Ekstrakurikuler",
-    maxMember: 30,
-    description:
-      "Kegiatan pengembangan minat, bakat, dan potensi diri siswa SMKN 2 Surakarta.",
-    schedule: {
-      day: "Sesuai Jadwal",
-      time: "15.30 - 17.00 WIB",
-      location: "Lingkungan SMKN 2 Surakarta",
-    },
-    instructor: "Pembina Ekstrakurikuler",
+  const [detailData, setDetailData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isJoined, setIsJoined] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionMsg, setActionMsg] = useState("");
+
+  useEffect(() => {
+    async function fetchDetail() {
+      if (!slug) return;
+      setIsLoading(true);
+      try {
+        const res = await extracurricularService.getExtracurricularById(slug);
+        const item = res?.data || res;
+        if (item && (item.id || item.Id || item.name || item.Name)) {
+          setDetailData({
+            id: item.id || item.Id,
+            name: item.name || item.Name,
+            category: item.category || item.Category || "Ekstrakurikuler",
+            maxMembers: item.maxMembers ?? item.maxMember ?? item.MaxMembers ?? 0,
+            currentMembers: item.currentMembers ?? item.membersCount ?? item.extracurricularMembers?.length ?? 0,
+            description: item.description || item.Description || "",
+            imageUrl: item.imageUrl || item.ImageUrl || null,
+            instructor: item.managedByUser?.fullName || item.instructor || "Pembina Ekstrakurikuler",
+            schedule: item.schedule || {
+              day: "Sesuai Jadwal",
+              time: "15.30 - 17.00 WIB",
+              location: "Lingkungan SMKN 2 Surakarta",
+            },
+          });
+        } else {
+          setDetailData(null);
+        }
+      } catch (e) {
+        setDetailData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchDetail();
+  }, [slug]);
+
+  const data = detailData;
+
+  const handleJoinLeave = async () => {
+    if (!isAuthenticated) {
+      setActionMsg("Silakan login terlebih dahulu untuk mendaftar ekstrakurikuler.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setActionMsg("");
+    try {
+      if (isJoined) {
+        await extracurricularService.leaveExtracurricular(data.id || slug);
+        setIsJoined(false);
+        setActionMsg("Anda telah keluar dari ekstrakurikuler ini.");
+      } else {
+        await extracurricularService.joinExtracurricular(data.id || slug);
+        setIsJoined(true);
+        setActionMsg("Selamat! Anda berhasil bergabung ke ekstrakurikuler ini.");
+      }
+    } catch (err) {
+      setActionMsg(err?.response?.data?.message || err?.message || "Gagal memperbarui status keanggotaan.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -277,7 +110,24 @@ export default function ExtracurricularDetailPage() {
           </Link>
         </div>
 
-        {/* Detail Card Container */}
+        {isLoading ? (
+          <div className="rounded-3xl border border-gray-200 bg-white p-12 text-center animate-pulse">
+            <div className="h-8 w-48 bg-slate-200 rounded-lg mx-auto mb-4" />
+            <div className="h-4 w-96 bg-slate-100 rounded-lg mx-auto" />
+          </div>
+        ) : !data ? (
+          <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-12 text-center">
+            <p className="text-lg font-bold text-gray-800">Ekstrakurikuler tidak ditemukan</p>
+            <p className="mt-1 text-xs text-gray-500">Data ekstrakurikuler yang dicari tidak tersedia di server.</p>
+            <Link
+              href="/ekstrakurikuler"
+              className="mt-4 inline-block rounded-xl bg-[#2c1ee8] px-5 py-2.5 text-xs font-bold text-white shadow-sm"
+            >
+              Kembali ke Daftar
+            </Link>
+          </div>
+        ) : (
+        /* Detail Card Container */
         <div className="rounded-3xl border border-gray-200/80 bg-white p-6 sm:p-8 lg:p-10 shadow-sm">
           {/* Layout Grid: Desktop 2 Kolom, Tablet & Mobile 1 Kolom */}
           <div className="grid gap-8 lg:grid-cols-12 items-start">
@@ -369,8 +219,10 @@ export default function ExtracurricularDetailPage() {
                       </svg>
                     </div>
                     <div>
-                      <span className="block text-xs text-gray-500 font-medium">Max Member</span>
-                      <span className="block text-base font-extrabold text-[#2c1ee8]">{data.maxMember} Siswa</span>
+                      <span className="block text-xs text-gray-500 font-medium">Kapasitas Member</span>
+                      <span className="block text-base font-extrabold text-[#2c1ee8]">
+                        {data.currentMembers || 0} / {data.maxMembers || data.maxMember || 30} Siswa
+                      </span>
                     </div>
                   </div>
 
@@ -381,21 +233,41 @@ export default function ExtracurricularDetailPage() {
                     </div>
                   )}
                 </div>
+
+                {actionMsg && (
+                  <div className="mt-3 p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-[#2c1ee8] text-xs font-semibold">
+                    {actionMsg}
+                  </div>
+                )}
               </div>
 
-              {/* Tombol Contact Us (WhatsApp) */}
-              <div className="pt-4">
+              {/* Action Buttons (Join / Leave & Hubungi Pembina) */}
+              <div className="pt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleJoinLeave}
+                  disabled={isSubmitting}
+                  className={`rounded-2xl px-6 py-4 text-sm font-bold shadow-md transition-all cursor-pointer ${
+                    isJoined
+                      ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20"
+                      : "bg-[#2c1ee8] hover:bg-blue-700 text-white shadow-[#2c1ee8]/25"
+                  }`}
+                >
+                  {isSubmitting
+                    ? "Memproses..."
+                    : isJoined
+                    ? "Batalkan Pendaftaran / Keluar"
+                    : "Gabung Ekstrakurikuler Ini"}
+                </button>
+
                 <a
                   href="https://wa.me/6282322377070"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-2xl bg-[#2c1ee8] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[#2c1ee8]/25 hover:bg-blue-700 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200"
+                  className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white border border-gray-200 px-6 py-4 text-sm font-bold text-gray-700 hover:border-[#2c1ee8] hover:text-[#2c1ee8] transition-all duration-200"
                 >
                   {/* WhatsApp SVG Icon */}
-                  <svg
-                    className="w-6 h-6 fill-current"
-                    viewBox="0 0 24 24"
-                  >
+                  <svg className="w-5 h-5 fill-current text-emerald-600" viewBox="0 0 24 24">
                     <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-1.002 3.661 3.745-.985z" />
                   </svg>
                   <span>Hubungi Pembina</span>
@@ -404,6 +276,7 @@ export default function ExtracurricularDetailPage() {
             </div>
           </div>
         </div>
+        )}
       </main>
 
       <Footer />

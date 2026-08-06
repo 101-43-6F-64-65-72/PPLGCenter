@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
+import Skeleton from "@/components/ui/Skeleton";
 import { ROLE_LABELS } from "@/constants/userRoles";
 
 /**
@@ -39,12 +39,10 @@ export const AuthGuard = ({ children, allowedRoles = null }) => {
     return (
       <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4">
         <div className="flex flex-col items-center gap-4 p-8 rounded-3xl bg-white shadow-xl border border-gray-100 max-w-sm w-full text-center">
-          <LoadingSpinner size="lg" color="primary" />
-          <div>
-            <h3 className="text-lg font-bold text-gray-900">Memuat Sesi...</h3>
-            <p className="text-xs text-gray-500 mt-1">
-              Verifikasi identitas dan hak akses pengguna...
-            </p>
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="w-full space-y-2 flex flex-col items-center">
+            <Skeleton className="h-5 w-32 rounded-md" />
+            <Skeleton className="h-3.5 w-48 rounded-md" />
           </div>
         </div>
       </div>

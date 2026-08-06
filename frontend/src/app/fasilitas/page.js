@@ -100,7 +100,7 @@ export default function FasilitasPage() {
               </p>
             </div>
 
-            {/* Top Action Bar (Skeleton Load + Cart Drawer Trigger) */}
+            {/* Top Action Bar (Cart Drawer Trigger) */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsCartOpen(true)}
@@ -113,13 +113,6 @@ export default function FasilitasPage() {
                     {cartItems.length}
                   </span>
                 )}
-              </button>
-
-              <button
-                onClick={() => setIsLoading(!isLoading)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border border-gray-200 hover:border-gray-400 bg-gray-50 hover:bg-gray-100 text-gray-700 transition-all cursor-pointer shadow-sm active:scale-95"
-              >
-                <span>{isLoading ? "⚡ Stop Skeleton Load" : "↻ Demo Skeleton Load"}</span>
               </button>
             </div>
           </div>

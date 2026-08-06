@@ -1,51 +1,52 @@
-import api from "@/lib/api";
+import apiClient from "@/lib/api";
+import { API_ROUTES } from "@/constants/apiRoutes";
 
 /**
- * Pure Production Facility Service matching API Contract V1 (/api/v1/facilities, /api/v1/bookings)
+ * Pure Production Facility Service matching API Contract (/api/facilities, /api/bookings)
  * Communicates directly with .NET REST API without client-side mock data.
  */
 export const facilityService = {
   /**
    * Fetch all facilities & equipment items
-   * GET /api/v1/facilities
+   * GET /api/facilities
    */
   async getFacilities(params = {}) {
+    const endpoint = API_ROUTES.FACILITIES.LIST;
     try {
-      const response = await api.get("/facilities", { params });
+      const response = await apiClient.get(endpoint, { params });
       if (response && response.data) {
         return response.data;
       }
       return { places: [], items: [] };
     } catch (error) {
-      console.warn("Backend /facilities endpoint error:", error?.message);
       return { places: [], items: [] };
     }
   },
 
   /**
    * Fetch available slots for a facility
-   * GET /api/v1/facilities/:id/slots
+   * GET /api/facilities/:id/slots
    */
   async getFacilitySlots(facilityId) {
+    const endpoint = API_ROUTES.FACILITIES.SLOTS(facilityId);
     try {
-      const response = await api.get(`/facilities/${facilityId}/slots`);
+      const response = await apiClient.get(endpoint);
       return response?.data || [];
     } catch (error) {
-      console.warn(`Backend /facilities/${facilityId}/slots endpoint error:`, error?.message);
       return [];
     }
   },
 
   /**
-   * Submit facility booking (individual or bulk cart items)
-   * POST /api/v1/bookings
+   * Submit facility booking
+   * POST /api/bookings
    */
   async createBooking(bookingPayload) {
+    const endpoint = API_ROUTES.BOOKINGS.CREATE;
     try {
-      const response = await api.post("/bookings", bookingPayload);
+      const response = await apiClient.post(endpoint, bookingPayload);
       return response;
     } catch (error) {
-      console.warn("Backend /bookings endpoint error:", error?.message);
       return {
         success: false,
         message: error?.message || "Gagal menghubungi server booking",
@@ -55,29 +56,29 @@ export const facilityService = {
 
   /**
    * Fetch list of all facility bookings (For Admin / OSIS Panel)
-   * GET /api/v1/bookings
+   * GET /api/bookings
    */
   async getBookings(params = {}) {
+    const endpoint = API_ROUTES.BOOKINGS.LIST;
     try {
-      const response = await api.get("/bookings", { params });
+      const response = await apiClient.get(endpoint, { params });
       return response?.data || [];
     } catch (error) {
-      console.warn("Backend /bookings endpoint error:", error?.message);
       return [];
     }
   },
 
   /**
    * Update booking status (Approved / Rejected)
-   * PATCH /api/v1/bookings/:id/status
+   * PUT /api/bookings/:id/status
    */
-  async updateBookingStatus(bookingId, status, notes = "") {
+  async updateBookingStatus(bookingId, status, rejectionReason = "") {
+    const endpoint = `/api/bookings/${bookingId}/status`;
     try {
-      const response = await api.patch(`/bookings/${bookingId}/status`, { status, notes });
+      const response = await apiClient.put(endpoint, { status, rejectionReason });
       return response;
     } catch (error) {
-      console.warn(`Backend /bookings/${bookingId}/status endpoint error:`, error?.message);
-      return { success: false, message: error?.message };
+      return { success: false, message: error?.message || "Gagal memperbarui status booking" };
     }
   },
 };

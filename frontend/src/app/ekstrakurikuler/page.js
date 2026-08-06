@@ -5,74 +5,92 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { extracurricularService } from "@/services/extracurricularService";
-
-// TODO: Integrasi API daftar ekstrakurikuler
-// TODO: Integrasi halaman detail ekstrakurikuler
-// TODO: Integrasi jumlah anggota dari backend
+import EkstrakurikulerSkeleton from "@/components/ekstrakurikuler/EkstrakurikulerSkeleton";
 
 export default function EkstrakurikulerPage() {
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState("semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [apiState, setApiState] = useState("loading"); // "loading" | "success" | "empty" | "not_found" | "error"
+  const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    async function fetchFromApi() {
-      setIsLoading(true);
-      try {
-        const response = await extracurricularService.getExtracurriculars();
+  const fetchFromApi = async () => {
+    setIsLoading(true);
+    setApiState("loading");
+    setErrorMessage("");
 
-        let apiItems = [];
-        if (response && Array.isArray(response.data?.items)) {
-          apiItems = response.data.items;
-        } else if (response && Array.isArray(response.items)) {
-          apiItems = response.items;
-        } else if (Array.isArray(response)) {
-          apiItems = response;
-        }
+    try {
+      const response = await extracurricularService.getExtracurriculars();
 
-        if (apiItems && apiItems.length > 0) {
-          const categoryGroups = {};
-          apiItems.forEach((item) => {
-            const catName = item.category || "Umum";
-            const catId = catName.toLowerCase().replace(/[^a-z0-9]/g, "-");
-
-            if (!categoryGroups[catId]) {
-              categoryGroups[catId] = {
-                id: catId,
-                title: catName,
-                badgeBg: catName.toLowerCase().includes("olahraga")
-                  ? "bg-blue-50 text-[#2c1ee8] border-blue-200/80"
-                  : catName.toLowerCase().includes("seni")
-                  ? "bg-[#eef2ff] text-[#2c1ee8] border-[#c7d2fe]/80"
-                  : "bg-sky-50 text-[#2c1ee8] border-sky-200/80",
-                items: [],
-              };
-            }
-
-            categoryGroups[catId].items.push({
-              id: item.id || item.name?.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-              name: item.name,
-              category: item.category || catName,
-              maxMember: item.maxMembers || 30,
-              currentMembers: item.currentMembers || 0,
-              description: item.description || "Kegiatan ekstrakurikuler SMKN 2 Surakarta.",
-              imageUrl: item.imageUrl || null,
-            });
-          });
-
-          setCategories(Object.values(categoryGroups));
+      if (!response.success) {
+        if (response.statusCode === 404) {
+          setApiState("not_found");
+          setErrorMessage("No extracurricular data available.");
+          setCategories([]);
         } else {
+          setApiState("error");
+          setErrorMessage(response.message || "Gagal menghubungkan ke server ekstrakurikuler.");
           setCategories([]);
         }
-      } catch (err) {
-        console.error("Error fetching extracurriculars:", err);
-        setCategories([]);
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    }
 
+      const apiItems = response.data || [];
+
+      if (Array.isArray(apiItems) && apiItems.length > 0) {
+        const categoryGroups = {};
+        apiItems.forEach((item) => {
+          const catName = item.category || item.Category || "Umum";
+          const catId = catName.toLowerCase().replace(/[^a-z0-9]/g, "-");
+
+          if (!categoryGroups[catId]) {
+            categoryGroups[catId] = {
+              id: catId,
+              title: catName,
+              badgeBg: catName.toLowerCase().includes("olahraga")
+                ? "bg-blue-50 text-[#2c1ee8] border-blue-200/80"
+                : catName.toLowerCase().includes("seni")
+                ? "bg-[#eef2ff] text-[#2c1ee8] border-[#c7d2fe]/80"
+                : "bg-sky-50 text-[#2c1ee8] border-sky-200/80",
+              items: [],
+            };
+          }
+
+          const maxMembersCount = item.maxMembers ?? item.maxMember ?? item.MaxMembers ?? 0;
+          const membersCount = item.currentMembers ?? item.membersCount ?? item.extracurricularMembers?.length ?? 0;
+          const isEkstrakurikulerActive = item.isActive ?? item.IsActive ?? true;
+
+          categoryGroups[catId].items.push({
+            id: item.id || item.Id,
+            name: item.name || item.Name,
+            category: catName,
+            maxMembers: maxMembersCount,
+            currentMembers: membersCount,
+            isActive: isEkstrakurikulerActive,
+            managedByUserId: item.managedByUserId || item.ManagedByUserId || null,
+            description: item.description || item.Description || "",
+            imageUrl: item.imageUrl || item.ImageUrl || null,
+          });
+        });
+
+        setCategories(Object.values(categoryGroups));
+        setApiState("success");
+      } else {
+        setCategories([]);
+        setApiState("empty");
+        setErrorMessage("No extracurricular data available.");
+      }
+    } catch (err) {
+      setApiState("error");
+      setErrorMessage("Terjadi kesalahan yang tidak terduga saat memuat data.");
+      setCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchFromApi();
   }, []);
 
@@ -161,7 +179,7 @@ export default function EkstrakurikulerPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-base font-bold text-gray-900">Program Ekskul Terintegrasi</p>
+                  <p className="text-base font-bold text-gray-900">Daftar Ekstrakurikuler</p>
                   <p className="text-xs text-gray-500">Pilih ekstrakurikuler dan lihat detail lengkap</p>
                 </div>
               </div>
@@ -206,9 +224,46 @@ export default function EkstrakurikulerPage() {
         {/* Categories & Cards Section */}
         <div className="mt-10 space-y-12">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#2c1ee8] border-t-transparent" />
-              <p className="text-sm font-semibold text-gray-600">Memuat data ekstrakurikuler...</p>
+            <EkstrakurikulerSkeleton categoriesCount={2} itemsPerCategory={3} />
+          ) : apiState === "error" ? (
+            /* Error State UI with Retry Button */
+            <div className="rounded-2xl border border-red-200 bg-red-50/50 p-10 text-center shadow-xs">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-red-600 mb-4">
+                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Gagal Memuat Data Ekstrakurikuler</h3>
+              <p className="mt-1 text-sm text-gray-600 max-w-md mx-auto">
+                {errorMessage || "Layanan ekstrakurikuler sedang tidak dapat diakses atau terjadi masalah koneksi."}
+              </p>
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={fetchFromApi}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#2c1ee8] px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-700 transition-all cursor-pointer"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Coba Lagi</span>
+                </button>
+              </div>
+            </div>
+          ) : apiState === "empty" || apiState === "not_found" ? (
+            /* Friendly Empty / Not Found State */
+            <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center shadow-2xs">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[#2c1ee8] mb-4">
+                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="text-base font-bold text-gray-800">
+                {apiState === "not_found" ? "Data Tidak Ditemukan" : "Belum Ada Data Ekstrakurikuler"}
+              </h3>
+              <p className="mt-1 text-xs text-gray-500 max-w-sm mx-auto">
+                {errorMessage || "No extracurricular data available."}
+              </p>
             </div>
           ) : filteredCategories.length > 0 ? (
             filteredCategories.map((category) => (
@@ -271,15 +326,15 @@ export default function EkstrakurikulerPage() {
                         {/* Informasi Kategori & Max Member */}
                         <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/90 p-4 text-sm space-y-2.5">
                           <div className="flex items-center justify-between text-gray-500">
-                            <span className="font-medium text-gray-500 font-medium">Kategori</span>
+                            <span className="font-medium text-gray-500">Kategori</span>
                             <span className="font-semibold text-gray-800 truncate max-w-[140px] text-right">
                               {item.category}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-gray-500 pt-2 border-t border-slate-200/60">
-                            <span className="font-medium text-gray-500">Max Member</span>
+                            <span className="font-medium text-gray-500">Kapasitas Member</span>
                             <span className="font-extrabold text-[#2c1ee8] text-base">
-                              {item.maxMember} Siswa
+                              {item.currentMembers || 0} / {item.maxMembers} Siswa
                             </span>
                           </div>
                         </div>
@@ -305,7 +360,7 @@ export default function EkstrakurikulerPage() {
           ) : (
             <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center">
               <p className="text-base font-semibold text-gray-700">
-                Tidak ada ekstrakurikuler ditemukan
+                Tidak ada ekstrakurikuler cocok dengan pencarian
               </p>
               <p className="mt-1 text-xs text-gray-500">
                 Coba gunakan kata kunci pencarian yang berbeda atau hapus filter.
@@ -319,4 +374,3 @@ export default function EkstrakurikulerPage() {
     </div>
   );
 }
-

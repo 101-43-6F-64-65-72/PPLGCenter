@@ -82,7 +82,7 @@ export const LoginForm = () => {
         isLoading={isSubmitting}
         className="!bg-white !text-[#2c1ee8] hover:!bg-slate-100 shadow-xl shadow-white/20 font-bold py-4 text-base rounded-2xl"
       >
-        Masuk Ke Student Center
+        {isSubmitting ? "Memverifikasi Akun..." : "Masuk Ke Student Center"}
       </Button>
     </form>
   );

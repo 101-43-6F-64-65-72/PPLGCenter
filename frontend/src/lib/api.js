@@ -167,7 +167,14 @@ function formatApiError(error) {
 
   switch (status) {
     case 400:
-      friendlyMessage = data?.message || "Permintaan tidak valid.";
+      if (data?.errors && typeof data.errors === "object" && Object.keys(data.errors).length > 0) {
+        const errorList = Object.entries(data.errors)
+          .map(([key, val]) => Array.isArray(val) ? val.join(", ") : val)
+          .join("; ");
+        friendlyMessage = `Form tidak valid: ${errorList}`;
+      } else {
+        friendlyMessage = data?.message || data?.title || "Permintaan tidak valid.";
+      }
       break;
     case 401:
       friendlyMessage = data?.message || "Sesi Anda telah berakhir. Silakan login kembali.";

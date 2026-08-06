@@ -27,14 +27,12 @@ export default function AdminAnnouncementsTab() {
 
   const [announcements, setAnnouncements] = useState([]);
 
-  const handleCroppedImage = async (dataUrl) => {
+  const handleCroppedImage = async (dataUrl, metadata) => {
     // Store data URL for preview only — don't save to state yet
     setIsUploading(true);
     setCoverImageUrl(""); // reset while uploading
     try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], "mading-cover.jpg", { type: "image/jpeg" });
+      const file = metadata?.croppedFile || (await fetch(dataUrl).then((r) => r.blob()).then((blob) => new File([blob], "mading-cover.jpg", { type: "image/jpeg" })));
       const uploadedUrl = await uploadImageToCloudinary(file);
       // Only store if we got a valid HTTPS URL back
       if (uploadedUrl && uploadedUrl.startsWith("https://")) {

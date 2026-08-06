@@ -1,275 +1,659 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
+import {
+  RotateCw,
+  RotateCcw,
+  ZoomIn,
+  ZoomOut,
+  RefreshCw,
+  Check,
+  X,
+  Move,
+  Crop as CropIcon,
+  Upload,
+  Trash2,
+  Sparkles,
+} from "lucide-react";
 
 /**
- * ImageCropUploader - Standalone image picker & cropper using HTML5 Canvas.
- * Aspect ratio is 16:9 to match mading card cover image.
- * No external library needed.
+ * Aspect ratio definitions supported by the interactive cropper
  */
-export default function ImageCropUploader({ onCropped, label = "Gambar Sampul Mading" }) {
+const ASPECT_RATIOS = [
+  { id: "16:9", label: "16:9", ratio: 16 / 9 },
+  { id: "4:3", label: "4:3", ratio: 4 / 3 },
+  { id: "1:1", label: "1:1", ratio: 1 },
+  { id: "3:4", label: "3:4", ratio: 3 / 4 },
+  { id: "free", label: "Free", ratio: null },
+];
+
+/**
+ * Interactive ImageCropUploader Component for Student Center
+ *
+ * Styled to perfectly match Student Center UI design system:
+ * - Brand Color `#2c1ee8` & blue gradients
+ * - Smooth interactive crop area (drag & resize with 8 handles)
+ * - Zoom (100%-300%), Pan, Rotations (0°, 90°, 180°, 270°)
+ * - Real-time instant live preview & metadata
+ * - High-precision canvas crop output (Blob, File, DataURL)
+ */
+export default function ImageCropUploader({
+  onCropped,
+  label = "Gambar Sampul Mading",
+  defaultAspectRatio = "16:9",
+}) {
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
-  const imgRef = useRef(null);
 
-  const [rawSrc, setRawSrc] = useState(null);         // raw loaded image src
-  const [preview, setPreview] = useState(null);        // final cropped Data URL
-  const [showCropper, setShowCropper] = useState(false);
+  // Loaded raw image state
+  const [rawFile, setRawFile] = useState(null);
+  const [rawSrc, setRawSrc] = useState(null);
+  const [rawImageObj, setRawImageObj] = useState(null);
 
-  // Drag state
-  const [isDragging, setIsDragging] = useState(false);
-  const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 300, h: 169 }); // 16:9 box
-  const dragStart = useRef(null);
-  const resizeHandle = useRef(null);
+  // Final cropped output preview DataURL
+  const [previewDataUrl, setPreviewDataUrl] = useState(null);
+  const [croppedMetadata, setCroppedMetadata] = useState(null);
 
-  const IMG_W = 560;  // canvas display width
-  const IMG_H = 315;  // canvas display height (16:9)
-  const ASPECT = 16 / 9;
+  // Cropper Modal UI state
+  const [showModal, setShowModal] = useState(false);
 
-  const loadImageFromFile = (file) => {
+  // Transformation states
+  const [aspectRatioId, setAspectRatioId] = useState(defaultAspectRatio);
+  const [rotation, setRotation] = useState(0); // 0, 90, 180, 270
+  const [zoom, setZoom] = useState(1.0); // 1.0 to 3.0
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+
+  // Crop box rectangle (in canvas viewport coordinates)
+  const [cropBox, setCropBox] = useState({ x: 40, y: 30, w: 480, h: 270 });
+
+  // Real-time live preview state
+  const [livePreviewUrl, setLivePreviewUrl] = useState(null);
+
+  // Interaction dragging states
+  const [isInteracting, setIsInteracting] = useState(false);
+  const activeModeRef = useRef(null); // 'move-crop' | 'pan-image' | handle ('nw', 'se', etc.)
+  const dragStartRef = useRef(null);
+
+  // Viewport dimensions for display canvas
+  const VIEWPORT_W = 580;
+  const VIEWPORT_H = 360;
+
+  // 1. Load image file
+  const handleFileSelect = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
+    setRawFile(file);
+
     const reader = new FileReader();
     reader.onload = (e) => {
-      setRawSrc(e.target.result);
-      setShowCropper(true);
-      // Reset crop box
-      setCropBox({ x: 0, y: 0, w: IMG_W, h: Math.round(IMG_W / ASPECT) });
+      const src = e.target.result;
+      setRawSrc(src);
+
+      const img = new window.Image();
+      img.onload = () => {
+        setRawImageObj(img);
+        resetTransformationState(img, defaultAspectRatio);
+        setShowModal(true);
+      };
+      img.src = src;
     };
     reader.readAsDataURL(file);
   };
 
-  // Draw canvas whenever cropBox changes
-  useEffect(() => {
-    if (!showCropper || !rawSrc || !canvasRef.current) return;
+  // Reset transformation & crop box to centered defaults
+  const resetTransformationState = (
+    img = rawImageObj,
+    ratioId = aspectRatioId,
+  ) => {
+    setRotation(0);
+    setZoom(1.0);
+    setPan({ x: 0, y: 0 });
+    setAspectRatioId(ratioId);
+
+    if (!img) return;
+
+    const selected =
+      ASPECT_RATIOS.find((r) => r.id === ratioId) || ASPECT_RATIOS[0];
+    const targetRatio = selected.ratio || 16 / 9;
+
+    let w = Math.min(VIEWPORT_W - 60, 460);
+    let h = Math.round(w / targetRatio);
+
+    if (h > VIEWPORT_H - 50) {
+      h = VIEWPORT_H - 50;
+      w = Math.round(h * targetRatio);
+    }
+
+    const x = Math.round((VIEWPORT_W - w) / 2);
+    const y = Math.round((VIEWPORT_H - h) / 2);
+
+    setCropBox({ x, y, w, h });
+  };
+
+  // Handle Aspect Ratio Change
+  const handleAspectRatioChange = (newRatioId) => {
+    setAspectRatioId(newRatioId);
+    const selected = ASPECT_RATIOS.find((r) => r.id === newRatioId);
+    if (!selected || !selected.ratio) return;
+
+    const targetRatio = selected.ratio;
+    let newW = cropBox.w;
+    let newH = Math.round(newW / targetRatio);
+
+    if (newH > VIEWPORT_H - 20) {
+      newH = VIEWPORT_H - 20;
+      newW = Math.round(newH * targetRatio);
+    }
+
+    let newX = cropBox.x;
+    let newY = cropBox.y;
+
+    if (newX + newW > VIEWPORT_W) newX = Math.max(0, VIEWPORT_W - newW);
+    if (newY + newH > VIEWPORT_H) newY = Math.max(0, VIEWPORT_H - newH);
+
+    setCropBox({ x: newX, y: newY, w: newW, h: newH });
+  };
+
+  // Rotate handler
+  const handleRotate = (dir) => {
+    setRotation((prev) => {
+      let next = dir === "cw" ? prev + 90 : prev - 90;
+      if (next >= 360) next = 0;
+      if (next < 0) next = 270;
+      return next;
+    });
+  };
+
+  // 2. Draw canvas function (Image + Transform + Dark Mask + Crop Box + Grid + Handles)
+  const drawMainCanvas = useCallback(() => {
+    if (!canvasRef.current || !rawImageObj) return;
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    const img = new window.Image();
-    img.onload = () => {
-      canvas.width = IMG_W;
-      canvas.height = IMG_H;
-      ctx.clearRect(0, 0, IMG_W, IMG_H);
-      ctx.drawImage(img, 0, 0, IMG_W, IMG_H);
+    if (!ctx) return;
 
-      // Overlay dimmer
-      ctx.fillStyle = "rgba(0,0,0,0.45)";
-      ctx.fillRect(0, 0, IMG_W, IMG_H);
+    canvas.width = VIEWPORT_W;
+    canvas.height = VIEWPORT_H;
 
-      // Clear crop box
-      ctx.clearRect(cropBox.x, cropBox.y, cropBox.w, cropBox.h);
-      ctx.drawImage(img, cropBox.x, cropBox.y, cropBox.w, cropBox.h, cropBox.x, cropBox.y, cropBox.w, cropBox.h);
+    // Dark canvas background
+    ctx.fillStyle = "#0f172a";
+    ctx.fillRect(0, 0, VIEWPORT_W, VIEWPORT_H);
 
-      // Crop box border
-      ctx.strokeStyle = "#6366f1";
+    // Calculate base scale for image inside viewport
+    const isSwapped = rotation === 90 || rotation === 270;
+    const imgW = isSwapped
+      ? rawImageObj.naturalHeight
+      : rawImageObj.naturalWidth;
+    const imgH = isSwapped
+      ? rawImageObj.naturalWidth
+      : rawImageObj.naturalHeight;
+
+    const baseScale = Math.min(
+      (VIEWPORT_W - 30) / imgW,
+      (VIEWPORT_H - 30) / imgH,
+    );
+
+    const drawW = rawImageObj.naturalWidth * baseScale;
+    const drawH = rawImageObj.naturalHeight * baseScale;
+
+    // Render transformed background image
+    ctx.save();
+    ctx.translate(VIEWPORT_W / 2 + pan.x, VIEWPORT_H / 2 + pan.y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(zoom, zoom);
+    ctx.drawImage(rawImageObj, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+
+    // Dark mask outside crop box
+    ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+    ctx.fillRect(0, 0, VIEWPORT_W, VIEWPORT_H);
+
+    // Clear crop area to reveal clear image
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cropBox.x, cropBox.y, cropBox.w, cropBox.h);
+    ctx.clip();
+
+    // Redraw image inside clip
+    ctx.translate(VIEWPORT_W / 2 + pan.x, VIEWPORT_H / 2 + pan.y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(zoom, zoom);
+    ctx.drawImage(rawImageObj, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+
+    // Draw Crop Box Border (Brand #2c1ee8 border)
+    ctx.save();
+    ctx.strokeStyle = "#2c1ee8";
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(cropBox.x, cropBox.y, cropBox.w, cropBox.h);
+
+    // Inner subtle border
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cropBox.x + 1, cropBox.y + 1, cropBox.w - 2, cropBox.h - 2);
+
+    // Rule of thirds grid lines
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+
+    const thirdW = cropBox.w / 3;
+    const thirdH = cropBox.h / 3;
+
+    // Vertical & Horizontal grid lines
+    ctx.beginPath();
+    ctx.moveTo(cropBox.x + thirdW, cropBox.y);
+    ctx.lineTo(cropBox.x + thirdW, cropBox.y + cropBox.h);
+    ctx.moveTo(cropBox.x + thirdW * 2, cropBox.y);
+    ctx.lineTo(cropBox.x + thirdW * 2, cropBox.y + cropBox.h);
+
+    ctx.moveTo(cropBox.x, cropBox.y + thirdH);
+    ctx.lineTo(cropBox.x + cropBox.w, cropBox.y + thirdH);
+    ctx.moveTo(cropBox.x, cropBox.y + thirdH * 2);
+    ctx.lineTo(cropBox.x + cropBox.w, cropBox.y + thirdH * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw 8 Handles (Corners & Edges)
+    const handleSize = 10;
+    const halfH = handleSize / 2;
+
+    const handles = [
+      { id: "nw", x: cropBox.x - halfH, y: cropBox.y - halfH },
+      { id: "ne", x: cropBox.x + cropBox.w - halfH, y: cropBox.y - halfH },
+      { id: "sw", x: cropBox.x - halfH, y: cropBox.y + cropBox.h - halfH },
+      {
+        id: "se",
+        x: cropBox.x + cropBox.w - halfH,
+        y: cropBox.y + cropBox.h - halfH,
+      },
+      { id: "n", x: cropBox.x + cropBox.w / 2 - halfH, y: cropBox.y - halfH },
+      {
+        id: "s",
+        x: cropBox.x + cropBox.w / 2 - halfH,
+        y: cropBox.y + cropBox.h - halfH,
+      },
+      { id: "w", x: cropBox.x - halfH, y: cropBox.y + cropBox.h / 2 - halfH },
+      {
+        id: "e",
+        x: cropBox.x + cropBox.w - halfH,
+        y: cropBox.y + cropBox.h / 2 - halfH,
+      },
+    ];
+
+    handles.forEach((h) => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(h.x, h.y, handleSize, handleSize);
+      ctx.strokeStyle = "#2c1ee8";
       ctx.lineWidth = 2;
-      ctx.setLineDash([6, 3]);
-      ctx.strokeRect(cropBox.x, cropBox.y, cropBox.w, cropBox.h);
+      ctx.strokeRect(h.x, h.y, handleSize, handleSize);
+    });
 
-      // Corner handles
-      const hs = 8;
-      ctx.fillStyle = "#6366f1";
-      ctx.setLineDash([]);
-      const corners = [
-        [cropBox.x, cropBox.y],
-        [cropBox.x + cropBox.w - hs, cropBox.y],
-        [cropBox.x, cropBox.y + cropBox.h - hs],
-        [cropBox.x + cropBox.w - hs, cropBox.y + cropBox.h - hs],
-      ];
-      corners.forEach(([cx, cy]) => ctx.fillRect(cx, cy, hs, hs));
-    };
-    img.src = rawSrc;
-  }, [rawSrc, showCropper, cropBox]);
+    ctx.restore();
+  }, [rawImageObj, rotation, zoom, pan, cropBox]);
 
-  // Mouse pointer management
+  // 3. Render Real-Time Live Preview Thumbnail
+  const updateLivePreview = useCallback(() => {
+    if (!rawImageObj) return;
+
+    try {
+      const isSwapped = rotation === 90 || rotation === 270;
+      const imgW = isSwapped
+        ? rawImageObj.naturalHeight
+        : rawImageObj.naturalWidth;
+      const imgH = isSwapped
+        ? rawImageObj.naturalWidth
+        : rawImageObj.naturalHeight;
+
+      const baseScale = Math.min(
+        (VIEWPORT_W - 30) / imgW,
+        (VIEWPORT_H - 30) / imgH,
+      );
+
+      const drawW = rawImageObj.naturalWidth * baseScale;
+      const drawH = rawImageObj.naturalHeight * baseScale;
+
+      const previewCanvas = document.createElement("canvas");
+      const previewW = Math.max(160, Math.round(cropBox.w));
+      const previewH = Math.max(90, Math.round(cropBox.h));
+      previewCanvas.width = previewW;
+      previewCanvas.height = previewH;
+
+      const pCtx = previewCanvas.getContext("2d");
+      if (!pCtx) return;
+
+      pCtx.fillStyle = "#000000";
+      pCtx.fillRect(0, 0, previewW, previewH);
+
+      const scaleX = previewW / cropBox.w;
+      const scaleY = previewH / cropBox.h;
+
+      pCtx.save();
+      pCtx.scale(scaleX, scaleY);
+      pCtx.translate(-cropBox.x, -cropBox.y);
+      pCtx.translate(VIEWPORT_W / 2 + pan.x, VIEWPORT_H / 2 + pan.y);
+      pCtx.rotate((rotation * Math.PI) / 180);
+      pCtx.scale(zoom, zoom);
+      pCtx.drawImage(rawImageObj, -drawW / 2, -drawH / 2, drawW, drawH);
+      pCtx.restore();
+
+      const url = previewCanvas.toDataURL("image/jpeg", 0.85);
+      setLivePreviewUrl(url);
+    } catch {
+      // Ignore preview errors
+    }
+  }, [rawImageObj, rotation, zoom, pan, cropBox]);
+
+  useEffect(() => {
+    if (showModal) {
+      drawMainCanvas();
+      updateLivePreview();
+    }
+  }, [showModal, drawMainCanvas, updateLivePreview]);
+
+  // Pointer position helper
   const getMousePos = (e) => {
+    if (!canvasRef.current) return { x: 0, y: 0 };
     const rect = canvasRef.current.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return {
-      x: (e.clientX - rect.left) * (IMG_W / rect.width),
-      y: (e.clientY - rect.top) * (IMG_H / rect.height),
+      x: (clientX - rect.left) * (VIEWPORT_W / rect.width),
+      y: (clientY - rect.top) * (VIEWPORT_H / rect.height),
     };
   };
 
-  const getResizeHandle = (pos) => {
-    const hs = 12;
+  const getHandleAtPos = (pos) => {
+    const handleSize = 16;
+    const halfH = handleSize / 2;
     const { x: bx, y: by, w: bw, h: bh } = cropBox;
-    if (pos.x >= bx + bw - hs && pos.y >= by + bh - hs) return "se";
-    if (pos.x <= bx + hs && pos.y >= by + bh - hs) return "sw";
-    if (pos.x >= bx + bw - hs && pos.y <= by + hs) return "ne";
-    if (pos.x <= bx + hs && pos.y <= by + hs) return "nw";
-    return null;
-  };
 
-  const onMouseDown = (e) => {
-    const pos = getMousePos(e);
-    const handle = getResizeHandle(pos);
-    if (handle) {
-      resizeHandle.current = handle;
-    } else if (
-      pos.x >= cropBox.x && pos.x <= cropBox.x + cropBox.w &&
-      pos.y >= cropBox.y && pos.y <= cropBox.y + cropBox.h
-    ) {
-      resizeHandle.current = "move";
-    } else {
-      return;
-    }
-    dragStart.current = { pos, box: { ...cropBox } };
-    setIsDragging(true);
-  };
+    if (Math.abs(pos.x - bx) <= halfH && Math.abs(pos.y - by) <= halfH)
+      return "nw";
+    if (Math.abs(pos.x - (bx + bw)) <= halfH && Math.abs(pos.y - by) <= halfH)
+      return "ne";
+    if (Math.abs(pos.x - bx) <= halfH && Math.abs(pos.y - (by + bh)) <= halfH)
+      return "sw";
+    if (
+      Math.abs(pos.x - (bx + bw)) <= halfH &&
+      Math.abs(pos.y - (by + bh)) <= halfH
+    )
+      return "se";
 
-  const onMouseMove = (e) => {
-    if (!isDragging || !dragStart.current) return;
-    const pos = getMousePos(e);
-    const dx = pos.x - dragStart.current.pos.x;
-    const dy = pos.y - dragStart.current.pos.y;
-    const orig = dragStart.current.box;
+    if (
+      Math.abs(pos.x - (bx + bw / 2)) <= halfH &&
+      Math.abs(pos.y - by) <= halfH
+    )
+      return "n";
+    if (
+      Math.abs(pos.x - (bx + bw / 2)) <= halfH &&
+      Math.abs(pos.y - (by + bh)) <= halfH
+    )
+      return "s";
+    if (
+      Math.abs(pos.x - bx) <= halfH &&
+      Math.abs(pos.y - (by + bh / 2)) <= halfH
+    )
+      return "w";
+    if (
+      Math.abs(pos.x - (bx + bw)) <= halfH &&
+      Math.abs(pos.y - (by + bh / 2)) <= halfH
+    )
+      return "e";
 
-    let { x, y, w, h } = orig;
-
-    if (resizeHandle.current === "move") {
-      x = Math.max(0, Math.min(IMG_W - w, orig.x + dx));
-      y = Math.max(0, Math.min(IMG_H - h, orig.y + dy));
-    } else if (resizeHandle.current === "se") {
-      w = Math.max(80, Math.min(IMG_W - orig.x, orig.w + dx));
-      h = Math.round(w / ASPECT);
-      if (orig.y + h > IMG_H) { h = IMG_H - orig.y; w = Math.round(h * ASPECT); }
-    } else if (resizeHandle.current === "sw") {
-      w = Math.max(80, orig.w - dx);
-      h = Math.round(w / ASPECT);
-      x = orig.x + orig.w - w;
-      if (x < 0) { x = 0; w = orig.x + orig.w; h = Math.round(w / ASPECT); }
-    } else if (resizeHandle.current === "ne") {
-      w = Math.max(80, orig.w + dx);
-      h = Math.round(w / ASPECT);
-      y = orig.y + orig.h - h;
-      if (y < 0) { y = 0; h = orig.y + orig.h; w = Math.round(h * ASPECT); }
-    } else if (resizeHandle.current === "nw") {
-      w = Math.max(80, orig.w - dx);
-      h = Math.round(w / ASPECT);
-      x = orig.x + orig.w - w;
-      y = orig.y + orig.h - h;
-      if (x < 0) { x = 0; w = orig.x + orig.w; h = Math.round(w / ASPECT); y = orig.y + orig.h - h; }
-      if (y < 0) { y = 0; h = orig.y + orig.h; w = Math.round(h * ASPECT); }
+    if (pos.x >= bx && pos.x <= bx + bw && pos.y >= by && pos.y <= by + bh) {
+      return "move-crop";
     }
 
-    setCropBox({ x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) });
+    return "pan-image";
   };
 
-  const onMouseUp = () => {
-    setIsDragging(false);
-    dragStart.current = null;
-    resizeHandle.current = null;
-  };
-
-  const applyCrop = () => {
-    if (!rawSrc) return;
-    const img = new window.Image();
-    img.onload = () => {
-      // Map canvas coords back to actual image dimensions
-      const scaleX = img.naturalWidth / IMG_W;
-      const scaleY = img.naturalHeight / IMG_H;
-      const sx = Math.round(cropBox.x * scaleX);
-      const sy = Math.round(cropBox.y * scaleY);
-      const sw = Math.round(cropBox.w * scaleX);
-      const sh = Math.round(cropBox.h * scaleY);
-
-      const out = document.createElement("canvas");
-      out.width = sw;
-      out.height = sh;
-      out.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-      const croppedDataUrl = out.toDataURL("image/jpeg", 0.9);
-      setPreview(croppedDataUrl);
-      setShowCropper(false);
-      onCropped && onCropped(croppedDataUrl);
+  const onPointerDown = (e) => {
+    if (!showModal) return;
+    const pos = getMousePos(e);
+    const mode = getHandleAtPos(pos);
+    activeModeRef.current = mode;
+    dragStartRef.current = {
+      pos,
+      cropBox: { ...cropBox },
+      pan: { ...pan },
     };
-    img.src = rawSrc;
+    setIsInteracting(true);
   };
 
-  const resetCrop = () => {
+  const onPointerMove = (e) => {
+    if (!isInteracting || !dragStartRef.current || !activeModeRef.current)
+      return;
+    const pos = getMousePos(e);
+    const dx = pos.x - dragStartRef.current.pos.x;
+    const dy = pos.y - dragStartRef.current.pos.y;
+    const origBox = dragStartRef.current.cropBox;
+    const origPan = dragStartRef.current.pan;
+    const mode = activeModeRef.current;
+
+    const currentRatioObj = ASPECT_RATIOS.find((r) => r.id === aspectRatioId);
+    const targetRatio = currentRatioObj ? currentRatioObj.ratio : null;
+
+    if (mode === "move-crop") {
+      let newX = Math.max(0, Math.min(VIEWPORT_W - origBox.w, origBox.x + dx));
+      let newY = Math.max(0, Math.min(VIEWPORT_H - origBox.h, origBox.y + dy));
+      setCropBox((prev) => ({
+        ...prev,
+        x: Math.round(newX),
+        y: Math.round(newY),
+      }));
+    } else if (mode === "pan-image") {
+      setPan({ x: Math.round(origPan.x + dx), y: Math.round(origPan.y + dy) });
+    } else {
+      let { x, y, w, h } = origBox;
+
+      if (mode.includes("e")) w = Math.max(60, origBox.w + dx);
+      if (mode.includes("s")) h = Math.max(60, origBox.h + dy);
+      if (mode.includes("w")) {
+        const potentialW = Math.max(60, origBox.w - dx);
+        x = origBox.x + (origBox.w - potentialW);
+        w = potentialW;
+      }
+      if (mode.includes("n")) {
+        const potentialH = Math.max(60, origBox.h - dy);
+        y = origBox.y + (origBox.h - potentialH);
+        h = potentialH;
+      }
+
+      if (targetRatio) {
+        if (mode === "e" || mode === "w" || mode === "se" || mode === "sw") {
+          h = Math.round(w / targetRatio);
+        } else {
+          w = Math.round(h * targetRatio);
+        }
+      }
+
+      if (x < 0) x = 0;
+      if (y < 0) y = 0;
+      if (x + w > VIEWPORT_W) w = VIEWPORT_W - x;
+      if (y + h > VIEWPORT_H) h = VIEWPORT_H - y;
+
+      setCropBox({
+        x: Math.round(x),
+        y: Math.round(y),
+        w: Math.round(w),
+        h: Math.round(h),
+      });
+    }
+  };
+
+  const onPointerUp = () => {
+    setIsInteracting(false);
+    activeModeRef.current = null;
+    dragStartRef.current = null;
+  };
+
+  const onWheel = (e) => {
+    e.preventDefault();
+    const zoomDelta = e.deltaY < 0 ? 0.08 : -0.08;
+    setZoom((prev) =>
+      Math.min(3.0, Math.max(1.0, parseFloat((prev + zoomDelta).toFixed(2)))),
+    );
+  };
+
+  // High-Precision Crop Export
+  const applyCrop = () => {
+    if (!rawImageObj) return;
+
+    const isSwapped = rotation === 90 || rotation === 270;
+    const imgW = isSwapped
+      ? rawImageObj.naturalHeight
+      : rawImageObj.naturalWidth;
+    const imgH = isSwapped
+      ? rawImageObj.naturalWidth
+      : rawImageObj.naturalHeight;
+
+    const baseScale = Math.min(
+      (VIEWPORT_W - 30) / imgW,
+      (VIEWPORT_H - 30) / imgH,
+    );
+
+    const drawW = rawImageObj.naturalWidth * baseScale;
+    const drawH = rawImageObj.naturalHeight * baseScale;
+
+    const scaleToNatural = rawImageObj.naturalWidth / drawW;
+    const outW = Math.max(100, Math.round(cropBox.w * scaleToNatural));
+    const outH = Math.max(100, Math.round(cropBox.h * scaleToNatural));
+
+    const outCanvas = document.createElement("canvas");
+    outCanvas.width = outW;
+    outCanvas.height = outH;
+
+    const ctx = outCanvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    const scaleX = outW / cropBox.w;
+    const scaleY = outH / cropBox.h;
+
+    ctx.save();
+    ctx.scale(scaleX, scaleY);
+    ctx.translate(-cropBox.x, -cropBox.y);
+    ctx.translate(VIEWPORT_W / 2 + pan.x, VIEWPORT_H / 2 + pan.y);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(zoom, zoom);
+    ctx.drawImage(rawImageObj, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+
+    const croppedDataUrl = outCanvas.toDataURL("image/jpeg", 0.92);
+
+    outCanvas.toBlob(
+      (blob) => {
+        const file = new File([blob], `mading-crop-${Date.now()}.jpg`, {
+          type: "image/jpeg",
+        });
+
+        const currentRatioObj = ASPECT_RATIOS.find(
+          (r) => r.id === aspectRatioId,
+        );
+        const metadata = {
+          croppedDataUrl,
+          croppedBlob: blob,
+          croppedFile: file,
+          width: outW,
+          height: outH,
+          aspectRatio: currentRatioObj?.label || aspectRatioId,
+          cropBox: { ...cropBox },
+          zoom,
+          rotation,
+        };
+
+        setPreviewDataUrl(croppedDataUrl);
+        setCroppedMetadata(metadata);
+        setShowModal(false);
+
+        if (onCropped) {
+          onCropped(croppedDataUrl, metadata);
+        }
+      },
+      "image/jpeg",
+      0.92,
+    );
+  };
+
+  const handleFullReset = () => {
+    setRawFile(null);
     setRawSrc(null);
-    setPreview(null);
-    setShowCropper(false);
+    setRawImageObj(null);
+    setPreviewDataUrl(null);
+    setCroppedMetadata(null);
+    setShowModal(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
-    <div>
-      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+    <div className="w-full space-y-1.5">
+      <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
         {label}
       </label>
 
-      {/* Preview */}
-      {preview && !showCropper && (
-        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-gray-200 mb-2 bg-gray-100 group">
-          <img src={preview} alt="Sampul" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => setShowCropper(true)}
-              className="px-3 py-1.5 bg-white text-gray-900 text-xs font-bold rounded-xl shadow cursor-pointer"
-            >
-              ✂ Crop Ulang
-            </button>
-            <button
-              type="button"
-              onClick={resetCrop}
-              className="px-3 py-1.5 bg-rose-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer"
-            >
-              🗑 Hapus
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Crop UI */}
-      {showCropper && rawSrc && (
-        <div className="rounded-2xl overflow-hidden border border-indigo-200 bg-gray-900 mb-2 shadow-lg">
-          <div className="px-4 py-2.5 bg-indigo-600 text-white text-xs font-bold flex items-center justify-between">
-            <span>✂ Sesuaikan Area Gambar (Seret/Resize Kotak Crop)</span>
-            <span className="text-indigo-200 font-normal">Rasio 16:9</span>
-          </div>
-          <canvas
-            ref={canvasRef}
-            width={IMG_W}
-            height={IMG_H}
-            className="w-full cursor-crosshair block"
-            style={{ maxHeight: "260px", objectFit: "contain" }}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseUp}
+      {/* 1. Final Cropped Result Preview Card */}
+      {previewDataUrl && !showModal && (
+        <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-slate-900 group transition-all">
+          <img
+            src={previewDataUrl}
+            alt="Hasil Crop Mading"
+            className="w-full h-full object-cover"
           />
-          <div className="flex items-center justify-end gap-2 px-4 py-3 bg-gray-800">
+
+          {/* Metadata Badge */}
+          {croppedMetadata && (
+            <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-2 border border-white/10 shadow-md">
+              <span className="text-blue-400 font-bold">
+                {croppedMetadata.aspectRatio}
+              </span>
+              <span>•</span>
+              <span>
+                {croppedMetadata.width} × {croppedMetadata.height} px
+              </span>
+            </div>
+          )}
+
+          {/* Action Overlay */}
+          <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2.5">
             <button
               type="button"
-              onClick={resetCrop}
-              className="px-4 py-1.5 rounded-xl bg-gray-600 hover:bg-gray-500 text-white text-xs font-bold cursor-pointer transition-colors"
+              onClick={() => setShowModal(true)}
+              className="px-4 py-2 bg-[#2c1ee8] hover:bg-[#2218a3] text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
             >
-              Batal
+              <CropIcon className="w-4 h-4" />
+              <span>✂ Crop Ulang</span>
             </button>
             <button
               type="button"
-              onClick={applyCrop}
-              className="px-5 py-1.5 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-bold cursor-pointer transition-colors flex items-center gap-1"
+              onClick={handleFullReset}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
             >
-              ✓ Terapkan Crop
+              <Trash2 className="w-4 h-4" />
+              <span>Hapus</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* File picker button */}
-      {!showCropper && (
+      {/* 2. File Picker Input Button */}
+      {!previewDataUrl && !showModal && (
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-full flex flex-col items-center justify-center gap-2 py-5 rounded-2xl border-2 border-dashed border-gray-200 hover:border-indigo-400 hover:bg-indigo-50/40 text-gray-400 hover:text-indigo-600 transition-all cursor-pointer"
+          className="w-full flex flex-col items-center justify-center gap-2 py-7 px-4 rounded-2xl border-2 border-dashed border-gray-200 hover:border-[#2c1ee8] hover:bg-blue-50/40 text-gray-400 hover:text-[#2c1ee8] transition-all cursor-pointer group"
         >
-          <svg className="w-8 h-8 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+          <div className="w-11 h-11 rounded-2xl bg-blue-50 text-[#2c1ee8] group-hover:scale-110 transition-transform flex items-center justify-center shadow-xs">
+            <Upload className="w-5 h-5" />
+          </div>
           <div className="text-center">
-            <p className="text-xs font-semibold">{preview ? "Ganti Gambar Sampul" : "Pilih Gambar dari Perangkat"}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">PNG, JPG, WEBP — Max 5MB</p>
+            <p className="text-xs font-bold text-gray-800 group-hover:text-[#2c1ee8]">
+              Pilih Gambar Sampul Mading
+            </p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              PNG, JPG, WEBP — Potong Interaktif (Free, 16:9, 4:3, 1:1, 3:4)
+            </p>
           </div>
         </button>
       )}
@@ -279,8 +663,205 @@ export default function ImageCropUploader({ onCropped, label = "Gambar Sampul Ma
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => loadImageFromFile(e.target.files?.[0])}
+        onChange={(e) => handleFileSelect(e.target.files?.[0])}
       />
+
+      {/* 3. Interactive Crop Workspace Modal (Matching Student Center UI System) */}
+      {showModal && rawImageObj && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+            {/* Student Center Blue Gradient Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-[#2c1ee8] to-blue-700 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-md">
+                  <CropIcon className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold">
+                    Editor Crop & Framing Gambar
+                  </h2>
+                  <p className="text-xs text-blue-100">
+                    Atur area potong, rasio aspek, zoom, dan rotasi gambar
+                    secara interaktif
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="p-1.5 rounded-full hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 overflow-y-auto flex-1 p-6 gap-6 bg-slate-50">
+              {/* Left Column: Interactive Canvas Viewport */}
+              <div className="lg:col-span-8 flex flex-col items-center justify-center space-y-4">
+                <div className="relative rounded-2xl overflow-hidden border border-slate-700 shadow-xl bg-slate-950 select-none">
+                  <canvas
+                    ref={canvasRef}
+                    width={VIEWPORT_W}
+                    height={VIEWPORT_H}
+                    onMouseDown={onPointerDown}
+                    onMouseMove={onPointerMove}
+                    onMouseUp={onPointerUp}
+                    onMouseLeave={onPointerUp}
+                    onTouchStart={onPointerDown}
+                    onTouchMove={onPointerMove}
+                    onTouchEnd={onPointerUp}
+                    onWheel={onWheel}
+                    className="cursor-crosshair block touch-none"
+                    style={{
+                      width: `${VIEWPORT_W}px`,
+                      height: `${VIEWPORT_H}px`,
+                    }}
+                  />
+
+                  {/* Top-right Canvas Hint Badge */}
+                  <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-medium text-slate-300 border border-slate-700 flex items-center gap-1.5 pointer-events-none">
+                    <Move className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Scroll: Zoom | Drag: Geser/Resize</span>
+                  </div>
+                </div>
+
+                {/* Quick Transformation Toolbar */}
+                <div className="flex flex-wrap items-center justify-between w-full max-w-[580px] px-4 py-3 rounded-2xl bg-white border border-gray-200 shadow-sm gap-3 text-xs">
+                  {/* Zoom Slider */}
+                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                    <ZoomOut className="w-4 h-4 text-gray-400 shrink-0" />
+                    <input
+                      type="range"
+                      min="1.0"
+                      max="3.0"
+                      step="0.05"
+                      value={zoom}
+                      onChange={(e) => setZoom(parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#2c1ee8]"
+                    />
+                    <ZoomIn className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="text-gray-700 font-bold w-12 text-right">
+                      {Math.round(zoom * 100)}%
+                    </span>
+                  </div>
+
+                  {/* Rotation Controls */}
+                  <div className="flex items-center gap-1 bg-gray-100 border border-gray-200 rounded-xl p-1">
+                    <button
+                      type="button"
+                      onClick={() => handleRotate("ccw")}
+                      title="Putar 90° Kiri"
+                      className="p-1.5 rounded-lg text-gray-700 hover:text-[#2c1ee8] hover:bg-white cursor-pointer transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                    <span className="text-[11px] font-bold text-[#2c1ee8] px-1">
+                      {rotation}°
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRotate("cw")}
+                      title="Putar 90° Kanan"
+                      className="p-1.5 rounded-lg text-gray-700 hover:text-[#2c1ee8] hover:bg-white cursor-pointer transition-colors"
+                    >
+                      <RotateCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Aspect Ratio & Live Preview Panel */}
+              <div className="lg:col-span-4 flex flex-col justify-between space-y-6 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <div className="space-y-5">
+                  {/* Aspect Ratio Selector */}
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-2">
+                      Rasio Aspek Gambar
+                    </label>
+                    <div className="grid grid-cols-5 gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
+                      {ASPECT_RATIOS.map((r) => (
+                        <button
+                          key={r.id}
+                          type="button"
+                          onClick={() => handleAspectRatioChange(r.id)}
+                          className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            aspectRatioId === r.id
+                              ? "bg-[#2c1ee8] text-white shadow-xs"
+                              : "text-gray-600 hover:text-gray-900 hover:bg-white"
+                          }`}
+                        >
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Real-Time Live Preview Thumbnail */}
+                  <div>
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-2 flex items-center justify-between">
+                      <span>Preview Instan</span>
+                      <span className="text-[11px] font-normal text-[#2c1ee8]">
+                        {Math.round(cropBox.w)} × {Math.round(cropBox.h)} px
+                      </span>
+                    </label>
+
+                    <div className="w-full aspect-video rounded-xl overflow-hidden border border-gray-200 bg-slate-900 relative flex items-center justify-center shadow-inner">
+                      {livePreviewUrl ? (
+                        <img
+                          src={livePreviewUrl}
+                          alt="Live Preview"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-xs text-gray-400">
+                          Memuat preview...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer Action Buttons */}
+                <div className="space-y-2.5 pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2">
+                    {/* Reset Button */}
+                    <button
+                      type="button"
+                      onClick={() => resetTransformationState()}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Reset</span>
+                    </button>
+
+                    {/* Cancel Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowModal(false)}
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Batal</span>
+                    </button>
+                  </div>
+
+                  {/* Crop / Apply Button */}
+                  <button
+                    type="button"
+                    onClick={applyCrop}
+                    className="w-full py-3 px-5 rounded-xl bg-[#2c1ee8] hover:bg-[#2218a3] text-white text-xs font-bold shadow-md shadow-[#2c1ee8]/20 cursor-pointer transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Terapkan Crop Gambar</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import userService from "@/services/userService";
 import { UserPlus, Users, Trash2, ShieldCheck, Mail, Lock, User, RefreshCw } from "lucide-react";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 
 const ROLE_OPTIONS = [
   { value: 0, label: "Admin (Waka Kesiswaan)", badgeBg: "bg-purple-100 text-purple-700 border-purple-200" },
@@ -40,7 +41,7 @@ export default function AdminUsersTab() {
       }
       setUsers(userItems);
     } catch (err) {
-      console.error("Gagal memuat daftar pengguna:", err);
+      setUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -193,8 +194,8 @@ export default function AdminUsersTab() {
         </div>
 
         {isLoading ? (
-          <div className="p-12 text-center text-sm font-semibold text-gray-500">
-            Memuat data pengguna dari server backend...
+          <div className="p-4">
+            <TableSkeleton rows={5} cols={4} />
           </div>
         ) : users.length > 0 ? (
           <div className="overflow-x-auto">

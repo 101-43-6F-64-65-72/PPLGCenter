@@ -1,58 +1,123 @@
-import api from "@/lib/api";
+import apiClient from "@/lib/api";
+import { API_ROUTES } from "@/constants/apiRoutes";
 
 /**
- * Pure Production Proposal Service matching API Contract V1 (/api/v1/proposals)
+ * Pure Production Proposal Service matching API Contract (/api/proposals)
  * Communicates directly with .NET REST API without client-side mock data.
  */
 export const proposalService = {
   /**
    * Fetch list of all proposals
-   * GET /api/v1/proposals
+   * GET /api/proposals
    */
   async getProposals(params = {}) {
+    const endpoint = API_ROUTES.PROPOSALS.LIST;
     try {
-      const response = await api.get("/proposals", { params });
-      return response?.data || [];
+      const response = await apiClient.get(endpoint, { params });
+      const items = response?.data?.items || response?.items || response?.data || (Array.isArray(response) ? response : []);
+      return {
+        success: true,
+        data: items,
+        raw: response,
+      };
     } catch (error) {
-      console.warn("Backend /proposals endpoint error:", error?.message);
-      return [];
+      const statusCode = error?.statusCode || error?.response?.status || 500;
+      return {
+        success: false,
+        statusCode,
+        message: error?.message || "Gagal memuat proposal",
+        data: [],
+      };
     }
   },
 
   /**
-   * Create new proposal with file attachment
-   * POST /api/v1/proposals
+   * Create new proposal
+   * POST /api/proposals
+   * Body: { title, description, fileUrl }
    */
-  async createProposal(formData) {
+  async createProposal(data) {
+    const endpoint = API_ROUTES.PROPOSALS.LIST;
     try {
-      const response = await api.post("/proposals", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      return response;
+      const response = await apiClient.post(endpoint, data);
+      return {
+        success: true,
+        data: response?.data || response,
+        message: response?.message || "Proposal berhasil diajukan",
+      };
     } catch (error) {
-      console.warn("Backend POST /proposals endpoint error:", error?.message);
+      const statusCode = error?.statusCode || error?.response?.status || 500;
       return {
         success: false,
+        statusCode,
         message: error?.message || "Gagal mengajukan proposal",
       };
     }
   },
 
   /**
-   * Update proposal status (Acc / Revision / Reject)
-   * PATCH /api/v1/proposals/:id/status
+   * Update existing proposal
+   * PUT /api/proposals/:id
    */
-  async updateProposalStatus(proposalId, status, notes = "") {
+  async updateProposal(id, data) {
+    const endpoint = API_ROUTES.PROPOSALS.DETAIL(id);
     try {
-      const response = await api.patch(`/proposals/${proposalId}/status`, { status, notes });
-      return response;
+      const response = await apiClient.put(endpoint, data);
+      return {
+        success: true,
+        data: response?.data || response,
+        message: response?.message || "Proposal berhasil diperbarui",
+      };
     } catch (error) {
-      console.warn(`Backend PATCH /proposals/${proposalId}/status error:`, error?.message);
+      const statusCode = error?.statusCode || error?.response?.status || 500;
       return {
         success: false,
-        message: error?.message,
+        statusCode,
+        message: error?.message || "Gagal memperbarui proposal",
+      };
+    }
+  },
+
+  /**
+   * Delete proposal
+   * DELETE /api/proposals/:id
+   */
+  async deleteProposal(id) {
+    const endpoint = API_ROUTES.PROPOSALS.DETAIL(id);
+    try {
+      const response = await apiClient.delete(endpoint);
+      return {
+        success: true,
+        message: response?.message || "Proposal berhasil dihapus",
+      };
+    } catch (error) {
+      const statusCode = error?.statusCode || error?.response?.status || 500;
+      return {
+        success: false,
+        statusCode,
+        message: error?.message || "Gagal menghapus proposal",
+      };
+    }
+  },
+
+  /**
+   * Review proposal status (Admin / Teacher only)
+   * PATCH /api/proposals/:id/review
+   */
+  async updateProposalStatus(proposalId, status, rejectionReason = "") {
+    const endpoint = API_ROUTES.PROPOSALS.REVIEW(proposalId);
+    try {
+      const response = await apiClient.patch(endpoint, { status, rejectionReason });
+      return {
+        success: true,
+        data: response?.data || response,
+      };
+    } catch (error) {
+      const statusCode = error?.statusCode || error?.response?.status || 500;
+      return {
+        success: false,
+        statusCode,
+        message: error?.message || "Gagal memperbarui status proposal",
       };
     }
   },

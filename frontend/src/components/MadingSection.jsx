@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import MadingCollage from "./MadingCollage";
 import { useAnnouncements } from "@/features/announcement/hooks/useAnnouncements";
-import LoadingSpinner from "@/components/common/LoadingSpinner";
 import AnnouncementSkeleton from "@/features/announcement/components/AnnouncementSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import ErrorAlert from "@/components/common/ErrorAlert";
