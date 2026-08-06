@@ -9,17 +9,17 @@ export default function ExtracurricularCollage() {
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform -rotate-1 hover:rotate-0 transition-transform duration-300',
     },
     {
-      src: '/images/paskibra.jpg',
+      src: '/images/eskul.jpeg',
       alt: 'Ekstrakurikuler Paskibra',
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform rotate-2 hover:rotate-0 transition-transform duration-300',
     },
     {
-      src: '/images/pmr.jpg',
+      src: '/images/mading.jpeg',
       alt: 'Ekstrakurikuler PMR',
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform rotate-1 hover:rotate-0 transition-transform duration-300',
     },
     {
-      src: '/images/pramuka.jpg',
+      src: '/images/fasilitas.jpeg',
       alt: 'Ekstrakurikuler Pramuka',
       className: 'rounded-[28px] sm:rounded-[36px] shadow-sm transform -rotate-2 hover:rotate-0 transition-transform duration-300',
     },

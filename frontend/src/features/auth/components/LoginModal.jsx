@@ -59,6 +59,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
               src="/images/hero-building.png"
               alt="SMK Negeri 2 Surakarta Building"
               fill
+              sizes="100vw"
               className="object-cover object-top brightness-60"
               priority
             />
@@ -77,6 +78,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
               src="/images/hero-building.png"
               alt="SMK Negeri 2 Surakarta Building"
               fill
+              sizes="100vw"
               className="object-cover object-bottom brightness-60"
               priority
             />
@@ -113,6 +115,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                     alt="Logo SMKN 2 Surakarta"
                     width={42}
                     height={42}
+                    style={{ width: "auto", height: "auto" }}
                     className="object-contain"
                     priority
                   />

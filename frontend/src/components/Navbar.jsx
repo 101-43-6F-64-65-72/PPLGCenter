@@ -122,6 +122,7 @@ export default function Navbar() {
                 src="/images/logo.png"
                 alt="SMK Negeri 2 Surakarta Logo"
                 fill
+                sizes="48px"
                 className="object-contain"
                 priority
               />
