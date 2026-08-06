@@ -23,6 +23,7 @@ export default function Navbar() {
     { name: "Fasilitas", path: "/fasilitas" },
     { name: "Ekstrakurikuler", path: "/ekstrakurikuler" },
     { name: "Mading", path: "/mading" },
+    { name: "Kalender", path: "/kalender" },
   ];
 
   // Add Proposal menu only for authenticated users
