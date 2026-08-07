@@ -43,4 +43,9 @@ export const API_ROUTES = {
     LIST: "/api/users",
     DETAIL: (id) => `/api/users/${id}`,
   },
+  CALENDAR: {
+    LIST: "/api/calendar",
+    UPCOMING: "/api/calendar/upcoming",
+    DETAIL: (id) => `/api/calendar/${id}`,
+  },
 };

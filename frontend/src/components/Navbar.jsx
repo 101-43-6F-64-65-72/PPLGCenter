@@ -111,7 +111,7 @@ export default function Navbar() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md py-3.5 px-4 sm:px-6 lg:px-8 xl:px-12 border-b border-gray-100 shadow-sm transition-all duration-300">
-        <div className="max-w-7xl w-full mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-7xl w-full mx-auto flex items-center justify-between gap-2">
           {/* Left Side: Logo & School Name */}
           <Link
             href="/"
