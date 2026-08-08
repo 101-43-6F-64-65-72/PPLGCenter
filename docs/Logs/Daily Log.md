@@ -1,0 +1,258 @@
+---
+tags:
+  - daily-log
+aliases:
+  - Daily Log
+---
+
+# Daily Log
+
+Development activity log for StudentCenter.
+
+## 2026-07-27
+
+- Initial backend project created with [[Clean Architecture]] structure
+- [[Database Schema]] defined: `Users` and `Announcements` tables
+- [[Entity - User]] and [[Entity - Announcement]] created
+- EF Core migrations applied: `InitialCreate`, `AddAnnouncementEntity`
+- [[Authentication]] implemented: JWT login + `/api/auth/me`
+- [[Feature - Announcements]] implemented: Full CRUD with pagination
+- Admin seed data configured
+- [[API Contract]] agreed and frozen (V1)
+- Frontend landing page built with hero section and extracurricular preview
+
+## 2026-07-28
+
+- Obsidian vault documentation created
+- Knowledge base structured with MOCs and cross-links
+- Performed complete Backend Quality Audit
+- Resolved 4 High/Critical issues: request validation, global exception middleware, negative skip pagination, and EF seeder MigrateAsync migration transition
+- Created [[Quality Audit]] report note
+- Implemented [[Feature - User Management]]: full CRUD with pagination, search, filtering, role-based access (Admin only)
+- Enhanced `ExceptionHandlingMiddleware` to catch `ValidationException` and return 400 Bad Request
+- Implemented [[Feature - Dashboard]] Summary API: `GET /api/dashboard` with concurrent count queries, `AsNoTracking()`, and latest 5 announcements
+
+## 2026-07-29
+
+- Created `docs/Engineering/` directory with AI engineering workflow and standards
+- Created [[Definition of Done]] checklist for feature completion criteria
+- Created [[Feature Template]] with 14-step standard implementation workflow
+- Created [[Backend Standards]] documenting all project conventions and rules
+- Created [[Prompt Library]] with 9 reusable prompt placeholders
+- Created [[AI Collaboration]] guide for OpenCode project collaboration
+- Created [[Quality Checklist]] grouped by Architecture, Security, Performance, Maintainability, Documentation, Production Readiness
+- Created [[MOC - Engineering]] Map of Content
+- Updated [[Home]] with Engineering section and MOC link
+- Implemented [[Feature - Materials]]: complete Material Management module
+  - Created `Material` entity in Domain layer
+  - Created `MaterialConfiguration` with Fluent API (indexes: UploadedAt, Subject, Grade, UploadedByUserId)
+  - Created DTOs: `CreateMaterialRequest`, `UpdateMaterialRequest`, `MaterialResponse`
+  - Created `IMaterialService` interface and `MaterialService` implementation
+  - Created `MaterialsController` with 5 endpoints (GET list, GET by ID, POST, PUT, DELETE)
+  - Ownership enforcement: Teachers can only edit/delete own materials, Admin bypasses
+  - Pagination with subject and grade filtering, newest-first ordering
+  - EF Core migration `AddMaterialEntity` generated
+  - Registered `IMaterialService` in DI
+  - Created [[Entity - Material]] and [[Feature - Materials]] documentation
+  - Updated [[API Contract]], [[Database Schema]], MOCs, and [[Home]]
+- Implemented [[Feature - Assignment]]: complete Assignment Management module
+  - Created `Assignment` entity (Title, Description, Subject, Grade, DueDate, MaxScore)
+  - Created `Submission` entity (FileUrl, Notes, Score, Feedback, GradedAt)
+  - Created `AssignmentConfiguration` and `SubmissionConfiguration` with Fluent API
+  - Unique constraint on `(AssignmentId, StudentId)` to prevent duplicate submissions
+  - Created 6 DTOs: `CreateAssignmentRequest`, `UpdateAssignmentRequest`, `AssignmentResponse`, `SubmitAssignmentRequest`, `SubmissionResponse`, `GradeSubmissionRequest`
+  - Created `IAssignmentService`/`AssignmentService` and `ISubmissionService`/`SubmissionService`
+  - Created `AssignmentsController` with 9 endpoints (CRUD + submit + grade)
+  - Ownership enforcement: Teachers edit/delete own assignments, grade own assignment submissions
+  - Students can submit once per assignment; `InvalidOperationException` on duplicate
+  - EF Core migration `AddAssignmentAndSubmissionEntities` generated
+  - Created [[Entity - Assignment]], [[Entity - Submission]], and [[Feature - Assignment]] documentation
+  - Updated [[API Contract]], [[Database Schema]], MOCs, and [[Home]]
+- Implemented [[Feature - School Calendar]]: complete School Calendar module
+  - Created `CalendarEvent` entity (Title, Description, StartDate, EndDate, Location, Category, IsAllDay)
+  - Created `CalendarEventConfiguration` with Fluent API and index on StartDate, EndDate, Category, CreatedByUserId
+  - Created DTOs: `CreateCalendarEventRequest`, `UpdateCalendarEventRequest`, `CalendarEventResponse` with date validation (`EndDate >= StartDate`)
+  - Created `ICalendarService` and `CalendarService` with upcoming events sorting
+  - Created `CalendarController` with 6 endpoints (GET, GET upcoming, GET by ID, POST, PUT, DELETE)
+  - Ownership enforcement: Teachers can edit/delete own calendar events, Admins unrestricted
+  - EF Core migration `AddCalendarEventEntity` generated
+  - Created [[Entity - Calendar Event]] and [[Feature - School Calendar]] documentation
+  - Updated [[API Contract]], [[Database Schema]], MOCs, and [[Home]]
+- Enhanced announcements into a complete [[Feature - Digital Bulletin Board]]
+  - Created `AnnouncementComment` entity (Content, CreatedAt, AnnouncementId, UserId)
+  - Created `AnnouncementReaction` entity (Type, CreatedAt, AnnouncementId, UserId)
+  - Created configurations with Restrict delete behavior and unique index for reactions
+  - Created DTOs: `CommentRequest`, `CommentResponse`, `ReactionRequest`, `AnnouncementFeedResponse`
+  - Created `IAnnouncementCommentService`/`AnnouncementCommentService`
+  - Created `IAnnouncementReactionService`/`AnnouncementReactionService`
+  - Extended `IAnnouncementService` and `AnnouncementService` with feed query (optimized projection, counts, and latest 3 comments to avoid N+1)
+  - Updated `AnnouncementController` with 6 bulletin board endpoints (feed, comments, reactions)
+  - Registered services in DI
+  - EF Core migration `AddAnnouncementInteractionEntities` generated
+  - Created [[Entity - Announcement Comment]], [[Entity - Announcement Reaction]], and [[Feature - Digital Bulletin Board]] documentation
+  - Updated [[API Contract]], [[Database Schema]], MOCs, and [[Home]]
+- Implemented [[Feature - Notification]]: complete notification management module
+  - Created `Notification` entity (Title, Message, Type, ReferenceId, ReferenceType, IsRead) and `NotificationType` enum
+  - Created `NotificationConfiguration` with Fluent API and indexes on UserId, CreatedAt, IsRead, Type
+  - Created DTOs: `NotificationResponse`, `CreateNotificationRequest`, `MarkNotificationReadRequest`
+  - Created `INotificationService` interface and `NotificationService` implementation (NotifyUser, NotifyUsers, MarkAsRead, MarkAllAsRead, GetMyNotifications)
+  - Created `NotificationController` with 4 endpoints (GET list, GET unread count, PATCH read, PATCH read-all)
+   - Strict ownership checks: users can only access their own notifications, validated in service layer
+   - Registered service in DI
+   - EF Core migration `AddNotificationEntity` generated
+   - Created [[Entity - Notification]] and [[Feature - Notification]] documentation
+   - Updated [[API Contract]], [[Database Schema]], MOCs, and [[Home]]
+- Implemented [[Feature - Proposals]]: complete Proposal Management module
+  - Created `ProposalStatus` enum (Pending, Approved, Rejected)
+  - Created `Proposal` entity (Title, Description, FileUrl, Status, RejectionReason, SubmittedByUserId, ReviewedByUserId, ReviewedAt)
+  - Created `ProposalConfiguration` with Fluent API (indexes: SubmittedByUserId, Status, CreatedAt, ReviewedByUserId)
+  - Created DTOs: `CreateProposalRequest`, `UpdateProposalRequest`, `ReviewProposalRequest`, `ProposalResponse`
+  - Created `IProposalService` interface and `ProposalService` implementation
+  - Created `ProposalController` with 6 endpoints (GET list, GET by ID, POST, PUT, DELETE, PATCH review)
+  - Business rules enforced:
+    - Only OSIS members can create proposals
+    - Only Admin and Teacher can review proposals
+    - Approved/Rejected proposals cannot be edited or deleted
+    - Review can only happen once per proposal
+    - Ownership validation in service layer (OSIS can only edit/delete own proposals)
+  - Pagination with status and submitter filtering, newest-first ordering
+  - Validation attributes on DTOs for input sanitization
+  - `AsNoTracking()` for all read queries
+  - EF Core migration `AddProposalEntity` generated (migration ID: 20260730044227)
+  - Registered `IProposalService` in DI
+  - Created [[Entity - Proposal]] documentation
+  - Updated [[Feature - Proposals]] from "Not started" to "Implemented"
+   - Updated [[API Contract]], [[Database Schema]], MOCs ([[MOC - Backend]], [[MOC - Features]], [[MOC - Database]]), and [[Home]]
+   - Build succeeded with no errors
+- Implemented [[Feature - Extracurricular]]: complete Extracurricular Management module (Phase 018)
+  - Created `Extracurricular` entity (Name, Description, ImageUrl, Category, MaxMembers, IsActive, ManagedByUserId)
+  - Created `ExtracurricularMember` entity (ExtracurricularId, StudentId, JoinedAt)
+  - Created `ExtracurricularConfiguration` with Fluent API (indexes: Name, Category, IsActive, ManagedByUserId, CreatedAt)
+  - Created `ExtracurricularMemberConfiguration` with Fluent API (unique constraint: ExtracurricularId, StudentId; CASCADE delete on extracurricular)
+  - Created DTOs: `CreateExtracurricularRequest`, `UpdateExtracurricularRequest`, `ExtracurricularResponse`, `ExtracurricularMemberResponse`
+  - Created `IExtracurricularService` interface and `ExtracurricularService` implementation
+  - Created `ExtracurricularController` with 8 endpoints (GET list, GET by ID, POST, PUT, DELETE, POST join, DELETE leave, GET members)
+  - Business rules enforced:
+    - Only Admin and Teacher can create/update/delete extracurriculars
+    - Only students can join/leave
+    - Cannot join inactive extracurriculars
+    - Cannot join when MaxMembers reached
+    - Cannot join twice (duplicate prevention via unique constraint)
+    - Ownership validation in service layer (manager/admin only for updates/deletes)
+  - Pagination with category and active status filtering, newest-first ordering
+  - Member listing with pagination
+  - Calculated `CurrentMembers` field in response DTOs
+  - Validation attributes on DTOs for input sanitization
+  - `AsNoTracking()` for all read queries
+  - EF Core migration `AddExtracurricularEntities` generated (migration ID: 20260730055028)
+  - Registered `IExtracurricularService` in DI
+  - Created [[Entity - Extracurricular]] and [[Entity - Extracurricular Member]] documentation
+  - Updated [[Feature - Extracurricular]] from "Planned" to "Implemented"
+  - Updated [[API Contract]] with 8 new endpoints
+  - Updated [[Database Schema]] with Extracurriculars and ExtracurricularMembers tables
+   - Updated MOCs ([[MOC - Backend]], [[MOC - Features]], [[MOC - Database]])
+   - Updated [[Home]] with entity links
+   - Build succeeded with no errors (20.97s, 2 pre-existing warnings)
+- Implemented [[Feature - Notification]] Integration (Phase 019)
+  - Integrated notifications into 7 business workflows via Service Layer injection
+  - Modified `AssignmentService`:
+    - Added `INotificationService` dependency injection
+    - NotifyUsersAsync on assignment creation → all students receive "New Assignment" notification
+  - Modified `SubmissionService`:
+    - Added `INotificationService` dependency injection
+    - NotifyUserAsync on submission grading → student receives "Assignment Graded" with score/feedback
+  - Modified `ProposalService`:
+    - Added `INotificationService` dependency injection
+    - NotifyUserAsync on proposal approval → OSIS member receives "Proposal Approved" notification
+    - NotifyUserAsync on proposal rejection → OSIS member receives "Proposal Rejected" with reason
+  - Modified `BookingService`:
+    - Added `INotificationService` dependency injection
+    - NotifyUserAsync on booking approval → requester receives "Booking Approved" notification
+    - NotifyUserAsync on booking rejection → requester receives "Booking Rejected" with reason
+  - Modified `AnnouncementService`:
+    - Added `INotificationService` dependency injection
+    - NotifyUsersAsync on announcement creation → all users receive "New Announcement" notification
+  - Architecture compliance:
+    - No changes to Controllers (endpoints remain unchanged)
+    - All notification triggers in Service Layer only
+    - Reused INotificationService interface (no duplication)
+    - Notification payloads consistent: Title, Message, NotificationType, ReferenceId, ReferenceType
+    - DI registration order maintained (INotificationService before dependent services)
+  - Updated Feature - Notification with integration matrix and workflow documentation
+  - Updated Backend Overview with notification integration flow diagram and workflow table
+  - Added using statements for UserRole and NotificationType enums to 3 services
+  - Build succeeded with 0 errors (12.45s, 2 pre-existing warnings)
+  - No migrations needed (existing Notification infrastructure reused)
+   - Updated [[Feature - Notification]] documentation with current integrations
+   - Updated [[Backend Overview]] with notification flow and integrated workflows
+- Implemented [[Feature - Search]] & Standardized Pagination (Phase 020)
+  - Created `PagedRequest` DTO with normalization (page, pageSize defaults and bounds)
+  - Created `SearchResponse` and `SearchResult` DTOs for grouped search results
+  - Created `ISearchService` interface with SearchAsync method
+  - Created `SearchService` implementation:
+    - Parallel async searches via Task.WhenAll (7 entity types)
+    - LINQ-only queries (no Elasticsearch or external engines)
+    - AsNoTracking() on all read queries
+    - Projection to DTOs (entities never exposed)
+    - Role-based authorization for Proposals (OSIS own only, Admin/Teacher all)
+    - Active filtering for Facilities and Extracurriculars
+    - Searchable fields: Title, Description/Content for all entities
+  - Created `SearchController` with GET /api/search endpoint
+    - Query parameters: keyword (required), page (default 1), pageSize (default 10, max 100)
+    - Validates keyword is not empty
+    - Passes CurrentUserService data for authorization
+  - Enhanced `IAnnouncementService` with SearchAsync method (keyword, isPinned filters)
+  - Enhanced `AnnouncementService` with SearchAsync implementation
+  - Enhanced `IAssignmentService` with SearchAsync method (keyword, subject, grade, dueBefore, dueAfter filters)
+  - Enhanced `AssignmentService` with SearchAsync implementation
+  - Registered `ISearchService` in DI
+  - Architecture compliance:
+    - LINQ-only search (no external engines)
+    - Standardized PagedRequest/PagedResult models
+    - All authorization in service layer
+    - Grouped results by entity type
+    - No breaking changes to existing endpoints
+    - Parallel searches for better performance
+  - Created comprehensive [[Feature - Search]] documentation with:
+    - Global search endpoint details
+    - Search matrix (entities, filters, authorization)
+    - Pagination models (PagedRequest, PagedResult)
+    - Performance optimizations (AsNoTracking, projections, parallel queries)
+  - Updated [[API Contract]] with /api/search and /api/announcements/search, /api/assignments/search endpoints
+  - Updated [[Backend Overview]] with search architecture flow diagram and pagination details
+  - Updated [[Home]] with Search feature link
+  - Updated [[MOC - Features]] to move Search to Implemented
+  - Build succeeded with 0 errors (20.30s, 7 warnings for null-reference checks - safe in context)
+  - No migrations needed (search uses existing entities)
+   - Future search enhancements planned for Materials, Calendar, Facilities, Proposals, Extracurriculars
+- Implemented [[Feature - Attendance]]: complete Attendance Management System (Phase 021)
+  - Created `AttendanceStatus` enum (Present, Late, Absent, Permission, Sick)
+  - Created `Attendance` entity (StudentId, AttendanceDate, Status, Notes, RecordedByUserId)
+  - Created `AttendanceConfiguration` with Fluent API
+    - DeleteBehavior.Restrict for Student and RecordedByUser
+    - Unique composite index on (StudentId, AttendanceDate)
+    - Indexes on StudentId, AttendanceDate, Status, RecordedByUserId
+  - Created DTOs: `CreateAttendanceRequest`, `UpdateAttendanceRequest`, `AttendanceResponse`
+  - Created `IAttendanceService` interface and `AttendanceService` implementation
+  - Created `AttendanceController` with 7 endpoints (GET all, GET by ID, GET by student, GET by date, POST, PUT, DELETE)
+  - Business rules enforced:
+    - Teachers can record attendance
+    - Teachers can edit/delete only attendance they created
+    - Admin can manage everything
+    - Students read only
+    - OSIS has no access
+    - Duplicate attendance per student per day throws InvalidOperationException
+    - AttendanceDate cannot be more than 30 days in the future
+  - Optimization:
+    - AsNoTracking() on all read queries
+    - Projection DTOs in all queries
+    - Async LINQ throughout
+    - No N+1 queries
+  - EF Core migration `AddAttendanceEntity` generated (migration ID: 20260730081029)
+  - Registered `IAttendanceService` in DI
+  - Created [[Entity - Attendance]] documentation
+  - Created [[Feature - Attendance]] documentation
+  - Updated [[API Contract]] with 7 attendance endpoints
+  - Updated [[Database Schema]] with Attendances table and unique constraint
+  - Updated [[MOC - Features]], [[MOC - Backend]], [[MOC - Database]], and [[Home]]
+  - Build succeeded with 0 errors
