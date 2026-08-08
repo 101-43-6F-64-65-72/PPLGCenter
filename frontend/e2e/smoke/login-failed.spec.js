@@ -9,8 +9,9 @@ test('failed login', async ({ page }) => {
   });
   await page.goto('/login');
 
-  await page.locator('input[name="email"]').fill('wrong@studentcenter.id');
+  await page.locator('select').selectOption('Admin');
+  await page.locator('input[name="identifier"]').fill('wrong@studentcenter.id');
   await page.locator('input[name="password"]').fill('wrongpassword');
-  await page.getByRole('button', { name: /masuk ke student center/i }).click();
-  await expect(page.getByText(/login gagal|invalid email or password|gagal masuk/i).first()).toBeVisible();
+  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('[role="alert"]').first()).toBeVisible({ timeout: 10000 });
 });

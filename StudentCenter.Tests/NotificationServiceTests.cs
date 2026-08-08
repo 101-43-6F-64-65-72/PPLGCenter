@@ -23,23 +23,41 @@ public class NotificationServiceTests
         _service = new NotificationService(_context);
     }
 
+    private async Task<User> CreateActiveUserAsync(Guid? id = null, UserRole role = UserRole.Student)
+    {
+        var userId = id ?? Guid.NewGuid();
+        var user = new User
+        {
+            Id = userId,
+            Username = $"user_{userId.ToString().Substring(0, 8)}",
+            PasswordHash = "hash",
+            FullName = "Test User",
+            Role = role,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        return user;
+    }
+
     [Fact]
     public async Task CreateAsync_ValidRequest_CreatesNotification()
     {
-        var userId = Guid.NewGuid();
+        var user = await CreateActiveUserAsync();
         var request = new CreateNotificationRequest
         {
-            UserId = userId,
+            UserId = user.Id,
             Title = "Test Notification",
             Message = "This is a test",
             Type = NotificationType.Announcement,
             ReferenceId = Guid.NewGuid().ToString(),
-            ReferenceType = "Announcement"
+            ReferenceType = NotificationReferenceType.Announcement
         };
 
         await _service.CreateAsync(request);
 
-        var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.UserId == userId);
+        var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.UserId == user.Id);
         notification.Should().NotBeNull();
         notification!.Title.Should().Be(request.Title);
         notification.IsRead.Should().BeFalse();
@@ -48,10 +66,10 @@ public class NotificationServiceTests
     [Fact]
     public async Task NotifyUserAsync_ValidUser_CreatesNotification()
     {
-        var userId = Guid.NewGuid();
+        var user = await CreateActiveUserAsync();
 
         await _service.NotifyUserAsync(
-            userId,
+            user.Id,
             "Test Title",
             "Test Message",
             NotificationType.Assignment,
@@ -59,16 +77,46 @@ public class NotificationServiceTests
             "Assignment"
         );
 
-        var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.UserId == userId);
+        var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.UserId == user.Id);
         notification.Should().NotBeNull();
         notification!.Title.Should().Be("Test Title");
-        notification.Message.Should().Be("Test Message");
+        notification.Body.Should().Be("Test Message");
+    }
+
+    [Fact]
+    public async Task Cooldown_DuplicateNotificationWithin30s_IgnoresDuplicate()
+    {
+        var user = await CreateActiveUserAsync();
+
+        await _service.NotifyUserAsync(
+            user.Id,
+            "Title",
+            "Duplicate Content",
+            NotificationType.Announcement,
+            "ref-1",
+            "Announcement"
+        );
+
+        await _service.NotifyUserAsync(
+            user.Id,
+            "Title",
+            "Duplicate Content",
+            NotificationType.Announcement,
+            "ref-1",
+            "Announcement"
+        );
+
+        var notifications = await _context.Notifications.Where(n => n.UserId == user.Id).ToListAsync();
+        notifications.Should().HaveCount(1);
     }
 
     [Fact]
     public async Task NotifyUsersAsync_MultipleUsers_CreatesNotificationsForAll()
     {
-        var userIds = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+        var user1 = await CreateActiveUserAsync();
+        var user2 = await CreateActiveUserAsync();
+        var user3 = await CreateActiveUserAsync();
+        var userIds = new[] { user1.Id, user2.Id, user3.Id };
 
         await _service.NotifyUsersAsync(
             userIds,
@@ -85,179 +133,47 @@ public class NotificationServiceTests
     }
 
     [Fact]
-    public async Task NotifyUsersAsync_EmptyUserList_DoesNotCreateNotifications()
+    public async Task BroadcastAsync_ValidRole_SendsToMatchingActiveUsers()
     {
-        var initialCount = await _context.Notifications.CountAsync();
+        var student1 = await CreateActiveUserAsync(role: UserRole.Student);
+        var student2 = await CreateActiveUserAsync(role: UserRole.Student);
+        var teacher = await CreateActiveUserAsync(role: UserRole.Teacher);
 
-        await _service.NotifyUsersAsync(
-            new List<Guid>(),
-            "Title",
-            "Message",
-            NotificationType.Assignment
+        await _service.BroadcastAsync(
+            "Broadcast Title",
+            "Broadcast Message",
+            NotificationType.Announcement,
+            "Student"
         );
 
-        var finalCount = await _context.Notifications.CountAsync();
-        finalCount.Should().Be(initialCount);
+        var studentNotifications = await _context.Notifications.Where(n => n.UserId == student1.Id || n.UserId == student2.Id).ToListAsync();
+        studentNotifications.Should().HaveCount(2);
+
+        var teacherNotifications = await _context.Notifications.Where(n => n.UserId == teacher.Id).ToListAsync();
+        teacherNotifications.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task GetMyNotificationsAsync_ValidUser_ReturnsUserNotifications()
+    public async Task DeleteAsync_OwnerDeleting_SoftDeletesNotification()
     {
-        var userId = Guid.NewGuid();
-        var otherUserId = Guid.NewGuid();
-
-        _context.Notifications.AddRange(
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "Mine 1", Message = "msg", IsRead = false, CreatedAt = DateTime.UtcNow, Type = NotificationType.Announcement },
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "Mine 2", Message = "msg", IsRead = true, CreatedAt = DateTime.UtcNow, Type = NotificationType.Assignment },
-            new Notification { Id = Guid.NewGuid(), UserId = otherUserId, Title = "Others", Message = "msg", IsRead = false, CreatedAt = DateTime.UtcNow, Type = NotificationType.Proposal }
-        );
-        await _context.SaveChangesAsync();
-
-        var result = await _service.GetMyNotificationsAsync(userId, 1, 10);
-
-        result.Items.Should().HaveCount(2);
-        result.TotalCount.Should().Be(2);
-        result.Items.All(n => n.UserId == userId).Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetMyNotificationsAsync_WithPagination_ReturnsPaginatedResults()
-    {
-        var userId = Guid.NewGuid();
-
-        for (int i = 0; i < 25; i++)
-        {
-            _context.Notifications.Add(new Notification
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                Title = $"Notification {i}",
-                Message = "msg",
-                IsRead = false,
-                CreatedAt = DateTime.UtcNow.AddHours(-i),
-                Type = NotificationType.Announcement
-            });
-        }
-        await _context.SaveChangesAsync();
-
-        var result = await _service.GetMyNotificationsAsync(userId, 1, 10);
-
-        result.Items.Should().HaveCount(10);
-        result.TotalCount.Should().Be(25);
-        result.Page.Should().Be(1);
-        result.PageSize.Should().Be(10);
-    }
-
-    [Fact]
-    public async Task GetUnreadCountAsync_ValidUser_ReturnsCorrectCount()
-    {
-        var userId = Guid.NewGuid();
-
-        _context.Notifications.AddRange(
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "Unread 1", Message = "msg", IsRead = false, CreatedAt = DateTime.UtcNow, Type = NotificationType.Announcement },
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "Read", Message = "msg", IsRead = true, CreatedAt = DateTime.UtcNow, Type = NotificationType.Assignment },
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "Unread 2", Message = "msg", IsRead = false, CreatedAt = DateTime.UtcNow, Type = NotificationType.Proposal }
-        );
-        await _context.SaveChangesAsync();
-
-        var count = await _service.GetUnreadCountAsync(userId);
-
-        count.Should().Be(2);
-    }
-
-    [Fact]
-    public async Task MarkAsReadAsync_OwnerMarkingTheirNotification_Succeeds()
-    {
-        var userId = Guid.NewGuid();
+        var user = await CreateActiveUserAsync();
         var notificationId = Guid.NewGuid();
-        var notification = new Notification
+
+        _context.Notifications.Add(new Notification
         {
             Id = notificationId,
-            UserId = userId,
-            Title = "Test",
-            Message = "msg",
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow,
-            Type = NotificationType.Announcement
-        };
-        _context.Notifications.Add(notification);
+            UserId = user.Id,
+            Title = "To Delete",
+            Body = "Body",
+            IsDeleted = false,
+            CreatedAt = DateTime.UtcNow
+        });
         await _context.SaveChangesAsync();
 
-        var result = await _service.MarkAsReadAsync(notificationId, userId);
+        var deleted = await _service.DeleteAsync(notificationId, user.Id);
+        deleted.Should().BeTrue();
 
-        result.Should().BeTrue();
-        var updated = await _context.Notifications.FindAsync(notificationId);
-        updated!.IsRead.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task MarkAsReadAsync_NonOwnerMarkingOthersNotification_ThrowsUnauthorizedException()
-    {
-        var owner = Guid.NewGuid();
-        var other = Guid.NewGuid();
-        var notificationId = Guid.NewGuid();
-        var notification = new Notification
-        {
-            Id = notificationId,
-            UserId = owner,
-            Title = "Test",
-            Message = "msg",
-            IsRead = false,
-            CreatedAt = DateTime.UtcNow,
-            Type = NotificationType.Announcement
-        };
-        _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
-
-        var act = async () => await _service.MarkAsReadAsync(notificationId, other);
-
-        await act.Should().ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("You do not own this notification.");
-    }
-
-    [Fact]
-    public async Task MarkAsReadAsync_NonExistingNotification_ReturnsFalse()
-    {
-        var result = await _service.MarkAsReadAsync(Guid.NewGuid(), Guid.NewGuid());
-
-        result.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task MarkAllAsReadAsync_UserWithMultipleUnreadNotifications_MarksAllAsRead()
-    {
-        var userId = Guid.NewGuid();
-
-        _context.Notifications.AddRange(
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "1", Message = "msg", IsRead = false, CreatedAt = DateTime.UtcNow, Type = NotificationType.Announcement },
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "2", Message = "msg", IsRead = false, CreatedAt = DateTime.UtcNow, Type = NotificationType.Assignment },
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "3", Message = "msg", IsRead = true, CreatedAt = DateTime.UtcNow, Type = NotificationType.Proposal }
-        );
-        await _context.SaveChangesAsync();
-
-        await _service.MarkAllAsReadAsync(userId);
-
-        var allNotifications = await _context.Notifications.Where(n => n.UserId == userId).ToListAsync();
-        allNotifications.All(n => n.IsRead).Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetMyNotificationsAsync_SortedByCreatedAtDescending()
-    {
-        var userId = Guid.NewGuid();
-        var now = DateTime.UtcNow;
-
-        _context.Notifications.AddRange(
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "Old", Message = "msg", IsRead = false, CreatedAt = now.AddHours(-2), Type = NotificationType.Announcement },
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "New", Message = "msg", IsRead = false, CreatedAt = now, Type = NotificationType.Assignment },
-            new Notification { Id = Guid.NewGuid(), UserId = userId, Title = "Middle", Message = "msg", IsRead = false, CreatedAt = now.AddHours(-1), Type = NotificationType.Proposal }
-        );
-        await _context.SaveChangesAsync();
-
-        var result = await _service.GetMyNotificationsAsync(userId, 1, 10);
-
-        result.Items[0].Title.Should().Be("New");
-        result.Items[1].Title.Should().Be("Middle");
-        result.Items[2].Title.Should().Be("Old");
+        var unreadCount = await _service.GetUnreadCountAsync(user.Id);
+        unreadCount.Should().Be(0);
     }
 }

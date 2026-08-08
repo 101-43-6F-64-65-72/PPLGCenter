@@ -29,24 +29,17 @@ export default function EkstrakurikulerPage() {
     setErrorMessage("");
 
     try {
-      const response = await extracurricularService.getExtracurriculars();
+      const response = await extracurricularService.getExtracurriculars({ pageSize: 100 });
 
-      if (!response.success) {
-        if (response.statusCode === 404) {
-          setApiState("not_found");
-          setErrorMessage("No extracurricular data available.");
-          setCategories([]);
-        } else {
-          setApiState("error");
-          setErrorMessage(response.message || "Gagal menghubungkan ke server ekstrakurikuler.");
-          setCategories([]);
-        }
-        return;
-      }
+      // Normalize: API returns { success, data: { items, totalCount } } or { success, data: [...] }
+      const rawData = response?.data ?? response;
+      const apiItems = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.items)
+        ? rawData.items
+        : [];
 
-      const apiItems = response.data || [];
-
-      if (Array.isArray(apiItems) && apiItems.length > 0) {
+      if (apiItems.length > 0) {
         const categoryGroups = {};
         apiItems.forEach((item) => {
           const catName = item.category || item.Category || "Umum";
@@ -99,7 +92,13 @@ export default function EkstrakurikulerPage() {
   };
 
   useEffect(() => {
-    fetchFromApi();
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) fetchFromApi();
+    });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const totalExtracurriculars = categories.reduce(

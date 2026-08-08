@@ -33,6 +33,21 @@ public class ExtracurricularConfiguration : IEntityTypeConfiguration<Extracurric
         builder.Property(e => e.MaxMembers)
             .IsRequired();
 
+        builder.Property(e => e.ScheduleDay)
+            .HasMaxLength(50);
+
+        builder.Property(e => e.ScheduleTime)
+            .HasMaxLength(100);
+
+        builder.Property(e => e.Location)
+            .HasMaxLength(200);
+
+        builder.Property(e => e.AdvisorName)
+            .HasMaxLength(200);
+
+        builder.Property(e => e.AdvisorWhatsapp)
+            .HasMaxLength(50);
+
         builder.Property(e => e.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
@@ -53,6 +68,11 @@ public class ExtracurricularConfiguration : IEntityTypeConfiguration<Extracurric
             .HasForeignKey(e => e.ManagedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(e => e.SupervisorTeacher)
+            .WithMany()
+            .HasForeignKey(e => e.SupervisorTeacherId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasMany(e => e.Members)
             .WithOne(m => m.Extracurricular)
             .HasForeignKey(m => m.ExtracurricularId)
@@ -62,6 +82,7 @@ public class ExtracurricularConfiguration : IEntityTypeConfiguration<Extracurric
         builder.HasIndex(e => e.Category);
         builder.HasIndex(e => e.IsActive);
         builder.HasIndex(e => e.ManagedByUserId);
+        builder.HasIndex(e => e.SupervisorTeacherId);
         builder.HasIndex(e => e.CreatedAt);
     }
 }

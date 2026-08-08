@@ -8,6 +8,21 @@ import { loginSchema } from "../schemas/loginSchema";
 import useAuth from "@/hooks/useAuth";
 
 /**
+ * Resolve the post-login redirect destination based on role.
+ * Admin  → /admin
+ * Others → /dashboard
+ */
+function resolveRedirect(role, callbackUrl) {
+  // If an explicit callbackUrl was provided (e.g. from AuthGuard), honour it
+  if (callbackUrl && callbackUrl !== "/profile" && callbackUrl !== "/") {
+    return callbackUrl;
+  }
+  const normalizedRole = (role || "").toLowerCase();
+  if (normalizedRole === "admin") return "/admin";
+  return "/dashboard";
+}
+
+/**
  * Custom hook encapsulating all Login Form logic & submission
  */
 export const useLogin = (options = {}) => {
@@ -18,7 +33,7 @@ export const useLogin = (options = {}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const callbackUrl = searchParams.get("callbackUrl") || "/profile";
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const {
     register,
@@ -36,11 +51,17 @@ export const useLogin = (options = {}) => {
     try {
       setErrorMessage("");
       setIsSubmitting(true);
-      await login(data);
+      const res = await login(data);
+
       if (typeof onSuccess === "function") {
         onSuccess();
       }
-      router.push(callbackUrl);
+
+      // Determine effective role from login response
+      const resData = res?.data || res;
+      const effectiveRole = resData?.userType || resData?.role || resData?.user?.role || "Student";
+      const destination = resolveRedirect(effectiveRole, callbackUrl);
+      router.push(destination);
     } catch (error) {
       const backendMessage =
         error?.response?.data?.message ||

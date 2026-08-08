@@ -1,15 +1,14 @@
 using StudentCenter.Application.DTOs;
-using StudentCenter.Domain.Enums;
 
 namespace StudentCenter.Application.Services;
 
 public interface IAttendanceService
 {
-    Task<PagedResult<AttendanceResponse>> GetAllAsync(int page, int pageSize);
-    Task<AttendanceResponse?> GetByIdAsync(Guid id);
-    Task<PagedResult<AttendanceResponse>> GetByStudentAsync(Guid studentId, int page, int pageSize);
-    Task<PagedResult<AttendanceResponse>> GetByDateAsync(DateTime date, int page, int pageSize);
-    Task<AttendanceResponse> CreateAsync(CreateAttendanceRequest request, Guid recordedByUserId);
-    Task<AttendanceResponse?> UpdateAsync(Guid id, UpdateAttendanceRequest request, Guid userId, string userRole);
-    Task<bool> DeleteAsync(Guid id, Guid userId, string userRole);
+    Task<List<AttendanceSessionResponse>> GetAllSessionsAsync(Guid? scheduleId = null, Guid? classSubjectId = null, DateTime? date = null, string? status = null);
+    Task<AttendanceSessionResponse?> GetSessionByIdAsync(Guid sessionId);
+    Task<AttendanceSessionResponse> CreateSessionAsync(Guid teacherId, CreateAttendanceSessionRequest request);
+    Task<AttendanceSessionResponse?> UpdateStudentStatusAsync(Guid sessionId, Guid teacherId, UpdateAttendanceStatusRequest request);
+    Task<AttendanceSessionResponse?> BulkUpdateAttendanceAsync(Guid sessionId, Guid teacherId, BulkUpdateAttendanceRequest request);
+    Task<AttendanceSessionResponse?> CloseSessionAsync(Guid sessionId, Guid teacherId);
+    Task<List<AttendanceRecordResponse>> GetStudentAttendanceHistoryAsync(Guid studentId);
 }

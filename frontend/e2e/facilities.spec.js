@@ -7,16 +7,15 @@ test.describe('Module 4: Facility Booking', () => {
     await page.goto('/fasilitas');
 
     // Heading verification
-    await expect(page.getByRole('heading', { name: /katalog fasilitas & peralatan/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /katalog fasilitas/i }).first()).toBeVisible();
 
     // Search input verification
-    const searchInput = page.getByPlaceholder(/cari tempat atau barang/i);
+    const searchInput = page.getByPlaceholder(/cari fasilitas/i);
     await expect(searchInput).toBeVisible();
     await searchInput.fill('Aula');
 
     // Filter tabs verification
-    await expect(page.getByRole('button', { name: 'Semua' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Tempat' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Tersedia' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Semua Fasilitas' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Status Tersedia' })).toBeVisible();
   });
 });

@@ -36,6 +36,14 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<PagedResult<UserResponse>>.Ok("Users retrieved successfully", result));
     }
 
+    [Authorize(Roles = "Admin,Teacher")]
+    [HttpGet("teachers")]
+    public async Task<IActionResult> GetActiveTeachers()
+    {
+        var teachers = await _userService.GetActiveTeachersAsync();
+        return Ok(ApiResponse<List<UserResponse>>.Ok("Active teachers retrieved successfully", teachers));
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetUser(Guid id)
     {

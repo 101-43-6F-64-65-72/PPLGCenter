@@ -7,5 +7,11 @@ public class ExtracurricularMemberResponse
     public Guid StudentId { get; set; }
     public string StudentName { get; set; } = string.Empty;
     public string StudentEmail { get; set; } = string.Empty;
+    public string? NIS { get; set; }
+    public string? NISN { get; set; }
+    public string? ClassName { get; set; }
+    public string? PhotoUrl { get; set; }
+    public string? PhoneNumber { get; set; }
     public DateTime JoinedAt { get; set; }
 }
+

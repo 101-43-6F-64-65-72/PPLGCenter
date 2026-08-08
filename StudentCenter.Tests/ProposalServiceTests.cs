@@ -27,10 +27,10 @@ public class ProposalServiceTests
     }
 
     [Fact]
-    public async Task CreateProposalAsync_ValidOSISUser_ReturnsProposal()
+    public async Task CreateProposalAsync_ValidStudentUser_ReturnsProposal()
     {
         var userId = Guid.NewGuid();
-        var user = new User { Id = userId, FullName = "OSIS Member", Email = "osis@test.com", Role = UserRole.OSIS };
+        var user = new User { Id = userId, FullName = "Student Member", Email = "osis@test.com", Role = UserRole.Student };
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
@@ -50,7 +50,7 @@ public class ProposalServiceTests
     }
 
     [Fact]
-    public async Task CreateProposalAsync_NonOSISUser_ThrowsInvalidOperationException()
+    public async Task CreateProposalAsync_StudentUser_ReturnsProposal()
     {
         var userId = Guid.NewGuid();
         var user = new User { Id = userId, FullName = "Student", Email = "student@test.com", Role = UserRole.Student };
@@ -64,10 +64,12 @@ public class ProposalServiceTests
             FileUrl = "https://example.com/file.pdf"
         };
 
-        var act = async () => await _service.CreateProposalAsync(request, userId);
+        var result = await _service.CreateProposalAsync(request, userId);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Only OSIS members can create proposals.");
+        result.Should().NotBeNull();
+        result.Title.Should().Be(request.Title);
+        result.Status.Should().Be(ProposalStatus.Pending);
+        result.SubmittedByUserId.Should().Be(userId);
     }
 
     [Fact]
@@ -282,7 +284,7 @@ public class ProposalServiceTests
     {
         var submitter = Guid.NewGuid();
         var admin = Guid.NewGuid();
-        var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.OSIS };
+        var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.Student };
         var user2 = new User { Id = admin, FullName = "Admin", Email = "admin@test.com", Role = UserRole.Admin };
         var proposal = new Proposal
         {
@@ -325,7 +327,7 @@ public class ProposalServiceTests
     {
         var submitter = Guid.NewGuid();
         var teacher = Guid.NewGuid();
-        var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.OSIS };
+        var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.Student };
         var user2 = new User { Id = teacher, FullName = "Teacher", Email = "teacher@test.com", Role = UserRole.Teacher };
         var proposal = new Proposal
         {
@@ -360,7 +362,7 @@ public class ProposalServiceTests
     {
         var submitter = Guid.NewGuid();
         var student = Guid.NewGuid();
-        var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.OSIS };
+        var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.Student };
         var user2 = new User { Id = student, FullName = "Student", Email = "student@test.com", Role = UserRole.Student };
         var proposal = new Proposal
         {

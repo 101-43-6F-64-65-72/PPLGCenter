@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Api.Models.Responses;
+using StudentCenter.Domain.Enums;
 
 namespace StudentCenter.Api.Controllers;
 
@@ -21,16 +22,26 @@ public class NotificationController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> GetNotifications(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetNotifications([FromQuery] NotificationFilterRequest filter)
     {
         var userId = _currentUserService.UserId;
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _notificationService.GetMyNotificationsAsync(userId.Value, page, pageSize);
+        var result = await _notificationService.GetMyNotificationsAsync(userId.Value, filter);
         return Ok(ApiResponse<PagedResult<NotificationResponse>>.Ok("Notifications retrieved successfully", result));
+    }
+
+    [Authorize]
+    [HttpGet("summary")]
+    public async Task<IActionResult> GetSummary()
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var result = await _notificationService.GetSummaryAsync(userId.Value);
+        return Ok(ApiResponse<NotificationSummaryResponse>.Ok("Notification summary retrieved successfully", result));
     }
 
     [Authorize]
@@ -47,7 +58,7 @@ public class NotificationController : ControllerBase
 
     [Authorize]
     [HttpPatch("{id:guid}/read")]
-    public async Task<IActionResult> MarkAsRead(Guid id, [FromBody] MarkNotificationReadRequest request)
+    public async Task<IActionResult> MarkAsRead(Guid id)
     {
         var userId = _currentUserService.UserId;
         if (userId is null)
@@ -71,5 +82,43 @@ public class NotificationController : ControllerBase
 
         await _notificationService.MarkAllAsReadAsync(userId.Value);
         return Ok(ApiResponse<object>.Ok("All notifications marked as read successfully"));
+    }
+
+    [Authorize]
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteNotification(Guid id)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var result = await _notificationService.DeleteAsync(id, userId.Value);
+
+        if (!result)
+            return NotFound(ApiResponse<object>.Fail("Notification not found."));
+
+        return Ok(ApiResponse<object>.Ok("Notification deleted successfully"));
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpPost("broadcast")]
+    public async Task<IActionResult> BroadcastNotification([FromBody] BroadcastNotificationRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Body))
+            return BadRequest(ApiResponse<object>.Fail("Title and Body are required."));
+
+        await _notificationService.BroadcastAsync(
+            request.Title,
+            request.Body,
+            request.Type,
+            request.TargetRole,
+            request.Priority,
+            request.ActionUrl,
+            request.Icon,
+            request.Color,
+            request.Metadata
+        );
+
+        return Ok(ApiResponse<object>.Ok("Broadcast notification sent successfully."));
     }
 }

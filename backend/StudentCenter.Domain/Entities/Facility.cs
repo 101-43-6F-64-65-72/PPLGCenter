@@ -7,7 +7,10 @@ public class Facility
     public string? Description { get; set; }
     public string Location { get; set; } = string.Empty;
     public int Capacity { get; set; }
-    public bool IsActive { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? Category { get; set; }
+    public bool IsActive { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

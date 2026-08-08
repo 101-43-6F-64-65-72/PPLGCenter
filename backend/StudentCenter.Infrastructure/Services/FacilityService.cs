@@ -46,6 +46,8 @@ public class FacilityService : IFacilityService
                 Description = f.Description,
                 Location = f.Location,
                 Capacity = f.Capacity,
+                ImageUrl = f.ImageUrl,
+                Category = f.Category,
                 IsActive = f.IsActive,
                 CreatedAt = f.CreatedAt,
                 UpdatedAt = f.UpdatedAt
@@ -73,6 +75,8 @@ public class FacilityService : IFacilityService
                 Description = f.Description,
                 Location = f.Location,
                 Capacity = f.Capacity,
+                ImageUrl = f.ImageUrl,
+                Category = f.Category,
                 IsActive = f.IsActive,
                 CreatedAt = f.CreatedAt,
                 UpdatedAt = f.UpdatedAt
@@ -89,6 +93,8 @@ public class FacilityService : IFacilityService
             Description = request.Description,
             Location = request.Location,
             Capacity = request.Capacity,
+            ImageUrl = request.ImageUrl,
+            Category = request.Category,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -104,6 +110,8 @@ public class FacilityService : IFacilityService
             Description = facility.Description,
             Location = facility.Location,
             Capacity = facility.Capacity,
+            ImageUrl = facility.ImageUrl,
+            Category = facility.Category,
             IsActive = facility.IsActive,
             CreatedAt = facility.CreatedAt,
             UpdatedAt = facility.UpdatedAt
@@ -122,6 +130,8 @@ public class FacilityService : IFacilityService
         facility.Description = request.Description;
         facility.Location = request.Location;
         facility.Capacity = request.Capacity;
+        facility.ImageUrl = request.ImageUrl;
+        facility.Category = request.Category;
         facility.IsActive = request.IsActive;
         facility.UpdatedAt = DateTime.UtcNow;
 
@@ -134,6 +144,8 @@ public class FacilityService : IFacilityService
             Description = facility.Description,
             Location = facility.Location,
             Capacity = facility.Capacity,
+            ImageUrl = facility.ImageUrl,
+            Category = facility.Category,
             IsActive = facility.IsActive,
             CreatedAt = facility.CreatedAt,
             UpdatedAt = facility.UpdatedAt

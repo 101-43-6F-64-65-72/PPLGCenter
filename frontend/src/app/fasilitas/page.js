@@ -29,9 +29,17 @@ export default function FasilitasPage() {
     async function loadFacilityData() {
       setIsLoading(true);
       try {
-        const res = await facilityService.getFacilities();
-        if (isMounted && res && res.success && Array.isArray(res.data)) {
-          const mapped = res.data.map((item) => ({
+        const res = await facilityService.getFacilities({ pageSize: 100 });
+        // Normalize: res.data may be PagedResult { items, totalCount } or flat array
+        const rawData = res?.data ?? res;
+        const items = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData?.items)
+          ? rawData.items
+          : [];
+
+        if (isMounted) {
+          const mapped = items.map((item) => ({
             id: item.id || item.Id,
             title: item.name || item.Name || "Fasilitas Sekolah",
             name: item.name || item.Name || "Fasilitas Sekolah",
@@ -43,8 +51,6 @@ export default function FasilitasPage() {
             imageSrc: "/images/tempat/lapangansmkn2ska.jpg",
           }));
           setPlacesData(mapped);
-        } else if (isMounted) {
-          setPlacesData([]);
         }
       } catch (err) {
         if (isMounted) setPlacesData([]);

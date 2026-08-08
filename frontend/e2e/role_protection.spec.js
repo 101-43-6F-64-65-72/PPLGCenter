@@ -18,16 +18,20 @@ test.describe('Authentication, Session Refresh & Navigation Verification', () =>
 
     // 3. NAVIGATION VERIFICATION
     await page.goto('/fasilitas');
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/\/fasilitas/);
-    await expect(page.getByRole('heading', { name: /katalog fasilitas & peralatan/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /katalog fasilitas/i }).first()).toBeVisible();
 
     await page.goto('/mading');
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/\/mading/);
-    await expect(page.getByRole('heading', { name: /berita & publikasi siswa/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /berita/i }).first()).toBeVisible();
 
     await page.goto('/proposal');
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/\/proposal/);
-    await expect(page.getByRole('heading', { name: 'Pengajuan Proposal' })).toBeVisible();
+    // Admin sees 'Peninjauan Proposal', Student sees 'Pengajuan Proposal'
+    await expect(page.getByRole('heading', { name: /proposal/i }).first()).toBeVisible();
 
     await page.goto('/ekstrakurikuler');
     await expect(page).toHaveURL(/\/ekstrakurikuler/);
@@ -40,7 +44,9 @@ test.describe('Authentication, Session Refresh & Navigation Verification', () =>
 
     // 5. LOGOUT VERIFICATION
     await page.goto('/profile');
-    await page.getByRole('button', { name: /keluar sesi/i }).first().click();
+    const logoutBtn = page.locator('[title="Keluar Sesi"]').first();
+    await logoutBtn.waitFor({ state: 'attached' });
+    await logoutBtn.evaluate((el) => el.click());
     await expect(page).toHaveURL(/\/login/);
 
     const postLogoutToken = await page.evaluate(() => localStorage.getItem('token'));

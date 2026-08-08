@@ -12,4 +12,14 @@ public interface IExtracurricularService
     Task<ExtracurricularMemberResponse> JoinExtracurricularAsync(Guid extracurricularId, Guid studentId);
     Task<bool> LeaveExtracurricularAsync(Guid extracurricularId, Guid studentId);
     Task<PagedResult<ExtracurricularMemberResponse>> GetExtracurricularMembersAsync(Guid extracurricularId, int page, int pageSize);
+    Task<bool> UpdateMemberStatusAsync(Guid extracurricularId, Guid memberId, string status, Guid reviewerId);
+
+    Task<PagedResult<ExtracurricularResponse>> GetMyExtracurricularsAsync(Guid studentId, int page, int pageSize);
+
+    /// <summary>
+    /// Returns all extracurriculars supervised by the given teacher (via SupervisorTeacherId or ExtracurricularAdvisors),
+    /// each enriched with live MemberCount, PendingProposalsCount, and CompletedReviewCount.
+    /// Always queries PostgreSQL directly — never relies on stale cache.
+    /// </summary>
+    Task<List<SupervisedExtracurricularSummary>> GetSupervisedByTeacherAsync(Guid teacherId);
 }

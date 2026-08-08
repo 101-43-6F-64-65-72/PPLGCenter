@@ -39,8 +39,14 @@ public class AnnouncementCommentConfiguration : IEntityTypeConfiguration<Announc
             .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(c => c.ParentComment)
+            .WithMany(c => c.ChildComments)
+            .HasForeignKey(c => c.ParentCommentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(c => c.AnnouncementId);
         builder.HasIndex(c => c.UserId);
+        builder.HasIndex(c => c.ParentCommentId);
         builder.HasIndex(c => c.CreatedAt);
     }
 }

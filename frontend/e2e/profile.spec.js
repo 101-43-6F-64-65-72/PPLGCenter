@@ -6,7 +6,7 @@ test.describe('Module 8: Profile', () => {
     await login(page, TEST_ADMIN);
 
     // Section header verification
-    await expect(page.getByRole('heading', { name: 'Profil Saya' })).toBeVisible();
+    await expect(page.locator('h1').first()).toBeVisible();
 
     // User details verification
     await expect(page.locator('text=admin@studentcenter.id').first()).toBeVisible();

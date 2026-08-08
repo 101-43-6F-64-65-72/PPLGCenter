@@ -8,6 +8,7 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import useAuth from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/constants/userRoles";
 import { Shield, LogOut, User, Lock, Mail, Phone, MapPin, CheckCircle, AlertCircle, Camera } from "@/components/common/Icons";
+import { GraduationCap, BookOpen, Award, Hash } from "lucide-react";
 import Button from "@/components/ui/Button";
 import profileService from "@/services/profileService";
 
@@ -28,11 +29,13 @@ export default function ProfilePage() {
 }
 
 function ProfileContent() {
-  const { user, role, logout, fetchProfile } = useAuth();
+  const { user, role, memberships, advisorFor, logout, fetchProfile } = useAuth();
   const fileInputRef = useRef(null);
+
 
   // Active sub-tab state ('info' | 'password')
   const [activeTab, setActiveTab] = useState("info");
+  const [isEditingInfo, setIsEditingInfo] = useState(false);
 
   // Profile Form States
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -58,8 +61,8 @@ function ProfileContent() {
       setEmail(user.email || user.identifier || "");
       setPhone(user.phone || user.phoneNumber || "");
       setAddress(user.address || "");
-      if (user.avatar) {
-        setAvatarPreview(user.avatar);
+      if (user.photoUrl || user.avatar) {
+        setAvatarPreview(user.photoUrl || user.avatar);
       }
     }
   }, [user]);
@@ -70,13 +73,59 @@ function ProfileContent() {
   const savedEmail = user?.email || user?.identifier || "-";
   const roleLabel = ROLE_LABELS[role] || role || "Siswa Biasa";
   const isAdmin = role === "Admin" || user?.role === "Admin";
+  const isTeacher = role === "Teacher" || user?.role === "Teacher";
+  const isStudent = !isAdmin && !isTeacher;
 
-  const handleAvatarChange = (event) => {
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setAvatarFile(file);
     const previewUrl = URL.createObjectURL(file);
     setAvatarPreview(previewUrl);
+
+    // Auto upload to Cloudinary immediately upon file selection
+    setIsUploadingAvatar(true);
+    setStatusMessage({ type: "info", text: "Mengunggah foto profil ke Cloudinary..." });
+    try {
+      const { uploadImageToCloudinary } = await import("@/services/cloudinaryService");
+      const uploadedUrl = await uploadImageToCloudinary(file);
+      if (uploadedUrl) {
+        setAvatarPreview(uploadedUrl);
+        // Automatically save uploaded photoUrl to database user profile
+        let roleNum = 2;
+        if (role === "Admin" || user?.role === "Admin") roleNum = 0;
+        else if (role === "Teacher" || user?.role === "Teacher") roleNum = 1;
+        else if (role === "OSIS" || user?.role === "OSIS") roleNum = 3;
+
+        const payload = {
+          fullName: user?.fullName || fullName,
+          email: user?.email || email,
+          phoneNumber: phone || null,
+          address: address || null,
+          photoUrl: uploadedUrl,
+          role: roleNum,
+        };
+
+        const res = await profileService.updateProfile(user.id, payload);
+        if (res?.success || res?.data) {
+          setStatusMessage({ type: "success", text: "✓ Foto profil berhasil diunggah dan disimpan!" });
+          await fetchProfile();
+        } else {
+          setStatusMessage({ type: "error", text: "Foto diunggah tapi gagal disimpan ke database." });
+        }
+      } else {
+        setStatusMessage({ type: "error", text: "Gagal mengunggah foto ke Cloudinary." });
+      }
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+      setStatusMessage({ type: "error", text: "Gagal mengunggah foto profil." });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const openFilePicker = () => {
@@ -103,6 +152,9 @@ function ProfileContent() {
       const payload = {
         fullName,
         email,
+        phoneNumber: phone || null,
+        address: address || null,
+        photoUrl: avatarPreview && avatarPreview.startsWith("http") ? avatarPreview : (user?.photoUrl || null),
         role: roleNum,
       };
 
@@ -112,8 +164,9 @@ function ProfileContent() {
       if (res?.success || res?.data) {
         setStatusMessage({
           type: "success",
-          text: "✓ Data profil berhasil diperbarui di database backend!",
+          text: "✓ Data profil berhasil diperbarui!",
         });
+        setIsEditingInfo(false);
         await fetchProfile();
       } else {
         setStatusMessage({
@@ -199,15 +252,12 @@ function ProfileContent() {
     <div className="space-y-6">
       {/* Banner & Header Card */}
       <div className="overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-sm">
-        <div className="relative h-56 sm:h-60">
-          <Image
-            src="/images/profile-bg.jpeg"
-            alt="Profile Background"
-            fill
-            priority
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/25" />
+        <div className="relative h-56 sm:h-60 bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 flex items-center justify-between px-8 text-white">
+          <div className="space-y-2 z-10">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight opacity-90">STUDENT CENTER SMKN 2 SURAKARTA</h2>
+            <p className="text-xs sm:text-sm font-medium text-blue-200/80">Sistem Informasi Kesiswaan, Akademik & Ekstrakurikuler Terpadu</p>
+          </div>
+          <div className="absolute inset-0 bg-black/20" />
         </div>
 
         <div className="px-5 py-6 sm:px-8 sm:py-8">
@@ -225,11 +275,16 @@ function ProfileContent() {
                 <button
                   type="button"
                   onClick={openFilePicker}
-                  className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-[#2C1EE8] shadow-lg transition hover:scale-105 hover:bg-[#2C1EE8] hover:text-white cursor-pointer"
+                  disabled={isUploadingAvatar}
+                  className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-[#2C1EE8] shadow-lg transition hover:scale-105 hover:bg-[#2C1EE8] hover:text-white cursor-pointer disabled:opacity-50"
                   aria-label="Ubah foto profil"
                   title="Ubah foto profil"
                 >
-                  <Camera className="h-4.5 w-4.5" />
+                  {isUploadingAvatar ? (
+                    <div className="w-4 h-4 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Camera className="h-4.5 w-4.5" />
+                  )}
                 </button>
 
                 <input
@@ -250,9 +305,28 @@ function ProfileContent() {
                     <Shield className="h-3.5 w-3.5" />
                     {roleLabel}
                   </span>
+                  {Array.isArray(advisorFor) && advisorFor.map((ekskul) => (
+                    <span
+                      key={ekskul.id || ekskul.name}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1 text-xs font-extrabold text-emerald-800"
+                    >
+                      <Award className="h-3.5 w-3.5 text-emerald-600" />
+                      Pembina {ekskul.name}
+                    </span>
+                  ))}
+                  {Array.isArray(memberships) && memberships.map((ekskul) => (
+                    <span
+                      key={ekskul.extracurricularId || ekskul.id || ekskul.name}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3.5 py-1 text-xs font-extrabold text-purple-800"
+                    >
+                      <GraduationCap className="h-3.5 w-3.5 text-purple-600" />
+                      Anggota {ekskul.name}
+                    </span>
+                  ))}
                 </div>
+
                 <p className="mt-2 text-sm font-medium text-gray-500 sm:text-base">
-                  Email / NIS: <span className="font-semibold text-gray-900">{savedEmail}</span>
+                  ID Akun: <span className="font-semibold text-gray-900 font-mono">{savedEmail}</span>
                 </p>
               </div>
             </div>
@@ -270,39 +344,60 @@ function ProfileContent() {
         </div>
       </div>
 
+      {/* Academic / Institutional Info Panel */}
+      <AcademicInfoCard user={user} isStudent={isStudent} isTeacher={isTeacher} isAdmin={isAdmin} />
+
       {/* Main Profile Form Card */}
       <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-        {/* Navigation Sub-Tabs */}
-        <div className="flex items-center gap-2 border-b border-gray-100 pb-4 mb-6">
-          <button
-            type="button"
-            onClick={() => setActiveTab("info")}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "info"
-                ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+        {/* Navigation Sub-Tabs & Edit Action */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("info")}
+              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTab === "info"
+                  ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
-          >
-            Informasi Profil
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("password")}
-            className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "password"
-                ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            >
+              Informasi Profil
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("password")}
+              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeTab === "password"
+                  ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
-          >
-            Ubah Password
-          </button>
+            >
+              Ubah Password
+            </button>
+          </div>
+
+          {activeTab === "info" && !isEditingInfo && (
+            <button
+              type="button"
+              onClick={() => setIsEditingInfo(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-indigo-200 bg-indigo-50 text-[#2C1EE8] hover:bg-indigo-100 transition cursor-pointer self-start sm:self-auto"
+            >
+              <User className="w-4 h-4" />
+              <span>Edit Informasi Profil</span>
+            </button>
+          )}
         </div>
 
         {/* Status Toast Alert */}
         {statusMessage.text && (
           <div
-            className={`mb-6 p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between transition-all ${statusMessage.type === "success"
+            className={`mb-6 p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between transition-all ${
+              statusMessage.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                : statusMessage.type === "info"
+                ? "bg-blue-50 text-blue-800 border-blue-200"
                 : "bg-rose-50 text-rose-800 border-rose-200"
-              }`}
+            }`}
           >
             <div className="flex items-center gap-2.5">
               {statusMessage.type === "success" ? (
@@ -321,107 +416,146 @@ function ProfileContent() {
           </div>
         )}
 
-        {/* Tab 1: Informasi Profil Form */}
+        {/* Tab 1: Informasi Profil */}
         {activeTab === "info" && (
-          <form onSubmit={handleSaveProfile} className="space-y-5">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Nama Lengkap *
-                </label>
-                {!isAdmin && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
-                    <Lock className="w-3 h-3 text-amber-600" />
-                    <span>Dikunci Otoritas Sekolah</span>
-                  </span>
-                )}
+          !isEditingInfo ? (
+            /* READ-ONLY DISPLAY MODE */
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Nama Lengkap</span>
+                  <p className="text-base font-extrabold text-gray-900">{fullName || savedName}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Email / Identitas Akun</span>
+                  <p className="text-base font-extrabold text-gray-900 font-mono">{email || savedEmail}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Telepon / WA</span>
+                  <p className="text-base font-extrabold text-gray-900 font-mono">{phone || "Belum diisi"}</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Domisili</span>
+                  <p className="text-sm font-semibold text-gray-800 leading-relaxed">{address || "Belum diisi"}</p>
+                </div>
               </div>
-              <div className="relative">
-                <User className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
-                <input
-                  type="text"
-                  required
-                  disabled={!isAdmin}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Masukkan nama lengkap"
-                  className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
-                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
-                      : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+            </div>
+          ) : (
+            /* EDIT FORM MODE */
+            <form onSubmit={handleSaveProfile} className="space-y-5">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Nama Lengkap *
+                  </label>
+                  {!isAdmin && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
+                      <Lock className="w-3 h-3 text-amber-600" />
+                      <span>Dikunci Otoritas Sekolah</span>
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <User className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
+                  <input
+                    type="text"
+                    required
+                    disabled={!isAdmin}
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Masukkan nama lengkap"
+                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${
+                      !isAdmin
+                        ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                        : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                     }`}
-                />
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Email / NIS / NIP *
-                </label>
-                {!isAdmin && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
-                    <Lock className="w-3 h-3 text-amber-600" />
-                    <span>Dikunci Otoritas Sekolah</span>
-                  </span>
-                )}
-              </div>
-              <div className="relative">
-                <Mail className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
-                <input
-                  type="text"
-                  required
-                  disabled={!isAdmin}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Masukkan email atau NIS/NIP"
-                  className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
-                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
-                      : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Email / NIS / NIP *
+                  </label>
+                  {!isAdmin && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
+                      <Lock className="w-3 h-3 text-amber-600" />
+                      <span>Dikunci Otoritas Sekolah</span>
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <Mail className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
+                  <input
+                    type="text"
+                    required
+                    disabled={!isAdmin}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Masukkan email atau NIS/NIP"
+                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${
+                      !isAdmin
+                        ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                        : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                     }`}
-                />
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Nomor Telepon / WhatsApp
-              </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Contoh: 082322377070"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                />
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Nomor Telepon / WhatsApp
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Contoh: 082322377070"
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Alamat Tempat Tinggal
-              </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
-                <textarea
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  rows="3"
-                  placeholder="Masukkan alamat domisili Anda"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                />
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Alamat Tempat Tinggal
+                </label>
+                <div className="relative">
+                  <MapPin className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    rows="3"
+                    placeholder="Masukkan alamat domisili Anda"
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
-            >
-              {isSaving ? "Menyimpan Profil..." : "Simpan Perubahan Profil"}
-            </button>
-          </form>
+              <div className="flex items-center gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingInfo(false)}
+                  className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSaving ? "Menyimpan Profil..." : "Simpan Perubahan Profil"}
+                </button>
+              </div>
+            </form>
+          )
         )}
 
         {/* Tab 2: Ubah Password Form */}
@@ -488,6 +622,51 @@ function ProfileContent() {
             </button>
           </form>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Academic / Institutional Info Card
+// ─────────────────────────────────────────────────────────────────────────────
+function AcademicInfoCard({ user, isStudent, isTeacher, isAdmin }) {
+  if (!user) return null;
+
+  const items = [];
+
+  if (isStudent) {
+    if (user.nis)  items.push({ icon: Hash,         label: "NIS",     value: user.nis });
+    if (user.nisn) items.push({ icon: Hash,         label: "NISN",    value: user.nisn });
+    if (user.className) items.push({ icon: GraduationCap, label: "Kelas", value: user.className });
+    if (user.departmentName) items.push({ icon: BookOpen,    label: "Jurusan", value: user.departmentName });
+  } else if (isTeacher) {
+    if (user.nip)      items.push({ icon: Hash,      label: "NIP",     value: user.nip });
+    if (user.position) items.push({ icon: Award,     label: "Jabatan", value: user.position });
+  } else if (isAdmin) {
+    items.push({ icon: Shield, label: "Hak Akses", value: "Super Admin / Waka Kesiswaan" });
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="rounded-[24px] border border-gray-100 bg-white p-5 sm:p-6 shadow-sm">
+      <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Informasi Akademik</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {items.map((item) => {
+          const IconComp = item.icon;
+          return (
+            <div key={item.label} className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5 text-gray-400">
+                <IconComp className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
+              </div>
+              <span className="text-sm font-black text-gray-900 font-mono tracking-wide truncate">
+                {item.value || "—"}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

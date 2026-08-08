@@ -21,12 +21,25 @@ public class ExtracurricularMemberConfiguration : IEntityTypeConfiguration<Extra
         builder.Property(m => m.StudentId)
             .IsRequired();
 
+        builder.Property(m => m.Position)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.Property(m => m.Status)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue("Active");
+
+        builder.Property(m => m.JoinDate)
+            .IsRequired()
+            .HasDefaultValueSql("now()");
+
         builder.Property(m => m.JoinedAt)
             .IsRequired()
             .HasDefaultValueSql("now()");
 
         builder.HasOne(m => m.Student)
-            .WithMany()
+            .WithMany(u => u.Memberships)
             .HasForeignKey(m => m.StudentId)
             .OnDelete(DeleteBehavior.Restrict);
 

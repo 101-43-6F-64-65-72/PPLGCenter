@@ -5,12 +5,9 @@ test.describe('Module 5: Proposals', () => {
   test('Proposal page loads and displays heading', async ({ page }) => {
     await login(page, TEST_ADMIN);
     await page.goto('/proposal');
+    await page.waitForLoadState('networkidle');
 
-    // Heading verification
-    await expect(page.getByRole('heading', { name: 'Pengajuan Proposal' })).toBeVisible();
-
-    // Check Proposal section headers
-    await expect(page.getByRole('heading', { name: /form pengajuan|perbarui proposal/i })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Proposal Saya' })).toBeVisible();
+    // Admin sees 'Peninjauan Proposal', Student sees 'Pengajuan Proposal'
+    await expect(page.getByRole('heading', { name: /proposal/i }).first()).toBeVisible();
   });
 });

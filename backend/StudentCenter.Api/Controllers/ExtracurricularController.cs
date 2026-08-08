@@ -19,7 +19,7 @@ public class ExtracurricularController : ControllerBase
         _currentUserService = currentUserService;
     }
 
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetExtracurriculars(
         [FromQuery] int page = 1,
@@ -32,6 +32,35 @@ public class ExtracurricularController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyExtracurriculars([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var result = await _extracurricularService.GetMyExtracurricularsAsync(userId.Value, page, pageSize);
+        return Ok(ApiResponse<PagedResult<ExtracurricularResponse>>.Ok("My extracurriculars retrieved successfully", result));
+    }
+
+    /// <summary>
+    /// Returns all extracurriculars supervised by the authenticated teacher,
+    /// with live member counts, pending proposal counts, and completed review counts.
+    /// Always queries PostgreSQL — never relies on stale auth context or localStorage.
+    /// </summary>
+    [Authorize(Roles = "Teacher,Admin")]
+    [HttpGet("supervised")]
+    public async Task<IActionResult> GetSupervisedExtracurriculars()
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var result = await _extracurricularService.GetSupervisedByTeacherAsync(userId.Value);
+        return Ok(ApiResponse<List<SupervisedExtracurricularSummary>>.Ok("Supervised extracurriculars retrieved successfully", result));
+    }
+
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetExtracurricular(Guid id)
     {
@@ -42,6 +71,7 @@ public class ExtracurricularController : ControllerBase
 
         return Ok(ApiResponse<ExtracurricularResponse>.Ok("Extracurricular retrieved successfully", result));
     }
+
 
     [Authorize(Roles = "Admin,Teacher")]
     [HttpPost]

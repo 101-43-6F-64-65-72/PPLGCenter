@@ -1,108 +1,115 @@
 "use client";
 
-import React from "react";
-import { ShieldAlert, Building2, FileCheck, Users, Activity, CheckCircle2 } from "lucide-react";
-
-import userService from "@/services/userService";
-import facilityService from "@/services/facilityService";
+import React, { useState, useEffect } from "react";
+import {
+  Users, GraduationCap, BookOpen, Layers, Award, Activity
+} from "lucide-react";
+import dashboardService from "@/services/dashboardService";
 
 export default function AdminStatCards() {
-  const [userCount, setUserCount] = React.useState(0);
-  const [facilityCount, setFacilityCount] = React.useState(0);
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    userService
-      .getUsers(1, 100)
+  useEffect(() => {
+    dashboardService
+      .getSummary()
       .then((res) => {
-        if (res?.totalCount !== undefined) {
-          setUserCount(res.totalCount);
-        } else if (Array.isArray(res?.items)) {
-          setUserCount(res.items.length);
-        } else if (Array.isArray(res)) {
-          setUserCount(res.length);
-        }
+        const data = res?.data || res;
+        if (data) setSummary(data);
       })
-      .catch(() => {});
-
-    facilityService
-      .getFacilities()
-      .then((res) => {
-        if (Array.isArray(res)) setFacilityCount(res.length);
-      })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const stats = [
+  const cards = [
     {
-      id: "admin-proposals",
-      title: "Proposal Butuh ACC Final",
-      value: "4",
-      subtext: "Menunggu persetujuan Waka",
-      icon: FileCheck,
-      badge: "Final Approval",
-      badgeColor: "bg-[#2c1ee8]/10 text-[#2c1ee8] border-blue-200",
+      id: "total-students",
+      title: "Total Siswa",
+      value: summary?.totalStudents ?? "—",
+      subtext: "Siswa terdaftar di sistem",
+      icon: GraduationCap,
+      badge: "Siswa",
+      badgeColor: "bg-blue-50 text-[#2c1ee8] border-blue-200",
       accentBg: "bg-blue-50 text-[#2c1ee8]",
     },
     {
-      id: "facility-inventory",
-      title: "Fasilitas & Barang Terdaftar",
-      value: facilityCount > 0 ? String(facilityCount) : "14",
-      subtext: "Inventaris Live Database",
-      icon: Building2,
-      badge: "Database Live",
+      id: "total-teachers",
+      title: "Total Guru",
+      value: summary?.totalTeachers ?? "—",
+      subtext: "Pengajar aktif di sistem",
+      icon: BookOpen,
+      badge: "Guru",
       badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
       accentBg: "bg-emerald-50 text-emerald-600",
     },
     {
-      id: "active-users",
-      title: "Pengguna Sistem Terdaftar",
-      value: userCount > 0 ? String(userCount) : "Live Database",
-      subtext: "Akun Terverifikasi di System DB",
-      icon: Users,
-      badge: "Multi-Role DB",
-      badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
-      accentBg: "bg-purple-50 text-purple-600",
+      id: "total-classes",
+      title: "Total Kelas",
+      value: summary?.totalClasses ?? "—",
+      subtext: "Kelas aktif tahun ajaran ini",
+      icon: Layers,
+      badge: "Kelas",
+      badgeColor: "bg-violet-50 text-violet-700 border-violet-200",
+      accentBg: "bg-violet-50 text-violet-600",
     },
     {
-      id: "system-status",
-      title: "Status REST API Backend",
-      value: "99.9%",
-      subtext: ".NET Clean Architecture V1",
+      id: "total-departments",
+      title: "Total Jurusan",
+      value: summary?.totalDepartments ?? "—",
+      subtext: "Program keahlian terdaftar",
+      icon: Award,
+      badge: "Jurusan",
+      badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
+      accentBg: "bg-amber-50 text-amber-600",
+    },
+    {
+      id: "total-extracurriculars",
+      title: "Ekstrakurikuler",
+      value: summary?.totalExtracurriculars ?? "—",
+      subtext: "Unit kegiatan aktif",
       icon: Activity,
-      badge: "Operational",
-      badgeColor: "bg-blue-50 text-[#2c1ee8] border-blue-200",
-      accentBg: "bg-blue-50 text-[#2c1ee8]",
+      badge: "UKS",
+      badgeColor: "bg-pink-50 text-pink-700 border-pink-200",
+      accentBg: "bg-pink-50 text-pink-600",
+    },
+    {
+      id: "active-members",
+      title: "Anggota Aktif",
+      value: summary?.totalActiveMembers ?? "—",
+      subtext: "Anggota aktif ekstrakurikuler",
+      icon: Users,
+      badge: "Members",
+      badgeColor: "bg-cyan-50 text-cyan-700 border-cyan-200",
+      accentBg: "bg-cyan-50 text-cyan-600",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      {stats.map((item) => {
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+      {cards.map((item) => {
         const IconComp = item.icon;
         return (
           <div
             key={item.id}
-            className="bg-white p-5 sm:p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 space-y-4"
+            className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 space-y-3"
           >
             <div className="flex items-center justify-between">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold ${item.accentBg}`}>
-                <IconComp className="w-6 h-6" />
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${item.accentBg}`}>
+                <IconComp className="w-5 h-5" />
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${item.badgeColor}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${item.badgeColor}`}>
                 {item.badge}
               </span>
             </div>
 
             <div>
-              <span className="text-3xl sm:text-4xl font-black text-gray-900 leading-none">
-                {item.value}
-              </span>
-              <h4 className="text-sm font-bold text-gray-800 mt-1">
-                {item.title}
-              </h4>
-              <p className="text-xs text-gray-500 mt-1 font-medium">
-                {item.subtext}
-              </p>
+              {loading ? (
+                <div className="h-8 w-16 bg-gray-100 rounded-lg animate-pulse" />
+              ) : (
+                <span className="text-2xl font-black text-gray-900 leading-none">{item.value}</span>
+              )}
+              <p className="text-[10px] text-gray-500 mt-1 font-medium leading-tight">{item.title}</p>
+              <p className="text-[10px] text-gray-400 font-medium leading-tight">{item.subtext}</p>
             </div>
           </div>
         );

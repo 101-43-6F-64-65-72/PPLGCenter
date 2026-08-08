@@ -23,6 +23,23 @@ public class UpdateExtracurricularRequest
     [Range(1, 1000, ErrorMessage = "MaxMembers must be between 1 and 1000")]
     public int MaxMembers { get; set; }
 
+    [StringLength(50, ErrorMessage = "ScheduleDay must not exceed 50 characters")]
+    public string? ScheduleDay { get; set; }
+
+    [StringLength(100, ErrorMessage = "ScheduleTime must not exceed 100 characters")]
+    public string? ScheduleTime { get; set; }
+
+    [StringLength(200, ErrorMessage = "Location must not exceed 200 characters")]
+    public string? Location { get; set; }
+
+    public Guid? SupervisorTeacherId { get; set; }
+
+    [StringLength(200, ErrorMessage = "AdvisorName must not exceed 200 characters")]
+    public string? AdvisorName { get; set; }
+
+    [StringLength(50, ErrorMessage = "AdvisorWhatsapp must not exceed 50 characters")]
+    public string? AdvisorWhatsapp { get; set; }
+
     [Required(ErrorMessage = "IsActive is required")]
     public bool IsActive { get; set; }
 }

@@ -8,6 +8,7 @@ public class Announcement
     public string Category { get; set; } = string.Empty;
     public string? CoverImageUrl { get; set; }
     public bool IsPinned { get; set; }
+    public bool IsCommentsLocked { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public Guid CreatedByUserId { get; set; }

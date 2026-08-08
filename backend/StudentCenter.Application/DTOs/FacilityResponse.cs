@@ -7,6 +7,8 @@ public class FacilityResponse
     public string? Description { get; set; }
     public string Location { get; set; } = string.Empty;
     public int Capacity { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? Category { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

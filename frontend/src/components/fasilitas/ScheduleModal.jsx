@@ -59,9 +59,15 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
 
   // Load availability & extracurriculars when modal opens
   useEffect(() => {
+    let isMounted = true;
     if (isOpen && facility) {
-      fetchAvailability();
+      queueMicrotask(() => {
+        if (isMounted) fetchAvailability();
+      });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen, facility, selectedDate, fetchAvailability]);
 
   useEffect(() => {

@@ -13,7 +13,8 @@ import {
   Check,
   ShoppingBag,
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  Send
 } from "lucide-react";
 import bookingService from "@/services/bookingService";
 import OrganizationSelect from "@/components/common/OrganizationSelect";

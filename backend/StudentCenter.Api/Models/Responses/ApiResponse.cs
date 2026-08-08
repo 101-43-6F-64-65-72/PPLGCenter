@@ -6,49 +6,44 @@ namespace StudentCenter.Api.Models.Responses;
 /// <typeparam name="T">The type of data being returned.</typeparam>
 public class ApiResponse<T>
 {
-    /// <summary>
-    /// Indicates whether the request was successful.
-    /// </summary>
     public bool Success { get; set; }
-
-    /// <summary>
-    /// A descriptive message about the response.
-    /// </summary>
     public string Message { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The response data payload.
-    /// </summary>
+    public string? ErrorCode { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public string? TraceId { get; set; }
     public T? Data { get; set; }
 
-    /// <summary>
-    /// Creates a successful API response.
-    /// </summary>
-    /// <param name="message">The success message.</param>
-    /// <param name="data">The response data.</param>
-    /// <returns>A successful ApiResponse instance.</returns>
     public static ApiResponse<T> Ok(string message, T? data = default)
     {
         return new ApiResponse<T>
         {
             Success = true,
             Message = message,
+            Timestamp = DateTime.UtcNow,
             Data = data
         };
     }
 
-    /// <summary>
-    /// Creates a failed API response.
-    /// </summary>
-    /// <param name="message">The error message.</param>
-    /// <returns>A failed ApiResponse instance.</returns>
-    public static ApiResponse<T> Fail(string message)
+    public static ApiResponse<T> Fail(string message, string? errorCode = null, string? traceId = null)
     {
         return new ApiResponse<T>
         {
             Success = false,
             Message = message,
+            ErrorCode = errorCode,
+            TraceId = traceId,
+            Timestamp = DateTime.UtcNow,
             Data = default
         };
+    }
+
+    public static ApiResponse<T> SuccessResponse(T data, string message = "Success")
+    {
+        return Ok(message, data);
+    }
+
+    public static ApiResponse<T> ErrorResponse(string message, string? errorCode = null)
+    {
+        return Fail(message, errorCode);
     }
 }

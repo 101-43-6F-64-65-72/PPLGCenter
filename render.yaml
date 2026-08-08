@@ -1,0 +1,40 @@
+# Render Infrastructure as Code Blueprint
+# Render Deployment Specification for StudentCenter (.NET Backend + PostgreSQL + Persistent Disk)
+
+services:
+  - type: web
+    name: studentcenter-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: singapore
+    plan: starter
+    healthCheckPath: /health/ready
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: studentcenter-db
+          property: connectionString
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ISSUER
+        value: StudentCenter
+      - key: JWT_AUDIENCE
+        value: StudentCenterApp
+      - key: CORS__AllowedOrigins
+        sync: false
+      - key: UPLOAD_PATH
+        value: /app/wwwroot/uploads
+    disk:
+      name: uploads-disk
+      mountPath: /app/wwwroot/uploads
+      sizeGB: 1
+
+databases:
+  - name: studentcenter-db
+    databaseName: studentcenter
+    user: studentcenter_user
+    region: singapore
+    plan: starter

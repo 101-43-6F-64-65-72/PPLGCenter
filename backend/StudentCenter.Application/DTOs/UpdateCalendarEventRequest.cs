@@ -12,17 +12,29 @@ public class UpdateCalendarEventRequest : IValidatableObject
     public string? Description { get; set; }
 
     [Required(ErrorMessage = "Start date is required.")]
-    public DateTime StartDate { get; set; }
+    public DateTime StartDate { get; set; } = DateTime.UtcNow;
 
     [Required(ErrorMessage = "End date is required.")]
-    public DateTime EndDate { get; set; }
+    public DateTime EndDate { get; set; } = DateTime.UtcNow;
+
+    public DateTime EventDate
+    {
+        get => StartDate;
+        set { StartDate = value; EndDate = value; }
+    }
+
+    public string? StartTime { get; set; }
+    public string? EndTime { get; set; }
 
     [MaxLength(200, ErrorMessage = "Location cannot exceed 200 characters.")]
     public string? Location { get; set; }
 
     [Required(ErrorMessage = "Category is required.")]
     [MaxLength(100, ErrorMessage = "Category cannot exceed 100 characters.")]
-    public string Category { get; set; } = string.Empty;
+    public string Category { get; set; } = "Academic";
+
+    public string? Color { get; set; }
+    public string Visibility { get; set; } = "Public";
 
     public bool IsAllDay { get; set; }
 

@@ -1,0 +1,66 @@
+[
+  {
+    "fullName": "System Administrator",
+    "email": "admin@studentcenter.id",
+    "username": "admin",
+    "password": "Admin123!",
+    "role": "Admin",
+    "phoneNumber": "+6281234567890",
+    "isActive": true
+  },
+  {
+    "fullName": "Budi Santoso, M.Pd.",
+    "email": "budi.teacher@studentcenter.id",
+    "username": "teacher.budi",
+    "password": "Guru123!",
+    "role": "Teacher",
+    "nip": "198501012010011001",
+    "phoneNumber": "+6281987654321",
+    "position": "Wali Kelas & Pembina Pramuka",
+    "homeroomClass": "X RPL 1",
+    "isActive": true,
+    "advisorFor": ["OSIS", "Pramuka"]
+  },
+  {
+    "fullName": "Ahmad Rizky Pratama",
+    "email": "ahmad.student@studentcenter.id",
+    "username": "student.ahmad",
+    "password": "Student123!",
+    "role": "Student",
+    "nis": "54321",
+    "nisn": "0051234567",
+    "departmentCode": "RPL",
+    "className": "X RPL 1",
+    "studentNumber": 1,
+    "gender": "Male",
+    "birthDate": "2009-05-15",
+    "address": "Jl. Merdeka No. 10, Jakarta",
+    "phoneNumber": "+6285678901234",
+    "isActive": true,
+    "memberships": [
+      { "extracurricular": "OSIS", "position": "Secretary" },
+      { "extracurricular": "Basket", "position": "Member" }
+    ]
+  },
+  {
+    "fullName": "Siti Nurhaliza",
+    "email": "siti.student@studentcenter.id",
+    "username": "student.siti",
+    "password": "Student123!",
+    "role": "Student",
+    "nis": "54320",
+    "nisn": "0051234566",
+    "departmentCode": "RPL",
+    "className": "X RPL 1",
+    "studentNumber": 2,
+    "gender": "Female",
+    "birthDate": "2009-08-20",
+    "address": "Jl. Mawar No. 5, Jakarta",
+    "phoneNumber": "+6285678901230",
+    "isActive": true,
+    "memberships": [
+      { "extracurricular": "OSIS", "position": "Leader" },
+      { "extracurricular": "Paskibra", "position": "Member" }
+    ]
+  }
+]

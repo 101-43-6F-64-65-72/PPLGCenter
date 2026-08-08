@@ -27,7 +27,7 @@ public class AnnouncementController : ControllerBase
         _currentUserService = currentUserService;
     }
 
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAnnouncements(
         [FromQuery] int page = 1,
@@ -38,7 +38,7 @@ public class AnnouncementController : ControllerBase
         return Ok(ApiResponse<PagedResult<AnnouncementResponse>>.Ok("Announcements retrieved successfully", result));
     }
 
-    [Authorize]
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetAnnouncement(Guid id)
     {
@@ -50,7 +50,7 @@ public class AnnouncementController : ControllerBase
         return Ok(ApiResponse<AnnouncementResponse>.Ok("Announcement retrieved successfully", result));
     }
 
-    [Authorize(Roles = "Admin,OSIS")]
+    [Authorize(Roles = "Admin,Teacher,Student")]
     [HttpPost]
     public async Task<IActionResult> CreateAnnouncement([FromBody] CreateAnnouncementRequest request)
     {
@@ -65,7 +65,7 @@ public class AnnouncementController : ControllerBase
             ApiResponse<AnnouncementResponse>.Ok("Announcement created successfully", result));
     }
 
-    [Authorize(Roles = "Admin,OSIS")]
+    [Authorize(Roles = "Admin,Teacher,Student")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateAnnouncement(Guid id, [FromBody] UpdateAnnouncementRequest request)
     {
@@ -77,7 +77,7 @@ public class AnnouncementController : ControllerBase
         return Ok(ApiResponse<AnnouncementResponse>.Ok("Announcement updated successfully", result));
     }
 
-    [Authorize(Roles = "Admin,OSIS")]
+    [Authorize(Roles = "Admin,Teacher,Student")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteAnnouncement(Guid id)
     {

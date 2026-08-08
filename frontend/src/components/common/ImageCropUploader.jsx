@@ -344,10 +344,16 @@ export default function ImageCropUploader({
   }, [rawImageObj, rotation, zoom, pan, cropBox]);
 
   useEffect(() => {
+    let isMounted = true;
     if (showModal) {
       drawMainCanvas();
-      updateLivePreview();
+      queueMicrotask(() => {
+        if (isMounted) updateLivePreview();
+      });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [showModal, drawMainCanvas, updateLivePreview]);
 
   // Pointer position helper

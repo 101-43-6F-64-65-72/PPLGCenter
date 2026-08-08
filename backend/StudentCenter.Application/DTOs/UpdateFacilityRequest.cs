@@ -19,5 +19,11 @@ public class UpdateFacilityRequest
     [Range(1, 10000, ErrorMessage = "Capacity must be between 1 and 10000.")]
     public int Capacity { get; set; }
 
+    [MaxLength(500, ErrorMessage = "ImageUrl cannot exceed 500 characters.")]
+    public string? ImageUrl { get; set; }
+
+    [MaxLength(100, ErrorMessage = "Category cannot exceed 100 characters.")]
+    public string? Category { get; set; }
+
     public bool IsActive { get; set; }
 }

@@ -1,114 +1,98 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StudentCenter.Api.Models.Responses;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
-using StudentCenter.Api.Models.Responses;
 
 namespace StudentCenter.Api.Controllers;
 
 [ApiController]
-[Route("api/attendance")]
+[Route("api/[controller]")]
+[Authorize]
 public class AttendanceController : ControllerBase
 {
     private readonly IAttendanceService _attendanceService;
-    private readonly ICurrentUserService _currentUserService;
 
-    public AttendanceController(IAttendanceService attendanceService, ICurrentUserService currentUserService)
+    public AttendanceController(IAttendanceService attendanceService)
     {
         _attendanceService = attendanceService;
-        _currentUserService = currentUserService;
     }
 
-    [Authorize]
-    [HttpGet]
-    public async Task<IActionResult> GetAllAttendance(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    [HttpGet("sessions")]
+    public async Task<IActionResult> GetAllSessions([FromQuery] Guid? scheduleId, [FromQuery] Guid? classSubjectId, [FromQuery] DateTime? date, [FromQuery] string? status)
     {
-        var result = await _attendanceService.GetAllAsync(page, pageSize);
-        return Ok(ApiResponse<PagedResult<AttendanceResponse>>.Ok("Attendance records retrieved successfully", result));
+        var sessions = await _attendanceService.GetAllSessionsAsync(scheduleId, classSubjectId, date, status);
+        return Ok(ApiResponse<List<AttendanceSessionResponse>>.SuccessResponse(sessions));
     }
 
-    [Authorize]
-    [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetAttendance(Guid id)
+    [HttpGet("sessions/{id:guid}")]
+    public async Task<IActionResult> GetSessionById(Guid id)
     {
-        var result = await _attendanceService.GetByIdAsync(id);
+        var session = await _attendanceService.GetSessionByIdAsync(id);
+        if (session == null)
+            return NotFound(ApiResponse<object>.ErrorResponse("Attendance session not found."));
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Attendance record not found."));
-
-        return Ok(ApiResponse<AttendanceResponse>.Ok("Attendance record retrieved successfully", result));
+        return Ok(ApiResponse<AttendanceSessionResponse>.SuccessResponse(session));
     }
 
-    [Authorize]
-    [HttpGet("student/{studentId:guid}")]
-    public async Task<IActionResult> GetAttendanceByStudent(
-        Guid studentId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
-    {
-        var result = await _attendanceService.GetByStudentAsync(studentId, page, pageSize);
-        return Ok(ApiResponse<PagedResult<AttendanceResponse>>.Ok("Student attendance retrieved successfully", result));
-    }
-
-    [Authorize]
-    [HttpGet("date/{date:datetime}")]
-    public async Task<IActionResult> GetAttendanceByDate(
-        DateTime date,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
-    {
-        var result = await _attendanceService.GetByDateAsync(date, page, pageSize);
-        return Ok(ApiResponse<PagedResult<AttendanceResponse>>.Ok("Attendance for date retrieved successfully", result));
-    }
-
+    [HttpPost("sessions")]
     [Authorize(Roles = "Teacher,Admin")]
-    [HttpPost]
-    public async Task<IActionResult> CreateAttendance([FromBody] CreateAttendanceRequest request)
+    public async Task<IActionResult> CreateSession([FromBody] CreateAttendanceSessionRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
-
-        var result = await _attendanceService.CreateAsync(request, userId.Value);
-        return CreatedAtAction(nameof(GetAttendance), new { id = result.Id },
-            ApiResponse<AttendanceResponse>.Ok("Attendance created successfully", result));
+        var teacherId = GetCurrentUserId();
+        var session = await _attendanceService.CreateSessionAsync(teacherId, request);
+        return CreatedAtAction(nameof(GetSessionById), new { id = session.Id }, ApiResponse<AttendanceSessionResponse>.SuccessResponse(session, "Attendance session opened successfully."));
     }
 
+    [HttpPut("sessions/{id:guid}/records")]
     [Authorize(Roles = "Teacher,Admin")]
-    [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateAttendance(Guid id, [FromBody] UpdateAttendanceRequest request)
+    public async Task<IActionResult> UpdateStudentStatus(Guid id, [FromBody] UpdateAttendanceStatusRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+        var teacherId = GetCurrentUserId();
+        var session = await _attendanceService.UpdateStudentStatusAsync(id, teacherId, request);
+        if (session == null)
+            return NotFound(ApiResponse<object>.ErrorResponse("Attendance session not found."));
 
-        var userRole = _currentUserService.Role ?? string.Empty;
-
-        var result = await _attendanceService.UpdateAsync(id, request, userId.Value, userRole);
-
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Attendance record not found."));
-
-        return Ok(ApiResponse<AttendanceResponse>.Ok("Attendance updated successfully", result));
+        return Ok(ApiResponse<AttendanceSessionResponse>.SuccessResponse(session, "Student attendance updated successfully."));
     }
 
+    [HttpPut("sessions/{id:guid}/bulk")]
     [Authorize(Roles = "Teacher,Admin")]
-    [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteAttendance(Guid id)
+    public async Task<IActionResult> BulkUpdate(Guid id, [FromBody] BulkUpdateAttendanceRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+        var teacherId = GetCurrentUserId();
+        var session = await _attendanceService.BulkUpdateAttendanceAsync(id, teacherId, request);
+        if (session == null)
+            return NotFound(ApiResponse<object>.ErrorResponse("Attendance session not found."));
 
-        var userRole = _currentUserService.Role ?? string.Empty;
+        return Ok(ApiResponse<AttendanceSessionResponse>.SuccessResponse(session, "Attendance records updated in bulk successfully."));
+    }
 
-        var result = await _attendanceService.DeleteAsync(id, userId.Value, userRole);
+    [HttpPost("sessions/{id:guid}/close")]
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> CloseSession(Guid id)
+    {
+        var teacherId = GetCurrentUserId();
+        var session = await _attendanceService.CloseSessionAsync(id, teacherId);
+        if (session == null)
+            return NotFound(ApiResponse<object>.ErrorResponse("Attendance session not found."));
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Attendance record not found."));
+        return Ok(ApiResponse<AttendanceSessionResponse>.SuccessResponse(session, "Attendance session closed successfully."));
+    }
 
-        return Ok(ApiResponse<object>.Ok("Attendance deleted successfully"));
+    [HttpGet("my")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> GetMyAttendanceHistory()
+    {
+        var studentId = GetCurrentUserId();
+        var history = await _attendanceService.GetStudentAttendanceHistoryAsync(studentId);
+        return Ok(ApiResponse<List<AttendanceRecordResponse>>.SuccessResponse(history));
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(idClaim, out var id) ? id : Guid.Empty;
     }
 }

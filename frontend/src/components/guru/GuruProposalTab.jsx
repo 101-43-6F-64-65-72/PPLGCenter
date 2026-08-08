@@ -44,6 +44,21 @@ function parseTitleAndOrg(rawTitle = "") {
   return { organization: org, cleanTitle };
 }
 
+const ProposalSkeleton = () => (
+  <div className="divide-y divide-gray-100 animate-pulse">
+    {Array.from({ length: 3 }).map((_, idx) => (
+      <div key={idx} className="p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-24 bg-slate-200 rounded-full" />
+          <div className="h-5 w-32 bg-slate-200 rounded-md" />
+        </div>
+        <div className="h-6 w-3/4 bg-slate-200 rounded-md" />
+        <div className="h-4 w-full bg-slate-100 rounded-md" />
+      </div>
+    ))}
+  </div>
+);
+
 export default function GuruProposalTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("semua"); // 'semua' | 'pending' | 'approved' | 'rejected'
@@ -143,54 +158,40 @@ export default function GuruProposalTab() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchProposals();
-  }, [fetchProposals]);
-
-  const filteredProposals = proposals.filter((p) => {
+  const filteredProposals = proposals.filter((prop) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.submittedByUserName.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "semua" || p.statusKey === statusFilter;
-
-    return matchesSearch && matchesStatus;
+      (prop.title || "").toLowerCase().includes(q) ||
+      (prop.organization || "").toLowerCase().includes(q) ||
+      (prop.submittedByUserName || "").toLowerCase().includes(q);
+    if (statusFilter === "semua") return matchesSearch;
+    return matchesSearch && prop.statusKey === statusFilter;
   });
 
-  const handleUpdateStatus = async (proposalId, statusEnum) => {
+  const handleUpdateStatus = async (proposalId, statusNum) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const res = await proposalService.reviewProposal(proposalId, statusEnum, teacherNote);
-      if (res.success) {
-        await fetchProposals();
-        setSelectedProposal(null);
-        setTeacherNote("");
-      } else {
-        alert(res.message || "Gagal memperbarui status proposal.");
-      }
+      await proposalService.updateProposalStatus(proposalId, statusNum, teacherNote);
+      await fetchProposals();
     } catch (err) {
-      alert("Gagal menghubungi server untuk memperbarui status.");
+      console.warn("Async proposal status update warning:", err);
     } finally {
       setIsSubmitting(false);
     }
+    setSelectedProposal(null);
+    setTeacherNote("");
   };
 
-  const ProposalSkeleton = () => (
-    <div className="divide-y divide-gray-100 animate-pulse">
-      {Array.from({ length: 3 }).map((_, idx) => (
-        <div key={idx} className="p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-24 bg-slate-200 rounded-full" />
-            <div className="h-5 w-32 bg-slate-200 rounded-md" />
-          </div>
-          <div className="h-6 w-3/4 bg-slate-200 rounded-md" />
-          <div className="h-4 w-full bg-slate-100 rounded-md" />
-        </div>
-      ))}
-    </div>
-  );
+  useEffect(() => {
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) fetchProposals();
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchProposals]);
 
   return (
     <div className="space-y-6">

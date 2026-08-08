@@ -1,4 +1,4 @@
-import apiClient from "@/lib/api";
+import apiClient, { getStoredToken } from "@/lib/api";
 import { API_ROUTES } from "@/constants/apiRoutes";
 
 /**
@@ -6,12 +6,79 @@ import { API_ROUTES } from "@/constants/apiRoutes";
  */
 export const bookingService = {
   /**
+   * Fetch all bookings with optional query parameters
+   * @param {Object} params - Query parameters (page, pageSize, facilityId, userId, status)
+   */
+  async getBookings(params = {}) {
+    if (!getStoredToken()) {
+      return [];
+    }
+    const endpoint = API_ROUTES.BOOKINGS.LIST;
+    try {
+      const response = await apiClient.get(endpoint, { params });
+      let items = response?.data?.items || response?.items || response?.data || (Array.isArray(response) ? response : []);
+      
+      // Normalize items for UI consumption
+      return items.map((item) => {
+        const rawStatus = item.status ?? item.Status ?? 0;
+        let statusText = "Menunggu Verifikasi";
+        if (rawStatus === 1 || rawStatus === "Approved") statusText = "Disetujui Admin";
+        else if (rawStatus === 2 || rawStatus === "Rejected") statusText = "Ditolak Admin";
+
+        return {
+          id: item.id || item.Id,
+          facilityId: item.facilityId || item.FacilityId,
+          facilityTitle: item.facilityName || item.FacilityName || item.facilityTitle || "Fasilitas Sekolah",
+          activityName: item.purpose || item.Purpose || item.activityName || "Kegiatan Sekolah",
+          organization: item.organizationName || item.OrganizationName || item.organization || "OSIS / Ekstrakurikuler",
+          date: item.startTime
+            ? new Date(item.startTime).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+            : "Hari ini",
+          slotFormatted: item.startTime && item.endTime
+            ? `${new Date(item.startTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} - ${new Date(item.endTime).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`
+            : "08:00 - 12:00",
+          description: item.purpose || item.Description || item.description || "-",
+          status: statusText,
+          verificator: item.approvedByUserName || "Admin Sarpras",
+        };
+      });
+    } catch (error) {
+      return [];
+    }
+  },
+
+  /**
+   * Update booking status (Approved = 1, Rejected = 2)
+   */
+  async updateBookingStatus(id, status, note = "") {
+    const endpoint = `/api/bookings/${id}/status`;
+    try {
+      let statusNum = 1;
+      if (typeof status === "number") {
+        statusNum = status;
+      } else if (String(status).toLowerCase().includes("tolak") || String(status).toLowerCase().includes("reject")) {
+        statusNum = 2;
+      }
+      const response = await apiClient.put(endpoint, {
+        status: statusNum,
+        note,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
    * Fetch bookings filtered by facility, date, and status from backend
    * @param {string} facilityId - UUID of the facility
    * @param {string} [bookingDate] - Date string YYYY-MM-DD
    * @param {number|string} [status] - BookingStatus enum (1 = Approved)
    */
   async getVerifiedBookings(facilityId, bookingDate = null, status = 1) {
+    if (!getStoredToken()) {
+      return { success: true, data: [] };
+    }
     const endpoint = API_ROUTES.BOOKINGS.LIST;
     try {
       const params = {
@@ -48,16 +115,12 @@ export const bookingService = {
 
   /**
    * Calculate real-time slot availability for a given facility and date
-   * @param {Object} facility - Facility object
-   * @param {string} selectedDate - YYYY-MM-DD date string
-   * @param {Array} predefinedSlots - Array of slot templates [{ id, time, startTime, endTime }]
    */
   async getSlotAvailability(facility, selectedDate, predefinedSlots = []) {
     if (!facility) {
       return { success: false, slots: [], message: "Fasilitas tidak ditemukan" };
     }
 
-    // Default predefined time slots if omitted
     const baseSlots = predefinedSlots.length > 0 ? predefinedSlots : [
       { id: 1, time: "07:00 - 09:00", startHour: 7, endHour: 9 },
       { id: 2, time: "09:00 - 11:00", startHour: 9, endHour: 11 },
@@ -68,7 +131,6 @@ export const bookingService = {
       { id: 7, time: "15:00 - 17:00", startHour: 15, endHour: 17 },
     ];
 
-    // Check facility active status
     const isFacilityActive = facility.isActive ?? facility.IsActive ?? true;
     if (!isFacilityActive) {
       const unavailableSlots = baseSlots.map((s) => ({
@@ -79,7 +141,6 @@ export const bookingService = {
       return { success: true, slots: unavailableSlots };
     }
 
-    // Fetch verified approved bookings for this facility
     const result = await this.getVerifiedBookings(facility.id, selectedDate, 1);
     if (!result.success) {
       return {
@@ -91,12 +152,9 @@ export const bookingService = {
 
     const verifiedBookings = result.data || [];
 
-    // Map availability for each time slot
     const mappedSlots = baseSlots.map((slot) => {
-      // Check if slot overlaps with any approved booking
       const isOccupied = verifiedBookings.some((b) => {
         const statusVal = b.status ?? b.Status;
-        // Only Approved (1) blocks the slot
         const isApproved = statusVal === 1 || statusVal === "Approved" || statusVal === "1";
         if (!isApproved) return false;
 
@@ -106,7 +164,6 @@ export const bookingService = {
         const bStartHour = bookingStart.getHours() + bookingStart.getMinutes() / 60;
         const bEndHour = bookingEnd.getHours() + bookingEnd.getMinutes() / 60;
 
-        // Overlap condition: start < bEnd AND end > bStart
         return slot.startHour < bEndHour && slot.endHour > bStartHour;
       });
 

@@ -44,6 +44,11 @@ public class SubmissionConfiguration : IEntityTypeConfiguration<Submission>
             .HasForeignKey(s => s.StudentId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasMany(s => s.Revisions)
+            .WithOne(r => r.Submission)
+            .HasForeignKey(r => r.SubmissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(s => s.AssignmentId);
         builder.HasIndex(s => s.StudentId);
         builder.HasIndex(s => new { s.AssignmentId, s.StudentId }).IsUnique();

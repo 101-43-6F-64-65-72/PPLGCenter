@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ProposalForm from "@/components/proposal/ProposalForm";
 import ProposalList from "@/components/proposal/ProposalList";
+import AdminProposalTab from "@/components/admin/AdminProposalTab";
 import AuthGuard from "@/components/layout/AuthGuard";
 import useAuth from "@/hooks/useAuth";
 import { extracurricularService } from "@/services/extracurricularService";
@@ -62,13 +63,19 @@ export default function ProposalPage() {
   }, [user]);
 
   useEffect(() => {
+    let isMounted = true;
     if (isAuthenticated && (user?.id || user?.Id)) {
-      loadExtracurricularMemberships();
+      queueMicrotask(() => {
+        if (isMounted) loadExtracurricularMemberships();
+      });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated, user, loadExtracurricularMemberships]);
 
   // Fetch Proposals list belonging strictly to the currently authenticated user
-  const fetchProposals = async () => {
+  const fetchProposals = React.useCallback(async () => {
     const currentUserId = user?.id || user?.Id;
     if (!currentUserId) {
       setProposals([]);
@@ -125,15 +132,23 @@ export default function ProposalPage() {
     } catch (err) {
       setProposals([]);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
+    let isMounted = true;
     if (isAuthenticated && (user?.id || user?.Id)) {
-      fetchProposals();
+      queueMicrotask(() => {
+        if (isMounted) fetchProposals();
+      });
     } else if (!isAuthenticated) {
-      setProposals([]);
+      queueMicrotask(() => {
+        if (isMounted) setProposals([]);
+      });
     }
-  }, [isAuthenticated, user]);
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, user, fetchProposals]);
 
   const handleFieldChange = (event) => {
     const { name, value } = event.target;
@@ -406,6 +421,8 @@ export default function ProposalPage() {
     }
   };
 
+  const isReviewerRole = role === "Admin" || role === "Super Admin" || role === "Teacher";
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <AuthGuard>
@@ -415,75 +432,85 @@ export default function ProposalPage() {
           {/* Header Banner */}
           <div className="max-w-3xl">
             <div className="inline-flex items-center rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2C1EE8]">
-              Pengajuan Proposal
+              {isReviewerRole ? "Peninjauan Proposal" : "Pengajuan Proposal"}
             </div>
             <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              Pengajuan Proposal Digital
+              {isReviewerRole ? "Verifikasi & Review Proposal Kegiatan" : "Pengajuan Proposal Digital"}
             </h1>
             <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
-              Ajukan proposal kegiatan ekstrakurikuler & OSIS secara digital. Proposal ini akan diverifikasi oleh Pembina/Guru dan Admin Sekolah.
+              {isReviewerRole
+                ? "Daftar proposal kegiatan ekstrakurikuler & OSIS yang diajukan oleh siswa untuk ditinjau dan disetujui."
+                : "Ajukan proposal kegiatan ekstrakurikuler & OSIS secara digital. Proposal ini akan diverifikasi oleh Pembina/Guru dan Admin Sekolah."}
             </p>
           </div>
 
-          {/* SECTION 1: Form Pengajuan Proposal (Full Width Hero Card) */}
-          <section className="rounded-[32px] border border-gray-100 bg-[#FAFBFF] p-6 shadow-sm sm:p-8 lg:p-10">
-            <div className="mb-6 border-b border-gray-100 pb-4">
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900">Form Pengajuan Proposal</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                Isi detail kegiatan dan lampirkan dokumen proposal PDF Anda.
-              </p>
-            </div>
+          {isReviewerRole ? (
+            /* Reviewer View (Admin & Teacher): AdminProposalTab without proposal submission form */
+            <AdminProposalTab />
+          ) : (
+            /* Student View: Form Pengajuan Proposal + Proposal Saya */
+            <>
+              {/* SECTION 1: Form Pengajuan Proposal (Full Width Hero Card) */}
+              <section className="rounded-[32px] border border-gray-100 bg-[#FAFBFF] p-6 shadow-sm sm:p-8 lg:p-10">
+                <div className="mb-6 border-b border-gray-100 pb-4">
+                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">Form Pengajuan Proposal</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Isi detail kegiatan dan lampirkan dokumen proposal PDF Anda.
+                  </p>
+                </div>
 
-            {successMessage && (
-              <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 font-semibold">
-                {successMessage}
-              </div>
-            )}
+                {successMessage && (
+                  <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 font-semibold">
+                    {successMessage}
+                  </div>
+                )}
 
-            <ProposalForm
-              formData={formData}
-              onFieldChange={handleFieldChange}
-              onSubmit={handleSubmit}
-              selectedFiles={selectedFiles}
-              onFileSelect={handleFileSelect}
-              onRemoveFile={handleRemoveFile}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              isDragging={isDragging}
-              uploadError={uploadError}
-              formErrors={formErrors}
-              isEditing={isEditing}
-              onCancelEdit={cancelEdit}
-              extracurriculars={extracurriculars}
-              isLoadingExtracurriculars={isLoadingExtracurriculars}
-              extracurricularError={extracurricularError}
-              onRetryLoadExtracurriculars={loadExtracurricularMemberships}
-              isSubmitting={isSubmitting}
-            />
-          </section>
+                <ProposalForm
+                  formData={formData}
+                  onFieldChange={handleFieldChange}
+                  onSubmit={handleSubmit}
+                  selectedFiles={selectedFiles}
+                  onFileSelect={handleFileSelect}
+                  onRemoveFile={handleRemoveFile}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  isDragging={isDragging}
+                  uploadError={uploadError}
+                  formErrors={formErrors}
+                  isEditing={isEditing}
+                  onCancelEdit={cancelEdit}
+                  extracurriculars={extracurriculars}
+                  isLoadingExtracurriculars={isLoadingExtracurriculars}
+                  extracurricularError={extracurricularError}
+                  onRetryLoadExtracurriculars={loadExtracurricularMemberships}
+                  isSubmitting={isSubmitting}
+                />
+              </section>
 
-          {/* SECTION 2: Proposal Saya (Full Width Horizontal List Below Form) */}
-          <section className="rounded-[32px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-gray-900">Proposal Saya</h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Daftar dan riwayat pemantauan status proposal yang telah Anda ajukan.
-                </p>
-              </div>
-              <div className="text-xs font-bold text-gray-400 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100 w-fit self-start sm:self-auto">
-                Total Proposal: <span className="text-gray-900 font-black">{proposals.length}</span>
-              </div>
-            </div>
+              {/* SECTION 2: Proposal Saya (Full Width Horizontal List Below Form) */}
+              <section className="rounded-[32px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
+                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-black text-gray-900">Proposal Saya</h2>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Daftar dan riwayat pemantauan status proposal yang telah Anda ajukan.
+                    </p>
+                  </div>
+                  <div className="text-xs font-bold text-gray-400 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100 w-fit self-start sm:self-auto">
+                    Total Proposal: <span className="text-gray-900 font-black">{proposals.length}</span>
+                  </div>
+                </div>
 
-            <ProposalList
-              proposals={proposals}
-              onEdit={handleEditProposal}
-              onDelete={handleDeleteProposal}
-              onRemoveFile={handleRemoveProposalFile}
-            />
-          </section>
+                <ProposalList
+                  proposals={proposals}
+                  onEdit={handleEditProposal}
+                  onDelete={handleDeleteProposal}
+                  onRemoveFile={handleRemoveProposalFile}
+                />
+              </section>
+            </>
+          )}
         </main>
       </AuthGuard>
     </div>

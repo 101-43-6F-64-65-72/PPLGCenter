@@ -1,5 +1,5 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
@@ -12,270 +12,249 @@ public class AssignmentService : IAssignmentService
 {
     private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
-    private readonly ILogger<AssignmentService> _logger;
 
-    public AssignmentService(AppDbContext context, INotificationService notificationService, ILogger<AssignmentService> logger)
+    public AssignmentService(AppDbContext context, INotificationService? notificationService = null)
     {
         _context = context;
-        _notificationService = notificationService;
-        _logger = logger;
+        _notificationService = notificationService ?? new NotificationService(context);
     }
 
-    public async Task<PagedResult<AssignmentResponse>> GetAssignmentsAsync(int page, int pageSize, string? subject, string? grade)
+    public async Task<List<AssignmentResponse>> GetAllAsync(Guid? classSubjectId = null, Guid? teacherId = null, bool includeDeleted = false)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        var query = BuildAssignmentQuery();
 
-        var query = _context.Set<Assignment>()
-            .AsNoTracking()
-            .AsQueryable();
+        if (!includeDeleted)
+            query = query.Where(a => !a.IsDeleted);
 
-        if (!string.IsNullOrWhiteSpace(subject))
+        if (classSubjectId.HasValue)
+            query = query.Where(a => a.ClassSubjectId == classSubjectId.Value);
+
+        if (teacherId.HasValue)
+            query = query.Where(a => a.TeacherId == teacherId.Value);
+
+        var list = await query.OrderByDescending(a => a.DueDate).ToListAsync();
+        return list.Select(MapToResponse).ToList();
+    }
+
+    public async Task<AssignmentResponse?> GetByIdAsync(Guid id)
+    {
+        var assignment = await BuildAssignmentQuery().FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
+        if (assignment == null) return null;
+        return MapToResponse(assignment);
+    }
+
+    public async Task<AssignmentResponse> CreateAsync(Guid teacherId, CreateAssignmentRequest request)
+    {
+        if (request.MaxScore <= 0)
         {
-            query = query.Where(a => a.Subject == subject);
+            throw new ValidationException("MaxScore must be greater than 0.");
         }
 
-        if (!string.IsNullOrWhiteSpace(grade))
+        if (request.DueDate <= request.PublishAt)
         {
-            query = query.Where(a => a.Grade == grade);
+            throw new ValidationException("DueDate must be after PublishAt.");
         }
 
-        var totalCount = await query.CountAsync();
-
-        var items = await query
-            .OrderByDescending(a => a.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(a => new AssignmentResponse
-            {
-                Id = a.Id,
-                Title = a.Title,
-                Description = a.Description,
-                Subject = a.Subject,
-                Grade = a.Grade,
-                DueDate = a.DueDate,
-                MaxScore = a.MaxScore,
-                CreatedAt = a.CreatedAt,
-                UpdatedAt = a.UpdatedAt,
-                CreatedByUserId = a.CreatedByUserId,
-                CreatedByUserName = a.CreatedByUser.FullName,
-                SubmissionCount = a.Submissions.Count
-            })
-            .ToListAsync();
-
-        return new PagedResult<AssignmentResponse>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount
-        };
-    }
-
-    public async Task<AssignmentResponse?> GetAssignmentByIdAsync(Guid id)
-    {
-        return await _context.Set<Assignment>()
+        var cs = await _context.ClassSubjects
             .AsNoTracking()
-            .Where(a => a.Id == id)
-            .Select(a => new AssignmentResponse
-            {
-                Id = a.Id,
-                Title = a.Title,
-                Description = a.Description,
-                Subject = a.Subject,
-                Grade = a.Grade,
-                DueDate = a.DueDate,
-                MaxScore = a.MaxScore,
-                CreatedAt = a.CreatedAt,
-                UpdatedAt = a.UpdatedAt,
-                CreatedByUserId = a.CreatedByUserId,
-                CreatedByUserName = a.CreatedByUser.FullName,
-                SubmissionCount = a.Submissions.Count
-            })
-            .FirstOrDefaultAsync();
-    }
+            .Include(c => c.TeacherSubject)
+            .FirstOrDefaultAsync(c => c.Id == request.ClassSubjectId);
 
-    public async Task<AssignmentResponse> CreateAssignmentAsync(CreateAssignmentRequest request, Guid userId)
-    {
+        if (cs == null) throw new ValidationException("ClassSubject not found.");
+
+        if (cs.TeacherSubject.TeacherId != teacherId)
+        {
+            var user = await _context.Users.FindAsync(teacherId);
+            if (user?.Role != UserRole.Admin)
+            {
+                throw new ValidationException("Teacher is not authorized for this ClassSubject.");
+            }
+        }
+
         var assignment = new Assignment
         {
             Id = Guid.NewGuid(),
-            Title = request.Title,
-            Description = request.Description,
-            Subject = request.Subject,
-            Grade = request.Grade,
+            ClassSubjectId = request.ClassSubjectId,
+            ScheduleId = request.ScheduleId,
+            TeacherId = teacherId,
+            Title = request.Title.Trim(),
+            Description = request.Description?.Trim(),
+            Attachment = request.Attachment?.Trim(),
+            PublishAt = request.PublishAt,
             DueDate = request.DueDate,
             MaxScore = request.MaxScore,
+            AllowLateSubmission = request.AllowLateSubmission,
+            LatePenaltyPercent = request.LatePenaltyPercent,
+            IsDeleted = false,
+            Version = 1,
+            CreatedBy = teacherId,
+            UpdatedBy = teacherId,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            CreatedByUserId = userId
+            UpdatedAt = DateTime.UtcNow
         };
 
-        _context.Set<Assignment>().Add(assignment);
+        _context.Assignments.Add(assignment);
         await _context.SaveChangesAsync();
 
-        var user = await _context.Set<User>().FindAsync(userId);
-
-        var students = await _context.Set<User>()
+        var studentsInClass = await _context.Users
             .AsNoTracking()
-            .Where(u => u.Role == UserRole.Student)
+            .Where(u => u.ClassId == cs.ClassId && u.Role == UserRole.Student && u.IsActive)
             .Select(u => u.Id)
             .ToListAsync();
 
-        if (students.Count > 0)
+        if (studentsInClass.Any())
         {
+            var subjectName = cs.TeacherSubject?.Subject?.Name ?? "Mata Pelajaran";
             await _notificationService.NotifyUsersAsync(
-                students,
-                $"New Assignment: {assignment.Title}",
-                $"A new assignment has been created for {assignment.Grade} grade in {assignment.Subject}. Due date: {assignment.DueDate:yyyy-MM-dd}",
+                studentsInClass,
+                $"Tugas Baru: {assignment.Title}",
+                $"Tugas baru untuk {subjectName} telah dibuat. Tenggat: {assignment.DueDate:dd MMM yyyy HH:mm}.",
                 NotificationType.Assignment,
+                NotificationPriority.High,
                 assignment.Id.ToString(),
-                "Assignment"
+                NotificationReferenceType.Assignment,
+                $"/student/assignments/{assignment.Id}",
+                "file-pen",
+                "#f59e0b"
             );
         }
 
-        return new AssignmentResponse
-        {
-            Id = assignment.Id,
-            Title = assignment.Title,
-            Description = assignment.Description,
-            Subject = assignment.Subject,
-            Grade = assignment.Grade,
-            DueDate = assignment.DueDate,
-            MaxScore = assignment.MaxScore,
-            CreatedAt = assignment.CreatedAt,
-            UpdatedAt = assignment.UpdatedAt,
-            CreatedByUserId = assignment.CreatedByUserId,
-            CreatedByUserName = user?.FullName ?? string.Empty,
-            SubmissionCount = 0
-        };
+        return (await GetByIdAsync(assignment.Id))!;
     }
 
-    public async Task<AssignmentResponse?> UpdateAssignmentAsync(Guid id, UpdateAssignmentRequest request, Guid userId, string userRole)
+    public async Task<AssignmentResponse?> UpdateAsync(Guid id, Guid teacherId, UpdateAssignmentRequest request)
     {
-        var assignment = await _context.Set<Assignment>()
-            .Include(a => a.CreatedByUser)
-            .FirstOrDefaultAsync(a => a.Id == id);
+        var assignment = await _context.Assignments
+            .Include(a => a.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
 
-        if (assignment is null)
-            return null;
+        if (assignment == null) return null;
 
-        if (userRole != "Admin" && assignment.CreatedByUserId != userId)
-            throw new UnauthorizedAccessException("You can only update your own assignments.");
+        if (assignment.TeacherId != teacherId && assignment.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        {
+            var user = await _context.Users.FindAsync(teacherId);
+            if (user?.Role != UserRole.Admin)
+            {
+                throw new ValidationException("Teacher is not authorized to edit this assignment.");
+            }
+        }
 
-        assignment.Title = request.Title;
-        assignment.Description = request.Description;
-        assignment.Subject = request.Subject;
-        assignment.Grade = request.Grade;
+        if (request.MaxScore <= 0)
+        {
+            throw new ValidationException("MaxScore must be greater than 0.");
+        }
+
+        if (request.DueDate <= request.PublishAt)
+        {
+            throw new ValidationException("DueDate must be after PublishAt.");
+        }
+
+        assignment.Title = request.Title.Trim();
+        assignment.Description = request.Description?.Trim();
+        assignment.Attachment = request.Attachment?.Trim();
+        assignment.PublishAt = request.PublishAt;
         assignment.DueDate = request.DueDate;
         assignment.MaxScore = request.MaxScore;
+        assignment.AllowLateSubmission = request.AllowLateSubmission;
+        assignment.LatePenaltyPercent = request.LatePenaltyPercent;
+        assignment.Version += 1;
+        assignment.UpdatedBy = teacherId;
         assignment.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-
-        var submissionCount = await _context.Set<Submission>()
-            .CountAsync(s => s.AssignmentId == id);
-
-        return new AssignmentResponse
-        {
-            Id = assignment.Id,
-            Title = assignment.Title,
-            Description = assignment.Description,
-            Subject = assignment.Subject,
-            Grade = assignment.Grade,
-            DueDate = assignment.DueDate,
-            MaxScore = assignment.MaxScore,
-            CreatedAt = assignment.CreatedAt,
-            UpdatedAt = assignment.UpdatedAt,
-            CreatedByUserId = assignment.CreatedByUserId,
-            CreatedByUserName = assignment.CreatedByUser.FullName,
-            SubmissionCount = submissionCount
-        };
+        return await GetByIdAsync(id);
     }
 
-    public async Task<bool> DeleteAssignmentAsync(Guid id, Guid userId, string userRole)
+    public async Task<bool> SoftDeleteAsync(Guid id, Guid teacherId)
     {
-        var assignment = await _context.Set<Assignment>()
-            .FirstOrDefaultAsync(a => a.Id == id);
+        var assignment = await _context.Assignments
+            .Include(a => a.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
 
-        if (assignment is null)
-            return false;
+        if (assignment == null) return false;
 
-        if (userRole != "Admin" && assignment.CreatedByUserId != userId)
-            throw new UnauthorizedAccessException("You can only delete your own assignments.");
+        if (assignment.TeacherId != teacherId && assignment.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        {
+            var user = await _context.Users.FindAsync(teacherId);
+            if (user?.Role != UserRole.Admin)
+            {
+                throw new ValidationException("Teacher is not authorized to delete this assignment.");
+            }
+        }
 
-        _context.Set<Assignment>().Remove(assignment);
+        assignment.IsDeleted = true;
+        assignment.DeletedAt = DateTime.UtcNow;
+        assignment.UpdatedBy = teacherId;
+        assignment.UpdatedAt = DateTime.UtcNow;
+
         await _context.SaveChangesAsync();
-
         return true;
     }
 
-    public async Task<PagedResult<AssignmentResponse>> SearchAsync(int page, int pageSize, string? keyword = null, string? subject = null, string? grade = null, DateTime? dueBefore = null, DateTime? dueAfter = null)
+    public async Task<List<AssignmentResponse>> GetStudentAssignmentsAsync(Guid studentId)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == studentId);
+        if (student?.ClassId == null) return new();
 
-        var query = _context.Set<Assignment>()
+        var now = DateTime.UtcNow;
+
+        var query = BuildAssignmentQuery()
+            .Where(a => !a.IsDeleted && a.PublishAt <= now && a.ClassSubject.ClassId == student.ClassId);
+
+        var list = await query.OrderBy(a => a.DueDate).ToListAsync();
+        return list.Select(MapToResponse).ToList();
+    }
+
+    public async Task<List<AssignmentResponse>> GetTeacherAssignmentsAsync(Guid teacherId)
+    {
+        var query = BuildAssignmentQuery()
+            .Where(a => !a.IsDeleted && (a.TeacherId == teacherId || a.ClassSubject.TeacherSubject.TeacherId == teacherId));
+
+        var list = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
+        return list.Select(MapToResponse).ToList();
+    }
+
+    private IQueryable<Assignment> BuildAssignmentQuery()
+    {
+        return _context.Assignments
             .AsNoTracking()
-            .AsQueryable();
+            .Include(a => a.Teacher)
+            .Include(a => a.ClassSubject)
+                .ThenInclude(cs => cs.Class)
+            .Include(a => a.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+                    .ThenInclude(ts => ts.Subject)
+            .Include(a => a.Submissions);
+    }
 
-        if (!string.IsNullOrWhiteSpace(keyword))
+    private static AssignmentResponse MapToResponse(Assignment a)
+    {
+        return new AssignmentResponse
         {
-            var searchTerm = keyword.ToLower();
-            query = query.Where(a => a.Title.ToLower().Contains(searchTerm) || (a.Description != null && a.Description.ToLower().Contains(searchTerm)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(subject))
-        {
-            query = query.Where(a => a.Subject == subject);
-        }
-
-        if (!string.IsNullOrWhiteSpace(grade))
-        {
-            query = query.Where(a => a.Grade == grade);
-        }
-
-        if (dueBefore.HasValue)
-        {
-            query = query.Where(a => a.DueDate <= dueBefore.Value);
-        }
-
-        if (dueAfter.HasValue)
-        {
-            query = query.Where(a => a.DueDate >= dueAfter.Value);
-        }
-
-        var totalCount = await query.CountAsync();
-
-        var items = await query
-            .OrderByDescending(a => a.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(a => new AssignmentResponse
-            {
-                Id = a.Id,
-                Title = a.Title,
-                Description = a.Description,
-                Subject = a.Subject,
-                Grade = a.Grade,
-                DueDate = a.DueDate,
-                MaxScore = a.MaxScore,
-                CreatedAt = a.CreatedAt,
-                UpdatedAt = a.UpdatedAt,
-                CreatedByUserId = a.CreatedByUserId,
-                CreatedByUserName = a.CreatedByUser.FullName,
-                SubmissionCount = a.Submissions.Count
-            })
-            .ToListAsync();
-
-        return new PagedResult<AssignmentResponse>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount
+            Id = a.Id,
+            ClassSubjectId = a.ClassSubjectId,
+            ClassId = a.ClassSubject?.ClassId ?? Guid.Empty,
+            ClassName = a.ClassSubject?.Class?.Name ?? string.Empty,
+            SubjectId = a.ClassSubject?.TeacherSubject?.SubjectId ?? Guid.Empty,
+            SubjectCode = a.ClassSubject?.TeacherSubject?.Subject?.Code ?? string.Empty,
+            SubjectName = a.ClassSubject?.TeacherSubject?.Subject?.Name ?? string.Empty,
+            ScheduleId = a.ScheduleId,
+            TeacherId = a.TeacherId,
+            TeacherName = a.Teacher?.FullName ?? string.Empty,
+            Title = a.Title,
+            Description = a.Description,
+            Attachment = a.Attachment,
+            PublishAt = a.PublishAt,
+            DueDate = a.DueDate,
+            MaxScore = a.MaxScore,
+            AllowLateSubmission = a.AllowLateSubmission,
+            LatePenaltyPercent = a.LatePenaltyPercent,
+            SubmissionCount = a.Submissions.Count,
+            GradedCount = a.Submissions.Count(s => s.Score.HasValue),
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt
         };
     }
 }

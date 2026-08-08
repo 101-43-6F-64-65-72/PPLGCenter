@@ -32,7 +32,11 @@ public class SearchService : ISearchService
             SearchCalendarEventsAsync(response, normalizedKeyword, page, pageSize),
             SearchFacilitiesAsync(response, normalizedKeyword, page, pageSize),
             SearchExtracurricularsAsync(response, normalizedKeyword, page, pageSize),
-            SearchProposalsAsync(response, normalizedKeyword, page, pageSize, userId, userRole)
+            SearchProposalsAsync(response, normalizedKeyword, page, pageSize, userId, userRole),
+            SearchDiscussionsAsync(response, normalizedKeyword, page, pageSize),
+            SearchMessagesAsync(response, normalizedKeyword, page, pageSize, userId),
+            SearchElectionsAsync(response, normalizedKeyword, page, pageSize),
+            SearchCandidatesAsync(response, normalizedKeyword, page, pageSize)
         );
 
         return response;
@@ -84,31 +88,30 @@ public class SearchService : ISearchService
 
     private async Task SearchAssignmentsAsync(SearchResponse response, string keyword, int page, int pageSize)
     {
-        var results = await _context.Set<Assignment>()
+        var assignmentsList = await _context.Set<Assignment>()
             .AsNoTracking()
             .Where(a => a.Title.ToLower().Contains(keyword) || (a.Description != null && a.Description.ToLower().Contains(keyword)))
             .OrderByDescending(a => a.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(a => new SearchResult
-            {
-                Type = "Assignment",
-                Id = a.Id,
-                Title = a.Title,
-                Description = a.Description ?? string.Empty,
-                Metadata = $"{a.Subject} - {a.Grade} - Due: {a.DueDate:yyyy-MM-dd}",
-                CreatedAt = a.CreatedAt
-            })
             .ToListAsync();
 
-        response.Assignments = results;
+        response.Assignments = assignmentsList.Select(a => new SearchResult
+        {
+            Type = "Assignment",
+            Id = a.Id,
+            Title = a.Title,
+            Description = a.Description ?? string.Empty,
+            Metadata = $"{a.Subject} - {a.Grade} - Due: {a.DueDate:yyyy-MM-dd}",
+            CreatedAt = a.CreatedAt
+        }).ToList();
     }
 
     private async Task SearchCalendarEventsAsync(SearchResponse response, string keyword, int page, int pageSize)
     {
         var results = await _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.Title.ToLower().Contains(keyword) || (c.Description != null && c.Description.ToLower().Contains(keyword)))
+            .Where(c => c.DeletedAt == null && (c.Title.ToLower().Contains(keyword) || (c.Description != null && c.Description.ToLower().Contains(keyword))))
             .OrderByDescending(c => c.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -130,7 +133,11 @@ public class SearchService : ISearchService
     {
         var results = await _context.Set<Facility>()
             .AsNoTracking()
-            .Where(f => f.IsActive && (f.Name.ToLower().Contains(keyword) || (f.Description != null && f.Description.ToLower().Contains(keyword))))
+            .Where(f => f.IsActive && (
+                f.Name.ToLower().Contains(keyword) ||
+                (f.Description != null && f.Description.ToLower().Contains(keyword)) ||
+                (f.Category != null && f.Category.ToLower().Contains(keyword)) ||
+                f.Location.ToLower().Contains(keyword)))
             .OrderBy(f => f.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -140,7 +147,7 @@ public class SearchService : ISearchService
                 Id = f.Id,
                 Title = f.Name,
                 Description = f.Description ?? string.Empty,
-                Metadata = $"Capacity: {f.Capacity}",
+                Metadata = $"Category: {f.Category ?? "Umum"} - Capacity: {f.Capacity}",
                 CreatedAt = f.CreatedAt
             })
             .ToListAsync();
@@ -152,7 +159,13 @@ public class SearchService : ISearchService
     {
         var results = await _context.Set<Extracurricular>()
             .AsNoTracking()
-            .Where(e => e.IsActive && (e.Name.ToLower().Contains(keyword) || e.Description.ToLower().Contains(keyword)))
+            .Where(e => e.IsActive && (
+                e.Name.ToLower().Contains(keyword) ||
+                e.Description.ToLower().Contains(keyword) ||
+                e.Category.ToLower().Contains(keyword) ||
+                (e.ScheduleDay != null && e.ScheduleDay.ToLower().Contains(keyword)) ||
+                (e.Location != null && e.Location.ToLower().Contains(keyword)) ||
+                (e.AdvisorName != null && e.AdvisorName.ToLower().Contains(keyword))))
             .OrderByDescending(e => e.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -197,5 +210,101 @@ public class SearchService : ISearchService
             .ToListAsync();
 
         response.Proposals = results;
+    }
+
+    private async Task SearchDiscussionsAsync(SearchResponse response, string keyword, int page, int pageSize)
+    {
+        var results = await _context.Set<DiscussionThread>()
+            .AsNoTracking()
+            .Where(t => t.DeletedAt == null && (t.Title.ToLower().Contains(keyword) || t.Body.ToLower().Contains(keyword)))
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(t => new SearchResult
+            {
+                Type = "DiscussionThread",
+                Id = t.Id,
+                Title = t.Title,
+                Description = t.Body.Length > 100 ? t.Body.Substring(0, 100) + "..." : t.Body,
+                Metadata = $"Replies: {t.ReplyCount}",
+                CreatedAt = t.CreatedAt
+            })
+            .ToListAsync();
+
+        response.Discussions = results;
+    }
+
+    private async Task SearchMessagesAsync(SearchResponse response, string keyword, int page, int pageSize, Guid? userId)
+    {
+        if (!userId.HasValue)
+        {
+            response.Messages = new List<SearchResult>();
+            return;
+        }
+
+        var results = await _context.Set<Message>()
+            .AsNoTracking()
+            .Where(m => m.DeletedAt == null && m.Text != null && m.Text.ToLower().Contains(keyword))
+            .Where(m => _context.Set<ConversationMember>().Any(cm => cm.ConversationId == m.ConversationId && cm.UserId == userId.Value))
+            .OrderByDescending(m => m.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(m => new SearchResult
+            {
+                Type = "Message",
+                Id = m.Id,
+                Title = $"Pesan di Chat",
+                Description = m.Text!.Length > 100 ? m.Text.Substring(0, 100) + "..." : m.Text,
+                Metadata = $"ConversationId: {m.ConversationId}",
+                CreatedAt = m.CreatedAt
+            })
+            .ToListAsync();
+
+        response.Messages = results;
+    }
+
+    private async Task SearchElectionsAsync(SearchResponse response, string keyword, int page, int pageSize)
+    {
+        var results = await _context.Set<Election>()
+            .AsNoTracking()
+            .Where(e => e.DeletedAt == null && (e.Title.ToLower().Contains(keyword) || e.Description.ToLower().Contains(keyword)))
+            .OrderByDescending(e => e.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new SearchResult
+            {
+                Type = "Election",
+                Id = e.Id,
+                Title = e.Title,
+                Description = e.Description,
+                Metadata = $"Status: {e.Status}",
+                CreatedAt = e.CreatedAt
+            })
+            .ToListAsync();
+
+        response.Elections = results;
+    }
+
+    private async Task SearchCandidatesAsync(SearchResponse response, string keyword, int page, int pageSize)
+    {
+        var results = await _context.Set<ElectionCandidate>()
+            .AsNoTracking()
+            .Include(c => c.Student)
+            .Where(c => c.Vision.ToLower().Contains(keyword) || c.Mission.ToLower().Contains(keyword) || c.Student.FullName.ToLower().Contains(keyword))
+            .OrderBy(c => c.CandidateNumber)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new SearchResult
+            {
+                Type = "Candidate",
+                Id = c.Id,
+                Title = $"No. {c.CandidateNumber} - {c.Student.FullName}",
+                Description = $"Visi: {c.Vision}",
+                Metadata = $"Mission: {c.Mission}",
+                CreatedAt = c.CreatedAt
+            })
+            .ToListAsync();
+
+        response.Candidates = results;
     }
 }

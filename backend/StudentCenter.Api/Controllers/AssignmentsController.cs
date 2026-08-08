@@ -1,153 +1,103 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StudentCenter.Api.Models.Responses;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
-using StudentCenter.Api.Models.Responses;
 
 namespace StudentCenter.Api.Controllers;
 
 [ApiController]
-[Route("api/assignments")]
+[Route("api/[controller]")]
+[Authorize]
 public class AssignmentsController : ControllerBase
 {
     private readonly IAssignmentService _assignmentService;
     private readonly ISubmissionService _submissionService;
-    private readonly ICurrentUserService _currentUserService;
 
-    public AssignmentsController(
-        IAssignmentService assignmentService,
-        ISubmissionService submissionService,
-        ICurrentUserService currentUserService)
+    public AssignmentsController(IAssignmentService assignmentService, ISubmissionService submissionService)
     {
         _assignmentService = assignmentService;
         _submissionService = submissionService;
-        _currentUserService = currentUserService;
     }
 
-    [Authorize]
     [HttpGet]
-    public async Task<IActionResult> GetAssignments(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? subject = null,
-        [FromQuery] string? grade = null)
+    public async Task<IActionResult> GetAll([FromQuery] Guid? classSubjectId, [FromQuery] Guid? teacherId)
     {
-        var result = await _assignmentService.GetAssignmentsAsync(page, pageSize, subject, grade);
-        return Ok(ApiResponse<PagedResult<AssignmentResponse>>.Ok("Assignments retrieved successfully", result));
+        var assignments = await _assignmentService.GetAllAsync(classSubjectId, teacherId);
+        return Ok(ApiResponse<List<AssignmentResponse>>.SuccessResponse(assignments));
     }
 
-    [Authorize]
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetAssignment(Guid id)
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var result = await _assignmentService.GetAssignmentByIdAsync(id);
+        var assignment = await _assignmentService.GetByIdAsync(id);
+        if (assignment == null)
+            return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found."));
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Assignment not found"));
-
-        return Ok(ApiResponse<AssignmentResponse>.Ok("Assignment retrieved successfully", result));
+        return Ok(ApiResponse<AssignmentResponse>.SuccessResponse(assignment));
     }
 
-    [Authorize(Roles = "Admin,Teacher")]
     [HttpPost]
-    public async Task<IActionResult> CreateAssignment([FromBody] CreateAssignmentRequest request)
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateAssignmentRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
-
-        var result = await _assignmentService.CreateAssignmentAsync(request, userId.Value);
-        return CreatedAtAction(nameof(GetAssignment), new { id = result.Id },
-            ApiResponse<AssignmentResponse>.Ok("Assignment created successfully", result));
+        var teacherId = GetCurrentUserId();
+        var assignment = await _assignmentService.CreateAsync(teacherId, request);
+        return CreatedAtAction(nameof(GetById), new { id = assignment.Id }, ApiResponse<AssignmentResponse>.SuccessResponse(assignment, "Assignment created successfully."));
     }
 
-    [Authorize(Roles = "Admin,Teacher")]
     [HttpPut("{id:guid}")]
-    public async Task<IActionResult> UpdateAssignment(Guid id, [FromBody] UpdateAssignmentRequest request)
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAssignmentRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+        var teacherId = GetCurrentUserId();
+        var assignment = await _assignmentService.UpdateAsync(id, teacherId, request);
+        if (assignment == null)
+            return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found."));
 
-        var userRole = _currentUserService.Role ?? string.Empty;
-
-        var result = await _assignmentService.UpdateAssignmentAsync(id, request, userId.Value, userRole);
-
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Assignment not found"));
-
-        return Ok(ApiResponse<AssignmentResponse>.Ok("Assignment updated successfully", result));
+        return Ok(ApiResponse<AssignmentResponse>.SuccessResponse(assignment, "Assignment updated successfully."));
     }
 
-    [Authorize(Roles = "Admin,Teacher")]
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteAssignment(Guid id)
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+        var teacherId = GetCurrentUserId();
+        var success = await _assignmentService.SoftDeleteAsync(id, teacherId);
+        if (!success)
+            return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found or unauthorized."));
 
-        var userRole = _currentUserService.Role ?? string.Empty;
-
-        var result = await _assignmentService.DeleteAssignmentAsync(id, userId.Value, userRole);
-
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Assignment not found"));
-
-        return Ok(ApiResponse<object>.Ok("Assignment deleted successfully"));
+        return Ok(ApiResponse<object>.SuccessResponse(null!, "Assignment deleted successfully."));
     }
 
-    [Authorize(Roles = "Student")]
-    [HttpPost("{id:guid}/submit")]
-    public async Task<IActionResult> SubmitAssignment(Guid id, [FromBody] SubmitAssignmentRequest request)
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyAssignments()
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
-
-        var result = await _submissionService.SubmitAsync(id, request, userId.Value);
-        return CreatedAtAction(nameof(GetSubmission), new { id = result.Id },
-            ApiResponse<SubmissionResponse>.Ok("Assignment submitted successfully", result));
+        var userId = GetCurrentUserId();
+        if (User.IsInRole("Student"))
+        {
+            var assignments = await _assignmentService.GetStudentAssignmentsAsync(userId);
+            return Ok(ApiResponse<List<AssignmentResponse>>.SuccessResponse(assignments));
+        }
+        else
+        {
+            var assignments = await _assignmentService.GetTeacherAssignmentsAsync(userId);
+            return Ok(ApiResponse<List<AssignmentResponse>>.SuccessResponse(assignments));
+        }
     }
 
-    [Authorize(Roles = "Admin,Teacher")]
     [HttpGet("{id:guid}/submissions")]
-    public async Task<IActionResult> GetSubmissions(
-        Guid id,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    [Authorize(Roles = "Teacher,Admin")]
+    public async Task<IActionResult> GetAssignmentSubmissions(Guid id)
     {
-        var result = await _submissionService.GetSubmissionsByAssignmentAsync(id, page, pageSize);
-        return Ok(ApiResponse<PagedResult<SubmissionResponse>>.Ok("Submissions retrieved successfully", result));
+        var submissions = await _submissionService.GetSubmissionsByAssignmentAsync(id);
+        return Ok(ApiResponse<List<SubmissionResponse>>.SuccessResponse(submissions));
     }
 
-    [Authorize]
-    [HttpGet("~/api/submissions/{id:guid}")]
-    public async Task<IActionResult> GetSubmission(Guid id)
+    private Guid GetCurrentUserId()
     {
-        var result = await _submissionService.GetSubmissionByIdAsync(id);
-
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Submission not found"));
-
-        return Ok(ApiResponse<SubmissionResponse>.Ok("Submission retrieved successfully", result));
-    }
-
-    [Authorize(Roles = "Admin,Teacher")]
-    [HttpPut("~/api/submissions/{id:guid}/grade")]
-    public async Task<IActionResult> GradeSubmission(Guid id, [FromBody] GradeSubmissionRequest request)
-    {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
-            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
-
-        var userRole = _currentUserService.Role ?? string.Empty;
-
-        var result = await _submissionService.GradeSubmissionAsync(id, request, userId.Value, userRole);
-
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Submission not found"));
-
-        return Ok(ApiResponse<SubmissionResponse>.Ok("Submission graded successfully", result));
+        var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(idClaim, out var id) ? id : Guid.Empty;
     }
 }

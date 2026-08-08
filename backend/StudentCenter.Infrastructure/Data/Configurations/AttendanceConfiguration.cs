@@ -29,15 +29,12 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
             .HasMaxLength(1000);
 
         builder.Property(a => a.RecordedByUserId)
-            .IsRequired();
+            .IsRequired(false);
 
-        builder.Property(a => a.CreatedAt)
-            .IsRequired()
-            .HasDefaultValueSql("now()");
-
-        builder.Property(a => a.UpdatedAt)
-            .IsRequired()
-            .HasDefaultValueSql("now()");
+        builder.HasOne(a => a.AttendanceSession)
+            .WithMany(s => s.Attendances)
+            .HasForeignKey(a => a.AttendanceSessionId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(a => a.Student)
             .WithMany()
@@ -52,7 +49,6 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
         builder.HasIndex(a => a.StudentId);
         builder.HasIndex(a => a.AttendanceDate);
         builder.HasIndex(a => a.Status);
-        builder.HasIndex(a => a.RecordedByUserId);
-        builder.HasIndex(a => new { a.StudentId, a.AttendanceDate }).IsUnique();
+        builder.HasIndex(a => new { a.AttendanceSessionId, a.StudentId }).IsUnique();
     }
 }

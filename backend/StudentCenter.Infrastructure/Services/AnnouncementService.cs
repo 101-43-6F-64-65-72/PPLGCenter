@@ -183,11 +183,15 @@ public class AnnouncementService : IAnnouncementService
         {
             await _notificationService.NotifyUsersAsync(
                 allUserIds,
-                $"New Announcement: {announcement.Title}",
-                announcement.Content,
+                $"Pengumuman: {announcement.Title}",
+                announcement.Content.Length > 200 ? announcement.Content.Substring(0, 197) + "..." : announcement.Content,
                 NotificationType.Announcement,
+                NotificationPriority.Normal,
                 announcement.Id.ToString(),
-                "Announcement"
+                NotificationReferenceType.Announcement,
+                $"/announcements/{announcement.Id}",
+                "bullhorn",
+                "#3b82f6"
             );
         }
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using StudentCenter.Domain.Entities;
+using StudentCenter.Domain.Enums;
 
 namespace StudentCenter.Infrastructure.Data.Configurations;
 
@@ -22,7 +23,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(n => n.Message)
+        builder.Property(n => n.Body)
             .IsRequired()
             .HasMaxLength(1000);
 
@@ -30,13 +31,37 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
             .IsRequired()
             .HasConversion<int>();
 
+        builder.Property(n => n.Priority)
+            .IsRequired()
+            .HasConversion<int>()
+            .HasSentinel((NotificationPriority)(-1))
+            .HasDefaultValue(NotificationPriority.Normal);
+
         builder.Property(n => n.ReferenceId)
             .HasMaxLength(100);
 
+        // Keep it as string in DB to prevent breaking change on column type
         builder.Property(n => n.ReferenceType)
+            .HasConversion<string>()
             .HasMaxLength(100);
 
+        builder.Property(n => n.ActionUrl)
+            .HasMaxLength(500);
+
+        builder.Property(n => n.Icon)
+            .HasMaxLength(100);
+
+        builder.Property(n => n.Color)
+            .HasMaxLength(50);
+
+        builder.Property(n => n.Metadata)
+            .HasColumnType("jsonb");
+
         builder.Property(n => n.IsRead)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(n => n.IsDeleted)
             .IsRequired()
             .HasDefaultValue(false);
 
@@ -53,5 +78,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.HasIndex(n => n.CreatedAt);
         builder.HasIndex(n => n.IsRead);
         builder.HasIndex(n => n.Type);
+        builder.HasIndex(n => n.IsDeleted);
+        builder.HasIndex(n => n.Priority);
     }
 }

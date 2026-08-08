@@ -7,7 +7,7 @@ export default function MadingCollage() {
       {/* Top Image Container */}
       <div className="relative h-[130px] sm:h-[160px] w-full overflow-hidden bg-gray-100">
         <Image
-          src="/images/aulasmkn2ska.jpg"
+          src="/images/tempat/aulasmkn2ska.jpg"
           alt="Suasana Ruang Mading Sekolah"
           fill
           sizes="(max-width: 768px) 100vw, 420px"

@@ -423,7 +423,7 @@ export default function KalenderPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-bold text-gray-800 flex items-center gap-2 text-base">
                     <Search className="h-4.5 w-4.5 text-[#2c1ee8]" />
-                    Hasil Pencarian untuk "{searchQuery}"
+                    Hasil Pencarian untuk &quot;{searchQuery}&quot;
                   </h3>
                   <span className="text-xs bg-blue-100/75 text-[#2c1ee8] font-bold px-3 py-1 rounded-full border border-blue-200/50">
                     {searchResults.length} Cocok

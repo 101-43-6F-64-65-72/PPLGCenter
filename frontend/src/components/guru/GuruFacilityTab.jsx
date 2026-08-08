@@ -15,12 +15,25 @@ import {
 import bookingService from "@/services/bookingService";
 import AnimatedContent from "@/components/common/AnimatedContent";
 
+const FacilitySkeleton = () => (
+  <div className="divide-y divide-gray-100 animate-pulse">
+    {Array.from({ length: 3 }).map((_, idx) => (
+      <div key={idx} className="p-5 space-y-3">
+        <div className="h-5 w-24 bg-slate-200 rounded-full" />
+        <div className="h-6 w-1/2 bg-slate-200 rounded-md" />
+        <div className="h-4 w-3/4 bg-slate-100 rounded-md" />
+      </div>
+    ))}
+  </div>
+);
+
 export default function GuruFacilityTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [note, setNote] = useState("");
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiState, setApiState] = useState("loading"); // "loading" | "success" | "empty" | "error"
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -42,47 +55,48 @@ export default function GuruFacilityTab() {
       setApiState("error");
       setErrorMessage("Gagal memuat data peminjaman fasilitas dari server.");
       setBookings([]);
-    } fontally: {
+    } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchBookings();
-  }, [fetchBookings]);
-
   const filtered = bookings.filter((b) => {
-    const org = b.organization || b.Organization || "";
-    const act = b.activityName || b.purpose || b.Purpose || "";
-    const fac = b.facilityTitle || b.facilityId || "";
+    const q = searchQuery.toLowerCase();
     return (
-      org.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      act.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      fac.toLowerCase().includes(searchQuery.toLowerCase())
+      (b.organization || "").toLowerCase().includes(q) ||
+      (b.activityName || b.purpose || "").toLowerCase().includes(q) ||
+      (b.facilityTitle || "").toLowerCase().includes(q)
     );
   });
 
-  const handleUpdateStatus = (bookingId, newStatus) => {
+  const handleUpdateStatus = async (bookingId, newStatus) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await bookingService.updateBookingStatus(bookingId, newStatus, note);
+    } catch (err) {
+      console.warn("Async booking update warning:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
     setBookings((prev) =>
       prev.map((b) =>
-        b.id === bookingId ? { ...b, status: newStatus, verificator: "Guru Pembina" } : b
+        b.id === bookingId ? { ...b, status: newStatus } : b
       )
     );
     setSelectedBooking(null);
     setNote("");
   };
 
-  const FacilitySkeleton = () => (
-    <div className="divide-y divide-gray-100 animate-pulse">
-      {Array.from({ length: 3 }).map((_, idx) => (
-        <div key={idx} className="p-5 space-y-3">
-          <div className="h-5 w-24 bg-slate-200 rounded-full" />
-          <div className="h-6 w-1/2 bg-slate-200 rounded-md" />
-          <div className="h-4 w-3/4 bg-slate-100 rounded-md" />
-        </div>
-      ))}
-    </div>
-  );
+  useEffect(() => {
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) fetchBookings();
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchBookings]);
 
   return (
     <div className="space-y-6">

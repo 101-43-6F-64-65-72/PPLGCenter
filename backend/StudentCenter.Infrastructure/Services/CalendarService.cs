@@ -23,7 +23,7 @@ public class CalendarService : ICalendarService
 
         var query = _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .AsQueryable();
+            .Where(c => c.DeletedAt == null);
 
         if (!string.IsNullOrWhiteSpace(category))
         {
@@ -36,21 +36,7 @@ public class CalendarService : ICalendarService
             .OrderBy(c => c.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new CalendarEventResponse
-            {
-                Id = c.Id,
-                Title = c.Title,
-                Description = c.Description,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                Location = c.Location,
-                Category = c.Category,
-                IsAllDay = c.IsAllDay,
-                CreatedByUserId = c.CreatedByUserId,
-                CreatedByUserName = c.CreatedByUser.FullName,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt
-            })
+            .Select(c => MapToResponse(c))
             .ToListAsync();
 
         return new PagedResult<CalendarEventResponse>
@@ -71,48 +57,71 @@ public class CalendarService : ICalendarService
 
         return await _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.StartDate >= now)
+            .Where(c => c.DeletedAt == null && c.StartDate >= now)
             .OrderBy(c => c.StartDate)
             .Take(count)
-            .Select(c => new CalendarEventResponse
-            {
-                Id = c.Id,
-                Title = c.Title,
-                Description = c.Description,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                Location = c.Location,
-                Category = c.Category,
-                IsAllDay = c.IsAllDay,
-                CreatedByUserId = c.CreatedByUserId,
-                CreatedByUserName = c.CreatedByUser.FullName,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt
-            })
+            .Select(c => MapToResponse(c))
+            .ToListAsync();
+    }
+
+    public async Task<List<CalendarEventResponse>> GetMonthlyEventsAsync(int year, int month, string? userRole = null)
+    {
+        var startOfMonth = new DateTime(year, month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var endOfMonth = startOfMonth.AddMonths(1).AddTicks(-1);
+
+        var query = _context.Set<CalendarEvent>()
+            .AsNoTracking()
+            .Where(c => c.DeletedAt == null && c.StartDate >= startOfMonth && c.StartDate <= endOfMonth);
+
+        if (userRole == "Student")
+        {
+            query = query.Where(c => c.Visibility == "Public");
+        }
+        else if (userRole == "Teacher")
+        {
+            query = query.Where(c => c.Visibility == "Public" || c.Visibility == "TeacherOnly");
+        }
+
+        return await query
+            .OrderBy(c => c.StartDate)
+            .Select(c => MapToResponse(c))
+            .ToListAsync();
+    }
+
+    public async Task<List<CalendarEventResponse>> GetDailyEventsAsync(DateTime date, string? userRole = null)
+    {
+        var startOfDay = date.Date;
+        var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+
+        var query = _context.Set<CalendarEvent>()
+            .AsNoTracking()
+            .Where(c => c.DeletedAt == null && c.StartDate >= startOfDay && c.StartDate <= endOfDay);
+
+        if (userRole == "Student")
+        {
+            query = query.Where(c => c.Visibility == "Public");
+        }
+        else if (userRole == "Teacher")
+        {
+            query = query.Where(c => c.Visibility == "Public" || c.Visibility == "TeacherOnly");
+        }
+
+        return await query
+            .OrderBy(c => c.StartDate)
+            .Select(c => MapToResponse(c))
             .ToListAsync();
     }
 
     public async Task<CalendarEventResponse?> GetEventByIdAsync(Guid id)
     {
-        return await _context.Set<CalendarEvent>()
+        var calendarEvent = await _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.Id == id)
-            .Select(c => new CalendarEventResponse
-            {
-                Id = c.Id,
-                Title = c.Title,
-                Description = c.Description,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                Location = c.Location,
-                Category = c.Category,
-                IsAllDay = c.IsAllDay,
-                CreatedByUserId = c.CreatedByUserId,
-                CreatedByUserName = c.CreatedByUser.FullName,
-                CreatedAt = c.CreatedAt,
-                UpdatedAt = c.UpdatedAt
-            })
-            .FirstOrDefaultAsync();
+            .Include(c => c.CreatedByUser)
+            .FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null);
+
+        if (calendarEvent is null) return null;
+
+        return MapToResponse(calendarEvent);
     }
 
     public async Task<CalendarEventResponse> CreateEventAsync(CreateCalendarEventRequest request, Guid userId)
@@ -120,12 +129,15 @@ public class CalendarService : ICalendarService
         var calendarEvent = new CalendarEvent
         {
             Id = Guid.NewGuid(),
-            Title = request.Title,
-            Description = request.Description,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            Location = request.Location,
-            Category = request.Category,
+            Title = request.Title.Trim(),
+            Description = request.Description?.Trim(),
+            EventDate = request.EventDate,
+            StartTime = request.StartTime,
+            EndTime = request.EndTime,
+            Location = request.Location?.Trim(),
+            Category = request.Category ?? "Academic",
+            Color = request.Color,
+            Visibility = request.Visibility ?? "Public",
             IsAllDay = request.IsAllDay,
             CreatedByUserId = userId,
             CreatedAt = DateTime.UtcNow,
@@ -142,10 +154,13 @@ public class CalendarService : ICalendarService
             Id = calendarEvent.Id,
             Title = calendarEvent.Title,
             Description = calendarEvent.Description,
-            StartDate = calendarEvent.StartDate,
-            EndDate = calendarEvent.EndDate,
+            EventDate = calendarEvent.EventDate,
+            StartTime = calendarEvent.StartTime,
+            EndTime = calendarEvent.EndTime,
             Location = calendarEvent.Location,
             Category = calendarEvent.Category,
+            Color = calendarEvent.Color,
+            Visibility = calendarEvent.Visibility,
             IsAllDay = calendarEvent.IsAllDay,
             CreatedByUserId = calendarEvent.CreatedByUserId,
             CreatedByUserName = user?.FullName ?? string.Empty,
@@ -158,7 +173,7 @@ public class CalendarService : ICalendarService
     {
         var calendarEvent = await _context.Set<CalendarEvent>()
             .Include(c => c.CreatedByUser)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null);
 
         if (calendarEvent is null)
             return null;
@@ -166,38 +181,27 @@ public class CalendarService : ICalendarService
         if (userRole != "Admin" && calendarEvent.CreatedByUserId != userId)
             throw new UnauthorizedAccessException("You can only update your own calendar events.");
 
-        calendarEvent.Title = request.Title;
-        calendarEvent.Description = request.Description;
-        calendarEvent.StartDate = request.StartDate;
-        calendarEvent.EndDate = request.EndDate;
-        calendarEvent.Location = request.Location;
-        calendarEvent.Category = request.Category;
+        calendarEvent.Title = request.Title.Trim();
+        calendarEvent.Description = request.Description?.Trim();
+        calendarEvent.EventDate = request.EventDate;
+        calendarEvent.StartTime = request.StartTime;
+        calendarEvent.EndTime = request.EndTime;
+        calendarEvent.Location = request.Location?.Trim();
+        calendarEvent.Category = request.Category ?? "Academic";
+        calendarEvent.Color = request.Color;
+        calendarEvent.Visibility = request.Visibility ?? "Public";
         calendarEvent.IsAllDay = request.IsAllDay;
         calendarEvent.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
-        return new CalendarEventResponse
-        {
-            Id = calendarEvent.Id,
-            Title = calendarEvent.Title,
-            Description = calendarEvent.Description,
-            StartDate = calendarEvent.StartDate,
-            EndDate = calendarEvent.EndDate,
-            Location = calendarEvent.Location,
-            Category = calendarEvent.Category,
-            IsAllDay = calendarEvent.IsAllDay,
-            CreatedByUserId = calendarEvent.CreatedByUserId,
-            CreatedByUserName = calendarEvent.CreatedByUser.FullName,
-            CreatedAt = calendarEvent.CreatedAt,
-            UpdatedAt = calendarEvent.UpdatedAt
-        };
+        return MapToResponse(calendarEvent);
     }
 
     public async Task<bool> DeleteEventAsync(Guid id, Guid userId, string userRole)
     {
         var calendarEvent = await _context.Set<CalendarEvent>()
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null);
 
         if (calendarEvent is null)
             return false;
@@ -205,9 +209,31 @@ public class CalendarService : ICalendarService
         if (userRole != "Admin" && calendarEvent.CreatedByUserId != userId)
             throw new UnauthorizedAccessException("You can only delete your own calendar events.");
 
-        _context.Set<CalendarEvent>().Remove(calendarEvent);
+        calendarEvent.DeletedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
         return true;
+    }
+
+    private static CalendarEventResponse MapToResponse(CalendarEvent c)
+    {
+        return new CalendarEventResponse
+        {
+            Id = c.Id,
+            Title = c.Title,
+            Description = c.Description,
+            EventDate = c.EventDate,
+            StartTime = c.StartTime,
+            EndTime = c.EndTime,
+            Location = c.Location,
+            Category = c.Category,
+            Color = c.Color,
+            Visibility = c.Visibility,
+            IsAllDay = c.IsAllDay,
+            CreatedByUserId = c.CreatedByUserId,
+            CreatedByUserName = c.CreatedByUser?.FullName ?? string.Empty,
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt
+        };
     }
 }

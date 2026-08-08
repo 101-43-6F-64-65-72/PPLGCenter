@@ -1,25 +1,34 @@
 "use client";
 
 import React from "react";
-import { FileText, Building2, Award, CheckCircle2, Clock, Users, ShieldCheck } from "lucide-react";
+import { FileText, Building2, Award, CheckCircle2 } from "lucide-react";
 
-export default function GuruStatCards() {
+export default function GuruStatCards({ teacherDash, supervisedExtracurriculars = [] }) {
+  const pendingProposalCount = teacherDash?.pendingProposalsCount ?? 0;
+  const supervisedCount = supervisedExtracurriculars.length || (teacherDash?.advisingExtracurricularCount ?? 0);
+  const pendingSessionCount = teacherDash?.unopenedAttendanceSessionsCount ?? 0;
+  const completedReviewCount = teacherDash?.completedVerificationCount ?? 0;
+
+  const ekskulNames = supervisedExtracurriculars.map((e) => e.name).join(", ");
+
   const stats = [
     {
       id: "proposal-acc",
       title: "Proposal Menunggu ACC Guru",
-      value: "3",
-      subtext: "2 dari Ekskul Binaan",
+      value: String(pendingProposalCount),
+      subtext: ekskulNames ? `Dari unit: ${ekskulNames}` : "Proposal dari unit binaan",
       icon: FileText,
-      badge: "Perlu Tindakan",
-      badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
-      accentBg: "bg-blue-50 text-[#2c1ee8]",
+      badge: pendingProposalCount > 0 ? "Perlu Tindakan" : "Selesai",
+      badgeColor: pendingProposalCount > 0 
+        ? "bg-amber-50 text-amber-700 border-amber-200"
+        : "bg-emerald-50 text-emerald-700 border-emerald-200",
+      accentBg: "bg-amber-50 text-amber-600",
     },
     {
       id: "facility-approval",
       title: "Persetujuan Peminjaman",
-      value: "5",
-      subtext: "3 disetujui minggu ini",
+      value: String(pendingSessionCount),
+      subtext: "Sesi & fasilitas aktif",
       icon: Building2,
       badge: "Real-time",
       badgeColor: "bg-blue-50 text-[#2c1ee8] border-blue-200",
@@ -28,18 +37,20 @@ export default function GuruStatCards() {
     {
       id: "ekskul-binaan",
       title: "Ekskul Binaan Saya",
-      value: "2",
-      subtext: "Pramuka & Basketball Club",
+      value: String(supervisedCount),
+      subtext: ekskulNames || "Belum ada unit binaan",
       icon: Award,
-      badge: "Aktif",
-      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      badge: supervisedCount > 0 ? "Aktif" : "Kosong",
+      badgeColor: supervisedCount > 0 
+        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+        : "bg-gray-50 text-gray-500 border-gray-200",
       accentBg: "bg-emerald-50 text-emerald-600",
     },
     {
       id: "total-verified",
       title: "Total Verifikasi Selesai",
-      value: "28",
-      subtext: "Semester Genap 2026",
+      value: String(completedReviewCount),
+      subtext: "Proposal telah direview",
       icon: CheckCircle2,
       badge: "Verifikasi Guru",
       badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
@@ -72,7 +83,7 @@ export default function GuruStatCards() {
               <h4 className="text-sm font-bold text-gray-800 mt-1">
                 {item.title}
               </h4>
-              <p className="text-xs text-gray-500 mt-1 font-medium">
+              <p className="text-xs text-gray-500 mt-1 font-medium line-clamp-1">
                 {item.subtext}
               </p>
             </div>
@@ -82,3 +93,4 @@ export default function GuruStatCards() {
     </div>
   );
 }
+

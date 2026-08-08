@@ -46,6 +46,21 @@ function parseTitleAndOrg(rawTitle = "") {
   return { organization: org, cleanTitle };
 }
 
+const ProposalSkeleton = () => (
+  <div className="divide-y divide-gray-100 animate-pulse">
+    {Array.from({ length: 3 }).map((_, idx) => (
+      <div key={idx} className="p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-24 bg-slate-200 rounded-full" />
+          <div className="h-5 w-32 bg-slate-200 rounded-md" />
+        </div>
+        <div className="h-6 w-3/4 bg-slate-200 rounded-md" />
+        <div className="h-4 w-full bg-slate-100 rounded-md" />
+      </div>
+    ))}
+  </div>
+);
+
 export default function AdminProposalTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("semua"); // 'semua' | 'pending' | 'approved' | 'rejected'
@@ -64,9 +79,9 @@ export default function AdminProposalTab() {
 
     try {
       const res = await proposalService.getProposals();
-      if (!res.success) {
+      if (!res || !res.success) {
         setApiState("error");
-        setErrorMessage(res.message || "Gagal mengambil data proposal dari server.");
+        setErrorMessage(res?.message || "Gagal mengambil data proposal dari server.");
         setProposals([]);
         return;
       }
@@ -146,14 +161,21 @@ export default function AdminProposalTab() {
   }, []);
 
   useEffect(() => {
-    fetchProposals();
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) fetchProposals();
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [fetchProposals]);
 
   const filteredProposals = proposals.filter((p) => {
     const matchesSearch =
-      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.submittedByUserName.toLowerCase().includes(searchQuery.toLowerCase());
+      searchQuery === "" ||
+      (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (p.organization && p.organization.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (p.submittedByUserName && p.submittedByUserName.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus =
       statusFilter === "semua" || p.statusKey === statusFilter;
@@ -161,38 +183,26 @@ export default function AdminProposalTab() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleUpdateStatus = async (proposalId, statusEnum) => {
+  const handleUpdateStatus = async (proposalId, statusNum) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const res = await proposalService.reviewProposal(proposalId, statusEnum, adminNote);
-      if (res.success) {
-        await fetchProposals();
+      const res = await proposalService.updateProposalStatus(proposalId, {
+        status: statusNum,
+        rejectionReason: adminNote || (statusNum === 2 ? "Ditolak oleh Admin" : ""),
+      });
+      if (res && res.success) {
         setSelectedProposal(null);
-        setAdminNote("");
+        fetchProposals();
       } else {
-        alert(res.message || "Gagal memperbarui status proposal.");
+        alert(res?.message || "Gagal memperbarui status proposal.");
       }
     } catch (err) {
-      alert("Gagal menghubungi server untuk memperbarui status.");
+      alert("Terjadi kesalahan sistem saat memperbarui status proposal.");
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const ProposalSkeleton = () => (
-    <div className="divide-y divide-gray-100 animate-pulse">
-      {Array.from({ length: 3 }).map((_, idx) => (
-        <div key={idx} className="p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-24 bg-slate-200 rounded-full" />
-            <div className="h-5 w-32 bg-slate-200 rounded-md" />
-          </div>
-          <div className="h-6 w-3/4 bg-slate-200 rounded-md" />
-          <div className="h-4 w-full bg-slate-100 rounded-md" />
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -201,6 +211,7 @@ export default function AdminProposalTab() {
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
+            suppressHydrationWarning={true}
             type="text"
             placeholder="Cari proposal, organisasi, atau pengaju..."
             value={searchQuery}
@@ -220,6 +231,7 @@ export default function AdminProposalTab() {
             ].map((tab) => (
               <button
                 key={tab.id}
+                suppressHydrationWarning={true}
                 type="button"
                 onClick={() => setStatusFilter(tab.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${

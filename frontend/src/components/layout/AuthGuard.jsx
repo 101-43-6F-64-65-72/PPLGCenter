@@ -25,15 +25,10 @@ export const AuthGuard = ({ children, allowedRoles = null }) => {
   const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
-    if (!isDev && !loading && !isAuthenticated) {
+    if (!loading && !isAuthenticated) {
       router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
     }
-  }, [isDev, isAuthenticated, loading, pathname, router]);
-
-  // Development preview only.
-  if (isDev) {
-    return children;
-  }
+  }, [isAuthenticated, loading, pathname, router]);
 
   if (loading) {
     return (

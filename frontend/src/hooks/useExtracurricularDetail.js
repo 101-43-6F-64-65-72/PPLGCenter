@@ -53,7 +53,8 @@ export function useExtracurricularDetail(slug) {
         isActive: activeState,
         description: item.description || item.Description || "",
         imageUrl: item.imageUrl || item.ImageUrl || null,
-        instructor: item.managedByUser?.fullName || item.instructor || "Pembina Ekstrakurikuler",
+        instructor: item.supervisor?.name || item.advisorName || item.managedByUser?.fullName || item.instructor || "Pembina Ekstrakurikuler",
+        supervisor: item.supervisor || null,
         schedule: item.schedule || {
           day: "Sesuai Jadwal",
           time: "15.30 - 17.00 WIB",
@@ -115,7 +116,13 @@ export function useExtracurricularDetail(slug) {
   }, [slug, isAuthenticated, userId]);
 
   useEffect(() => {
-    fetchDetailAndMembership();
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) fetchDetailAndMembership();
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [fetchDetailAndMembership]);
 
   return {

@@ -31,6 +31,28 @@ public class CalendarController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("month")]
+    public async Task<IActionResult> GetMonthlyEvents([FromQuery] int year = 0, [FromQuery] int month = 0)
+    {
+        if (year == 0) year = DateTime.UtcNow.Year;
+        if (month == 0) month = DateTime.UtcNow.Month;
+
+        var userRole = _currentUserService.Role;
+        var result = await _calendarService.GetMonthlyEventsAsync(year, month, userRole);
+        return Ok(ApiResponse<List<CalendarEventResponse>>.Ok("Monthly calendar events retrieved successfully", result));
+    }
+
+    [Authorize]
+    [HttpGet("day")]
+    public async Task<IActionResult> GetDailyEvents([FromQuery] DateTime? date = null)
+    {
+        var targetDate = date ?? DateTime.UtcNow;
+        var userRole = _currentUserService.Role;
+        var result = await _calendarService.GetDailyEventsAsync(targetDate, userRole);
+        return Ok(ApiResponse<List<CalendarEventResponse>>.Ok("Daily calendar events retrieved successfully", result));
+    }
+
+    [Authorize]
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcomingEvents([FromQuery] int count = 5)
     {

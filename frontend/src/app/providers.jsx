@@ -3,11 +3,25 @@
 import React from "react";
 import { QueryClientProvider, queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 export function Providers({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        {children}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              borderRadius: "16px",
+              fontWeight: "600",
+              fontSize: "13px",
+            },
+          }}
+        />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -12,7 +12,17 @@ export default function ProposalList({
   onEdit,
   onDelete,
 }) {
-  const [pinnedIds, setPinnedIds] = useState([]);
+  const [pinnedIds, setPinnedIds] = useState(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const stored = localStorage.getItem(PIN_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
 
   // Search & Filter states
@@ -28,21 +38,6 @@ export default function ProposalList({
 
     return () => clearTimeout(handler);
   }, [searchQuery]);
-
-  // Load pinned IDs from localStorage once on initial mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(PIN_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setPinnedIds(parsed);
-        }
-      }
-    } catch (e) {
-      // Safe fallback
-    }
-  }, []);
 
   const handleTogglePin = (id) => {
     setPinnedIds((prev) => {

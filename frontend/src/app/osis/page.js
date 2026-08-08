@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthGuard from "@/components/layout/AuthGuard";
@@ -9,6 +9,7 @@ import OsisStatCards from "@/components/osis/OsisStatCards";
 import OsisProposalTab from "@/components/osis/OsisProposalTab";
 import OsisFacilityTab from "@/components/osis/OsisFacilityTab";
 import OsisAnnouncementsTab from "@/components/osis/OsisAnnouncementsTab";
+import dashboardService from "@/services/dashboardService";
 import {
   LayoutDashboard,
   FileText,
@@ -30,6 +31,28 @@ export default function OsisPanelPage() {
 
 function OsisPanelContent() {
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'proposals' | 'facilities' | 'announcements'
+  const [summaryData, setSummaryData] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadSummary() {
+      setLoadingSummary(true);
+      try {
+        const res = await dashboardService.getSummary();
+        const data = res?.data || res;
+        if (isMounted && data) setSummaryData(data);
+      } catch (err) {
+        console.error("Failed to load OSIS panel summary:", err);
+      } finally {
+        if (isMounted) setLoadingSummary(false);
+      }
+    }
+    loadSummary();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const tabs = [
     { id: "overview", label: "Overview OSIS", icon: LayoutDashboard },
@@ -99,7 +122,7 @@ function OsisPanelContent() {
         {/* Dynamic Tab Content */}
         {activeTab === "overview" && (
           <div className="space-y-8">
-            <OsisStatCards />
+            <OsisStatCards summaryData={summaryData} loading={loadingSummary} />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Proposal Quick Section */}

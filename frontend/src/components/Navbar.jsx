@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { User, LogOut } from "@/components/common/Icons";
 import LoginModal from "@/features/auth/components/LoginModal";
+import NotificationBell from "@/components/notification/NotificationBell";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,6 +30,9 @@ export default function Navbar() {
   // Add Proposal menu only for authenticated users
   if (isAuthenticated) {
     baseNavItems.push({ name: "Proposal", path: "/proposal" });
+    // Phase 6: Pemilos & OSIS Structure
+    baseNavItems.push({ name: "PEMILOS", path: "/pemilos" });
+    baseNavItems.push({ name: "Struktur OSIS", path: "/osis/structure" });
   }
 
   if (isAuthenticated) {
@@ -36,6 +40,7 @@ export default function Navbar() {
       baseNavItems.push({ name: "Panel Admin", path: "/admin" });
     } else if (userRole === "osis") {
       baseNavItems.push({ name: "Panel OSIS", path: "/osis" });
+      baseNavItems.push({ name: "Rekrutmen OSIS", path: "/osis/recruitment" });
     } else if (userRole === "teacher") {
       baseNavItems.push({ name: "Panel Guru", path: "/guru" });
     }
@@ -171,6 +176,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-2.5">
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
+                  <NotificationBell />
                   <Link
                     href="/profile"
                     className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 text-[#2c1ee8] hover:bg-blue-100 font-semibold text-xs lg:text-sm transition-all shadow-2xs border border-blue-200/60 cursor-pointer"

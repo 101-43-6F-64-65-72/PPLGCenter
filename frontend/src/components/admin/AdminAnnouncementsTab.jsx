@@ -57,7 +57,20 @@ export default function AdminAnnouncementsTab() {
         else if (Array.isArray(res?.data)) list = res.data;
         else if (Array.isArray(res?.items)) list = res.items;
         else if (Array.isArray(res)) list = res;
-        setAnnouncements(list);
+        setAnnouncements(
+          list.map((item) => ({
+            ...item,
+            author: item.createdByUserName || item.author || "Admin Sekolah",
+            date: item.createdAt
+              ? new Date(item.createdAt).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : item.date || "Hari ini",
+            status: item.isPinned ? "Dipin di Teratas" : "Dipublikasikan",
+          }))
+        );
       })
       .catch(() => {});
   };

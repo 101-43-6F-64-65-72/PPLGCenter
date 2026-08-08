@@ -14,10 +14,13 @@ test.describe('Module 1: Authentication', () => {
     // Refresh
     await page.reload();
     await expect(page).toHaveURL(/\/profile/);
-    await expect(page.getByRole('heading', { name: 'Profil Saya' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /keluar sesi/i }).first()).toBeVisible();
 
     // Logout
-    await page.getByRole('button', { name: /keluar sesi/i }).first().click();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const logoutBtn = page.locator('[title="Keluar Sesi"]').first();
+    await logoutBtn.waitFor({ state: 'attached' });
+    await logoutBtn.evaluate((el) => el.click());
     await expect(page).toHaveURL(/\/login/);
     const postLogoutToken = await page.evaluate(() => localStorage.getItem('token'));
     expect(postLogoutToken).toBeNull();

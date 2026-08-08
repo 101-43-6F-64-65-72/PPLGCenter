@@ -17,7 +17,7 @@ export default function OrganizationSelect({
   required = true,
   className = "",
 }) {
-  const { organizations, isLoading, error: fetchError, refetch } = useUserOrganizations();
+  const { organizations, userOrganizations, isLoading, error: fetchError, refetch } = useUserOrganizations();
 
   const isOtherSelected = value === OTHER_OPTION_VALUE;
 
@@ -46,14 +46,29 @@ export default function OrganizationSelect({
               : "-- Pilih Organisasi / Ekstrakurikuler Anda --"}
           </option>
 
-          {/* Render joined extracurriculars for current authenticated user */}
-          {organizations && organizations.length > 0 && (
+          {/* Render user joined extracurriculars if available */}
+          {userOrganizations && userOrganizations.length > 0 && (
             <optgroup label="Ekstrakurikuler Anda">
+              {userOrganizations.map((item) => {
+                const name = typeof item === "string" ? item : (item.name || item.Name || item.title || item.Title);
+                const key = typeof item === "object" ? (item.id || item.Id || name) : item;
+                return (
+                  <option key={`my-${key}`} value={name}>
+                    {name}
+                  </option>
+                );
+              })}
+            </optgroup>
+          )}
+
+          {/* Render all registered school extracurriculars & organizations */}
+          {organizations && organizations.length > 0 && (
+            <optgroup label="Daftar Ekstrakurikuler & Organisasi Sekolah">
               {organizations.map((item) => {
                 const name = typeof item === "string" ? item : (item.name || item.Name || item.title || item.Title);
                 const key = typeof item === "object" ? (item.id || item.Id || name) : item;
                 return (
-                  <option key={key} value={name}>
+                  <option key={`all-${key}`} value={name}>
                     {name}
                   </option>
                 );

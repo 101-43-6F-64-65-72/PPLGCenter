@@ -28,7 +28,9 @@ export default function AnimatedContent({
   useEffect(() => {
     let timer;
     if (activeLoading) {
-      setShowContent(false);
+      timer = setTimeout(() => {
+        setShowContent(false);
+      }, 0);
     } else {
       timer = setTimeout(() => {
         setShowContent(true);

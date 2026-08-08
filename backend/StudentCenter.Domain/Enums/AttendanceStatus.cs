@@ -2,9 +2,11 @@ namespace StudentCenter.Domain.Enums;
 
 public enum AttendanceStatus
 {
-    Present = 0,
-    Late = 1,
-    Absent = 2,
+    NotMarked = 0,
+    Present = 1,
+    Late = 2,
     Permission = 3,
-    Sick = 4
+    Sick = 4,
+    Alpha = 5,
+    Absent = 6
 }

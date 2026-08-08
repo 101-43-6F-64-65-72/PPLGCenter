@@ -18,7 +18,7 @@ export const profileService = {
    * Update user profile via backend REST API database (PUT /api/users/:id)
    */
   async updateProfile(userId, profileData) {
-    const response = await apiClient.put(`/users/${userId}`, profileData);
+    const response = await apiClient.put(`/api/users/${userId}`, profileData);
     return response;
   },
 };

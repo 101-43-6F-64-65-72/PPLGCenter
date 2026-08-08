@@ -19,6 +19,15 @@ public class JwtService : IJwtService
 
     public string GenerateToken(User user)
     {
+        // Default: derive userType from Role, primaryIdentifier from Email
+        var userType = user.Role.ToString();
+        var primaryIdentifier = user.Email;
+
+        return GenerateToken(user, primaryIdentifier, userType);
+    }
+
+    public string GenerateToken(User user, string primaryIdentifier, string userType)
+    {
         var jwtSettings = _configuration.GetSection("Jwt");
         var secretKey = jwtSettings["SecretKey"]!;
         var issuer = jwtSettings["Issuer"]!;
@@ -30,6 +39,7 @@ public class JwtService : IJwtService
 
         var claims = new[]
         {
+            // Standard claims
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
@@ -38,8 +48,13 @@ public class JwtService : IJwtService
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.GivenName, user.FullName),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
+            // Extended identity claims
             new Claim("given_name", user.FullName),
-            new Claim("role", user.Role.ToString())
+            new Claim("role", user.Role.ToString()),
+            new Claim("userId", user.Id.ToString()),
+            new Claim("userType", userType),
+            new Claim("primaryIdentifier", primaryIdentifier),
+            new Claim("fullName", user.FullName)
         };
 
         var token = new JwtSecurityToken(

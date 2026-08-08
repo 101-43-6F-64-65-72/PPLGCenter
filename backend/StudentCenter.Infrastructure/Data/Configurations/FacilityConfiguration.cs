@@ -29,6 +29,12 @@ public class FacilityConfiguration : IEntityTypeConfiguration<Facility>
         builder.Property(f => f.Capacity)
             .IsRequired();
 
+        builder.Property(f => f.ImageUrl)
+            .HasMaxLength(500);
+
+        builder.Property(f => f.Category)
+            .HasMaxLength(100);
+
         builder.Property(f => f.IsActive)
             .IsRequired()
             .HasDefaultValue(true);

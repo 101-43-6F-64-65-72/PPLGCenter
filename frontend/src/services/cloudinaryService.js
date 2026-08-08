@@ -10,8 +10,20 @@ export const uploadImageToCloudinary = async (file) => {
   formData.append("file", file);
 
   try {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("token") ||
+          document.cookie.match(/token=([^;]+)/)?.[1]
+        : null;
+
+    const headers = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch("/api/upload", {
       method: "POST",
+      headers,
       body: formData,
     });
 

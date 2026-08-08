@@ -28,7 +28,9 @@ public class ProposalController : ControllerBase
         [FromQuery] Guid? userId = null,
         [FromQuery] ProposalStatus? status = null)
     {
-        var result = await _proposalService.GetProposalsAsync(page, pageSize, userId, status);
+        var requestingUserId = _currentUserService.UserId;
+        var requestingUserRole = _currentUserService.Role;
+        var result = await _proposalService.GetProposalsAsync(page, pageSize, userId, status, requestingUserId, requestingUserRole);
         return Ok(ApiResponse<PagedResult<ProposalResponse>>.Ok("Proposals retrieved successfully", result));
     }
 
@@ -44,7 +46,7 @@ public class ProposalController : ControllerBase
         return Ok(ApiResponse<ProposalResponse>.Ok("Proposal retrieved successfully", result));
     }
 
-    [Authorize(Roles = "OSIS")]
+    [Authorize(Roles = "Student,OSIS")]
     [HttpPost]
     public async Task<IActionResult> CreateProposal([FromBody] CreateProposalRequest request)
     {
@@ -57,7 +59,7 @@ public class ProposalController : ControllerBase
             ApiResponse<ProposalResponse>.Ok("Proposal created successfully", result));
     }
 
-    [Authorize(Roles = "OSIS")]
+    [Authorize(Roles = "Student,Teacher,Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateProposal(Guid id, [FromBody] UpdateProposalRequest request)
     {
@@ -73,7 +75,7 @@ public class ProposalController : ControllerBase
         return Ok(ApiResponse<ProposalResponse>.Ok("Proposal updated successfully", result));
     }
 
-    [Authorize(Roles = "OSIS")]
+    [Authorize(Roles = "Student,Teacher,Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteProposal(Guid id)
     {

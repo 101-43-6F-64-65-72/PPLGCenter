@@ -11,11 +11,12 @@ test('auth flow trace', async ({ page }) => {
 
   // 2. Navigation & Actions
   await page.goto('/login');
-  await page.locator('input[name="email"]').fill('admin@studentcenter.id');
+  await page.locator('select').selectOption('Admin');
+  await page.locator('input[name="identifier"]').fill('admin@studentcenter.id');
   await page.locator('input[name="password"]').fill('Admin123!');
   
   console.log('TRACE_ACTION=click_login');
-  await page.getByRole('button', { name: /masuk ke student center/i }).click();
+  await page.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/profile/);
   
   const postLoginState = await page.evaluate(() => {

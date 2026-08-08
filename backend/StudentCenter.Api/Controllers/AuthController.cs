@@ -59,9 +59,9 @@ public class AuthController : ControllerBase
     /// <response code="401">User not authenticated.</response>
     [Authorize]
     [HttpGet("me")]
-    [ProducesResponseType(typeof(ApiResponse<CurrentUserResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
-    public IActionResult Me()
+    public async Task<IActionResult> Me()
     {
         var userId = _currentUserService.UserId;
         if (userId is null)
@@ -69,14 +69,12 @@ public class AuthController : ControllerBase
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
         }
 
-        var user = new CurrentUserResponse
+        var user = await _userService.GetUserByIdAsync(userId.Value);
+        if (user is null)
         {
-            Id = userId.Value,
-            FullName = _currentUserService.FullName ?? "Unknown",
-            Email = _currentUserService.Email ?? string.Empty,
-            Role = _currentUserService.Role ?? string.Empty
-        };
+            return NotFound(ApiResponse<object>.Fail("User not found."));
+        }
 
-        return Ok(ApiResponse<CurrentUserResponse>.Ok("User retrieved successfully", user));
+        return Ok(ApiResponse<UserResponse>.Ok("User retrieved successfully", user));
     }
 }

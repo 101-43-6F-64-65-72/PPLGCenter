@@ -45,7 +45,7 @@ public class BookingController : ControllerBase
         return Ok(ApiResponse<BookingResponse>.Ok("Booking retrieved successfully", result));
     }
 
-    [Authorize(Roles = "Student,Teacher,OSIS")]
+    [Authorize(Roles = "Student,Teacher,Admin")]
     [HttpPost]
     public async Task<IActionResult> CreateBooking([FromBody] CreateBookingRequest request)
     {
