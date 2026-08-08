@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import useAuth from "@/hooks/useAuth";
+import calendarService from "@/services/calendarService";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -20,7 +21,9 @@ import {
   X,
   Info,
   CalendarDays,
-  ListTodo
+  ListTodo,
+  Trash2,
+  Loader2
 } from "lucide-react";
 
 // Simple premium Modal Component
@@ -56,13 +59,6 @@ const formatDate = (date) => {
   return `${y}-${m}-${d}`;
 };
 
-// Helper: Safely offset date relative to current time for dummy events
-const getDateOffset = (offset) => {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return formatDate(d);
-};
-
 // Helper: Format event date range beautifully for Indonesian locale
 const formatEventDateRange = (startDateStr, endDateStr) => {
   if (!endDateStr || startDateStr === endDateStr) {
@@ -78,7 +74,7 @@ export default function KalenderPage() {
   const { role, user } = useAuth();
   const userRole = (role || user?.role || "").toLowerCase();
   
-  // OSIS, Admin, and Guru (Teacher) are allowed to add events
+  // OSIS, Admin, and Guru (Teacher) are allowed to add/delete events
   const isAllowedToAddEvent = 
     userRole === "admin" || 
     userRole === "teacher" || 
@@ -98,59 +94,45 @@ export default function KalenderPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize Dummy Events with offset dates so they are always current
-  const [events, setEvents] = useState([
-    {
-      date: `${year}-01-01`,
-      title: "Tahun Baru Masehi",
-      category: "Libur Nasional",
-      location: "Seluruh Sekolah",
-      description: "Hari libur memperingati Tahun Baru Masehi.",
-    },
-    {
-      date: `${year}-05-01`,
-      title: "Hari Buruh Internasional",
-      category: "Libur Nasional",
-      location: "Seluruh Sekolah",
-      description: "Libur nasional memperingati Hari Buruh.",
-    },
-    {
-      date: `${year}-08-17`,
-      title: "Hari Kemerdekaan RI",
-      category: "Libur Nasional",
-      location: "Lapangan Utama",
-      description: "Upacara bendera dan perayaan HUT Kemerdekaan Republik Indonesia.",
-    },
-    {
-      date: getDateOffset(0),
-      title: "Ujian Tengah Semester (UTS)",
-      category: "Ujian",
-      location: "Ruang Kelas masing-masing",
-      description: "Pelaksanaan Ujian Tengah Semester untuk semua mata pelajaran.",
-    },
-    {
-      date: getDateOffset(2),
-      title: "Rapat Anggota Pleno OSIS",
-      category: "OSIS",
-      location: "Ruang Rapat OSIS",
-      description: "Rapat koordinasi dan evaluasi program kerja OSIS tengah tahun.",
-    },
-    {
-      date: getDateOffset(-2),
-      title: "Latihan Gabungan Pramuka",
-      category: "Ekstrakurikuler",
-      location: "Halaman Utama & Lapangan Belakang",
-      description: "Latihan gabungan ekstrakurikuler Pramuka wajib kelas X.",
-    },
-    {
-      date: getDateOffset(5),
-      title: "Sosialisasi Beasiswa Perguruan Tinggi",
-      category: "Akademik",
-      location: "Aula Utama Lantai 2",
-      description: "Workshop dan sosialisasi beasiswa kuliah dalam dan luar negeri untuk kelas XII.",
-    },
-  ]);
+  // Fetch Events from Backend API Endpoint
+  const fetchEvents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await calendarService.getEvents({ page: 1, pageSize: 100 });
+      if (res?.success && res?.data) {
+        const rawItems = Array.isArray(res.data) ? res.data : (res.data.items || []);
+        const normalized = rawItems.map((item) => {
+          const sDate = item.startDate ? item.startDate.split("T")[0] : item.date;
+          const eDate = item.endDate ? item.endDate.split("T")[0] : (item.end || sDate);
+          return {
+            id: item.id,
+            date: sDate,
+            end: eDate,
+            title: item.title,
+            category: item.category || "Akademik",
+            location: item.location || "Sekolah",
+            description: item.description || "",
+          };
+        });
+        setEvents(normalized);
+      } else {
+        setEvents([]);
+      }
+    } catch (err) {
+      console.error("Gagal memuat data kegiatan kalender:", err);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   // Color Mapping Configurations
   const categoryColors = {
@@ -162,7 +144,7 @@ export default function KalenderPage() {
   };
 
   const categoryBadgeStyles = {
-    "Libur Nasional": "bg-red-55 text-red-700 border-red-100",
+    "Libur Nasional": "bg-red-50 text-red-700 border-red-100",
     Akademik: "bg-emerald-50 text-emerald-700 border-emerald-100",
     Ujian: "bg-amber-50 text-amber-700 border-amber-100",
     OSIS: "bg-blue-50 text-blue-700 border-blue-100",
@@ -184,23 +166,52 @@ export default function KalenderPage() {
     setNewEvent((prev) => ({ ...prev, [name]: value }));
   };
 
-  const submitNewEvent = (e) => {
+  const submitNewEvent = async (e) => {
     e.preventDefault();
     if (newEvent.end && new Date(newEvent.start) > new Date(newEvent.end)) {
       alert("Tanggal selesai tidak boleh sebelum tanggal mulai.");
       return;
     }
-    const added = {
-      date: newEvent.start,
-      end: newEvent.end || undefined,
-      title: newEvent.title,
-      category: newEvent.category,
-      location: newEvent.location || "Sekolah",
-      description: newEvent.description || "",
-    };
-    setEvents((prev) => [...prev, added]);
-    setShowAddModal(false);
-    setNewEvent({ title: "", start: "", end: "", category: "", location: "", description: "" });
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        title: newEvent.title,
+        description: newEvent.description || null,
+        startDate: new Date(newEvent.start).toISOString(),
+        endDate: new Date(newEvent.end || newEvent.start).toISOString(),
+        location: newEvent.location || "Sekolah",
+        category: newEvent.category,
+        isAllDay: true,
+      };
+      const res = await calendarService.createEvent(payload);
+      if (res?.success) {
+        setShowAddModal(false);
+        setNewEvent({ title: "", start: "", end: "", category: "", location: "", description: "" });
+        await fetchEvents();
+      } else {
+        alert(res?.message || "Gagal menambah kegiatan kalender.");
+      }
+    } catch (err) {
+      alert("Terjadi kesalahan saat menyimpan kegiatan.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id) => {
+    if (!id) return;
+    if (!confirm("Apakah Anda yakin ingin menghapus kegiatan ini?")) return;
+    try {
+      const res = await calendarService.deleteEvent(id);
+      if (res?.success) {
+        setShowDetailModal(false);
+        await fetchEvents();
+      } else {
+        alert(res?.message || "Gagal menghapus kegiatan.");
+      }
+    } catch (err) {
+      alert("Terjadi kesalahan saat menghapus kegiatan.");
+    }
   };
 
   // Month navigation logic - Main Calendar
@@ -827,9 +838,21 @@ export default function KalenderPage() {
                     <div key={idx} className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50">
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="font-extrabold text-gray-900 text-sm leading-snug">{e.title}</h4>
-                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border shrink-0 ${categoryBadgeStyles[e.category] || ""}`}>
-                          {e.category}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${categoryBadgeStyles[e.category] || ""}`}>
+                            {e.category}
+                          </span>
+                          {isAllowedToAddEvent && e.id && (
+                            <button
+                              onClick={() => handleDeleteEvent(e.id)}
+                              className="p-1 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                              title="Hapus Kegiatan"
+                              aria-label="Hapus kegiatan"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="mt-3 space-y-1.5 text-xs text-gray-500">
@@ -970,11 +993,17 @@ export default function KalenderPage() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-              <Button type="button" variant="outline" onClick={() => setShowAddModal(false)} className="rounded-xl cursor-pointer">
+              <Button type="button" variant="outline" onClick={() => setShowAddModal(false)} disabled={isSubmitting} className="rounded-xl cursor-pointer">
                 Batal
               </Button>
-              <Button type="submit" className="rounded-xl cursor-pointer">
-                Simpan Agenda
+              <Button type="submit" disabled={isSubmitting} className="rounded-xl cursor-pointer flex items-center gap-2">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...
+                  </>
+                ) : (
+                  "Simpan Agenda"
+                )}
               </Button>
             </div>
           </form>

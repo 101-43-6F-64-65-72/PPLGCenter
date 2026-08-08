@@ -194,4 +194,9 @@ export const API_ROUTES = {
     DELETE: (annId, commentId) => `/api/announcements/${annId}/comments/${commentId}`,
     TOGGLE_LOCK: (annId) => `/api/announcements/${annId}/comments/toggle-lock`,
   },
+  CALENDAR: {
+    LIST: "/api/calendar",
+    UPCOMING: "/api/calendar/upcoming",
+    DETAIL: (id) => `/api/calendar/${id}`,
+  },
 };
