@@ -3,6 +3,8 @@
  * Uploads images and PDF documents securely through Next.js server route (/api/upload).
  */
 
+import { API_CONFIG } from "@/config/api";
+
 export const uploadPdfDocument = async (file, folder = "proposals") => {
   if (!file) return null;
 
@@ -22,7 +24,8 @@ export const uploadPdfDocument = async (file, folder = "proposals") => {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch("/api/upload", {
+    const backendUrl = API_CONFIG.BASE_URL;
+    const response = await fetch(`${backendUrl}/api/upload`, {
       method: "POST",
       headers,
       body: formData,
@@ -30,14 +33,15 @@ export const uploadPdfDocument = async (file, folder = "proposals") => {
 
     const data = await response.json();
 
-    if (data?.path || data?.url) {
+    const uploadData = data?.data || data;
+    if (uploadData?.path || uploadData?.url) {
       return {
-        path: data.path || data.url,
-        url: data.url,
+        path: uploadData.path || uploadData.url,
+        url: uploadData.url,
       };
     }
 
-    console.warn("Upload API returned no path/URL:", data);
+    console.warn("Upload API returned error:", data?.message || data?.error || data);
     return null;
   } catch (error) {
     console.warn("Upload network error:", error);
