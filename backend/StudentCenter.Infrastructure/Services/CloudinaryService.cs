@@ -100,6 +100,13 @@ public class CloudinaryService : ICloudinaryService
         }
     }
 
+    private static void AddFormField(MultipartFormDataContent content, string name, string value)
+    {
+        var fieldContent = new StringContent(value, Encoding.UTF8);
+        fieldContent.Headers.ContentType = null;
+        content.Add(fieldContent, name);
+    }
+
     public async Task<string> UploadImageAsync(
         Stream fileStream,
         string fileName,
@@ -126,19 +133,9 @@ public class CloudinaryService : ICloudinaryService
 
         content.Add(fileContent, "file", fileName);
 
-        if (!string.IsNullOrWhiteSpace(uploadPreset))
+        if (!string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(apiSecret))
         {
-            // Unsigned upload mode using preset
-            content.Add(new StringContent(uploadPreset), "upload_preset");
-            if (!string.IsNullOrWhiteSpace(targetFolder))
-            {
-                content.Add(new StringContent(targetFolder), "folder");
-            }
-            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary using unsigned upload preset '{Preset}'...", fileName, uploadPreset);
-        }
-        else
-        {
-            // Signed upload mode using SHA1 signature
+            // Signed upload mode using SHA1 signature (preferred & secure)
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
 
             var sortedParams = new SortedDictionary<string, string>
@@ -154,12 +151,26 @@ public class CloudinaryService : ICloudinaryService
             var hashBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToSign));
             var signature = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
 
-            content.Add(new StringContent(apiKey!), "api_key");
-            content.Add(new StringContent(timestamp), "timestamp");
-            content.Add(new StringContent(targetFolder), "folder");
-            content.Add(new StringContent(signature), "signature");
+            AddFormField(content, "api_key", apiKey);
+            AddFormField(content, "timestamp", timestamp);
+            AddFormField(content, "folder", targetFolder);
+            AddFormField(content, "signature", signature);
 
             _logger.LogInformation("Uploading image '{FileName}' to Cloudinary cloud '{CloudName}' using signed API key '{ApiKey}'...", fileName, cloudName, apiKey);
+        }
+        else if (!string.IsNullOrWhiteSpace(uploadPreset))
+        {
+            // Unsigned upload mode using preset
+            AddFormField(content, "upload_preset", uploadPreset);
+            if (!string.IsNullOrWhiteSpace(targetFolder))
+            {
+                AddFormField(content, "folder", targetFolder);
+            }
+            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary using unsigned upload preset '{Preset}'...", fileName, uploadPreset);
+        }
+        else
+        {
+            throw new InvalidOperationException("Neither valid Cloudinary API key/secret nor upload preset was provided.");
         }
 
         var uploadUrl = $"https://api.cloudinary.com/v1_1/{cloudName}/image/upload";
