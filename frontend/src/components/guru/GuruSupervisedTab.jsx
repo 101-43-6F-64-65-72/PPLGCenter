@@ -103,7 +103,17 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
     }
   }, [selectedEkskul, loadMembers, loadPemilosCandidates]);
 
-  // Teacher Review Candidate Pair
+  const handleUpdateMemberStatus = async (memberId, status) => {
+    if (!selectedEkskul?.id) return;
+    try {
+      await extracurricularService.updateMemberStatus(selectedEkskul.id, memberId, status);
+      toast.success(status === "Active" ? "✓ Pendaftaran siswa berhasil disetujui!" : "Pendaftaran siswa ditolak.");
+      loadMembers();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Gagal memperbarui status keanggotaan.");
+    }
+  };
+
   const handleTeacherReviewPair = async (pairId, isApproved) => {
     try {
       const notes = reviewNotes[pairId] || (isApproved ? "Disetujui oleh Guru Pembina" : "Ditolak oleh Guru Pembina");
@@ -363,9 +373,38 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
                         </td>
 
                         <td className="px-6 py-4">
-                          <span className="inline-block px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-extrabold border border-emerald-200">
-                            ● {m.status || "Aktif"}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold border ${
+                              m.status === "Pending" || m.status === "Menunggu"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : m.status === "Active" || m.status === "Aktif"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-gray-100 text-gray-600 border-gray-200"
+                            }`}>
+                              ● {m.status === "Pending" ? "Menunggu Persetujuan" : m.status || "Aktif"}
+                            </span>
+
+                            {(m.status === "Pending" || m.status === "Menunggu") && (
+                              <div className="flex gap-1.5 ml-2">
+                                <button
+                                  onClick={() => handleUpdateMemberStatus(m.id || m.studentId, "Active")}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition shadow-sm flex items-center gap-1 cursor-pointer"
+                                  title="Setujui Pendaftaran"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  Setujui
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateMemberStatus(m.id || m.studentId, "Removed")}
+                                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold rounded-lg transition shadow-sm flex items-center gap-1 cursor-pointer"
+                                  title="Tolak Pendaftaran"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  Tolak
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

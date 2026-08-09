@@ -369,7 +369,7 @@ public class ExtracurricularService : IExtracurricularService
         if (existingMembership != null)
         {
             member = existingMembership;
-            member.Status = "Active";
+            member.Status = "Pending";
             member.JoinedAt = DateTime.UtcNow;
             _context.ExtracurricularMembers.Update(member);
         }
@@ -380,7 +380,7 @@ public class ExtracurricularService : IExtracurricularService
                 Id = Guid.NewGuid(),
                 ExtracurricularId = extracurricularId,
                 StudentId = studentId,
-                Status = "Active",
+                Status = "Pending",
                 JoinedAt = DateTime.UtcNow
             };
             _context.ExtracurricularMembers.Add(member);
@@ -390,8 +390,8 @@ public class ExtracurricularService : IExtracurricularService
 
         await _notificationService.NotifyUserAsync(
             extracurricular.ManagedByUserId,
-            "Anggota Ekskul Baru",
-            $"{student.FullName} bergabung dengan ekstrakurikuler {extracurricular.Name}.",
+            "Pengajuan Pendaftaran Ekskul",
+            $"{student.FullName} mengajukan pendaftaran ke {extracurricular.Name}. Membutuhkan persetujuan Guru Pembina.",
             NotificationType.ExtracurricularRegistrationApproved,
             NotificationPriority.Normal,
             extracurricular.Id.ToString(),
@@ -410,6 +410,8 @@ public class ExtracurricularService : IExtracurricularService
             ClassName = student.Class?.Name,
             PhotoUrl = student.PhotoUrl,
             PhoneNumber = student.PhoneNumber,
+            Status = member.Status,
+            Position = member.Position.ToString(),
             JoinedAt = member.JoinedAt
         };
     }
@@ -465,6 +467,8 @@ public class ExtracurricularService : IExtracurricularService
                 ClassName = m.Student.Class != null ? m.Student.Class.Name : null,
                 PhotoUrl = m.Student.PhotoUrl,
                 PhoneNumber = m.Student.PhoneNumber,
+                Status = m.Status,
+                Position = m.Position.ToString(),
                 JoinedAt = m.JoinedAt
             })
             .ToListAsync();

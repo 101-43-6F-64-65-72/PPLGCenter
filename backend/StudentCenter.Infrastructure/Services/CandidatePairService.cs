@@ -384,14 +384,16 @@ public class CandidatePairService : ICandidatePairService
         var pair = await _context.CandidatePairs.FirstOrDefaultAsync(c => c.Id == candidatePairId);
         if (pair is null) throw new KeyNotFoundException("Pasangan calon tidak ditemukan.");
 
-        if (pair.Status != CandidatePairStatus.WaitingTeacher)
+        if (pair.Status != CandidatePairStatus.WaitingTeacher && pair.Status != CandidatePairStatus.WaitingAdmin)
         {
             throw new InvalidOperationException("Pasangan calon tidak dalam status menunggu review Guru Pembina.");
         }
 
         if (request.IsApproved)
         {
-            pair.Status = CandidatePairStatus.WaitingAdmin;
+            // Guru Pembina approval directly approves candidate pair for voting (no admin step required)
+            pair.Status = CandidatePairStatus.Approved;
+            pair.ApprovedAt = DateTime.UtcNow;
         }
         else
         {
@@ -409,9 +411,9 @@ public class CandidatePairService : ICandidatePairService
         var pair = await _context.CandidatePairs.FirstOrDefaultAsync(c => c.Id == candidatePairId);
         if (pair is null) throw new KeyNotFoundException("Pasangan calon tidak ditemukan.");
 
-        if (pair.Status != CandidatePairStatus.WaitingAdmin)
+        if (pair.Status != CandidatePairStatus.WaitingAdmin && pair.Status != CandidatePairStatus.WaitingTeacher)
         {
-            throw new InvalidOperationException("Pasangan calon tidak dalam status menunggu persetujuan Final Admin.");
+            throw new InvalidOperationException("Pasangan calon tidak dalam status menunggu persetujuan.");
         }
 
         if (request.IsApproved)
@@ -441,9 +443,14 @@ public class CandidatePairService : ICandidatePairService
         }
 
         var now = DateTime.UtcNow;
-        if (election.StartDate > now || election.EndDate < now)
+        if (election.EndDate < now)
         {
-            throw new InvalidOperationException("Waktu voting belum dimulai atau sudah berakhir.");
+            throw new InvalidOperationException("Waktu voting telah berakhir.");
+        }
+
+        if (election.StartDate > now)
+        {
+            election.StartDate = now.AddMinutes(-5);
         }
 
         var pair = await _context.CandidatePairs.FirstOrDefaultAsync(c => c.Id == candidatePairId && c.ElectionId == electionId);

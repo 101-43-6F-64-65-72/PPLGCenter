@@ -247,8 +247,10 @@ function PemilosContent() {
     }
   };
 
-  // Only approved candidate pairs (statusText === 'Approved' or status === 5)
-  const approvedPairs = pairs.filter((p) => p.statusText === "Approved" || p.status === 5);
+  // Approved candidate pairs for ballot (status Approved = 5 or legacy WaitingAdmin = 4)
+  const approvedPairs = pairs.filter(
+    (p) => p.statusText === "Approved" || p.status === 5 || p.statusText === "WaitingAdmin" || p.status === 4
+  );
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
