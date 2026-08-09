@@ -59,17 +59,18 @@ public class UploadController : ControllerBase
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
     private readonly IFileStorageService _fileStorageService;
-    private readonly HttpClient _httpClient;
+    private readonly ICloudinaryService _cloudinaryService;
 
     public UploadController(
         IWebHostEnvironment environment,
         IConfiguration configuration,
-        IFileStorageService fileStorageService)
+        IFileStorageService fileStorageService,
+        ICloudinaryService cloudinaryService)
     {
         _environment = environment;
         _configuration = configuration;
         _fileStorageService = fileStorageService;
-        _httpClient = new HttpClient();
+        _cloudinaryService = cloudinaryService;
     }
 
     /// <summary>
@@ -146,19 +147,19 @@ public class UploadController : ControllerBase
             }
         }
 
-        // ── IMAGE & FALLBACK FILE UPLOAD PATH: CLOUDINARY OR LOCAL DISK ──
-        var cloudName = _configuration["Cloudinary:CloudName"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME");
-        var apiKey = _configuration["Cloudinary:ApiKey"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY");
-        var apiSecret = _configuration["Cloudinary:ApiSecret"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
+        // ── IMAGE UPLOAD PATH: CLOUDINARY OR LOCAL DISK FALLBACK ──
+        var folder = string.IsNullOrWhiteSpace(request.Folder) ? "images" : request.Folder.Trim();
 
-        if (!string.IsNullOrWhiteSpace(cloudName) && !string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(apiSecret))
+        if (_cloudinaryService.IsConfigured)
         {
             try
             {
-                var cloudinaryUrl = await UploadToCloudinaryAsync(file, cloudName, apiKey, apiSecret);
+                using var stream = file.OpenReadStream();
+                var cloudinaryUrl = await _cloudinaryService.UploadImageAsync(stream, file.FileName, file.ContentType, folder);
+
                 if (!string.IsNullOrEmpty(cloudinaryUrl))
                 {
-                    return Ok(ApiResponse<UploadResponse>.Ok("File berhasil diunggah.", new UploadResponse
+                    return Ok(ApiResponse<UploadResponse>.Ok("Gambar berhasil diunggah ke Cloudinary.", new UploadResponse
                     {
                         Url = cloudinaryUrl,
                         Path = cloudinaryUrl,
@@ -170,11 +171,15 @@ public class UploadController : ControllerBase
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Cloudinary Upload Error] {ex.Message}. Falling back to local storage.");
+                Console.WriteLine($"[Cloudinary Upload Error] {ex.Message}");
+                if (!_environment.IsDevelopment())
+                {
+                    return BadRequest(ApiResponse<object>.Fail($"Gagal mengunggah gambar ke Cloudinary: {ex.Message}"));
+                }
             }
         }
 
-        // Fallback: Local Disk Storage
+        // Local Disk Storage (Fallback for local dev if Cloudinary is not configured)
         var uploadPathEnv = _configuration["UPLOAD_PATH"]
             ?? Environment.GetEnvironmentVariable("UPLOAD_PATH");
 
@@ -244,49 +249,6 @@ public class UploadController : ControllerBase
 
         var signedUrl = await _fileStorageService.CreateSignedUrlAsync(path);
         return Ok(ApiResponse<object>.Ok("Signed URL generated.", new { Url = signedUrl }));
-    }
-
-    private async Task<string?> UploadToCloudinaryAsync(IFormFile file, string cloudName, string apiKey, string apiSecret)
-    {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var stringToSign = $"timestamp={timestamp}{apiSecret}";
-        
-        using var sha1 = SHA1.Create();
-        var hashBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToSign));
-        var signature = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-
-        using var content = new MultipartFormDataContent();
-        
-        using var stream = file.OpenReadStream();
-        var fileContent = new StreamContent(stream);
-        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
-        
-        content.Add(fileContent, "file", file.FileName);
-        content.Add(new StringContent(apiKey), "api_key");
-        content.Add(new StringContent(timestamp), "timestamp");
-        content.Add(new StringContent(signature), "signature");
-
-        var uploadUrl = $"https://api.cloudinary.com/v1_1/{cloudName}/auto/upload";
-        var response = await _httpClient.PostAsync(uploadUrl, content);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorResponse = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Cloudinary API returned {response.StatusCode}: {errorResponse}");
-        }
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(jsonResponse);
-        if (doc.RootElement.TryGetProperty("secure_url", out var secureUrlProp))
-        {
-            return secureUrlProp.GetString();
-        }
-        if (doc.RootElement.TryGetProperty("url", out var urlProp))
-        {
-            return urlProp.GetString();
-        }
-
-        return null;
     }
 }
 
