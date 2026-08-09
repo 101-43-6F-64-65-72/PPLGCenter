@@ -64,42 +64,49 @@ function AdminPanelContent() {
 
         {/* Content Area */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto">
-          {/* Banner Header */}
-          <div className="mb-8 space-y-4">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 text-[#2c1ee8] text-xs font-extrabold tracking-wide mb-3 border border-blue-100">
-                  <ShieldAlert className="w-4 h-4" />
-                  <span>PANEL KONTROL KESISWAAN & SUPER ADMIN</span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight">
-                  Panel Super Admin
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500 max-w-3xl mt-2 font-medium">
-                  Pusat kontrol utama sistem Student Center SMKN 2 Surakarta. Verifikasi persetujuan akhir proposal kegiatan, manajemen inventaris fasilitas sekolah, serta publikasi mading digital resmi.
-                </p>
-              </div>
+          {/* Banner Header (Executive Gradient Card) */}
+          <div className="mb-8 space-y-6">
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#071329] via-[#0f172a] to-[#2c1ee8] p-6 sm:p-8 lg:p-10 text-white shadow-xl shadow-slate-900/10 border border-white/10">
+              <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
 
-              {/* Quick Info Pill */}
-              <div className="bg-white p-4 rounded-3xl border border-gray-100 flex items-center gap-3 shadow-xs shrink-0">
-                <div className="w-10 h-10 rounded-2xl bg-[#2c1ee8] text-white flex items-center justify-center font-bold">
-                  <Settings className="w-5 h-5" />
+              <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-blue-200 text-xs font-black tracking-wide border border-white/20">
+                    <ShieldAlert className="w-4 h-4 text-amber-300" />
+                    <span>PANEL KONTROL KESISWAAN & SUPER ADMIN</span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                    Panel Control Center
+                  </h1>
+
+                  <p className="text-xs sm:text-sm text-blue-100/90 max-w-2xl leading-relaxed">
+                    Pusat kendali utama sistem Student Center SMKN 2 Surakarta. Kelola data akademik, akun pengguna, verifikasi proposal, inventaris fasilitas, dan publikasi mading digital.
+                  </p>
                 </div>
-                <div>
-                  <span className="text-[10px] text-gray-400 font-bold block uppercase tracking-wider">Hak Akses Sesi:</span>
-                  <span className="text-xs font-black text-gray-900">Super Admin</span>
+
+                {/* Quick Session Info Pill */}
+                <div className="bg-white/10 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-white/20 space-y-1.5 shrink-0 min-w-[200px]">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-200 uppercase tracking-wider">
+                    <Settings className="w-4 h-4 text-emerald-400" />
+                    <span>Otoritas Sesi</span>
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/30 text-emerald-200 text-xs font-black border border-emerald-400/40">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Super Admin System</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Mobile Tab Select Dropdown (For Responsive Design) */}
-            <div className="lg:hidden mt-4">
+            <div className="lg:hidden">
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Navigasi Panel</label>
               <select
                 suppressHydrationWarning={true}
                 value={activeTab}
                 onChange={(e) => setActiveTab(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl py-3 px-4 text-xs font-bold text-gray-700 outline-none focus:border-[#2c1ee8]"
+                className="w-full bg-white border border-gray-200 rounded-2xl py-3 px-4 text-xs font-bold text-gray-800 outline-none focus:border-[#2c1ee8] shadow-xs"
               >
                 <option value="overview">Dashboard Overview</option>
                 <option value="students">Master Siswa</option>
