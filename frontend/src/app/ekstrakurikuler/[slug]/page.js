@@ -10,6 +10,7 @@ import useExtracurricularDetail from "@/hooks/useExtracurricularDetail";
 import JoinExtracurricularModal from "@/components/ekstrakurikuler/JoinExtracurricularModal";
 import LeaveExtracurricularModal from "@/components/ekstrakurikuler/LeaveExtracurricularModal";
 import { extracurricularService } from "@/services/extracurricularService";
+import { resolveImageUrl } from "@/lib/utils";
 import {
   CheckCircle2,
   Loader2,
@@ -281,7 +282,7 @@ export default function ExtracurricularDetailPage() {
                 <div className="relative aspect-4/5 w-full overflow-hidden rounded-2xl border border-gray-200 bg-slate-100 flex flex-col items-center justify-center text-center shadow-xs">
                   {data.imageUrl ? (
                     <img
-                      src={data.imageUrl}
+                      src={resolveImageUrl(data.imageUrl)}
                       alt={data.name}
                       className="absolute inset-0 h-full w-full object-cover"
                     />

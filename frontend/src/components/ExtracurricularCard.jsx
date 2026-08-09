@@ -2,9 +2,12 @@
 
 import { useRef } from "react";
 import Image from "next/image";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function ExtracurricularCard({ imageSrc, title, alt = "Ekstrakurikuler" }) {
   const cardRef = useRef(null);
+
+  const resolvedSrc = resolveImageUrl(imageSrc);
 
   const handleMouseMove = (e) => {
     const card = cardRef.current;
@@ -58,9 +61,10 @@ export default function ExtracurricularCard({ imageSrc, title, alt = "Ekstrakuri
 
         <div className="relative h-72 sm:h-80 overflow-hidden">
           <Image
-            src={imageSrc}
+            src={resolvedSrc}
             alt={alt}
             fill
+            unoptimized
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.06]"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />

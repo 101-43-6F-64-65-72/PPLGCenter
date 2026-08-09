@@ -10,6 +10,7 @@ import EkstrakurikulerSkeleton from "@/components/ekstrakurikuler/Ekstrakurikule
 import AnimatedContent from "@/components/common/AnimatedContent";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import CreateExtracurricularModal from "@/components/ekstrakurikuler/CreateExtracurricularModal";
+import { resolveImageUrl } from "@/lib/utils";
 import { PlusCircle, ShieldCheck } from "lucide-react";
 
 export default function EkstrakurikulerPage() {
@@ -328,7 +329,7 @@ export default function EkstrakurikulerPage() {
                           <div className="relative mb-4.5 aspect-16/10 w-full overflow-hidden rounded-xl border border-blue-100/70 bg-linear-to-br from-slate-100 via-blue-50/60 to-indigo-100/50 p-4 flex flex-col justify-between group-hover:scale-[1.02] transition-transform duration-300">
                             {item.imageUrl ? (
                               <img
-                                src={item.imageUrl}
+                                src={resolveImageUrl(item.imageUrl)}
                                 alt={item.name}
                                 className="absolute inset-0 h-full w-full object-cover"
                               />

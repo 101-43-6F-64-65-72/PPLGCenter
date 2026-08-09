@@ -1,33 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Activity, Plus, Search, Edit2, Trash2, AlertCircle, UserCheck } from "lucide-react";
+import { Activity, Plus, Search, Edit2, Trash2, ImageIcon } from "lucide-react";
 import extracurricularService from "@/services/extracurricularService";
 import apiClient from "@/lib/api";
-import TeacherSelect from "@/components/common/TeacherSelect";
+import { resolveImageUrl } from "@/lib/utils";
+import CreateExtracurricularModal from "@/components/ekstrakurikuler/CreateExtracurricularModal";
 
 export default function AdminExtracurricularsTab() {
   const [clubs, setClubs] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    category: "Olahraga",
-    description: "",
-    scheduleDay: "Senin",
-    scheduleTime: "15:00 - 17:00",
-    location: "Lapangan Sekolah",
-    supervisorTeacherId: "",
-    advisorName: "",
-    advisorWhatsapp: "",
-    maxMembers: 50,
-    isActive: true,
-  });
-  const [errorMsg, setErrorMsg] = useState("");
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
@@ -35,23 +21,13 @@ export default function AdminExtracurricularsTab() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [resClubs, resTeachers] = await Promise.allSettled([
-        extracurricularService.getAll(),
-        apiClient.get("/api/users/teachers"),
-      ]);
-
-      if (resClubs.status === "fulfilled") {
-        const res = resClubs.value;
-        const list = Array.isArray(res) ? res : res?.items || res?.data?.items || res?.data || [];
-        setClubs(list);
-      }
-
-      if (resTeachers.status === "fulfilled") {
-        const tList = resTeachers.value?.data || resTeachers.value || [];
-        setTeachers(Array.isArray(tList) ? tList : []);
-      }
+      const resClubs = await extracurricularService.getAll();
+      const list = Array.isArray(resClubs)
+        ? resClubs
+        : resClubs?.items || resClubs?.data?.items || resClubs?.data || [];
+      setClubs(list);
     } catch (err) {
-      console.error("Failed to load extracurriculars or teachers:", err);
+      console.error("Failed to load extracurriculars:", err);
     } finally {
       setLoading(false);
     }
@@ -72,62 +48,12 @@ export default function AdminExtracurricularsTab() {
 
   const handleOpenAdd = () => {
     setEditingItem(null);
-    setFormData({
-      name: "",
-      category: "Olahraga",
-      description: "",
-      scheduleDay: "Senin",
-      scheduleTime: "15:00 - 17:00",
-      location: "Lapangan Sekolah",
-      supervisorTeacherId: "",
-      advisorName: "",
-      advisorWhatsapp: "",
-      maxMembers: 50,
-      isActive: true,
-    });
-    setErrorMsg("");
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (club) => {
     setEditingItem(club);
-    setFormData({
-      name: club.name || "",
-      category: club.category || "Olahraga",
-      description: club.description || "",
-      scheduleDay: club.scheduleDay || "Senin",
-      scheduleTime: club.scheduleTime || "15:00 - 17:00",
-      location: club.location || "",
-      supervisorTeacherId: club.supervisorTeacherId || club.supervisor?.id || "",
-      advisorName: club.supervisor?.name || club.advisorName || "",
-      advisorWhatsapp: club.supervisor?.phoneNumber || club.advisorWhatsapp || "",
-      maxMembers: club.maxMembers || 50,
-      isActive: club.isActive ?? true,
-    });
-    setErrorMsg("");
     setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
-    try {
-      const payload = {
-        ...formData,
-        supervisorTeacherId: formData.supervisorTeacherId || null,
-        maxMembers: parseInt(formData.maxMembers, 10) || 50,
-      };
-
-      if (editingItem) {
-        await extracurricularService.updateExtracurricular(editingItem.id, payload);
-      } else {
-        await extracurricularService.createExtracurricular(payload);
-      }
-      setIsModalOpen(false);
-      await loadData();
-    } catch (err) {
-      setErrorMsg(err?.response?.data?.message || err.message || "Gagal menyimpan ekstrakurikuler.");
-    }
   };
 
   const handleDelete = async () => {
@@ -143,7 +69,8 @@ export default function AdminExtracurricularsTab() {
   };
 
   return (
-    <div className="bg-white rounded-[28px] border border-gray-100 p-6 sm:p-8 shadow-sm space-y-6">
+    <div className="bg-white rounded-[28px] border border-gray-100 p-6 sm:p-8 shadow-sm space-y-6 font-sans">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
@@ -154,13 +81,14 @@ export default function AdminExtracurricularsTab() {
         </div>
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm"
+          className="inline-flex items-center gap-2 bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm active:scale-95"
         >
           <Plus className="w-4 h-4" />
           <span>Tambah Ekstrakurikuler</span>
         </button>
       </div>
 
+      {/* Search Input */}
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
         <input
@@ -172,6 +100,7 @@ export default function AdminExtracurricularsTab() {
         />
       </div>
 
+      {/* Table Section */}
       {loading ? (
         <div className="p-8 text-center text-xs text-gray-400">Memuat data ekstrakurikuler...</div>
       ) : (
@@ -179,7 +108,7 @@ export default function AdminExtracurricularsTab() {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase tracking-wider">
-                <th className="p-4">Nama Ekstrakurikuler</th>
+                <th className="p-4">Cover & Nama Ekstrakurikuler</th>
                 <th className="p-4">Guru Pembina</th>
                 <th className="p-4">Kategori</th>
                 <th className="p-4">Jadwal & Lokasi</th>
@@ -197,11 +126,32 @@ export default function AdminExtracurricularsTab() {
               ) : (
                 filtered.map((club) => {
                   const supervisorName = club.supervisor?.name || club.advisorName;
+                  const coverUrl = club.imageUrl || club.ImageUrl;
+
                   return (
                     <tr key={club.id || club.name} className="hover:bg-gray-50/50">
                       <td className="p-4">
-                        <div className="font-bold text-gray-900">{club.name}</div>
-                        <div className="text-[10px] text-gray-400">{club.description?.substring(0, 50)}...</div>
+                        <div className="flex items-center gap-3">
+                          {/* Thumbnail Cover */}
+                          <div className="w-14 h-10 rounded-xl border border-gray-200 bg-gray-100 overflow-hidden shrink-0 flex items-center justify-center relative shadow-2xs">
+                            {coverUrl ? (
+                              <img
+                                src={resolveImageUrl(coverUrl)}
+                                alt={club.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-gray-400">
+                                <ImageIcon className="w-4 h-4 opacity-50" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div>
+                            <div className="font-bold text-gray-900">{club.name}</div>
+                            <div className="text-[10px] text-gray-400 line-clamp-1">{club.description?.substring(0, 50)}...</div>
+                          </div>
+                        </div>
                       </td>
                       <td className="p-4">
                         {supervisorName ? (
@@ -226,8 +176,8 @@ export default function AdminExtracurricularsTab() {
                         </span>
                       </td>
                       <td className="p-4 text-gray-600">
-                        <div>{club.scheduleDay} ({club.scheduleTime})</div>
-                        <div className="text-[10px] text-gray-400">{club.location}</div>
+                        <div>{club.scheduleDay || "Senin"} ({club.scheduleTime || "15:00 - 17:00"})</div>
+                        <div className="text-[10px] text-gray-400">{club.location || "Lapangan Sekolah"}</div>
                       </td>
                       <td className="p-4">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${
@@ -241,9 +191,10 @@ export default function AdminExtracurricularsTab() {
                       <td className="p-4 text-right space-x-2">
                         <button
                           onClick={() => handleOpenEdit(club)}
-                          className="text-gray-500 hover:text-pink-700 font-bold cursor-pointer"
+                          className="text-gray-500 hover:text-pink-700 font-bold cursor-pointer inline-flex items-center gap-1"
                         >
-                          Edit
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Edit</span>
                         </button>
                         <button
                           onClick={() => {
@@ -264,128 +215,13 @@ export default function AdminExtracurricularsTab() {
         </div>
       )}
 
-      {/* Add / Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-black text-gray-900">
-              {editingItem ? "Edit Ekstrakurikuler" : "Tambah Ekstrakurikuler Baru"}
-            </h3>
-
-            {errorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-bold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Nama Ekstrakurikuler *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Contoh: OSIS, Paskibra, Pramuka, Basket"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-pink-600"
-                />
-              </div>
-
-              <TeacherSelect
-                value={formData.supervisorTeacherId}
-                teachersList={teachers}
-                onChange={(teacherId, selected) => {
-                  setFormData({
-                    ...formData,
-                    supervisorTeacherId: teacherId || "",
-                    advisorName: selected ? (selected.fullName || selected.name) : formData.advisorName,
-                    advisorWhatsapp: selected ? (selected.phoneNumber || formData.advisorWhatsapp) : formData.advisorWhatsapp,
-                  });
-                }}
-                label="Guru Pembina (User Relation)"
-                placeholder="Cari NIP atau Nama Guru Pembina..."
-              />
-
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Kategori *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-pink-600"
-                >
-                  <option value="Olahraga">Olahraga</option>
-                  <option value="Seni & Budaya">Seni & Budaya</option>
-                  <option value="Sains & Teknologi">Sains & Teknologi</option>
-                  <option value="Kepemimpinan">Kepemimpinan & Kebangsaan</option>
-                  <option value="Keagamaan">Keagamaan</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Deskripsi</label>
-                <textarea
-                  rows={2}
-                  placeholder="Ringkasan kegiatan ekskul..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 outline-none focus:border-pink-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">Hari Latihan</label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Senin & Kamis"
-                    value={formData.scheduleDay}
-                    onChange={(e) => setFormData({ ...formData, scheduleDay: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-pink-600"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">Jam Latihan</label>
-                  <input
-                    type="text"
-                    placeholder="15:30 - 17:00"
-                    value={formData.scheduleTime}
-                    onChange={(e) => setFormData({ ...formData, scheduleTime: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-pink-600"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Lokasi Latihan</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Lapangan Utama / Aula"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-pink-600"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-pink-600 text-white text-xs font-bold hover:bg-pink-700 transition cursor-pointer shadow-xs"
-                >
-                  Simpan Ekstrakurikuler
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Add / Edit Extracurricular Modal with Image Crop & Cloudinary upload */}
+      <CreateExtracurricularModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={loadData}
+        editingItem={editingItem}
+      />
 
       {/* Delete Modal */}
       {isDeleteModalOpen && (

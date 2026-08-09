@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { extracurricularService } from "@/services/extracurricularService";
 import candidatePairService from "@/services/candidatePairService";
+import uploadImageToCloudinary from "@/services/cloudinaryService";
+import ImageCropUploader from "@/components/common/ImageCropUploader";
 import toast from "react-hot-toast";
 
 export default function GuruSupervisedTab({ supervisedExtracurriculars = [], teacherName = "" }) {
@@ -29,6 +31,9 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
 
   // Settings state
   const [description, setDescription] = useState(selectedEkskul?.description || "");
+  const [imageUrl, setImageUrl] = useState(selectedEkskul?.imageUrl || selectedEkskul?.ImageUrl || null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Sync selectedEkskul if props change
@@ -88,6 +93,8 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
   useEffect(() => {
     if (selectedEkskul) {
       setDescription(selectedEkskul.description || "");
+      setImageUrl(selectedEkskul.imageUrl || selectedEkskul.ImageUrl || null);
+      setUploadError("");
       loadMembers();
       if (selectedEkskul.name?.toUpperCase().includes("OSIS")) {
         loadPemilosCandidates();
@@ -110,6 +117,30 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
     }
   };
 
+  const handleCroppedImage = async (dataUrl, metadata) => {
+    setIsUploading(true);
+    setUploadError("");
+    try {
+      const fileToUpload = metadata?.croppedFile || (await fetch(dataUrl).then((r) => r.blob()).then((blob) => new File([blob], `cover-${Date.now()}.jpg`, { type: "image/jpeg" })));
+      const uploadedUrl = await uploadImageToCloudinary(fileToUpload);
+      if (uploadedUrl) {
+        setImageUrl(uploadedUrl);
+        toast.success("✓ Gambar berhasil diunggah.");
+      } else {
+        setUploadError("Gagal mengunggah gambar. Silakan coba lagi.");
+      }
+    } catch (err) {
+      setUploadError("Gagal mengunggah gambar. Silakan coba lagi.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveCover = () => {
+    setImageUrl(null);
+    setUploadError("");
+  };
+
   // Save Settings
   const handleSaveSettings = async (e) => {
     e.preventDefault();
@@ -120,13 +151,21 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
         name: selectedEkskul.name,
         category: selectedEkskul.category,
         description: description,
+        imageUrl: imageUrl,
+        maxMembers: selectedEkskul.maxMembers || 50,
+        scheduleDay: selectedEkskul.scheduleDay || "Senin",
+        scheduleTime: selectedEkskul.scheduleTime || "15:00 - 17:00",
+        location: selectedEkskul.location || "Lapangan Sekolah",
+        supervisorTeacherId: selectedEkskul.supervisorTeacherId || selectedEkskul.supervisor?.id || null,
+        advisorName: selectedEkskul.advisorName || selectedEkskul.supervisor?.name || null,
+        advisorWhatsapp: selectedEkskul.advisorWhatsapp || selectedEkskul.supervisor?.phoneNumber || null,
         isActive: selectedEkskul.isActive ?? true,
       });
       toast.success("✓ Informasi ekskul berhasil diperbarui!");
     } catch (err) {
-      toast.error("Gagal memperbarui ekskul.");
+      toast.error(err?.response?.data?.message || "Gagal memperbarui ekskul.");
     } finally {
-      savingSettings && setSavingSettings(false);
+      setSavingSettings(false);
     }
   };
 
@@ -505,6 +544,19 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
               />
             </div>
 
+            {/* Cover Image Upload & Crop (16:9) */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-gray-200/80">
+              <ImageCropUploader
+                label="Foto Cover Unit Binaan (Rasio 16:9)"
+                defaultAspectRatio="16:9"
+                initialImageUrl={imageUrl}
+                onCropped={handleCroppedImage}
+                onRemove={handleRemoveCover}
+                isUploading={isUploading}
+                uploadError={uploadError}
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
                 Deskripsi Unit Binaan
@@ -520,11 +572,11 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
 
             <button
               type="submit"
-              disabled={savingSettings}
+              disabled={savingSettings || isUploading}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#2c1ee8] text-white text-xs sm:text-sm font-extrabold hover:bg-blue-700 transition cursor-pointer shadow-md shadow-blue-500/20 disabled:opacity-50"
             >
               <Check className="w-4 h-4" />
-              <span>Simpan Perubahan</span>
+              <span>{savingSettings ? "Menyimpan..." : "Simpan Perubahan"}</span>
             </button>
           </form>
         </div>

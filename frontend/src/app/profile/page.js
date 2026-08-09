@@ -349,305 +349,300 @@ function ProfileContent() {
         {/* Academic / Institutional Info Panel */}
         <AcademicInfoCard user={user} isStudent={isStudent} isTeacher={isTeacher} isAdmin={isAdmin} />
 
-      {/* Main Profile Form Card */}
-      <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-        {/* Navigation Sub-Tabs & Edit Action */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setActiveTab("info")}
-              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === "info"
-                  ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              Informasi Profil
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("password")}
-              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === "password"
-                  ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              Ubah Password
-            </button>
+        {/* Main Profile Form Card */}
+        <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+          {/* Navigation Sub-Tabs & Edit Action */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4 mb-6">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("info")}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "info"
+                    ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+              >
+                Informasi Profil
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("password")}
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "password"
+                    ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+              >
+                Ubah Password
+              </button>
+            </div>
+
+            {activeTab === "info" && !isEditingInfo && (
+              <button
+                type="button"
+                onClick={() => setIsEditingInfo(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-indigo-200 bg-indigo-50 text-[#2C1EE8] hover:bg-indigo-100 transition cursor-pointer self-start sm:self-auto"
+              >
+                <User className="w-4 h-4" />
+                <span>Edit Informasi Profil</span>
+              </button>
+            )}
           </div>
 
-          {activeTab === "info" && !isEditingInfo && (
-            <button
-              type="button"
-              onClick={() => setIsEditingInfo(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-indigo-200 bg-indigo-50 text-[#2C1EE8] hover:bg-indigo-100 transition cursor-pointer self-start sm:self-auto"
+          {/* Status Toast Alert */}
+          {statusMessage.text && (
+            <div
+              className={`mb-6 p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between transition-all ${statusMessage.type === "success"
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  : statusMessage.type === "info"
+                    ? "bg-blue-50 text-blue-800 border-blue-200"
+                    : "bg-rose-50 text-rose-800 border-rose-200"
+                }`}
             >
-              <User className="w-4 h-4" />
-              <span>Edit Informasi Profil</span>
-            </button>
+              <div className="flex items-center gap-2.5">
+                {statusMessage.type === "success" ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-rose-600" />
+                )}
+                <span>{statusMessage.text}</span>
+              </div>
+              <button
+                onClick={() => setStatusMessage({ type: "", text: "" })}
+                className="text-xs opacity-60 hover:opacity-100"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Tab 1: Informasi Profil */}
+          {activeTab === "info" && (
+            !isEditingInfo ? (
+              /* READ-ONLY DISPLAY MODE */
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Nama Lengkap</span>
+                    <p className="text-base font-extrabold text-gray-900">{fullName || savedName}</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Email / Identitas Akun</span>
+                    <p className="text-base font-extrabold text-gray-900 font-mono">{email || savedEmail}</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Telepon / WA</span>
+                    <p className="text-base font-extrabold text-gray-900 font-mono">{phone || "Belum diisi"}</p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Domisili</span>
+                    <p className="text-sm font-semibold text-gray-800 leading-relaxed">{address || "Belum diisi"}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* EDIT FORM MODE */
+              <form onSubmit={handleSaveProfile} className="space-y-5">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                      Nama Lengkap *
+                    </label>
+                    {!isAdmin && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
+                        <Lock className="w-3 h-3 text-amber-600" />
+                        <span>Dikunci Otoritas Sekolah</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <User className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
+                    <input
+                      type="text"
+                      required
+                      disabled={!isAdmin}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Masukkan nama lengkap"
+                      className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
+                          ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                          : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                        }`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                      Email / NIS / NIP *
+                    </label>
+                    {!isAdmin && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
+                        <Lock className="w-3 h-3 text-amber-600" />
+                        <span>Dikunci Otoritas Sekolah</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Mail className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
+                    <input
+                      type="text"
+                      required
+                      disabled={!isAdmin}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Masukkan email atau NIS/NIP"
+                      className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
+                          ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                          : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                        }`}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Nomor Telepon / WhatsApp
+                  </label>
+                  <div className="relative">
+                    <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Contoh: 082322377070"
+                      className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Alamat Tempat Tinggal
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+                    <textarea
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      rows="3"
+                      placeholder="Masukkan alamat domisili Anda"
+                      className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingInfo(false)}
+                    className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
+                  >
+                    {isSaving ? (
+                      <>
+                        <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span>Menyimpan Perubahan...</span>
+                      </>
+                    ) : (
+                      "Simpan Perubahan Profil"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )
+          )}
+
+          {/* Tab 2: Ubah Password Form */}
+          {activeTab === "password" && (
+            <form onSubmit={handleChangePassword} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Password Saat Ini *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+                  <input
+                    type="password"
+                    required
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Masukkan password lama"
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Password Baru *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimal 6 karakter"
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Konfirmasi Password Baru *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Ketik ulang password baru Anda"
+                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
+              >
+                {isSaving ? (
+                  <>
+                    <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Memperbarui Password...</span>
+                  </>
+                ) : (
+                  "Perbarui Password Akun"
+                )}
+              </button>
+            </form>
           )}
         </div>
-
-        {/* Status Toast Alert */}
-        {statusMessage.text && (
-          <div
-            className={`mb-6 p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between transition-all ${
-              statusMessage.type === "success"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                : statusMessage.type === "info"
-                ? "bg-blue-50 text-blue-800 border-blue-200"
-                : "bg-rose-50 text-rose-800 border-rose-200"
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              {statusMessage.type === "success" ? (
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-rose-600" />
-              )}
-              <span>{statusMessage.text}</span>
-            </div>
-            <button
-              onClick={() => setStatusMessage({ type: "", text: "" })}
-              className="text-xs opacity-60 hover:opacity-100"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Tab 1: Informasi Profil */}
-        {activeTab === "info" && (
-          !isEditingInfo ? (
-            /* READ-ONLY DISPLAY MODE */
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Nama Lengkap</span>
-                  <p className="text-base font-extrabold text-gray-900">{fullName || savedName}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Email / Identitas Akun</span>
-                  <p className="text-base font-extrabold text-gray-900 font-mono">{email || savedEmail}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Nomor Telepon / WA</span>
-                  <p className="text-base font-extrabold text-gray-900 font-mono">{phone || "Belum diisi"}</p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Alamat Domisili</span>
-                  <p className="text-sm font-semibold text-gray-800 leading-relaxed">{address || "Belum diisi"}</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* EDIT FORM MODE */
-            <form onSubmit={handleSaveProfile} className="space-y-5">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-                    Nama Lengkap *
-                  </label>
-                  {!isAdmin && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
-                      <Lock className="w-3 h-3 text-amber-600" />
-                      <span>Dikunci Otoritas Sekolah</span>
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <User className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
-                  <input
-                    type="text"
-                    required
-                    disabled={!isAdmin}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Masukkan nama lengkap"
-                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${
-                      !isAdmin
-                        ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
-                        : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                    }`}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
-                    Email / NIS / NIP *
-                  </label>
-                  {!isAdmin && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
-                      <Lock className="w-3 h-3 text-amber-600" />
-                      <span>Dikunci Otoritas Sekolah</span>
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <Mail className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-gray-400"}`} />
-                  <input
-                    type="text"
-                    required
-                    disabled={!isAdmin}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Masukkan email atau NIS/NIP"
-                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${
-                      !isAdmin
-                        ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
-                        : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                    }`}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                  Nomor Telepon / WhatsApp
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Contoh: 082322377070"
-                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                  Alamat Tempat Tinggal
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
-                  <textarea
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    rows="3"
-                    placeholder="Masukkan alamat domisili Anda"
-                    className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEditingInfo(false)}
-                  className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
-                >
-                  {isSaving ? (
-                    <>
-                      <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Menyimpan Perubahan...</span>
-                    </>
-                  ) : (
-                    "Simpan Perubahan Profil"
-                  )}
-                </button>
-              </div>
-            </form>
-          )
-        )}
-
-        {/* Tab 2: Ubah Password Form */}
-        {activeTab === "password" && (
-          <form onSubmit={handleChangePassword} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Password Saat Ini *
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
-                <input
-                  type="password"
-                  required
-                  value={oldPassword}
-                  onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="Masukkan password lama"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Password Baru *
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimal 6 karakter"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                Konfirmasi Password Baru *
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Ketik ulang password baru Anda"
-                  className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm text-gray-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
-            >
-              {isSaving ? (
-                <>
-                  <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Memperbarui Password...</span>
-                </>
-              ) : (
-                "Perbarui Password Akun"
-              )}
-            </button>
-          </form>
-        )}
-      </div>
-    </main>
-  </div>
-);
+      </main>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -659,13 +654,13 @@ function AcademicInfoCard({ user, isStudent, isTeacher, isAdmin }) {
   const items = [];
 
   if (isStudent) {
-    if (user.nis)  items.push({ icon: Hash,         label: "NIS",     value: user.nis });
-    if (user.nisn) items.push({ icon: Hash,         label: "NISN",    value: user.nisn });
+    if (user.nis) items.push({ icon: Hash, label: "NIS", value: user.nis });
+    if (user.nisn) items.push({ icon: Hash, label: "NISN", value: user.nisn });
     if (user.className) items.push({ icon: GraduationCap, label: "Kelas", value: user.className });
-    if (user.departmentName) items.push({ icon: BookOpen,    label: "Jurusan", value: user.departmentName });
+    if (user.departmentName) items.push({ icon: BookOpen, label: "Jurusan", value: user.departmentName });
   } else if (isTeacher) {
-    if (user.nip)      items.push({ icon: Hash,      label: "NIP",     value: user.nip });
-    if (user.position) items.push({ icon: Award,     label: "Jabatan", value: user.position });
+    if (user.nip) items.push({ icon: Hash, label: "NIP", value: user.nip });
+    if (user.position) items.push({ icon: Award, label: "Jabatan", value: user.position });
   } else if (isAdmin) {
     items.push({ icon: Shield, label: "Hak Akses", value: "Super Admin / Waka Kesiswaan" });
   }

@@ -39,8 +39,12 @@ const ASPECT_RATIOS = [
  */
 export default function ImageCropUploader({
   onCropped,
-  label = "Gambar Sampul Mading",
+  onRemove,
+  label = "Cover Ekstrakurikuler",
   defaultAspectRatio = "16:9",
+  initialImageUrl = null,
+  isUploading = false,
+  uploadError = "",
 }) {
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
@@ -50,9 +54,17 @@ export default function ImageCropUploader({
   const [rawSrc, setRawSrc] = useState(null);
   const [rawImageObj, setRawImageObj] = useState(null);
 
-  // Final cropped output preview DataURL
+  // Final cropped output preview DataURL & file info
   const [previewDataUrl, setPreviewDataUrl] = useState(null);
   const [croppedMetadata, setCroppedMetadata] = useState(null);
+  const [validationError, setValidationError] = useState("");
+
+  // Sync initialImageUrl if provided
+  const [currentCoverUrl, setCurrentCoverUrl] = useState(initialImageUrl);
+
+  useEffect(() => {
+    setCurrentCoverUrl(initialImageUrl);
+  }, [initialImageUrl]);
 
   // Cropper Modal UI state
   const [showModal, setShowModal] = useState(false);
@@ -78,9 +90,25 @@ export default function ImageCropUploader({
   const VIEWPORT_W = 580;
   const VIEWPORT_H = 360;
 
-  // 1. Load image file
+  // 1. Load image file with validation
   const handleFileSelect = (file) => {
-    if (!file || !file.type.startsWith("image/")) return;
+    setValidationError("");
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      setValidationError("Format gambar tidak didukung.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_SIZE_BYTES) {
+      setValidationError("Ukuran gambar maksimal 5 MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
     setRawFile(file);
 
     const reader = new FileReader();
@@ -589,48 +617,88 @@ export default function ImageCropUploader({
     setRawImageObj(null);
     setPreviewDataUrl(null);
     setCroppedMetadata(null);
+    setCurrentCoverUrl(null);
+    setValidationError("");
     setShowModal(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (onRemove) onRemove();
   };
 
+  const activeDisplayUrl = previewDataUrl || currentCoverUrl;
+
+  const fileSizeFormatted = croppedMetadata?.croppedFile?.size
+    ? `${(croppedMetadata.croppedFile.size / (1024 * 1024)).toFixed(2)} MB`
+    : rawFile?.size
+    ? `${(rawFile.size / (1024 * 1024)).toFixed(2)} MB`
+    : null;
+
+  const fileNameDisplay = croppedMetadata?.croppedFile?.name || rawFile?.name || null;
+
   return (
-    <div className="w-full space-y-1.5">
+    <div className="w-full space-y-2">
       <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
         {label}
       </label>
 
-      {/* 1. Final Cropped Result Preview Card */}
-      {previewDataUrl && !showModal && (
+      {(validationError || uploadError) && (
+        <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-center justify-between">
+          <span>{validationError || uploadError}</span>
+          <button
+            type="button"
+            onClick={() => setValidationError("")}
+            className="text-rose-500 hover:text-rose-700 font-bold ml-2 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* 1. Final Cropped Result or Initial Cover Preview Card */}
+      {activeDisplayUrl && !showModal && (
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-slate-900 group transition-all">
           <img
-            src={previewDataUrl}
-            alt="Hasil Crop Mading"
+            src={activeDisplayUrl}
+            alt="Preview Cover"
             className="w-full h-full object-cover"
           />
 
-          {/* Metadata Badge */}
-          {croppedMetadata && (
-            <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-2 border border-white/10 shadow-md">
-              <span className="text-blue-400 font-bold">
-                {croppedMetadata.aspectRatio}
-              </span>
-              <span>•</span>
-              <span>
-                {croppedMetadata.width} × {croppedMetadata.height} px
-              </span>
-            </div>
-          )}
+          {/* Metadata & File Info Badge */}
+          <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-md text-white px-3 py-1 rounded-full text-[11px] font-semibold flex items-center gap-2 border border-white/10 shadow-md max-w-[85%] truncate">
+            <span className="text-blue-400 font-bold shrink-0">16:9</span>
+            {fileNameDisplay && (
+              <>
+                <span>•</span>
+                <span className="truncate">{fileNameDisplay}</span>
+              </>
+            )}
+            {fileSizeFormatted && (
+              <>
+                <span>•</span>
+                <span className="shrink-0">{fileSizeFormatted}</span>
+              </>
+            )}
+          </div>
 
           {/* Action Overlay */}
           <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2.5">
             <button
               type="button"
-              onClick={() => setShowModal(true)}
+              onClick={() => fileInputRef.current?.click()}
               className="px-4 py-2 bg-[#2c1ee8] hover:bg-[#2218a3] text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
             >
-              <CropIcon className="w-4 h-4" />
-              <span>✂ Crop Ulang</span>
+              <Upload className="w-4 h-4" />
+              <span>Ganti Cover</span>
             </button>
+            {rawImageObj && (
+              <button
+                type="button"
+                onClick={() => setShowModal(true)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg flex items-center gap-1.5 cursor-pointer transition-transform active:scale-95"
+              >
+                <CropIcon className="w-4 h-4" />
+                <span>Crop Ulang</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleFullReset}
@@ -643,8 +711,16 @@ export default function ImageCropUploader({
         </div>
       )}
 
-      {/* 2. File Picker Input Button */}
-      {!previewDataUrl && !showModal && (
+      {/* Loading Indicator during Upload */}
+      {isUploading && (
+        <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-[#2c1ee8] flex items-center gap-2 animate-pulse">
+          <RefreshCw className="w-4 h-4 animate-spin" />
+          <span>Mengunggah gambar...</span>
+        </div>
+      )}
+
+      {/* 2. File Picker Input Button (Empty State) */}
+      {!activeDisplayUrl && !showModal && !isUploading && (
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -655,10 +731,10 @@ export default function ImageCropUploader({
           </div>
           <div className="text-center">
             <p className="text-xs font-bold text-gray-800 group-hover:text-[#2c1ee8]">
-              Pilih Gambar Sampul Mading
+              Tambah Cover
             </p>
             <p className="text-[11px] text-gray-400 mt-0.5">
-              PNG, JPG, WEBP — Potong Interaktif (Free, 16:9, 4:3, 1:1, 3:4)
+              JPG, PNG, atau WEBP • Maks. 5 MB (Rasio 16:9)
             </p>
           </div>
         </button>
