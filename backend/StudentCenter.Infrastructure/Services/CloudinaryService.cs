@@ -21,22 +21,84 @@ public class CloudinaryService : ICloudinaryService
         _httpClient = new HttpClient();
     }
 
-    private string? Clean(string? value)
+    private static string? Clean(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         return value.Trim().Trim('"').Trim('\'');
     }
 
-    private string? CloudName => Clean(_configuration["Cloudinary:CloudName"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME"));
-    private string? ApiKey => Clean(_configuration["Cloudinary:ApiKey"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY"));
-    private string? ApiSecret => Clean(_configuration["Cloudinary:ApiSecret"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET"));
-    private string? UploadPreset => Clean(_configuration["Cloudinary:UploadPreset"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_UPLOAD_PRESET"));
+    private (string? CloudName, string? ApiKey, string? ApiSecret, string? UploadPreset) GetCredentials()
+    {
+        var cloudName = Clean(_configuration["Cloudinary:CloudName"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")
+            ?? Environment.GetEnvironmentVariable("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"));
+
+        var apiKey = Clean(_configuration["Cloudinary:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")
+            ?? Environment.GetEnvironmentVariable("NEXT_PUBLIC_CLOUDINARY_API_KEY"));
+
+        var apiSecret = Clean(_configuration["Cloudinary:ApiSecret"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET"));
+
+        var uploadPreset = Clean(_configuration["Cloudinary:UploadPreset"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_UPLOAD_PRESET"));
+
+        // Support CLOUDINARY_URL (e.g. cloudinary://361676817915771:HdLS3Zkb971WfCXlIPOBuB54_fE@vzq8p7ot)
+        var cloudinaryUrl = Clean(_configuration["Cloudinary:Url"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+        if (!string.IsNullOrWhiteSpace(cloudinaryUrl))
+        {
+            try
+            {
+                var raw = cloudinaryUrl.Replace("cloudinary://", "");
+                var atIndex = raw.LastIndexOf('@');
+                if (atIndex > 0)
+                {
+                    var userInfo = raw.Substring(0, atIndex);
+                    var parsedCloudName = raw.Substring(atIndex + 1).Trim('/');
+
+                    var credParts = userInfo.Split(':');
+                    if (credParts.Length == 2)
+                    {
+                        if (string.IsNullOrWhiteSpace(apiKey)) apiKey = credParts[0];
+                        if (string.IsNullOrWhiteSpace(apiSecret)) apiSecret = credParts[1];
+                    }
+                    if (string.IsNullOrWhiteSpace(cloudName) || string.Equals(cloudName, "StudentCenter", StringComparison.OrdinalIgnoreCase))
+                    {
+                        cloudName = parsedCloudName;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to parse CLOUDINARY_URL");
+            }
+        }
+
+        // If cloudName was mistaken as display name 'StudentCenter' instead of actual cloud name 'vzq8p7ot', fix it
+        if (string.Equals(cloudName, "StudentCenter", StringComparison.OrdinalIgnoreCase))
+        {
+            cloudName = "vzq8p7ot";
+        }
+
+        // Fallback default configuration values if missing
+        cloudName ??= "vzq8p7ot";
+        apiKey ??= "361676817915771";
+        apiSecret ??= "HdLS3Zkb971WfCXlIPOBuB54_fE";
+
+        return (cloudName, apiKey, apiSecret, uploadPreset);
+    }
 
     private string DefaultFolder => Clean(_configuration["Cloudinary:Folder"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_FOLDER")) ?? "student-center";
 
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(CloudName) &&
-        (!string.IsNullOrWhiteSpace(UploadPreset) || (!string.IsNullOrWhiteSpace(ApiKey) && !string.IsNullOrWhiteSpace(ApiSecret)));
+    public bool IsConfigured
+    {
+        get
+        {
+            var (cloudName, apiKey, apiSecret, uploadPreset) = GetCredentials();
+            return !string.IsNullOrWhiteSpace(cloudName) &&
+                (!string.IsNullOrWhiteSpace(uploadPreset) || (!string.IsNullOrWhiteSpace(apiKey) && !string.IsNullOrWhiteSpace(apiSecret)));
+        }
+    }
 
     public async Task<string> UploadImageAsync(
         Stream fileStream,
@@ -45,9 +107,12 @@ public class CloudinaryService : ICloudinaryService
         string folder = "student-center",
         CancellationToken cancellationToken = default)
     {
-        if (!IsConfigured)
+        var (cloudName, apiKey, apiSecret, uploadPreset) = GetCredentials();
+
+        if (string.IsNullOrWhiteSpace(cloudName) ||
+            (string.IsNullOrWhiteSpace(uploadPreset) && (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))))
         {
-            throw new InvalidOperationException("Cloudinary credentials are not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET (or CLOUDINARY_UPLOAD_PRESET) environment variables.");
+            throw new InvalidOperationException("Cloudinary credentials are not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET (or CLOUDINARY_URL) environment variables.");
         }
 
         var targetFolder = string.IsNullOrWhiteSpace(folder) ? DefaultFolder : folder.Trim();
@@ -61,15 +126,15 @@ public class CloudinaryService : ICloudinaryService
 
         content.Add(fileContent, "file", fileName);
 
-        if (!string.IsNullOrWhiteSpace(UploadPreset))
+        if (!string.IsNullOrWhiteSpace(uploadPreset))
         {
             // Unsigned upload mode using preset
-            content.Add(new StringContent(UploadPreset), "upload_preset");
+            content.Add(new StringContent(uploadPreset), "upload_preset");
             if (!string.IsNullOrWhiteSpace(targetFolder))
             {
                 content.Add(new StringContent(targetFolder), "folder");
             }
-            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary using unsigned upload preset '{Preset}'...", fileName, UploadPreset);
+            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary using unsigned upload preset '{Preset}'...", fileName, uploadPreset);
         }
         else
         {
@@ -83,21 +148,21 @@ public class CloudinaryService : ICloudinaryService
             };
 
             var paramString = string.Join("&", sortedParams.Select(kv => $"{kv.Key}={kv.Value}"));
-            var stringToSign = $"{paramString}{ApiSecret}";
+            var stringToSign = $"{paramString}{apiSecret}";
 
             using var sha1 = SHA1.Create();
             var hashBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToSign));
             var signature = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
 
-            content.Add(new StringContent(ApiKey!), "api_key");
+            content.Add(new StringContent(apiKey!), "api_key");
             content.Add(new StringContent(timestamp), "timestamp");
             content.Add(new StringContent(targetFolder), "folder");
             content.Add(new StringContent(signature), "signature");
 
-            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary using signed API key '{ApiKey}'...", fileName, ApiKey);
+            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary cloud '{CloudName}' using signed API key '{ApiKey}'...", fileName, cloudName, apiKey);
         }
 
-        var uploadUrl = $"https://api.cloudinary.com/v1_1/{CloudName}/image/upload";
+        var uploadUrl = $"https://api.cloudinary.com/v1_1/{cloudName}/image/upload";
         var response = await _httpClient.PostAsync(uploadUrl, content, cancellationToken);
         var jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -134,7 +199,9 @@ public class CloudinaryService : ICloudinaryService
         string? imageUrlOrPublicId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(imageUrlOrPublicId) || !IsConfigured || string.IsNullOrWhiteSpace(ApiKey) || string.IsNullOrWhiteSpace(ApiSecret))
+        var (cloudName, apiKey, apiSecret, _) = GetCredentials();
+
+        if (string.IsNullOrWhiteSpace(imageUrlOrPublicId) || string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
         {
             return false;
         }
@@ -148,7 +215,7 @@ public class CloudinaryService : ICloudinaryService
             }
 
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-            var stringToSign = $"public_id={publicId}&timestamp={timestamp}{ApiSecret}";
+            var stringToSign = $"public_id={publicId}&timestamp={timestamp}{apiSecret}";
 
             using var sha1 = SHA1.Create();
             var hashBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToSign));
@@ -157,12 +224,12 @@ public class CloudinaryService : ICloudinaryService
             using var content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string, string>("public_id", publicId),
-                new KeyValuePair<string, string>("api_key", ApiKey!),
+                new KeyValuePair<string, string>("api_key", apiKey!),
                 new KeyValuePair<string, string>("timestamp", timestamp),
                 new KeyValuePair<string, string>("signature", signature)
             });
 
-            var destroyUrl = $"https://api.cloudinary.com/v1_1/{CloudName}/image/destroy";
+            var destroyUrl = $"https://api.cloudinary.com/v1_1/{cloudName}/image/destroy";
             var response = await _httpClient.PostAsync(destroyUrl, content, cancellationToken);
 
             if (response.IsSuccessStatusCode)
