@@ -5,6 +5,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Application.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -50,7 +51,7 @@ public class AnnouncementService : IAnnouncementService
                 Title = a.Title,
                 Content = a.Content,
                 Category = a.Category,
-                CoverImageUrl = a.CoverImageUrl,
+                CoverImageUrl = FileUrlHelper.ResolveUrl(a.CoverImageUrl),
                 IsPinned = a.IsPinned,
                 CreatedAt = a.CreatedAt,
                 UpdatedAt = a.UpdatedAt,
@@ -98,7 +99,7 @@ public class AnnouncementService : IAnnouncementService
                 Title = a.Title,
                 Content = a.Content,
                 Category = a.Category,
-                CoverImageUrl = a.CoverImageUrl,
+                CoverImageUrl = FileUrlHelper.ResolveUrl(a.CoverImageUrl),
                 IsPinned = a.IsPinned,
                 CreatedAt = a.CreatedAt,
                 UpdatedAt = a.UpdatedAt,

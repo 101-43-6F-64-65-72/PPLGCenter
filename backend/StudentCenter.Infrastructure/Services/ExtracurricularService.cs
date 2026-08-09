@@ -3,7 +3,7 @@ using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
-using StudentCenter.Infrastructure.Data;
+using StudentCenter.Application.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -531,7 +531,7 @@ public class ExtracurricularService : IExtracurricularService
             Id = e.Id,
             Name = e.Name,
             Description = e.Description,
-            ImageUrl = e.ImageUrl,
+            ImageUrl = FileUrlHelper.ResolveUrl(e.ImageUrl),
             Category = e.Category,
             MaxMembers = e.MaxMembers,
             CurrentMembers = currentMemberCount,
@@ -545,7 +545,7 @@ public class ExtracurricularService : IExtracurricularService
                 Name = supervisorTeacher.FullName,
                 NIP = supervisorTeacher.NIP,
                 Email = supervisorTeacher.Email,
-                PhotoUrl = supervisorTeacher.PhotoUrl,
+                PhotoUrl = FileUrlHelper.ResolveUrl(supervisorTeacher.PhotoUrl),
                 PhoneNumber = supervisorTeacher.PhoneNumber
             },
             AdvisorName = supervisorTeacher != null ? supervisorTeacher.FullName : e.AdvisorName,
@@ -624,7 +624,7 @@ public class ExtracurricularService : IExtracurricularService
                 Id = e.Id,
                 Name = e.Name,
                 Description = e.Description,
-                ImageUrl = e.ImageUrl,
+                ImageUrl = FileUrlHelper.ResolveUrl(e.ImageUrl),
                 Category = e.Category,
                 IsActive = e.IsActive,
                 ScheduleDay = e.ScheduleDay,

@@ -4,6 +4,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Application.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -250,7 +251,7 @@ public class DashboardAggregationService : IDashboardAggregationService
                     Id = e.Id,
                     Name = e.Name,
                     Description = e.Description,
-                    ImageUrl = e.ImageUrl,
+                    ImageUrl = FileUrlHelper.ResolveUrl(e.ImageUrl),
                     Category = e.Category,
                     IsActive = e.IsActive,
                     ScheduleDay = e.ScheduleDay,
@@ -377,7 +378,7 @@ public class DashboardAggregationService : IDashboardAggregationService
             Id = e.Id,
             Name = e.Name,
             Description = e.Description,
-            ImageUrl = e.ImageUrl,
+            ImageUrl = FileUrlHelper.ResolveUrl(e.ImageUrl),
             Category = e.Category,
             MaxMembers = e.MaxMembers,
             ScheduleDay = e.ScheduleDay,

@@ -15,6 +15,7 @@ import {
   Trash2,
   Sparkles,
 } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils";
 
 /**
  * Aspect ratio definitions supported by the interactive cropper
@@ -657,7 +658,7 @@ export default function ImageCropUploader({
       {activeDisplayUrl && !showModal && (
         <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-slate-900 group transition-all">
           <img
-            src={activeDisplayUrl}
+            src={resolveImageUrl(activeDisplayUrl)}
             alt="Preview Cover"
             className="w-full h-full object-cover"
           />

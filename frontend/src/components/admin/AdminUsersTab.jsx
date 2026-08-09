@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import userService from "@/services/userService";
+import { resolveImageUrl } from "@/lib/utils";
 import {
   Users,
   UserPlus,
@@ -437,7 +438,7 @@ export default function AdminUsersTab() {
                         <div className="flex items-center gap-3">
                           <div className="relative w-9 h-9 rounded-2xl overflow-hidden bg-indigo-50 border border-indigo-100 text-[#2c1ee8] flex items-center justify-center font-black text-xs shrink-0">
                             {u.photoUrl ? (
-                              <img src={u.photoUrl} alt={u.fullName} className="w-full h-full object-cover" />
+                              <img src={resolveImageUrl(u.photoUrl)} alt={u.fullName} className="w-full h-full object-cover" />
                             ) : (
                               u.fullName?.charAt(0)?.toUpperCase() || "U"
                             )}
@@ -520,7 +521,7 @@ export default function AdminUsersTab() {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#2c1ee8] font-black text-lg">
                   {selectedUserDetail.photoUrl ? (
-                    <img src={selectedUserDetail.photoUrl} alt={selectedUserDetail.fullName} className="w-full h-full object-cover rounded-2xl" />
+                    <img src={resolveImageUrl(selectedUserDetail.photoUrl)} alt={selectedUserDetail.fullName} className="w-full h-full object-cover rounded-2xl" />
                   ) : (
                     selectedUserDetail.fullName?.charAt(0)?.toUpperCase() || "U"
                   )}

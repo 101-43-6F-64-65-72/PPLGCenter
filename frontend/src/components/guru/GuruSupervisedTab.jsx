@@ -12,6 +12,7 @@ import candidatePairService from "@/services/candidatePairService";
 import uploadImageToCloudinary from "@/services/cloudinaryService";
 import ImageCropUploader from "@/components/common/ImageCropUploader";
 import toast from "react-hot-toast";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function GuruSupervisedTab({ supervisedExtracurriculars = [], teacherName = "" }) {
   const [selectedEkskul, setSelectedEkskul] = useState(
@@ -335,7 +336,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
                               {m.photoUrl ? (
-                                <img src={m.photoUrl} alt={m.studentName} className="w-full h-full object-cover" />
+                                <img src={resolveImageUrl(m.photoUrl)} alt={m.studentName} className="w-full h-full object-cover" />
                               ) : (
                                 m.studentName?.charAt(0)?.toUpperCase() || "S"
                               )}
@@ -445,7 +446,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
                         <span className="text-[10px] font-extrabold text-gray-400 uppercase block">Calon Ketua</span>
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-blue-100 text-[#2c1ee8] font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
-                            {pair.photoUrl ? <img src={pair.photoUrl} alt="Ketua" className="w-full h-full object-cover" /> : pair.chairmanName?.[0]}
+                            {pair.photoUrl ? <img src={resolveImageUrl(pair.photoUrl)} alt="Ketua" className="w-full h-full object-cover" /> : pair.chairmanName?.[0]}
                           </div>
                           <div>
                             <p className="font-extrabold text-gray-900 text-xs leading-tight">{pair.chairmanName}</p>
@@ -460,7 +461,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
                         {pair.viceName ? (
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden">
-                              {pair.vicePhotoUrl ? <img src={pair.vicePhotoUrl} alt="Wakil" className="w-full h-full object-cover" /> : pair.viceName?.[0]}
+                              {pair.vicePhotoUrl ? <img src={resolveImageUrl(pair.vicePhotoUrl)} alt="Wakil" className="w-full h-full object-cover" /> : pair.viceName?.[0]}
                             </div>
                             <div>
                               <p className="font-extrabold text-gray-900 text-xs leading-tight">{pair.viceName}</p>

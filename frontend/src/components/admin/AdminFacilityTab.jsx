@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import apiClient from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 
 // ─────────────────────────────────────────────
 // Modal Tambah / Edit Fasilitas
@@ -209,7 +210,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
             <div className="space-y-3">
               {form.imageUrl && (
                 <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
-                  <img src={form.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(form.imageUrl)} alt="Preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setForm((prev) => ({ ...prev, imageUrl: "" }))}
@@ -234,6 +235,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                     setError("");
                     try {
                       const { uploadImageToCloudinary } = await import("@/services/cloudinaryService");
+                      const { resolveImageUrl } = await import("@/lib/utils");
                       const url = await uploadImageToCloudinary(file);
                       if (url) {
                         setForm((prev) => ({ ...prev, imageUrl: url }));
@@ -601,7 +603,7 @@ export default function AdminFacilityTab() {
                   {f.imageUrl ? (
                     <div className="h-36 overflow-hidden">
                       <img
-                        src={f.imageUrl}
+                        src={resolveImageUrl(f.imageUrl)}
                         alt={f.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => { e.target.style.display = "none"; }}

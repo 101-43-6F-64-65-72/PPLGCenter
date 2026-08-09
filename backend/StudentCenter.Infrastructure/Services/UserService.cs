@@ -6,6 +6,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Application.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -169,7 +170,7 @@ public class UserService : IUserService
                     NISN = user.NISN,
                     NIP = user.NIP,
                     PhoneNumber = user.PhoneNumber,
-                    PhotoUrl = user.PhotoUrl,
+                    PhotoUrl = FileUrlHelper.ResolveUrl(user.PhotoUrl),
                     Role = user.Role.ToString(),
                     IsActive = user.IsActive,
                     ClassId = user.ClassId,
@@ -246,7 +247,7 @@ public class UserService : IUserService
                 NISN = u.NISN,
                 NIP = u.NIP,
                 PhoneNumber = u.PhoneNumber,
-                PhotoUrl = u.PhotoUrl,
+                PhotoUrl = FileUrlHelper.ResolveUrl(u.PhotoUrl),
                 Role = u.Role.ToString(),
                 IsActive = u.IsActive,
                 ClassId = u.ClassId,
@@ -290,7 +291,7 @@ public class UserService : IUserService
             NISN = user.NISN,
             NIP = user.NIP,
             PhoneNumber = user.PhoneNumber,
-            PhotoUrl = user.PhotoUrl,
+            PhotoUrl = FileUrlHelper.ResolveUrl(user.PhotoUrl),
             Role = user.Role.ToString(),
             IsActive = user.IsActive,
             ClassId = user.ClassId,

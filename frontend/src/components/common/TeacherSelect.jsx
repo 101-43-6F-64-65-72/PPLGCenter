@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Search, ChevronDown, Check, User, X, Loader2, AlertCircle } from "lucide-react";
 import userService from "@/services/userService";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function TeacherSelect({
   value,
@@ -105,7 +106,7 @@ export default function TeacherSelect({
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[#2c1ee8] font-bold text-xs flex-shrink-0 overflow-hidden">
               {selectedTeacher.photoUrl ? (
-                <img src={selectedTeacher.photoUrl} alt={selectedTeacher.fullName || selectedTeacher.name} className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(selectedTeacher.photoUrl)} alt={selectedTeacher.fullName || selectedTeacher.name} className="w-full h-full object-cover" />
               ) : (
                 (selectedTeacher.fullName || selectedTeacher.name)?.charAt(0).toUpperCase() || <User className="w-4 h-4" />
               )}
@@ -216,7 +217,7 @@ export default function TeacherSelect({
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs flex-shrink-0 overflow-hidden">
                         {t.photoUrl ? (
-                          <img src={t.photoUrl} alt={teacherName} className="w-full h-full object-cover" />
+                          <img src={resolveImageUrl(t.photoUrl)} alt={teacherName} className="w-full h-full object-cover" />
                         ) : (
                           teacherName?.charAt(0).toUpperCase() || <User className="w-4 h-4" />
                         )}

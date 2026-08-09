@@ -196,7 +196,10 @@ public class UploadController : ControllerBase
         }
 
         var publicBaseUrl = _configuration["PUBLIC_BASE_URL"] 
-            ?? Environment.GetEnvironmentVariable("PUBLIC_BASE_URL");
+            ?? Environment.GetEnvironmentVariable("PUBLIC_BASE_URL")
+            ?? _configuration["APP_BASE_URL"]
+            ?? Environment.GetEnvironmentVariable("APP_BASE_URL")
+            ?? _configuration["AppBaseUrl"];
 
         string baseUrl;
         if (!string.IsNullOrWhiteSpace(publicBaseUrl))

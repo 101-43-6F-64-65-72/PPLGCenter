@@ -4,6 +4,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Application.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -526,12 +527,12 @@ public class CandidatePairService : ICandidatePairService
             ChairmanName = p.ChairmanUser?.FullName ?? "Calon Ketua",
             ChairmanNis = p.ChairmanUser?.NIS,
             ChairmanClass = p.ChairmanUser?.Class?.Name,
-            PhotoUrl = p.PhotoUrl,
+            PhotoUrl = FileUrlHelper.ResolveUrl(p.PhotoUrl),
             ViceUserId = p.ViceUserId,
             ViceName = p.ViceUser?.FullName,
             ViceNis = p.ViceUser?.NIS,
             ViceClass = p.ViceUser?.Class?.Name,
-            VicePhotoUrl = p.VicePhotoUrl,
+            VicePhotoUrl = FileUrlHelper.ResolveUrl(p.VicePhotoUrl),
             Vision = p.Vision,
             Mission = p.Mission,
             Programs = p.Programs,

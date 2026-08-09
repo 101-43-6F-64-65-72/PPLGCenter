@@ -4,6 +4,7 @@ using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Application.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -46,7 +47,7 @@ public class FacilityService : IFacilityService
                 Description = f.Description,
                 Location = f.Location,
                 Capacity = f.Capacity,
-                ImageUrl = f.ImageUrl,
+                ImageUrl = FileUrlHelper.ResolveUrl(f.ImageUrl),
                 Category = f.Category,
                 IsActive = f.IsActive,
                 CreatedAt = f.CreatedAt,
@@ -75,7 +76,7 @@ public class FacilityService : IFacilityService
                 Description = f.Description,
                 Location = f.Location,
                 Capacity = f.Capacity,
-                ImageUrl = f.ImageUrl,
+                ImageUrl = FileUrlHelper.ResolveUrl(f.ImageUrl),
                 Category = f.Category,
                 IsActive = f.IsActive,
                 CreatedAt = f.CreatedAt,

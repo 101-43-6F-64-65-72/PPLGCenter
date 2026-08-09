@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Crown, Users, GitBranch } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils";
 
 const DEPT_COLORS = {
   "BPH": "bg-blue-100 text-blue-700",
@@ -13,15 +14,16 @@ const DEPT_COLORS = {
 
 function MemberCard({ member, isChairman }) {
   return (
-    <div className={`relative p-3 rounded-2xl border text-center transition-all hover:shadow-md hover:-translate-y-0.5 ${
+    <div className={`p-3.5 rounded-2xl border text-center transition-all ${
       isChairman
-        ? "border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50"
-        : "border-gray-100 bg-white"
+        ? "bg-amber-50/80 border-amber-200 shadow-sm"
+        : "bg-white border-gray-100 shadow-xs hover:border-gray-200"
     }`}>
       {isChairman && (
-        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-          <div className="bg-amber-400 rounded-full p-1">
-            <Crown className="w-3 h-3 text-white" />
+        <div className="flex justify-center mb-1">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black border border-amber-300">
+            <Crown className="w-3 h-3 text-amber-600" />
+            <span>Ketua Umum</span>
           </div>
         </div>
       )}
@@ -31,7 +33,7 @@ function MemberCard({ member, isChairman }) {
           : "bg-gradient-to-br from-[#2c1ee8] to-blue-500"
       }`}>
         {member.photoUrl
-          ? <img src={member.photoUrl} alt={member.studentName} className="w-full h-full object-cover" />
+          ? <img src={resolveImageUrl(member.photoUrl)} alt={member.studentName} className="w-full h-full object-cover" />
           : member.studentName?.[0] ?? "?"}
       </div>
       <p className="font-bold text-gray-900 text-xs leading-tight truncate">{member.studentName}</p>

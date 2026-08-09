@@ -232,7 +232,23 @@ app.Use(async (context, next) =>
     await next();
 });
 
+var uploadsDirEnv = builder.Configuration["UPLOAD_PATH"] ?? Environment.GetEnvironmentVariable("UPLOAD_PATH");
+var uploadsPhysicalPath = !string.IsNullOrWhiteSpace(uploadsDirEnv)
+    ? (Path.IsPathRooted(uploadsDirEnv) ? uploadsDirEnv : Path.Combine(app.Environment.ContentRootPath, uploadsDirEnv))
+    : Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "uploads");
+
+if (!Directory.Exists(uploadsPhysicalPath))
+{
+    Directory.CreateDirectory(uploadsPhysicalPath);
+}
+
 app.UseStaticFiles();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPhysicalPath),
+    RequestPath = "/uploads"
+});
 
 if (app.Environment.IsDevelopment())
 {
