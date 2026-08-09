@@ -227,7 +227,12 @@ public class LessonMaterialService : ILessonMaterialService
             .Where(m => !m.IsDeleted && m.Visibility.ToLower() == "published" && m.ClassSubject.ClassId == student.ClassId);
 
         var list = await query.OrderBy(m => m.Order).ThenByDescending(m => m.CreatedAt).ToListAsync();
-        return list.Select(MapToResponse).ToList();
+        var result = new List<LessonMaterialResponse>();
+        foreach (var m in list)
+        {
+            result.Add(await MapToResponseAsync(m));
+        }
+        return result;
     }
 
     public async Task<List<LessonMaterialResponse>> GetTeacherMaterialsAsync(Guid teacherId)
@@ -236,7 +241,12 @@ public class LessonMaterialService : ILessonMaterialService
             .Where(m => !m.IsDeleted && m.ClassSubject.TeacherSubject.TeacherId == teacherId);
 
         var list = await query.OrderByDescending(m => m.CreatedAt).ToListAsync();
-        return list.Select(MapToResponse).ToList();
+        var result = new List<LessonMaterialResponse>();
+        foreach (var m in list)
+        {
+            result.Add(await MapToResponseAsync(m));
+        }
+        return result;
     }
 
     private IQueryable<LessonMaterial> BuildMaterialQuery()
