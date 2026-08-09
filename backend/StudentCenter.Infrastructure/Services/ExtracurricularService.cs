@@ -4,6 +4,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Application.Helpers;
+using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Infrastructure.Services;
 
