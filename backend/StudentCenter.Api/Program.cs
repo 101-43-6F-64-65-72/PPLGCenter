@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StudentCenter.Api.Middleware;
@@ -125,7 +126,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+        policy.WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "https://studentcenter.vercel.app")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -134,18 +135,55 @@ builder.Services.AddCors(options =>
     options.AddPolicy("ProductionPolicy", policy =>
     {
         var rawOrigins = builder.Configuration["CORS__AllowedOrigins"]
+            ?? builder.Configuration["CORS_ALLOWED_ORIGINS"]
             ?? builder.Configuration["AllowedOrigins:Production"]
             ?? Environment.GetEnvironmentVariable("CORS__AllowedOrigins")
-            ?? "https://studentcenter.smkn2surakarta.sch.id";
+            ?? Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
+            ?? "https://studentcenter.vercel.app,https://studentcenter.smkn2surakarta.sch.id,http://localhost:3000";
 
         var allowedOrigins = rawOrigins
-            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(o => o.TrimEnd('/'))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+
+            var normalizedOrigin = origin.TrimEnd('/');
+
+            if (allowedOrigins.Contains(normalizedOrigin, StringComparer.OrdinalIgnoreCase))
+                return true;
+
+            try
+            {
+                var uri = new Uri(origin);
+                var host = uri.Host;
+                if (host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase) ||
+                    host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // Invalid URI format
+            }
+
+            return false;
+        })
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials();
     });
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 builder.Services.AddSwaggerGen();
@@ -158,6 +196,8 @@ builder.Services.AddResponseCompression(options =>
 });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 using (var scope = app.Services.CreateScope())
 {
@@ -177,6 +217,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseResponseCompression();
+
+var corsPolicy = app.Environment.IsDevelopment() ? "DevelopmentPolicy" : "ProductionPolicy";
+app.UseCors(corsPolicy);
 
 app.Use(async (context, next) =>
 {
@@ -200,9 +243,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-var corsPolicy = app.Environment.IsDevelopment() ? "DevelopmentPolicy" : "ProductionPolicy";
-app.UseCors(corsPolicy);
 
 await SeedAdminData.SeedAsync(app.Services);
 await MasterDataSeeder.SeedAsync(app.Services);

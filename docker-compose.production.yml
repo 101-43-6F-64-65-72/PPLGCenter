@@ -47,7 +47,7 @@ services:
       - JWT_SECRET__FILE=/run/secrets/jwt_secret
       - JWT_ISSUER=${JWT_ISSUER:-StudentCenter}
       - JWT_AUDIENCE=${JWT_AUDIENCE:-StudentCenterApp}
-      - CORS__AllowedOrigins=${ALLOWED_ORIGINS:-https://studentcenter.smkn2surakarta.sch.id}
+      - CORS__AllowedOrigins=${ALLOWED_ORIGINS:-https://studentcenter.vercel.app,https://studentcenter.smkn2surakarta.sch.id}
     secrets:
       - db_password
       - jwt_secret

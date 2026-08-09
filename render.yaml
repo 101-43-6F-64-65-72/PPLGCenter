@@ -24,7 +24,7 @@ services:
       - key: JWT_AUDIENCE
         value: StudentCenterApp
       - key: CORS__AllowedOrigins
-        sync: false
+        value: https://studentcenter.vercel.app,https://studentcenter.smkn2surakarta.sch.id
       - key: UPLOAD_PATH
         value: /app/wwwroot/uploads
     disk:
