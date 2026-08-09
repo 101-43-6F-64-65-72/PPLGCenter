@@ -373,6 +373,7 @@ export default function TestUploadPage() {
                     <UploadCloud className="w-4 h-4" />
                     Uji Upload {uploadMethod === "direct" ? "Direct Frontend" : "Via Backend"}
                   </>
+                )}
               </button>
               {file && (
                 <button
