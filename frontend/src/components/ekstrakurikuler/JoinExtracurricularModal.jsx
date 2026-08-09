@@ -92,10 +92,10 @@ export default function JoinExtracurricularModal({
           {/* Body Text */}
           <div className="text-sm text-gray-600 leading-relaxed space-y-2">
             <p className="font-semibold text-gray-800">
-              Apakah Anda yakin ingin bergabung dengan ekstrakurikuler ini?
+              Apakah Anda yakin ingin mengajukan pendaftaran ke ekstrakurikuler ini?
             </p>
             <p className="text-xs text-gray-500">
-              Pastikan Anda bersedia mengikuti seluruh kegiatan sesuai jadwal yang berlaku.
+              Pengajuan Anda akan dikirimkan ke Guru Pembina ekstrakurikuler untuk direview dan disetujui.
             </p>
           </div>
 
@@ -118,10 +118,10 @@ export default function JoinExtracurricularModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Menggabungkan...</span>
+                  <span>Mengirim...</span>
                 </>
               ) : (
-                <span>Ya, Gabung</span>
+                <span>Kirim Pengajuan</span>
               )}
             </button>
           </div>

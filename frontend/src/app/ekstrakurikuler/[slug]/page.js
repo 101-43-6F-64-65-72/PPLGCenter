@@ -34,6 +34,7 @@ export default function ExtracurricularDetailPage() {
     detailData: data,
     isLoading,
     isJoined,
+    isPending,
     currentMembers,
     maxMembers,
     isActive,
@@ -81,9 +82,18 @@ export default function ExtracurricularDetailPage() {
       };
     }
 
+    if (isPending) {
+      return {
+        label: "⏳ Menunggu Persetujuan Pembina",
+        disabled: true,
+        onClick: null,
+        className: "bg-amber-100 text-amber-800 border border-amber-300 font-extrabold cursor-not-allowed opacity-90 shadow-sm",
+      };
+    }
+
     if (isJoined) {
       return {
-        label: "✓ Anda Sudah Bergabung",
+        label: "✓ Terdaftar sebagai Anggota Aktif",
         disabled: true,
         onClick: null,
         className: "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold cursor-not-allowed opacity-90",
@@ -109,7 +119,7 @@ export default function ExtracurricularDetailPage() {
     }
 
     return {
-      label: isSubmittingJoin ? "Menggabungkan..." : "Gabung Ekstrakurikuler Ini",
+      label: isSubmittingJoin ? "Mengirim Pengajuan..." : "Gabung Ekstrakurikuler Ini",
       disabled: isSubmittingJoin,
       onClick: () => {
         setModalError("");
@@ -130,7 +140,7 @@ export default function ExtracurricularDetailPage() {
 
       if (res && res.success) {
         setIsConfirmJoinOpen(false);
-        showToastNotification(`Berhasil bergabung dengan ${data.name}.`, "success");
+        showToastNotification(`Pengajuan pendaftaran ke ${data.name} berhasil dikirim! Menunggu persetujuan Guru Pembina.`, "success");
         await refetch();
       } else {
         const rawMsg = res?.message || "";

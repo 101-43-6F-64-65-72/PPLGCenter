@@ -16,6 +16,7 @@ export function useExtracurricularDetail(slug) {
   const [detailData, setDetailData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isJoined, setIsJoined] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [currentMembers, setCurrentMembers] = useState(0);
   const [maxMembers, setMaxMembers] = useState(0);
   const [isActive, setIsActive] = useState(true);
@@ -84,14 +85,30 @@ export function useExtracurricularDetail(slug) {
             membersRes?.data ||
             (Array.isArray(membersRes) ? membersRes : []);
 
-          const userFound =
+          const userMember =
             Array.isArray(memberItems) &&
-            memberItems.some((m) => {
+            memberItems.find((m) => {
               const sId = m.studentId || m.StudentId || m.userId || m.UserId;
               return sId && String(sId).toLowerCase() === String(userId).toLowerCase();
             });
 
-          setIsJoined(userFound);
+          if (userMember) {
+            const status = userMember.status || userMember.Status || "Active";
+            if (status === "Pending" || status === "Menunggu") {
+              setIsPending(true);
+              setIsJoined(false);
+            } else if (status === "Active" || status === "Aktif") {
+              setIsJoined(true);
+              setIsPending(false);
+            } else {
+              setIsJoined(false);
+              setIsPending(false);
+            }
+          } else {
+            setIsJoined(false);
+            setIsPending(false);
+          }
+
           if (Array.isArray(memberItems)) {
             setCurrentMembers(memberItems.length);
           }
@@ -100,10 +117,22 @@ export function useExtracurricularDetail(slug) {
           try {
             const userMemRes = await extracurricularService.getUserMemberships(userId);
             if (userMemRes.success && Array.isArray(userMemRes.data)) {
-              const joinedThis = userMemRes.data.some(
+              const userEkstra = userMemRes.data.find(
                 (ekstra) => String(ekstra.id || ekstra.Id).toLowerCase() === String(exId).toLowerCase()
               );
-              setIsJoined(joinedThis);
+              if (userEkstra) {
+                const status = userEkstra.status || userEkstra.Status || "Active";
+                if (status === "Pending" || status === "Menunggu") {
+                  setIsPending(true);
+                  setIsJoined(false);
+                } else {
+                  setIsJoined(true);
+                  setIsPending(false);
+                }
+              } else {
+                setIsJoined(false);
+                setIsPending(false);
+              }
             }
           } catch (e) {
             // Ignore error
@@ -111,6 +140,7 @@ export function useExtracurricularDetail(slug) {
         }
       } else {
         setIsJoined(false);
+        setIsPending(false);
       }
     } catch (err) {
       setFetchError("Gagal memuat detail ekstrakurikuler.");
@@ -134,6 +164,7 @@ export function useExtracurricularDetail(slug) {
     detailData,
     isLoading,
     isJoined,
+    isPending,
     currentMembers,
     maxMembers,
     isActive,
