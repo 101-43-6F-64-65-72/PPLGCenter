@@ -13,7 +13,7 @@ export default function MadingCatalogSection() {
       <div className="max-w-6xl mx-auto">
         <EmptyState
           title="Ups... Data Tidak Ditemukan"
-          description="Publikasi mading digital dikelola sepenuhnya melalui REST API Backend."
+          description="Belum ada publikasi mading digital yang tersedia saat ini."
         />
       </div>
     </section>

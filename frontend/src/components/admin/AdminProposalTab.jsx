@@ -139,13 +139,7 @@ export default function AdminProposalTab() {
             reviewedDate: item.reviewedAt
               ? new Date(item.reviewedAt).toLocaleDateString("id-ID", {
                   day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })
-              : null,
-          };
-        });
-        setProposals(mapped);
+        setProposals(items);
         setApiState("success");
       } else {
         setProposals([]);
@@ -153,52 +147,61 @@ export default function AdminProposalTab() {
       }
     } catch (err) {
       setApiState("error");
-      setErrorMessage("Terjadi kesalahan sistem saat memuat proposal.");
-      setProposals([]);
+      setErrorMessage(err?.message || "Gagal memuat data proposal.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    queueMicrotask(() => {
-      if (isMounted) fetchProposals();
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchProposals]);
+    loadProposals();
+  }, [loadProposals]);
 
-  const filteredProposals = proposals.filter((p) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      (p.title && p.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.organization && p.organization.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.submittedByUserName && p.submittedByUserName.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredProposals = proposals.filter((item) => {
+    const q = searchQuery.toLowerCase();
+    const titleMatch = (item.title || "").toLowerCase().includes(q);
+    const orgMatch = (item.organization || "").toLowerCase().includes(q);
+    const submitterMatch = (item.submittedByName || "").toLowerCase().includes(q);
+    const matchesSearch = titleMatch || orgMatch || submitterMatch;
 
-    const matchesStatus =
-      statusFilter === "semua" || p.statusKey === statusFilter;
+    if (!matchesSearch) return false;
+    if (activeTab === "semua") return true;
+    if (activeTab === "pending_admin") return item.statusText === "PendingAdmin";
+    if (activeTab === "approved") return item.statusText === "Approved";
+    if (activeTab === "rejected") return item.statusText === "Rejected";
 
-    return matchesSearch && matchesStatus;
+    return true;
   });
 
-  const handleUpdateStatus = async (proposalId, statusNum) => {
-    if (isSubmitting) return;
+  const handleOpenReview = (proposal) => {
+    setSelectedProposal(proposal);
+    setReviewNotes(proposal.rejectionReason || "");
+    setReviewError("");
+    setIsReviewModalOpen(true);
+  };
+
+  const handleReviewAction = async (isApproved) => {
+    if (!selectedProposal) return;
     setIsSubmitting(true);
+    setReviewError("");
+
+    const actionText = isApproved ? "menyetujui" : "menolak";
     try {
-      const res = await proposalService.updateProposalStatus(proposalId, {
-        status: statusNum,
-        rejectionReason: adminNote || (statusNum === 2 ? "Ditolak oleh Admin" : ""),
+      const res = await proposalService.reviewByAdmin(selectedProposal.id, {
+        isApproved,
+        notes: reviewNotes.trim(),
       });
-      if (res && res.success) {
+
+      if (res.success) {
+        setIsReviewModalOpen(false);
         setSelectedProposal(null);
-        fetchProposals();
+        setReviewNotes("");
+        await loadProposals();
       } else {
-        alert(res?.message || "Gagal memperbarui status proposal.");
+        setReviewError(res.message || `Gagal ${actionText} proposal.`);
       }
     } catch (err) {
-      alert("Terjadi kesalahan sistem saat memperbarui status proposal.");
+      setReviewError(err?.message || `Gagal ${actionText} proposal.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -206,51 +209,53 @@ export default function AdminProposalTab() {
 
   return (
     <div className="space-y-6">
-      {/* Search & Filter Header */}
-      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Search & Filter Header Bar */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
           <input
-            suppressHydrationWarning={true}
             type="text"
-            placeholder="Cari proposal, organisasi, atau pengaju..."
+            placeholder="Cari judul proposal, pengaju, atau organisasi..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-10 pr-4 text-xs font-medium text-gray-900 outline-none focus:bg-white focus:border-[#2c1ee8] transition"
           />
         </div>
 
-        {/* Filter Tabs & Authority Badge */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-2xl">
-            {[
-              { id: "semua", label: "Semua" },
-              { id: "pending", label: "Menunggu" },
-              { id: "approved", label: "Disetujui" },
-              { id: "rejected", label: "Ditolak" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                suppressHydrationWarning={true}
-                type="button"
-                onClick={() => setStatusFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  statusFilter === tab.id
-                    ? "bg-white text-[#2c1ee8] shadow-2xs"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 text-xs font-extrabold text-[#2c1ee8] bg-blue-50 px-3.5 py-2 rounded-2xl border border-blue-100">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Wewenang Final: Admin & Waka</span>
-          </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {[
+            { id: "semua", label: "Semua Proposal" },
+            { id: "pending_admin", label: "Menunggu Approval Admin" },
+            { id: "approved", label: "Disetujui" },
+            { id: "rejected", label: "Ditolak" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "bg-[#2c1ee8] text-white shadow-sm"
+                  : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* Error State Banner */}
+      {errorMessage && (
+        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between gap-3 text-rose-700 text-xs font-bold">
+          <span>{errorMessage}</span>
+          <button
+            onClick={loadProposals}
+            className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs hover:bg-rose-700 transition"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      )}
 
       {/* Proposal Table Container wrapped in AnimatedContent */}
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -259,7 +264,7 @@ export default function AdminProposalTab() {
             <FileText className="w-5 h-5 text-[#2c1ee8]" />
             <span>Persetujuan Final Proposal ({filteredProposals.length})</span>
           </h3>
-          <span className="text-xs text-gray-500 font-medium">Approval Peninjauan REST API</span>
+          <span className="text-xs text-gray-500 font-medium">Status Peninjauan Proposal</span>
         </div>
 
         <AnimatedContent isLoading={isLoading} skeleton={<ProposalSkeleton />}>

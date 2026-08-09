@@ -253,7 +253,7 @@ export default function AdminUsersTab() {
           </div>
           <p className="text-2xl sm:text-3xl font-black">{stats.total || users.length}</p>
           <span className={`text-[11px] font-medium mt-1 block ${activeRoleFilter === "ALL" ? "opacity-70" : "text-gray-400"}`}>
-            Database Aktif
+            Pengguna Aktif
           </span>
         </div>
 
@@ -398,7 +398,7 @@ export default function AdminUsersTab() {
               Pengguna Terdaftar ({users.length})
             </h3>
           </div>
-          <span className="text-xs font-semibold text-gray-400">Database System GUI</span>
+          <span className="text-xs font-semibold text-gray-400">Daftar Pengguna</span>
         </div>
 
         {isLoading ? (

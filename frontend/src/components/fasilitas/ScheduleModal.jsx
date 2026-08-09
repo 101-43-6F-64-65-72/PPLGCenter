@@ -285,9 +285,15 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
               {/* LEFT COLUMN: Title & Slot List */}
               <div className="md:col-span-7 flex flex-col justify-between h-full">
                 <div>
-                  <h2 className="text-4xl sm:text-5xl font-black text-gray-900 uppercase tracking-tight leading-none mb-4">
-                    {facility.title || "LAPANGAN"}
+                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 uppercase tracking-tight leading-none mb-2">
+                    {facility.title || "FASILITAS"}
                   </h2>
+
+                  {facility.description && (
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-4 font-normal">
+                      {facility.description}
+                    </p>
+                  )}
 
                   {/* Date Selector Bar */}
                   <div className="mb-5 flex flex-wrap items-center justify-between gap-3 bg-gray-50/80 p-3 rounded-2xl border border-gray-200/80">

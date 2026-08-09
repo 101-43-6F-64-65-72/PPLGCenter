@@ -292,7 +292,7 @@ export default function ProposalPage() {
     try {
       const res = await proposalService.deleteProposal(id);
       if (res.success) {
-        setSuccessMessage("✓ Proposal berhasil dihapus dari server.");
+        setSuccessMessage("✓ Proposal berhasil dihapus.");
         await fetchProposals();
       } else {
         setUploadError(res.message || "Gagal menghapus proposal.");
@@ -391,8 +391,8 @@ export default function ProposalPage() {
       if (res && res.success) {
         setSuccessMessage(
           isEditing
-            ? "✓ Proposal berhasil diperbarui di server!"
-            : "✓ Proposal berhasil diajukan ke server!"
+            ? "✓ Proposal berhasil diperbarui!"
+            : "✓ Proposal berhasil diajukan!"
         );
         await fetchProposals();
 
@@ -411,7 +411,7 @@ export default function ProposalPage() {
         if (res?.statusCode === 401 || res?.statusCode === 403 || res?.message?.includes("Unauthorized")) {
           setUploadError("Sesi login telah berakhir atau akun Anda memerlukan hak akses OSIS. Silakan login kembali.");
         } else {
-          setUploadError(res?.message || "Gagal menyimpan proposal ke server.");
+          setUploadError(res?.message || "Gagal menyimpan proposal. Silakan coba lagi.");
         }
       }
     } catch (err) {

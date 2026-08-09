@@ -79,7 +79,7 @@ export default function GuruProposalTab() {
       const res = await proposalService.getProposals();
       if (!res.success) {
         setApiState("error");
-        setErrorMessage(res.message || "Gagal mengambil data proposal dari server.");
+        setErrorMessage(res.message || "Gagal memuat data proposal.");
         setProposals([]);
         return;
       }

@@ -358,9 +358,9 @@ function PemilosContent() {
         ) : elections.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
             <Vote className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-bold text-gray-700">Belum Ada Sesi Pemilihan Active</h3>
+            <h3 className="text-lg font-bold text-gray-700">Belum Ada Sesi Pemilihan</h3>
             <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">
-              Saat ini belum ada jadwal pemilihan ketua OSIS yang terdaftar di server sekolah.
+              Saat ini belum ada jadwal pemilihan ketua OSIS yang terdaftar.
             </p>
           </div>
         ) : (
@@ -368,14 +368,10 @@ function PemilosContent() {
             {/* Voted Banner */}
             {hasVoted && (
               <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 shadow-xs">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-white" />
-                </div>
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                 <div>
-                  <p className="font-bold text-emerald-800 text-sm">Suara Anda Sudah Terdaftar!</p>
-                  <p className="text-xs text-emerald-600">
-                    Terima kasih telah berpartisipasi dalam Pemilos. Hak suara Anda aman, rahasia, dan tidak dapat diubah lagi.
-                  </p>
+                  <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Suara Anda telah tercatat!</h4>
+                  <p className="text-xs text-emerald-700 font-medium">Terima kasih telah berpartisipasi dalam pemilihan kepengurusan OSIS tahun ini.</p>
                 </div>
               </div>
             )}
@@ -385,12 +381,12 @@ function PemilosContent() {
               <>
                 {/* Election Status Banner */}
                 {selectedElection && (
-                  <div className="mb-6 bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
+                  <div className="mb-8 p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-sm relative overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                      <div className="space-y-3 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide border ${
                               electionTimeState === "ONGOING" && isBackendOpen
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : electionTimeState === "BEFORE"
@@ -402,8 +398,6 @@ function PemilosContent() {
                               className={`w-2 h-2 rounded-full ${
                                 electionTimeState === "ONGOING" && isBackendOpen
                                   ? "bg-emerald-500 animate-pulse"
-                                  : electionTimeState === "BEFORE"
-                                  ? "bg-amber-500"
                                   : "bg-gray-400"
                               }`}
                             />
@@ -415,7 +409,7 @@ function PemilosContent() {
                           </span>
 
                           <span className="text-xs font-medium text-gray-400">
-                            (Status Server: {selectedElection.statusText || liveResults?.status || "Aktif"})
+                            (Status: {selectedElection.statusText || liveResults?.status || "Aktif"})
                           </span>
                         </div>
 

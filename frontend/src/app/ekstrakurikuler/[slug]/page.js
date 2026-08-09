@@ -262,7 +262,7 @@ export default function ExtracurricularDetailPage() {
           <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-12 text-center">
             <p className="text-lg font-bold text-gray-800">Ekstrakurikuler tidak ditemukan</p>
             <p className="mt-1 text-xs text-gray-500">
-              {fetchError || "Data ekstrakurikuler yang dicari tidak tersedia di server."}
+              {fetchError || "Data ekstrakurikuler yang dicari tidak ditemukan."}
             </p>
             <Link
               href="/ekstrakurikuler"

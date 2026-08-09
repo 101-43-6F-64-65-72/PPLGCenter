@@ -117,6 +117,12 @@ public class DepartmentService : IDepartmentService
         var department = await _context.Departments.FindAsync(id);
         if (department == null) return false;
 
+        var hasClasses = await _context.SchoolClasses.AnyAsync(c => c.DepartmentId == id);
+        if (hasClasses)
+        {
+            throw new ValidationException("Jurusan tidak dapat dihapus karena masih memiliki kelas terdaftar. Hapus atau pindahkan kelas terlebih dahulu.");
+        }
+
         _context.Departments.Remove(department);
         await _context.SaveChangesAsync();
         return true;

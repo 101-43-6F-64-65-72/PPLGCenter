@@ -88,19 +88,14 @@ function ProfileContent() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setAvatarFile(file);
-    const previewUrl = URL.createObjectURL(file);
-    setAvatarPreview(previewUrl);
-
-    // Auto upload to Cloudinary immediately upon file selection
+    setAvatarPreview(URL.createObjectURL(file));
     setIsUploadingAvatar(true);
-    setStatusMessage({ type: "info", text: "Mengunggah foto profil ke Cloudinary..." });
+    setStatusMessage({ type: "info", text: "Mengunggah foto profil..." });
     try {
       const { uploadImageToCloudinary } = await import("@/services/cloudinaryService");
       const uploadedUrl = await uploadImageToCloudinary(file);
       if (uploadedUrl) {
         setAvatarPreview(uploadedUrl);
-        // Automatically save uploaded photoUrl to database user profile
         let roleNum = 2;
         if (role === "Admin" || user?.role === "Admin") roleNum = 0;
         else if (role === "Teacher" || user?.role === "Teacher") roleNum = 1;
@@ -120,10 +115,10 @@ function ProfileContent() {
           setStatusMessage({ type: "success", text: "✓ Foto profil berhasil diunggah dan disimpan!" });
           await fetchProfile();
         } else {
-          setStatusMessage({ type: "error", text: "Foto diunggah tapi gagal disimpan ke database." });
+          setStatusMessage({ type: "error", text: "Foto diunggah tapi gagal disimpan. Silakan coba lagi." });
         }
       } else {
-        setStatusMessage({ type: "error", text: "Gagal mengunggah foto ke Cloudinary." });
+        setStatusMessage({ type: "error", text: "Gagal mengunggah foto profil." });
       }
     } catch (err) {
       console.error("Avatar upload failed:", err);
@@ -149,7 +144,7 @@ function ProfileContent() {
         return;
       }
 
-      let roleNum = 2; // Student
+      let roleNum = 2;
       if (role === "Admin" || user?.role === "Admin") roleNum = 0;
       else if (role === "Teacher" || user?.role === "Teacher") roleNum = 1;
       else if (role === "OSIS" || user?.role === "OSIS") roleNum = 3;
@@ -159,31 +154,30 @@ function ProfileContent() {
         email,
         phoneNumber: phone || null,
         address: address || null,
-        photoUrl: avatarPreview && avatarPreview.startsWith("http") ? avatarPreview : (user?.photoUrl || null),
+        bio: bio || null,
+        photoUrl: avatarPreview || user?.photoUrl || null,
         role: roleNum,
       };
 
-      // Send update request directly to backend database via PUT /api/users/{id}
       const res = await profileService.updateProfile(user.id, payload);
 
       if (res?.success || res?.data) {
-        setStatusMessage({
-          type: "success",
-          text: "✓ Data profil berhasil diperbarui!",
-        });
+        setStatusMessage({ type: "success", text: "✓ Profil berhasil diperbarui!" });
+        setSavedName(fullName);
+        setSavedEmail(email);
         setIsEditingInfo(false);
         await fetchProfile();
       } else {
         setStatusMessage({
           type: "error",
-          text: res?.message || "Gagal memperbarui profil di server database.",
+          text: res?.message || "Gagal memperbarui profil. Silakan coba lagi.",
         });
       }
     } catch (err) {
-      console.error("Gagal memperbarui profil ke database:", err);
+      console.error("Gagal memperbarui profil:", err);
       setStatusMessage({
         type: "error",
-        text: err?.response?.data?.message || err?.message || "Gagal menyimpan perubahan ke database.",
+        text: err?.response?.data?.message || err?.message || "Gagal menyimpan perubahan. Silakan coba lagi.",
       });
     } finally {
       setIsSaving(false);
@@ -208,12 +202,6 @@ function ProfileContent() {
     }
 
     try {
-      if (!user?.id) {
-        setStatusMessage({ type: "error", text: "ID Pengguna tidak ditemukan." });
-        setIsSaving(false);
-        return;
-      }
-
       let roleNum = 2;
       if (role === "Admin" || user?.role === "Admin") roleNum = 0;
       else if (role === "Teacher" || user?.role === "Teacher") roleNum = 1;
@@ -231,7 +219,7 @@ function ProfileContent() {
       if (res?.success || res?.data) {
         setStatusMessage({
           type: "success",
-          text: "✓ Password berhasil diperbarui di database backend!",
+          text: "✓ Password berhasil diperbarui!",
         });
         setOldPassword("");
         setNewPassword("");
@@ -240,13 +228,13 @@ function ProfileContent() {
       } else {
         setStatusMessage({
           type: "error",
-          text: res?.message || "Gagal memperbarui password di database.",
+          text: res?.message || "Gagal memperbarui password.",
         });
       }
     } catch (err) {
       setStatusMessage({
         type: "error",
-        text: err?.response?.data?.message || err?.message || "Gagal memperbarui password di server database.",
+        text: err?.response?.data?.message || err?.message || "Gagal memperbarui password. Silakan coba lagi.",
       });
     } finally {
       setIsSaving(false);
@@ -254,23 +242,20 @@ function ProfileContent() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Banner & Header Card */}
-      <div className="overflow-hidden rounded-[28px] border border-gray-100 bg-white shadow-sm">
-        <div className="relative h-56 sm:h-60 bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 flex items-center justify-between px-8 text-white">
-          <div className="space-y-2 z-10">
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight opacity-90">STUDENT CENTER SMKN 2 SURAKARTA</h2>
-            <p className="text-xs sm:text-sm font-medium text-blue-200/80">Sistem Informasi Kesiswaan, Akademik & Ekstrakurikuler Terpadu</p>
-          </div>
-          <div className="absolute inset-0 bg-black/20" />
-        </div>
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
+      <Navbar />
 
-        <div className="px-5 py-6 sm:px-8 sm:py-8">
-          <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:gap-5">
-              <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white bg-indigo-50 shadow-md sm:h-32 sm:w-32 group">
-                {avatarPreview ? (
-                  <Image src={avatarPreview} alt="Avatar profile" fill className="object-cover" unoptimized />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16">
+        <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-[#2C1EE8] via-indigo-700 to-purple-800 p-6 sm:p-10 text-white shadow-xl">
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+            <div className="relative group shrink-0">
+              <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl bg-white/10 flex items-center justify-center">
+                {avatarPreview || user?.photoUrl ? (
+                  <img
+                    src={avatarPreview || user?.photoUrl}
+                    alt={savedName}
+                    className="h-full w-full object-cover"
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-indigo-100 text-3xl font-bold text-[#2C1EE8] sm:text-4xl">
                     {savedName.charAt(0).toUpperCase() || "U"}
@@ -283,7 +268,7 @@ function ProfileContent() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-200">Cloudinary</span>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-200">Profil</span>
                   </div>
                 )}
 

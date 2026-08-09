@@ -138,7 +138,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
         </div>
         <h3 className="text-lg font-black text-gray-900">Belum Ada Unit Binaan</h3>
         <p className="text-xs text-gray-500 max-w-md mx-auto leading-relaxed">
-          Anda saat ini belum ditetapkan sebagai Guru Pembina untuk ekstrakurikuler atau organisasi siswa manapun di database sekolah.
+          Anda saat ini belum ditetapkan sebagai Guru Pembina untuk ekstrakurikuler atau organisasi siswa manapun.
         </p>
       </div>
     );

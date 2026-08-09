@@ -238,7 +238,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                       if (url) {
                         setForm((prev) => ({ ...prev, imageUrl: url }));
                       } else {
-                        setError("Gagal mengunggah gambar ke Cloudinary.");
+                        setError("Gagal mengunggah gambar.");
                       }
                     } catch (err) {
                       setError("Error mengunggah gambar fasilitas.");

@@ -66,7 +66,7 @@ export default function MadingSection() {
               <ErrorAlert
                 title="Gagal Memuat Mading"
                 message={
-                  error?.message || "Terjadi kesalahan saat menghubungi server."
+                  error?.message || "Gagal memuat pengumuman. Silakan coba lagi."
                 }
               />
               <div className="mt-4 flex justify-center">

@@ -30,6 +30,30 @@ const getCategoryMatchingImage = (item) => {
   return "/images/tempat/halamandepansmkn2ska.jpg";
 };
 
+const getDefaultFacilityDescription = (title = "", category = "", existingDesc = "") => {
+  if (existingDesc && existingDesc.trim().length > 15) {
+    return existingDesc.trim();
+  }
+  const text = `${title} ${category}`.toLowerCase();
+
+  if (text.includes("aula") || text.includes("hall") || text.includes("auditorium")) {
+    return "Ruang serbaguna utama berkapasitas besar dengan panggung, sound system pro, pendingin ruangan (AC), dan pencahayaan panggung. Sangat ideal untuk seminar, rapat pleno, perpisahan, dan pergelaran seni siswa.";
+  }
+  if (text.includes("lapangan") || text.includes("basket") || text.includes("futsal") || text.includes("voli") || text.includes("olahraga")) {
+    return "Stadion & lapangan sarana olahraga outdoor serbaguna berlantai standar nasional dengan garis lapangan basket, voli, dan futsal. Dilengkapi tribun penonton, papan skor digital, dan pencahayaan malam.";
+  }
+  if (text.includes("lab") || text.includes("komputer") || text.includes("laboratorium") || text.includes("pplg") || text.includes("tjkt")) {
+    return "Laboratorium komputer modern dengan 36+ PC spesifikasi tinggi, koneksi internet serat optik kecepatan tinggi, pendingin ruangan, dan proyektor presentasi untuk kebutuhan ujian berbasis komputer & workshop praktikum.";
+  }
+  if (text.includes("halaman") || text.includes("taman") || text.includes("depan") || text.includes("area")) {
+    return "Area ruang terbuka hijau dan lapangan utama kampus SMKN 2 Surakarta. Tempat serbaguna untuk pelaksanaan upacara bendera, bazar UMKM siswa, expo ekstrakurikuler, dan kegiatan outdoor.";
+  }
+  if (text.includes("perpustakaan") || text.includes("baca")) {
+    return "Ruang literasi ber-AC yang nyaman dengan ribuan koleksi buku referensi akademik, literatur digital, meja belajar diskusi kelompok, serta area baca terpisah.";
+  }
+  return "Fasilitas dan sarana prasarana resmi SMK Negeri 2 Surakarta yang dirancang mendukung kegiatan pembelajaran, keorganisasian siswa, dan kegiatan operasional sekolah secara optimal.";
+};
+
 export default function FasilitasPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
@@ -62,18 +86,25 @@ export default function FasilitasPage() {
           : [];
 
         if (isMounted) {
-          const mapped = items.map((item) => ({
-            id: item.id || item.Id,
-            title: item.name || item.Name || "Fasilitas Sekolah",
-            name: item.name || item.Name || "Fasilitas Sekolah",
-            location: item.location || item.Location || "SMKN 2 Surakarta",
-            capacity: item.capacity ?? item.Capacity ?? 30,
-            category: item.category || item.Category || "Umum",
-            description: item.description || item.Description || "",
-            status: (item.isActive ?? item.IsActive ?? true) ? "tersedia" : "tidak tersedia",
-            time: "07.00 s.d 17.00 WIB",
-            imageSrc: getCategoryMatchingImage(item),
-          }));
+          const mapped = items.map((item) => {
+            const facilityTitle = item.name || item.Name || "Fasilitas Sekolah";
+            const facilityCategory = item.category || item.Category || "Umum";
+            const rawDesc = item.description || item.Description || "";
+            const infoDescription = getDefaultFacilityDescription(facilityTitle, facilityCategory, rawDesc);
+
+            return {
+              id: item.id || item.Id,
+              title: facilityTitle,
+              name: facilityTitle,
+              location: item.location || item.Location || "SMKN 2 Surakarta",
+              capacity: item.capacity ?? item.Capacity ?? 30,
+              category: facilityCategory,
+              description: infoDescription,
+              status: (item.isActive ?? item.IsActive ?? true) ? "tersedia" : "tidak tersedia",
+              time: "07.00 s.d 17.00 WIB",
+              imageSrc: getCategoryMatchingImage(item),
+            };
+          });
           setPlacesData(mapped);
         }
       } catch (err) {

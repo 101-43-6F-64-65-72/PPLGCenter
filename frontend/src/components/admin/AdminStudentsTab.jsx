@@ -591,7 +591,7 @@ export default function AdminStudentsTab() {
               <code className="block p-3 rounded-xl bg-gray-50 border border-gray-200 font-mono text-[10px] text-gray-800 overflow-x-auto whitespace-pre">
                 Nama,NIS,NISN,Jurusan,Kelas,Email,HP,Gender,Tanggal Lahir,Alamat,Nomor Absen,Password
               </code>
-              <p className="text-[11px] text-gray-400">Aturan: Jurusan & Kelas wajib ada di database. NIS/NISN duplikat akan dilewati automatik.</p>
+              <p className="text-[11px] text-gray-400">Catatan: Jurusan & Kelas harus sudah terdaftar di sistem. NIS/NISN duplikat akan dilewati secara otomatis.</p>
             </div>
 
             <textarea

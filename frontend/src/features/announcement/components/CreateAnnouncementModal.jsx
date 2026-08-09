@@ -214,7 +214,7 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
           />
           {isUploading && (
             <p className="text-xs text-indigo-600 font-semibold animate-pulse">
-              Mengunggah gambar ke Cloudinary CDN...
+              Mengunggah gambar...
             </p>
           )}
           {uploadSuccessMsg && !isUploading && (

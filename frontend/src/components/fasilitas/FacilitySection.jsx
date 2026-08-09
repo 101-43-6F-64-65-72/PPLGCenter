@@ -50,6 +50,8 @@ export default function FacilitySection({
                 title={item.title || item.name}
                 location={item.location}
                 capacity={item.capacity}
+                category={item.category}
+                description={item.description}
                 status={item.status}
                 time={item.time}
                 imageSrc={item.imageSrc}

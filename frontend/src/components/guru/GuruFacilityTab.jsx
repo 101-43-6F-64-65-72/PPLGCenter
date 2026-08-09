@@ -53,7 +53,7 @@ export default function GuruFacilityTab() {
       }
     } catch (err) {
       setApiState("error");
-      setErrorMessage("Gagal memuat data peminjaman fasilitas dari server.");
+      setErrorMessage("Gagal memuat data peminjaman fasilitas.");
       setBookings([]);
     } finally {
       setIsLoading(false);

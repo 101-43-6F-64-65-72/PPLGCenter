@@ -179,7 +179,7 @@ export default function MadingPage() {
                 <>
                   <ErrorAlert
                     title="Gagal Memuat Pengumuman"
-                    message={error?.message || "Terjadi kesalahan saat memuat data dari server."}
+                    message={error?.message || "Terjadi kesalahan saat memuat data. Silakan coba lagi."}
                   />
                   <div className="mt-4 flex justify-center">
                     <button

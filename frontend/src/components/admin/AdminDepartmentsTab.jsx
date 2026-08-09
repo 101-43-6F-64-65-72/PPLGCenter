@@ -16,6 +16,7 @@ export default function AdminDepartmentsTab() {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -74,13 +75,14 @@ export default function AdminDepartmentsTab() {
 
   const handleDelete = async () => {
     if (!deletingId) return;
+    setDeleteError("");
     try {
       await departmentService.delete(deletingId);
       setIsDeleteModalOpen(false);
       setDeletingId(null);
       loadData();
     } catch (err) {
-      alert(err?.response?.data?.message || "Gagal menghapus jurusan.");
+      setDeleteError(err?.response?.data?.message || err?.message || "Gagal menghapus jurusan.");
     }
   };
 
@@ -152,6 +154,7 @@ export default function AdminDepartmentsTab() {
                       <button
                         onClick={() => {
                           setDeletingId(dept.id);
+                          setDeleteError("");
                           setIsDeleteModalOpen(true);
                         }}
                         className="text-gray-400 hover:text-rose-600 font-bold cursor-pointer"
@@ -238,6 +241,13 @@ export default function AdminDepartmentsTab() {
             <p className="text-xs text-gray-500 font-medium">
               Apakah Anda yakin ingin menghapus data jurusan ini?
             </p>
+
+            {deleteError && (
+              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-bold flex items-center gap-2 text-left">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{deleteError}</span>
+              </div>
+            )}
             <div className="flex gap-2 pt-2">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}

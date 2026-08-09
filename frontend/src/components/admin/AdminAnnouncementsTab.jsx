@@ -243,7 +243,7 @@ export default function AdminAnnouncementsTab() {
                 onCropped={handleCroppedImage}
               />
               {isUploading && (
-                <p className="text-xs text-indigo-600 font-semibold animate-pulse">Mengunggah gambar ke Cloudinary...</p>
+                <p className="text-xs text-indigo-600 font-semibold animate-pulse">Mengunggah gambar...</p>
               )}
 
               <div>

@@ -27,6 +27,8 @@ export default function FacilityCard({
   title = "Laboratorium Komputer",
   location = "SMKN 2 Surakarta",
   capacity = 36,
+  category = "Umum",
+  description = "",
   status = "tersedia",
   time = "07.00 s.d 17.00 WIB",
   imageSrc = "/images/tempat/lapangansmkn2ska.jpg",
@@ -40,7 +42,7 @@ export default function FacilityCard({
 
   return (
     <div
-      onClick={() => onActionClick && onActionClick({ title: displayTitle, location, capacity, status, time, imageSrc: imgSrc })}
+      onClick={() => onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, time, imageSrc: imgSrc })}
       className="group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:border-[#2c1ee8]/40 hover:shadow-xl hover:shadow-[#2c1ee8]/10 cursor-pointer"
     >
       <div>
@@ -90,6 +92,12 @@ export default function FacilityCard({
             {displayTitle}
           </h3>
 
+          {description && (
+            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-1 font-normal">
+              {description}
+            </p>
+          )}
+
           <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/90 p-2.5 text-xs flex items-center justify-between text-slate-600">
             <span className="font-medium text-slate-500">Jam Layanan</span>
             <span className="font-bold text-slate-800">{time}</span>
@@ -103,7 +111,7 @@ export default function FacilityCard({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            onActionClick && onActionClick({ title: displayTitle, location, capacity, status, time, imageSrc: imgSrc });
+            onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, time, imageSrc: imgSrc });
           }}
           className="w-full rounded-2xl bg-slate-50 py-3 px-4 text-xs sm:text-sm font-extrabold text-[#2c1ee8] border border-blue-200/80 hover:bg-[#2c1ee8] hover:text-white hover:border-[#2c1ee8] transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer group/btn"
         >
