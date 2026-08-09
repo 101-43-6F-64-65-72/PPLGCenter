@@ -12,6 +12,7 @@ import { GraduationCap, BookOpen, Award, Hash } from "lucide-react";
 import Button from "@/components/ui/Button";
 import profileService from "@/services/profileService";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function ProfilePage() {
   return (
@@ -253,7 +254,7 @@ function ProfileContent() {
                 <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl bg-white/10 flex items-center justify-center">
                   {avatarPreview || user?.photoUrl ? (
                     <img
-                      src={avatarPreview || user?.photoUrl}
+                      src={resolveImageUrl(avatarPreview || user?.photoUrl)}
                       alt={savedName}
                       className="h-full w-full object-cover"
                     />

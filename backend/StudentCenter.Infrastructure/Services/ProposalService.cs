@@ -187,24 +187,31 @@ public class ProposalService : IProposalService
         _context.Proposals.Add(proposal);
         await _context.SaveChangesAsync();
 
-        // Notify admins and teachers about new proposal
-        var adminAndTeacherIds = await _context.Users
-            .AsNoTracking()
-            .Where(u => u.IsActive && (u.Role == UserRole.Admin || u.Role == UserRole.Teacher))
-            .Select(u => u.Id)
-            .ToListAsync();
-
-        foreach (var recipientId in adminAndTeacherIds)
+        // Notify admins and teachers about new proposal safely
+        try
         {
-            await _notificationService.NotifyUserAsync(
-                recipientId,
-                "Proposal Baru Diajukan",
-                $"{user.FullName} mengajukan proposal baru '{proposal.Title}'.",
-                NotificationType.ProposalSubmitted,
-                NotificationPriority.Normal,
-                proposal.Id.ToString(),
-                NotificationReferenceType.Proposal
-            );
+            var adminAndTeacherIds = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.IsActive && (u.Role == UserRole.Admin || u.Role == UserRole.Teacher))
+                .Select(u => u.Id)
+                .ToListAsync();
+
+            foreach (var recipientId in adminAndTeacherIds)
+            {
+                await _notificationService.NotifyUserAsync(
+                    recipientId,
+                    "Proposal Baru Diajukan",
+                    $"{user.FullName} mengajukan proposal baru '{proposal.Title}'.",
+                    NotificationType.ProposalSubmitted,
+                    NotificationPriority.Normal,
+                    proposal.Id.ToString(),
+                    NotificationReferenceType.Proposal
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Proposal Notification Error] {ex.Message}");
         }
 
         var signedUrl = await _fileStorageService.CreateSignedUrlAsync(proposal.FileUrl);

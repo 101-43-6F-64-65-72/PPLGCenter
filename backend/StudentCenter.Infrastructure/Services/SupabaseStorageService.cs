@@ -126,47 +126,54 @@ public class SupabaseStorageService : IFileStorageService
 
         path = path.TrimStart('/');
 
-        var seconds = (int)(expiresIn?.TotalSeconds ?? 3600); // Default 60 minutes
-        var signUrl = $"{_supabaseUrl}/storage/v1/object/sign/{_bucketName}/{path}";
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, signUrl);
-        request.Headers.Add("Authorization", $"Bearer {_serviceRoleKey}");
-        request.Headers.Add("apikey", _serviceRoleKey);
-
-        var payload = JsonSerializer.Serialize(new { expiresIn = seconds });
-        request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            return path;
-        }
+            var seconds = (int)(expiresIn?.TotalSeconds ?? 3600); // Default 60 minutes
+            var signUrl = $"{_supabaseUrl}/storage/v1/object/sign/{_bucketName}/{path}";
 
-        var jsonStr = await response.Content.ReadAsStringAsync(cancellationToken);
-        using var doc = JsonDocument.Parse(jsonStr);
+            using var request = new HttpRequestMessage(HttpMethod.Post, signUrl);
+            request.Headers.Add("Authorization", $"Bearer {_serviceRoleKey}");
+            request.Headers.Add("apikey", _serviceRoleKey);
 
-        if (doc.RootElement.TryGetProperty("signedURL", out var signedUrlProp))
-        {
-            var signedPath = signedUrlProp.GetString();
-            if (!string.IsNullOrEmpty(signedPath))
+            var payload = JsonSerializer.Serialize(new { expiresIn = seconds });
+            request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
             {
-                if (signedPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                    signedPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                {
-                    return signedPath;
-                }
-
-                if (signedPath.StartsWith("/object/", StringComparison.OrdinalIgnoreCase))
-                {
-                    signedPath = "/storage/v1" + signedPath;
-                }
-                else if (!signedPath.StartsWith("/storage/v1", StringComparison.OrdinalIgnoreCase))
-                {
-                    signedPath = "/storage/v1/" + signedPath.TrimStart('/');
-                }
-
-                return $"{_supabaseUrl}{signedPath}";
+                return path;
             }
+
+            var jsonStr = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(jsonStr);
+
+            if (doc.RootElement.TryGetProperty("signedURL", out var signedUrlProp))
+            {
+                var signedPath = signedUrlProp.GetString();
+                if (!string.IsNullOrEmpty(signedPath))
+                {
+                    if (signedPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                        signedPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return signedPath;
+                    }
+
+                    if (signedPath.StartsWith("/object/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        signedPath = "/storage/v1" + signedPath;
+                    }
+                    else if (!signedPath.StartsWith("/storage/v1", StringComparison.OrdinalIgnoreCase))
+                    {
+                        signedPath = "/storage/v1/" + signedPath.TrimStart('/');
+                    }
+
+                    return $"{_supabaseUrl}{signedPath}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Supabase CreateSignedUrl Error] {ex.Message}");
         }
 
         return path;
