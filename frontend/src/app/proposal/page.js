@@ -106,12 +106,16 @@ export default function ProposalPage() {
           }
 
           const statusVal = item.status ?? item.Status ?? 0;
-          const reviewerName = item.reviewedByUserName || item.ReviewedByUserName || "";
+          const reviewerName = item.reviewedByUserName || item.ReviewedByUserName || item.reviewedBy || item.ReviewedBy || "";
+          const rejectionReason = item.rejectionReason || item.RejectionReason || item.teacherComment || item.TeacherComment || item.adminComment || item.AdminComment || "";
+          const teacherComment = item.teacherComment || item.TeacherComment || "";
+          const adminComment = item.adminComment || item.AdminComment || "";
+
           let statusText = "Menunggu Review";
           if (statusVal === 1 || statusVal === "Approved") {
-            statusText = reviewerName ? `Disetujui oleh ${reviewerName}` : "Disetujui Admin";
+            statusText = reviewerName ? `Disetujui oleh ${reviewerName}` : "Disetujui Pembina / Admin";
           } else if (statusVal === 2 || statusVal === "Rejected") {
-            statusText = reviewerName ? `Ditolak oleh ${reviewerName}` : "Ditolak Admin";
+            statusText = reviewerName ? `Ditolak oleh ${reviewerName}` : "Ditolak Pembina / Admin";
           }
 
           return {
@@ -120,7 +124,13 @@ export default function ProposalPage() {
             title: rawTitle,
             description: item.description || item.Description,
             status: statusText,
-            createdAt: item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID") : "Baru saja",
+            rawStatus: statusVal,
+            rejectionReason: rejectionReason,
+            teacherComment: teacherComment,
+            adminComment: adminComment,
+            reviewerName: reviewerName,
+            reviewedAt: item.reviewedAt ? new Date(item.reviewedAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : null,
+            createdAt: item.createdAt ? new Date(item.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "Baru saja",
             files: item.fileUrl ? [{ id: "1", name: "Dokumen Proposal.pdf", url: item.fileUrl }] : [],
             fileUrl: item.fileUrl || "",
             submittedByUserId: item.submittedByUserId || item.SubmittedByUserId,
