@@ -271,8 +271,101 @@ public static class OperationDataSeeder
                     });
                 }
             }
+        // ── 6. Seed Calendar Events ──────────────────────────────────────────
+        if (!await context.CalendarEvents.AnyAsync())
+        {
+            var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Role == UserRole.Admin);
+            var adminId = adminUser?.Id ?? Guid.NewGuid();
+            var currentYear = DateTime.UtcNow.Year;
+            var currentMonth = DateTime.UtcNow.Month;
+
+            var sampleEvents = new List<CalendarEvent>
+            {
+                new CalendarEvent
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Masa Bimbingan & Orientasi Siswa",
+                    Description = "Pengarahan program akademik dan kegiatan pembekalan siswa baru.",
+                    StartDate = new DateTime(currentYear, currentMonth, 3, 7, 30, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(currentYear, currentMonth, 5, 14, 0, 0, DateTimeKind.Utc),
+                    Category = "Akademik",
+                    Location = "Aula SMKN 2 Surakarta",
+                    Visibility = "Public",
+                    IsAllDay = true,
+                    CreatedByUserId = adminId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new CalendarEvent
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Rapat Koordinasi Pengurus OSIS & MPK",
+                    Description = "Musyawarah evaluasi bulanan dan persiapan kegiatan sekolah.",
+                    StartDate = new DateTime(currentYear, currentMonth, 10, 9, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(currentYear, currentMonth, 10, 12, 0, 0, DateTimeKind.Utc),
+                    Category = "OSIS",
+                    Location = "Ruang OSIS SMKN 2 Surakarta",
+                    Visibility = "Public",
+                    IsAllDay = false,
+                    StartTime = "09:00",
+                    EndTime = "12:00",
+                    CreatedByUserId = adminId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new CalendarEvent
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Hari Pramuka & Latihan Gabungan",
+                    Description = "Kegiatan peringatan Hari Pramuka dan apel serentak seluruh tingkat.",
+                    StartDate = new DateTime(currentYear, currentMonth, 14, 7, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(currentYear, currentMonth, 14, 11, 30, 0, DateTimeKind.Utc),
+                    Category = "Ekstrakurikuler",
+                    Location = "Halaman SMKN 2 Surakarta",
+                    Visibility = "Public",
+                    IsAllDay = false,
+                    StartTime = "07:00",
+                    EndTime = "11:30",
+                    CreatedByUserId = adminId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new CalendarEvent
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Upacara Bendera HUT Kemerdekaan RI",
+                    Description = "Seluruh siswa dan bapak/ibu guru mengikuti upacara peringatan HUT Kemerdekaan RI.",
+                    StartDate = new DateTime(currentYear, currentMonth, 17, 7, 0, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(currentYear, currentMonth, 17, 10, 0, 0, DateTimeKind.Utc),
+                    Category = "Libur Nasional",
+                    Location = "Lapangan Utama SMKN 2 Surakarta",
+                    Visibility = "Public",
+                    IsAllDay = true,
+                    CreatedByUserId = adminId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                },
+                new CalendarEvent
+                {
+                    Id = Guid.NewGuid(),
+                    Title = "Penilaian Tengah Semester (PTS)",
+                    Description = "Pelaksanaan evaluasi pembelajaran PTS berbasis CBT.",
+                    StartDate = new DateTime(currentYear, currentMonth, 24, 7, 30, 0, DateTimeKind.Utc),
+                    EndDate = new DateTime(currentYear, currentMonth, 27, 15, 0, 0, DateTimeKind.Utc),
+                    Category = "Ujian",
+                    Location = "Ruang Kelas & Lab Komputer",
+                    Visibility = "Public",
+                    IsAllDay = true,
+                    CreatedByUserId = adminId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                }
+            };
+
+            context.CalendarEvents.AddRange(sampleEvents);
+            await context.SaveChangesAsync();
         }
-        await context.SaveChangesAsync();
+
         logger?.LogInformation("OperationDataSeeder: Comprehensive UAT data initialized successfully.");
     }
 }

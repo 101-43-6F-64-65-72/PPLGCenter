@@ -71,7 +71,7 @@ public class CalendarService : ICalendarService
 
         var query = _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.DeletedAt == null && c.StartDate >= startOfMonth && c.StartDate <= endOfMonth);
+            .Where(c => c.DeletedAt == null && c.StartDate <= endOfMonth && c.EndDate >= startOfMonth);
 
         if (userRole == "Student")
         {
@@ -95,7 +95,7 @@ public class CalendarService : ICalendarService
 
         var query = _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.DeletedAt == null && c.StartDate >= startOfDay && c.StartDate <= endOfDay);
+            .Where(c => c.DeletedAt == null && c.StartDate <= endOfDay && c.EndDate >= startOfDay);
 
         if (userRole == "Student")
         {
@@ -131,7 +131,8 @@ public class CalendarService : ICalendarService
             Id = Guid.NewGuid(),
             Title = request.Title.Trim(),
             Description = request.Description?.Trim(),
-            EventDate = request.EventDate,
+            StartDate = request.StartDate ?? request.EventDate,
+            EndDate = request.EndDate ?? request.StartDate ?? request.EventDate,
             StartTime = request.StartTime,
             EndTime = request.EndTime,
             Location = request.Location?.Trim(),
@@ -148,25 +149,9 @@ public class CalendarService : ICalendarService
         await _context.SaveChangesAsync();
 
         var user = await _context.Set<User>().FindAsync(userId);
-
-        return new CalendarEventResponse
-        {
-            Id = calendarEvent.Id,
-            Title = calendarEvent.Title,
-            Description = calendarEvent.Description,
-            EventDate = calendarEvent.EventDate,
-            StartTime = calendarEvent.StartTime,
-            EndTime = calendarEvent.EndTime,
-            Location = calendarEvent.Location,
-            Category = calendarEvent.Category,
-            Color = calendarEvent.Color,
-            Visibility = calendarEvent.Visibility,
-            IsAllDay = calendarEvent.IsAllDay,
-            CreatedByUserId = calendarEvent.CreatedByUserId,
-            CreatedByUserName = user?.FullName ?? string.Empty,
-            CreatedAt = calendarEvent.CreatedAt,
-            UpdatedAt = calendarEvent.UpdatedAt
-        };
+        var response = MapToResponse(calendarEvent);
+        response.CreatedByUserName = user?.FullName ?? string.Empty;
+        return response;
     }
 
     public async Task<CalendarEventResponse?> UpdateEventAsync(Guid id, UpdateCalendarEventRequest request, Guid userId, string userRole)
@@ -183,7 +168,8 @@ public class CalendarService : ICalendarService
 
         calendarEvent.Title = request.Title.Trim();
         calendarEvent.Description = request.Description?.Trim();
-        calendarEvent.EventDate = request.EventDate;
+        calendarEvent.StartDate = request.StartDate ?? request.EventDate;
+        calendarEvent.EndDate = request.EndDate ?? request.StartDate ?? request.EventDate;
         calendarEvent.StartTime = request.StartTime;
         calendarEvent.EndTime = request.EndTime;
         calendarEvent.Location = request.Location?.Trim();
@@ -222,6 +208,8 @@ public class CalendarService : ICalendarService
             Id = c.Id,
             Title = c.Title,
             Description = c.Description,
+            StartDate = c.StartDate,
+            EndDate = c.EndDate,
             EventDate = c.EventDate,
             StartTime = c.StartTime,
             EndTime = c.EndTime,

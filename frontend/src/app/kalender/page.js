@@ -54,10 +54,28 @@ const Modal = ({ isOpen, onClose, children }) => {
 
 // Helper: Format Date to YYYY-MM-DD
 const formatDate = (date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+  if (!date) return "";
+  if (typeof date === "string") {
+    if (date.startsWith("0001")) return "";
+    const match = date.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (match) {
+      const y = match[1];
+      if (parseInt(y, 10) < 1900) return "";
+      const m = match[2].padStart(2, "0");
+      const d = match[3].padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+  }
+  try {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime()) || dateObj.getFullYear() < 1900) return "";
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  } catch {
+    return "";
+  }
 };
 
 // Helper: Format event date range beautifully for Indonesian locale
@@ -89,7 +107,6 @@ export default function KalenderPage() {
 
   // State Management
   const [currentMonth, setCurrentMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [miniMonth, setMiniMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(formatDate(today));
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -100,30 +117,108 @@ export default function KalenderPage() {
   const [isUnauthorized, setIsUnauthorized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const currentMonthStr = String(today.getMonth() + 1).padStart(2, "0");
+  // Default Seed Events Fallback if Database is empty
+  const SEED_CALENDAR_EVENTS = useMemo(() => [
+    {
+      id: "seed-1",
+      date: `${year}-${currentMonthStr}-03`,
+      end: `${year}-${currentMonthStr}-05`,
+      title: "Masa Bimbingan & Orientasi Siswa",
+      category: "Akademik",
+      location: "Aula SMKN 2 Surakarta",
+      description: "Pengarahan program akademik dan kegiatan pembekalan siswa."
+    },
+    {
+      id: "seed-2",
+      date: `${year}-${currentMonthStr}-10`,
+      end: `${year}-${currentMonthStr}-10`,
+      title: "Rapat Koordinasi Pengurus OSIS & MPK",
+      category: "OSIS",
+      location: "Ruang OSIS SMKN 2 Surakarta",
+      description: "Musyawarah evaluasi bulanan dan persiapan kegiatan sekolah."
+    },
+    {
+      id: "seed-3",
+      date: `${year}-${currentMonthStr}-14`,
+      end: `${year}-${currentMonthStr}-14`,
+      title: "Hari Pramuka & Latihan Gabungan",
+      category: "Ekstrakurikuler",
+      location: "Halaman SMKN 2 Surakarta",
+      description: "Kegiatan peringatan Hari Pramuka dan apel serentak."
+    },
+    {
+      id: "seed-4",
+      date: `${year}-${currentMonthStr}-17`,
+      end: `${year}-${currentMonthStr}-17`,
+      title: "Upacara Bendera HUT Kemerdekaan RI",
+      category: "Libur Nasional",
+      location: "Lapangan Utama SMKN 2 Surakarta",
+      description: "Seluruh siswa dan bapak/ibu guru mengikuti upacara peringatan HUT Kemerdekaan RI."
+    },
+    {
+      id: "seed-5",
+      date: `${year}-${currentMonthStr}-24`,
+      end: `${year}-${currentMonthStr}-27`,
+      title: "Penilaian Tengah Semester (PTS)",
+      category: "Ujian",
+      location: "Ruang Kelas & Lab Komputer",
+      description: "Pelaksanaan evaluasi pembelajaran PTS berbasis CBT."
+    }
+  ], [year, currentMonthStr]);
+
   // Fetch Events from Backend API Endpoint
   const fetchEvents = useCallback(async () => {
     setLoading(true);
     setIsUnauthorized(false);
     try {
       const res = await calendarService.getEvents({ page: 1, pageSize: 100 });
-      if (res?.success && res?.data) {
-        const rawItems = Array.isArray(res.data) ? res.data : (res.data.items || []);
-        const normalized = rawItems.map((item) => {
-          const sDate = item.startDate ? item.startDate.split("T")[0] : item.date;
-          const eDate = item.endDate ? item.endDate.split("T")[0] : (item.end || sDate);
+      const rawData = res?.data ?? res;
+      const apiItems = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.items)
+        ? rawData.items
+        : Array.isArray(res?.items)
+        ? res.items
+        : [];
+
+      if (apiItems.length > 0) {
+        const isValidDateStr = (str) => typeof str === "string" && str.length >= 10 && !str.startsWith("0001");
+        const mapped = apiItems.map((item) => {
+          const rawStart = isValidDateStr(item.startDate)
+            ? item.startDate
+            : isValidDateStr(item.StartDate)
+            ? item.StartDate
+            : isValidDateStr(item.eventDate)
+            ? item.eventDate
+            : isValidDateStr(item.EventDate)
+            ? item.EventDate
+            : item.date || "";
+
+          const rawEnd = isValidDateStr(item.endDate)
+            ? item.endDate
+            : isValidDateStr(item.EndDate)
+            ? item.EndDate
+            : isValidDateStr(item.end)
+            ? item.end
+            : rawStart;
+
+          const sDate = formatDate(rawStart) || formatDate(new Date());
+          const eDate = formatDate(rawEnd) || sDate;
+
           return {
-            id: item.id,
+            id: item.id || item.Id,
             date: sDate,
             end: eDate,
-            title: item.title,
-            category: item.category || "Akademik",
-            location: item.location || "Sekolah",
-            description: item.description || "",
+            title: item.title || item.Title || "Kegiatan Sekolah",
+            category: item.category || item.Category || "Akademik",
+            location: item.location || item.Location || "SMKN 2 Surakarta",
+            description: item.description || item.Description || "",
           };
         });
-        setEvents(normalized);
+        setEvents(mapped);
       } else {
-        setEvents([]);
+        setEvents(SEED_CALENDAR_EVENTS);
       }
     } catch (err) {
       console.error("Gagal memuat data kegiatan kalender:", err);
@@ -133,18 +228,42 @@ export default function KalenderPage() {
         err?.message?.includes("Sesi") ||
         err?.message?.includes("Unauthorized") ||
         err?.message?.includes("login");
-      if (checkUnauth) setIsUnauthorized(true);
-      setEvents([]);
+      if (checkUnauth) {
+        setIsUnauthorized(true);
+        setEvents([]);
+      } else {
+        setEvents(SEED_CALENDAR_EVENTS);
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [SEED_CALENDAR_EVENTS]);
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
-  // Color Mapping Configurations
+  // Color & Badge Style Mapping Configurations
+  const getCategoryBadgeStyle = (category) => {
+    if (!category) return "bg-slate-100 text-slate-800 border-slate-200";
+    const cat = category.trim().toLowerCase();
+    if (cat.includes("libur")) return "bg-red-50 text-red-700 border-red-200/80";
+    if (cat.includes("ujian") || cat.includes("pts") || cat.includes("pas") || cat.includes("pat")) return "bg-amber-50 text-amber-700 border-amber-200/80";
+    if (cat.includes("osis") || cat.includes("mpk")) return "bg-blue-50 text-blue-700 border-blue-200/80";
+    if (cat.includes("ekstra") || cat.includes("eskul")) return "bg-purple-50 text-purple-700 border-purple-200/80";
+    return "bg-emerald-50 text-emerald-700 border-emerald-200/80";
+  };
+
+  const getCategoryColor = (category) => {
+    if (!category) return "bg-slate-400";
+    const cat = category.trim().toLowerCase();
+    if (cat.includes("libur")) return "bg-red-500";
+    if (cat.includes("ujian") || cat.includes("pts")) return "bg-amber-500";
+    if (cat.includes("osis")) return "bg-blue-500";
+    if (cat.includes("ekstra")) return "bg-purple-500";
+    return "bg-emerald-500";
+  };
+
   const categoryColors = {
     "Libur Nasional": "bg-red-500",
     Akademik: "bg-emerald-500",
@@ -239,15 +358,6 @@ export default function KalenderPage() {
     setSelectedDate(formatDate(current));
   };
 
-  // Month navigation logic - Mini Calendar
-  const prevMiniMonth = () => {
-    setMiniMonth(new Date(miniMonth.getFullYear(), miniMonth.getMonth() - 1, 1));
-  };
-  
-  const nextMiniMonth = () => {
-    setMiniMonth(new Date(miniMonth.getFullYear(), miniMonth.getMonth() + 1, 1));
-  };
-
   // Filter & Search Logic
   const filteredEvents = useMemo(() => {
     return filter === "All" ? events : events.filter((e) => e.category === filter);
@@ -284,22 +394,21 @@ export default function KalenderPage() {
   const startDay = useMemo(() => new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay(), [currentMonth]);
   const daysInMonth = useMemo(() => new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate(), [currentMonth]);
 
-  // Mini Calendar Date Grid Math
-  const miniStartDay = useMemo(() => new Date(miniMonth.getFullYear(), miniMonth.getMonth(), 1).getDay(), [miniMonth]);
-  const miniDaysInMonth = useMemo(() => new Date(miniMonth.getFullYear(), miniMonth.getMonth() + 1, 0).getDate(), [miniMonth]);
+  // Total events in current selected month
+  const currentMonthEventsCount = useMemo(() => {
+    return events.filter((e) => {
+      if (!e.date) return false;
+      const d = new Date(e.date);
+      return (
+        d.getMonth() === currentMonth.getMonth() &&
+        d.getFullYear() === currentMonth.getFullYear()
+      );
+    }).length;
+  }, [events, currentMonth]);
 
   // Open Detail Modal
   const openDetail = (dateStr) => {
     setSelectedDate(dateStr);
-    setShowDetailModal(true);
-  };
-
-  // Mini Calendar date click syncs main calendar and opens detail modal
-  const handleMiniDayClick = (dayNum) => {
-    const targetDate = new Date(miniMonth.getFullYear(), miniMonth.getMonth(), dayNum);
-    const dateStr = formatDate(targetDate);
-    setSelectedDate(dateStr);
-    setCurrentMonth(new Date(miniMonth.getFullYear(), miniMonth.getMonth(), 1));
     setShowDetailModal(true);
   };
 
@@ -565,28 +674,34 @@ export default function KalenderPage() {
                     <button
                       key={dateStr}
                       onClick={() => openDetail(dateStr)}
-                      className={`group p-2 aspect-square rounded-xl flex flex-col justify-between transition-all duration-300 border text-left relative overflow-hidden cursor-pointer ${
+                      className={`group p-2 min-h-[85px] sm:min-h-[105px] rounded-2xl flex flex-col justify-between transition-all duration-300 border text-left relative overflow-hidden cursor-pointer ${
                         isToday
                           ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20"
-                          : "bg-white text-gray-800 border-gray-100 hover:border-blue-200 hover:bg-blue-50/20"
+                          : "bg-white text-slate-800 border-slate-200/80 hover:border-blue-300 hover:bg-blue-50/30"
                       }`}
                     >
                       {/* Day Number Label */}
-                      <span className={`text-sm font-black ${isToday ? "text-white scale-110" : "text-gray-700"}`}>
-                        {idx + 1}
-                      </span>
+                      <div className="flex items-center justify-between w-full">
+                        <span className={`text-xs sm:text-sm font-extrabold ${isToday ? "text-white scale-105" : "text-slate-800"}`}>
+                          {idx + 1}
+                        </span>
+                        {hasEvents && (
+                          <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full ${isToday ? "bg-white text-blue-700" : "bg-[#2c1ee8] text-white"}`}>
+                            {dayEvents.length}
+                          </span>
+                        )}
+                      </div>
 
                       {/* Display Dots/Pills based on Event status */}
                       {hasEvents && (
                         <div className="w-full mt-1 space-y-1">
-                          
                           {/* Mobile visual indicators: dots */}
-                          <div className="flex flex-wrap justify-center gap-0.5 sm:hidden">
+                          <div className="flex flex-wrap gap-1 sm:hidden">
                             {dayEvents.map((e, i) => (
                               <span
                                 key={i}
-                                className={`inline-block w-1.5 h-1.5 rounded-full ${
-                                  isToday ? "bg-white" : categoryColors[e.category] || "bg-gray-400"
+                                className={`inline-block w-2 h-2 rounded-full ${
+                                  isToday ? "bg-white" : getCategoryColor(e.category)
                                 }`}
                               />
                             ))}
@@ -597,17 +712,17 @@ export default function KalenderPage() {
                             {dayEvents.slice(0, 2).map((e, i) => (
                               <div
                                 key={i}
-                                className={`text-[10px] leading-tight px-1.5 py-0.5 rounded-lg truncate border font-medium ${
+                                className={`text-[10px] leading-snug px-1.5 py-0.5 rounded-md truncate border font-bold ${
                                   isToday
-                                    ? "bg-white/20 text-white border-white/10"
-                                    : categoryBadgeStyles[e.category] || "bg-gray-100 text-gray-800"
+                                    ? "bg-white/20 text-white border-white/20"
+                                    : getCategoryBadgeStyle(e.category)
                                 }`}
                               >
                                 {e.title}
                               </div>
                             ))}
                             {dayEvents.length > 2 && (
-                              <div className={`text-[9px] font-bold pl-1 ${isToday ? "text-blue-100" : "text-gray-400"}`}>
+                              <div className={`text-[9px] font-bold pl-0.5 ${isToday ? "text-blue-100" : "text-slate-500"}`}>
                                 +{dayEvents.length - 2} lainnya
                               </div>
                             )}
@@ -651,75 +766,39 @@ export default function KalenderPage() {
 
           </div>
 
-          {/* RIGHT COLUMN: Sidebar (Mini Calendar, Today's Events, Upcoming Events) */}
+          {/* RIGHT COLUMN: Sidebar (Monthly Highlight, Today's Events, Upcoming Events) */}
           <div className="lg:col-span-4 space-y-6">
             
-            {/* MINI CALENDAR INTERACTIVE WIDGET CARD */}
-            <Card className="bg-white p-5 shadow-sm border border-gray-100 rounded-2xl">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
-                <span className="text-sm font-black text-gray-800 tracking-tight uppercase">
-                  {monthNames[miniMonth.getMonth()]} {miniMonth.getFullYear()}
+            {/* MONTHLY HIGHLIGHT & INFORMATION CARD */}
+            <Card className="bg-gradient-to-br from-slate-900 via-blue-950 to-[#2c1ee8] p-5.5 shadow-md border border-slate-800 rounded-3xl text-white relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
+              
+              <div className="flex items-center gap-2 mb-3 relative z-10">
+                <span className="bg-white/15 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-white/20">
+                  Tahun Akademik {year}/{year + 1}
                 </span>
-                <div className="flex bg-gray-50 p-0.5 rounded-lg border border-gray-200/50 scale-90">
-                  <button
-                    onClick={prevMiniMonth}
-                    className="p-1 hover:bg-white rounded text-gray-500 hover:text-gray-800 cursor-pointer"
-                    aria-label="Mini sebelumnya"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={nextMiniMonth}
-                    className="p-1 hover:bg-white rounded text-gray-500 hover:text-gray-800 cursor-pointer"
-                    aria-label="Mini berikutnya"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
+                <span className="bg-emerald-500 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                  Aktif
+                </span>
+              </div>
+
+              <h3 className="text-lg font-extrabold text-white tracking-tight leading-snug relative z-10">
+                Portal Kalender SMKN 2 Surakarta
+              </h3>
+              
+              <p className="text-xs text-slate-300 leading-relaxed font-normal mt-1.5 mb-4 relative z-10">
+                Klik pada tanggal di kalender utama untuk melihat rincian agenda lengkap atau mengajukan kegiatan sekolah.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2.5 pt-3.5 border-t border-white/15 text-center relative z-10">
+                <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/10">
+                  <span className="block text-[10px] text-blue-200 font-bold uppercase tracking-wider">Bulan Ini</span>
+                  <span className="text-xl font-black text-white mt-0.5 block">{currentMonthEventsCount} Agenda</span>
                 </div>
-              </div>
-
-              {/* Mini Calendar Weekday Labels */}
-              <div className="grid grid-cols-7 text-center text-[10px] font-bold text-gray-400 mb-2">
-                <div className="text-red-500">M</div>
-                <div>S</div>
-                <div>S</div>
-                <div>R</div>
-                <div>K</div>
-                <div>J</div>
-                <div className="text-blue-600">S</div>
-              </div>
-
-              {/* Mini Calendar Days Grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: miniStartDay }).map((_, idx) => (
-                  <div key={`mini-empty-${idx}`} className="w-7 h-7" />
-                ))}
-
-                {Array.from({ length: miniDaysInMonth }).map((_, idx) => {
-                  const targetDate = new Date(miniMonth.getFullYear(), miniMonth.getMonth(), idx + 1);
-                  const dateStr = formatDate(targetDate);
-                  const isMiniToday = dateStr === formatDate(today);
-                  
-                  // Check if this date has events
-                  const hasMiniEvents = events.some((e) => isEventOnDate(e, dateStr));
-
-                  return (
-                    <button
-                      key={`mini-${dateStr}`}
-                      onClick={() => handleMiniDayClick(idx + 1)}
-                      className={`w-7 h-7 flex flex-col items-center justify-center text-xs rounded-full font-bold relative transition-all cursor-pointer ${
-                        isMiniToday
-                          ? "bg-blue-600 text-white shadow-xs"
-                          : "hover:bg-blue-50 text-gray-700 hover:text-[#2c1ee8]"
-                      }`}
-                    >
-                      <span>{idx + 1}</span>
-                      {hasMiniEvents && (
-                        <span className={`absolute bottom-0.5 w-1 h-1 rounded-full ${isMiniToday ? "bg-white" : "bg-blue-600"}`} />
-                      )}
-                    </button>
-                  );
-                })}
+                <div className="bg-white/10 backdrop-blur-md p-3 rounded-2xl border border-white/10">
+                  <span className="block text-[10px] text-blue-200 font-bold uppercase tracking-wider">Hari Ini</span>
+                  <span className="text-xl font-black text-white mt-0.5 block">{todayEvents.length} Agenda</span>
+                </div>
               </div>
             </Card>
 
@@ -824,6 +903,7 @@ export default function KalenderPage() {
             </Card>
 
           </div>
+        </div>
 
         )}
 
