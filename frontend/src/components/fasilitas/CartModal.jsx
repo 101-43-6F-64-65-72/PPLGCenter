@@ -83,6 +83,7 @@ export default function CartModal({
     };
 
     try {
+      const now = new Date();
       for (const item of cartItems) {
         const selectedDate = item.bookingDate || new Date().toISOString().split("T")[0];
         const selectedSlots = item.selectedSlots || [1];
@@ -92,19 +93,37 @@ export default function CartModal({
         const startHour = slotHours[firstSlotId]?.start ?? 7;
         const endHour = slotHours[lastSlotId]?.end ?? (startHour + 1);
 
-        const startTimeIso = new Date(`${selectedDate}T${String(startHour).padStart(2, "0")}:00:00Z`).toISOString();
-        const endTimeIso = new Date(`${selectedDate}T${String(endHour).padStart(2, "0")}:00:00Z`).toISOString();
+        const startLocalDate = new Date(`${selectedDate}T${String(startHour).padStart(2, "0")}:00:00`);
+        const endLocalDate = new Date(`${selectedDate}T${String(endHour).padStart(2, "0")}:00:00`);
 
-        await bookingService.createBooking({
+        if (isNaN(startLocalDate.getTime()) || isNaN(endLocalDate.getTime())) {
+          setErrors({ submit: `Format tanggal atau jam untuk ${item.facilityTitle || "fasilitas"} tidak valid.` });
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (startLocalDate < now) {
+          setErrors({ submit: `Peminjaman untuk ${item.facilityTitle || "fasilitas"} memiliki waktu di masa lalu. Silakan pilih jadwal di masa mendatang.` });
+          setIsSubmitting(false);
+          return;
+        }
+
+        const res = await bookingService.createBooking({
           facilityId: item.facilityId,
           purpose: fullPurpose,
-          startTime: startTimeIso,
-          endTime: endTimeIso,
+          startTime: startLocalDate.toISOString(),
+          endTime: endLocalDate.toISOString(),
         });
+
+        if (!res.success) {
+          setErrors({ submit: res.message || "Gagal memproses beberapa pengajuan dalam keranjang." });
+          setIsSubmitting(false);
+          return;
+        }
       }
       setStep(3);
     } catch (err) {
-      setErrors({ submit: "Gagal memproses beberapa pengajuan dalam keranjang." });
+      setErrors({ submit: err?.message || "Gagal memproses beberapa pengajuan dalam keranjang." });
     } finally {
       setIsSubmitting(false);
     }

@@ -5,16 +5,18 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentCenter.Api.Models.Responses;
+using StudentCenter.Application.Interfaces;
 
 namespace StudentCenter.Api.Controllers;
 
 public class UploadFileRequest
 {
     public IFormFile? File { get; set; }
+    public string? Folder { get; set; }
 }
 
 /// <summary>
-/// Production Image and Document Upload Controller supporting Cloudinary Direct Upload with Local Fallback.
+/// Production Image and Document Upload Controller supporting Supabase Storage for PDFs and Cloudinary/Local for Images.
 /// </summary>
 [ApiController]
 [Route("api/upload")]
@@ -56,17 +58,22 @@ public class UploadController : ControllerBase
 
     private readonly IWebHostEnvironment _environment;
     private readonly IConfiguration _configuration;
+    private readonly IFileStorageService _fileStorageService;
     private readonly HttpClient _httpClient;
 
-    public UploadController(IWebHostEnvironment environment, IConfiguration configuration)
+    public UploadController(
+        IWebHostEnvironment environment,
+        IConfiguration configuration,
+        IFileStorageService fileStorageService)
     {
         _environment = environment;
         _configuration = configuration;
+        _fileStorageService = fileStorageService;
         _httpClient = new HttpClient();
     }
 
     /// <summary>
-    /// Uploads an image or document file to Cloudinary (or fallback local storage).
+    /// Uploads an image (Cloudinary/Local) or PDF document (Supabase Storage).
     /// </summary>
     [HttpPost]
     [Authorize]
@@ -83,7 +90,7 @@ public class UploadController : ControllerBase
 
         if (file.Length > MaxFileSizeInBytes)
         {
-            return BadRequest(ApiResponse<object>.Fail("File size exceeds 10MB limit."));
+            return BadRequest(ApiResponse<object>.Fail("Ukuran file melebihi batas maksimum 10 MB."));
         }
 
         var extension = Path.GetExtension(file.FileName);
@@ -95,10 +102,46 @@ public class UploadController : ControllerBase
 
         if (!AllowedExtensions.Contains(extension) || !AllowedMimeTypes.Contains(file.ContentType))
         {
-            return BadRequest(ApiResponse<object>.Fail("Only JPG, PNG, WEBP, GIF images, PDF, and Office documents are allowed."));
+            return BadRequest(ApiResponse<object>.Fail("Only JPG, PNG, WEBP, GIF images, and PDF documents are allowed."));
         }
 
-        // Check for Cloudinary configuration
+        var isPdf = string.Equals(extension, ".pdf", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
+
+        // ── PDF UPLOAD PATH: SUPABASE STORAGE ──
+        if (isPdf)
+        {
+            var folder = string.IsNullOrWhiteSpace(request.Folder) ? "proposals" : request.Folder.Trim();
+
+            if (_fileStorageService.IsConfigured)
+            {
+                try
+                {
+                    using var stream = file.OpenReadStream();
+                    var storagePath = await _fileStorageService.UploadPdfAsync(stream, file.FileName, file.ContentType, folder);
+                    var signedUrl = await _fileStorageService.CreateSignedUrlAsync(storagePath);
+
+                    return Ok(ApiResponse<UploadResponse>.Ok("Dokumen berhasil diunggah.", new UploadResponse
+                    {
+                        Url = signedUrl,
+                        Path = storagePath,
+                        FileName = file.FileName,
+                        Size = file.Length,
+                        MimeType = file.ContentType
+                    }));
+                }
+                catch (ArgumentException ex)
+                {
+                    return BadRequest(ApiResponse<object>.Fail(ex.Message));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Supabase PDF Upload Error] {ex.Message}. Falling back to local storage.");
+                }
+            }
+        }
+
+        // ── IMAGE & FALLBACK FILE UPLOAD PATH: CLOUDINARY OR LOCAL DISK ──
         var cloudName = _configuration["Cloudinary:CloudName"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME");
         var apiKey = _configuration["Cloudinary:ApiKey"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY");
         var apiSecret = _configuration["Cloudinary:ApiSecret"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
@@ -110,9 +153,10 @@ public class UploadController : ControllerBase
                 var cloudinaryUrl = await UploadToCloudinaryAsync(file, cloudName, apiKey, apiSecret);
                 if (!string.IsNullOrEmpty(cloudinaryUrl))
                 {
-                    return Ok(ApiResponse<UploadResponse>.Ok("File uploaded successfully to Cloudinary.", new UploadResponse
+                    return Ok(ApiResponse<UploadResponse>.Ok("File berhasil diunggah.", new UploadResponse
                     {
                         Url = cloudinaryUrl,
+                        Path = cloudinaryUrl,
                         FileName = file.FileName,
                         Size = file.Length,
                         MimeType = file.ContentType
@@ -121,7 +165,6 @@ public class UploadController : ControllerBase
             }
             catch (Exception ex)
             {
-                // Log and fallback to local disk
                 Console.WriteLine($"[Cloudinary Upload Error] {ex.Message}. Falling back to local storage.");
             }
         }
@@ -150,13 +193,30 @@ public class UploadController : ControllerBase
         var baseUrl = $"{Request.Scheme}://{Request.Host}";
         var fileUrl = $"{baseUrl}/uploads/{uniqueFileName}";
 
-        return Ok(ApiResponse<UploadResponse>.Ok("File uploaded successfully.", new UploadResponse
+        return Ok(ApiResponse<UploadResponse>.Ok("File berhasil diunggah.", new UploadResponse
         {
             Url = fileUrl,
+            Path = fileUrl,
             FileName = uniqueFileName,
             Size = file.Length,
             MimeType = file.ContentType
         }));
+    }
+
+    /// <summary>
+    /// Generates a signed URL for a private file object path.
+    /// </summary>
+    [HttpGet("signed-url")]
+    [Authorize]
+    public async Task<IActionResult> GetSignedUrl([FromQuery] string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return BadRequest(ApiResponse<object>.Fail("Path file is required."));
+        }
+
+        var signedUrl = await _fileStorageService.CreateSignedUrlAsync(path);
+        return Ok(ApiResponse<object>.Ok("Signed URL generated.", new { Url = signedUrl }));
     }
 
     private async Task<string?> UploadToCloudinaryAsync(IFormFile file, string cloudName, string apiKey, string apiSecret)
@@ -206,8 +266,10 @@ public class UploadController : ControllerBase
 public class UploadResponse
 {
     public string Url { get; set; } = string.Empty;
+    public string Path { get; set; } = string.Empty;
     public string FileName { get; set; } = string.Empty;
     public long Size { get; set; }
     public string MimeType { get; set; } = string.Empty;
 }
+
 

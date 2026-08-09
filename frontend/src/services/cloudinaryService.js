@@ -1,13 +1,14 @@
 /**
- * Cloudinary Image Upload Utility Service
- * Uses a Next.js server-side API route (/api/upload) to perform a signed upload
- * with the API Secret — no unsigned preset needed on Cloudinary.
+ * File Upload Utility Service
+ * Uploads images and PDF documents securely through Next.js server route (/api/upload).
  */
-export const uploadImageToCloudinary = async (file) => {
+
+export const uploadPdfDocument = async (file, folder = "proposals") => {
   if (!file) return null;
 
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("folder", folder);
 
   try {
     const token =
@@ -29,16 +30,26 @@ export const uploadImageToCloudinary = async (file) => {
 
     const data = await response.json();
 
-    if (data?.url) {
-      return data.url; // valid HTTPS Cloudinary CDN URL
+    if (data?.path || data?.url) {
+      return {
+        path: data.path || data.url,
+        url: data.url,
+      };
     }
 
-    console.warn("Upload API returned no URL:", data);
+    console.warn("Upload API returned no path/URL:", data);
     return null;
   } catch (error) {
     console.warn("Upload network error:", error);
     return null;
   }
+};
+
+export const uploadImageToCloudinary = async (file) => {
+  if (!file) return null;
+
+  const res = await uploadPdfDocument(file, "images");
+  return res?.url || null;
 };
 
 export default uploadImageToCloudinary;

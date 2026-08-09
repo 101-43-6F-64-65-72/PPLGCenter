@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
+using StudentCenter.Application.Interfaces;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
@@ -12,11 +13,16 @@ public class LessonMaterialService : ILessonMaterialService
 {
     private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public LessonMaterialService(AppDbContext context, INotificationService? notificationService = null)
+    public LessonMaterialService(
+        AppDbContext context,
+        INotificationService? notificationService = null,
+        IFileStorageService? fileStorageService = null)
     {
         _context = context;
         _notificationService = notificationService ?? new NotificationService(context);
+        _fileStorageService = fileStorageService ?? new SupabaseStorageService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
     }
 
     public async Task<List<LessonMaterialResponse>> GetAllAsync(Guid? classSubjectId = null, string? visibility = null, bool includeDeleted = false)
@@ -33,7 +39,12 @@ public class LessonMaterialService : ILessonMaterialService
             query = query.Where(m => m.Visibility.ToLower() == visibility.Trim().ToLower());
 
         var list = await query.OrderBy(m => m.Order).ThenByDescending(m => m.CreatedAt).ToListAsync();
-        return list.Select(MapToResponse).ToList();
+        var result = new List<LessonMaterialResponse>();
+        foreach (var m in list)
+        {
+            result.Add(await MapToResponseAsync(m));
+        }
+        return result;
     }
 
     public async Task<LessonMaterialResponse?> GetByIdAsync(Guid id, bool isStudent = false)
@@ -46,7 +57,7 @@ public class LessonMaterialService : ILessonMaterialService
             throw new ValidationException("Students can only view published lesson materials.");
         }
 
-        return MapToResponse(material);
+        return await MapToResponseAsync(material);
     }
 
     public async Task<LessonMaterialResponse> CreateAsync(Guid teacherId, CreateLessonMaterialRequest request)
@@ -242,8 +253,12 @@ public class LessonMaterialService : ILessonMaterialService
                     .ThenInclude(ts => ts.Teacher);
     }
 
-    private static LessonMaterialResponse MapToResponse(LessonMaterial m)
+    private async Task<LessonMaterialResponse> MapToResponseAsync(LessonMaterial m)
     {
+        var signedUrl = !string.IsNullOrWhiteSpace(m.FileUrl)
+            ? await _fileStorageService.CreateSignedUrlAsync(m.FileUrl)
+            : m.FileUrl;
+
         return new LessonMaterialResponse
         {
             Id = m.Id,
@@ -257,7 +272,7 @@ public class LessonMaterialService : ILessonMaterialService
             TeacherName = m.ClassSubject?.TeacherSubject?.Teacher?.FullName ?? string.Empty,
             Title = m.Title,
             Description = m.Description,
-            FileUrl = m.FileUrl,
+            FileUrl = signedUrl,
             YoutubeUrl = m.YoutubeUrl,
             Order = m.Order,
             Visibility = m.Visibility,

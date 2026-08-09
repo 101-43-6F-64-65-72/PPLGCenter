@@ -203,21 +203,38 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
     const startHour = firstSlot?.startHour ?? 7;
     const endHour = lastSlot?.endHour ?? (startHour + 1);
 
-    const startTimeIso = new Date(`${selectedDate}T${String(startHour).padStart(2, "0")}:00:00Z`).toISOString();
-    const endTimeIso = new Date(`${selectedDate}T${String(endHour).padStart(2, "0")}:00:00Z`).toISOString();
+    const startLocalDate = new Date(`${selectedDate}T${String(startHour).padStart(2, "0")}:00:00`);
+    const endLocalDate = new Date(`${selectedDate}T${String(endHour).padStart(2, "0")}:00:00`);
+
+    if (isNaN(startLocalDate.getTime()) || isNaN(endLocalDate.getTime())) {
+      setErrors({ submit: "Format tanggal atau jam peminjaman tidak valid." });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (startLocalDate < new Date()) {
+      setErrors({ submit: "Waktu awal peminjaman tidak boleh di masa lalu. Silakan pilih tanggal atau jam di masa mendatang." });
+      setIsSubmitting(false);
+      return;
+    }
+
+    let fullPurpose = `${finalOrg} - ${activityName.trim()}: ${description.trim()}`;
+    if (fullPurpose.length > 500) {
+      fullPurpose = fullPurpose.substring(0, 497) + "...";
+    }
 
     const res = await bookingService.createBooking({
       facilityId: facility.id,
-      purpose: `${finalOrg} - ${activityName.trim()}: ${description.trim()}`,
-      startTime: startTimeIso,
-      endTime: endTimeIso,
+      purpose: fullPurpose,
+      startTime: startLocalDate.toISOString(),
+      endTime: endLocalDate.toISOString(),
     });
 
     if (res.success) {
       setIsSuccess(true);
       await fetchAvailability();
     } else {
-      setErrors({ submit: res.message || "Gagal menyimpan pengajuan booking." });
+      setErrors({ submit: res.message || "Gagal menyimpan pengajuan peminjaman." });
     }
     setIsSubmitting(false);
   };

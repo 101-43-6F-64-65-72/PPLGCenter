@@ -198,9 +198,27 @@ export const bookingService = {
         message: response?.message || "Peminjaman berhasil diajukan",
       };
     } catch (error) {
+      let errMsg = "Gagal mengajukan peminjaman.";
+      if (error?.response?.data) {
+        const d = error.response.data;
+        if (d.errors && typeof d.errors === "object") {
+          const firstErrKey = Object.keys(d.errors)[0];
+          if (firstErrKey && Array.isArray(d.errors[firstErrKey]) && d.errors[firstErrKey].length > 0) {
+            errMsg = d.errors[firstErrKey][0];
+          } else if (typeof d.errors === "string") {
+            errMsg = d.errors;
+          }
+        } else if (d.message) {
+          errMsg = d.message;
+        } else if (d.title) {
+          errMsg = d.title;
+        }
+      } else if (error?.message) {
+        errMsg = error.message;
+      }
       return {
         success: false,
-        message: error?.message || "Gagal mengajukan peminjaman ke server",
+        message: errMsg,
       };
     }
   },

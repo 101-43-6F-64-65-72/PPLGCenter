@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
+using StudentCenter.Application.Interfaces;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Infrastructure.Data;
@@ -9,10 +10,12 @@ namespace StudentCenter.Infrastructure.Services;
 public class MaterialService : IMaterialService
 {
     private readonly AppDbContext _context;
+    private readonly IFileStorageService _fileStorageService;
 
-    public MaterialService(AppDbContext context)
+    public MaterialService(AppDbContext context, IFileStorageService fileStorageService)
     {
         _context = context;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<PagedResult<MaterialResponse>> GetMaterialsAsync(int page, int pageSize, string? subject, string? grade)
@@ -56,6 +59,14 @@ public class MaterialService : IMaterialService
             })
             .ToListAsync();
 
+        foreach (var item in items)
+        {
+            if (!string.IsNullOrWhiteSpace(item.FileUrl))
+            {
+                item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
+            }
+        }
+
         return new PagedResult<MaterialResponse>
         {
             Items = items,
@@ -67,7 +78,7 @@ public class MaterialService : IMaterialService
 
     public async Task<MaterialResponse?> GetMaterialByIdAsync(Guid id)
     {
-        return await _context.Set<Material>()
+        var item = await _context.Set<Material>()
             .AsNoTracking()
             .Where(m => m.Id == id)
             .Select(m => new MaterialResponse
@@ -84,6 +95,13 @@ public class MaterialService : IMaterialService
                 UploadedByUserName = m.UploadedByUser.FullName
             })
             .FirstOrDefaultAsync();
+
+        if (item != null && !string.IsNullOrWhiteSpace(item.FileUrl))
+        {
+            item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
+        }
+
+        return item;
     }
 
     public async Task<MaterialResponse> CreateMaterialAsync(CreateMaterialRequest request, Guid userId)
@@ -106,12 +124,14 @@ public class MaterialService : IMaterialService
 
         var user = await _context.Set<User>().FindAsync(userId);
 
+        var signedUrl = await _fileStorageService.CreateSignedUrlAsync(material.FileUrl);
+
         return new MaterialResponse
         {
             Id = material.Id,
             Title = material.Title,
             Description = material.Description,
-            FileUrl = material.FileUrl,
+            FileUrl = signedUrl,
             Subject = material.Subject,
             Grade = material.Grade,
             UploadedAt = material.UploadedAt,
@@ -142,12 +162,14 @@ public class MaterialService : IMaterialService
 
         await _context.SaveChangesAsync();
 
+        var signedUrl = await _fileStorageService.CreateSignedUrlAsync(material.FileUrl);
+
         return new MaterialResponse
         {
             Id = material.Id,
             Title = material.Title,
             Description = material.Description,
-            FileUrl = material.FileUrl,
+            FileUrl = signedUrl,
             Subject = material.Subject,
             Grade = material.Grade,
             UploadedAt = material.UploadedAt,

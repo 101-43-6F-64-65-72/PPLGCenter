@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
+using StudentCenter.Application.Interfaces;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
@@ -12,11 +13,16 @@ public class SubmissionService : ISubmissionService
 {
     private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public SubmissionService(AppDbContext context, INotificationService? notificationService = null)
+    public SubmissionService(
+        AppDbContext context,
+        INotificationService? notificationService = null,
+        IFileStorageService? fileStorageService = null)
     {
         _context = context;
         _notificationService = notificationService ?? new NotificationService(context);
+        _fileStorageService = fileStorageService ?? new SupabaseStorageService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
     }
 
     public async Task<List<SubmissionResponse>> GetSubmissionsByAssignmentAsync(Guid assignmentId)
@@ -26,14 +32,19 @@ public class SubmissionService : ISubmissionService
             .OrderByDescending(s => s.SubmittedAt)
             .ToListAsync();
 
-        return list.Select(MapToResponse).ToList();
+        var result = new List<SubmissionResponse>();
+        foreach (var sub in list)
+        {
+            result.Add(await MapToResponseAsync(sub));
+        }
+        return result;
     }
 
     public async Task<SubmissionResponse?> GetSubmissionByIdAsync(Guid id)
     {
         var sub = await BuildSubmissionQuery().FirstOrDefaultAsync(s => s.Id == id);
         if (sub == null) return null;
-        return MapToResponse(sub);
+        return await MapToResponseAsync(sub);
     }
 
     public async Task<SubmissionResponse?> GetStudentSubmissionForAssignmentAsync(Guid assignmentId, Guid studentId)
@@ -42,7 +53,7 @@ public class SubmissionService : ISubmissionService
             .FirstOrDefaultAsync(s => s.AssignmentId == assignmentId && s.StudentId == studentId);
 
         if (sub == null) return null;
-        return MapToResponse(sub);
+        return await MapToResponseAsync(sub);
     }
 
     public async Task<SubmissionResponse> SubmitAssignmentAsync(Guid studentId, CreateSubmissionRequest request)
@@ -189,19 +200,27 @@ public class SubmissionService : ISubmissionService
             .Include(s => s.Revisions);
     }
 
-    private static SubmissionResponse MapToResponse(Submission s)
+    private async Task<SubmissionResponse> MapToResponseAsync(Submission s)
     {
-        var revisions = s.Revisions.OrderByDescending(r => r.Version).Select(r => new SubmissionRevisionResponse
+        var revisions = new List<SubmissionRevisionResponse>();
+        foreach (var r in s.Revisions.OrderByDescending(r => r.Version))
         {
-            Id = r.Id,
-            Version = r.Version,
-            SubmissionType = r.SubmissionType,
-            TextAnswer = r.TextAnswer,
-            FileUrl = r.FileUrl,
-            LinkUrl = r.LinkUrl,
-            Comment = r.Comment,
-            CreatedAt = r.CreatedAt
-        }).ToList();
+            var signedUrl = !string.IsNullOrWhiteSpace(r.FileUrl)
+                ? await _fileStorageService.CreateSignedUrlAsync(r.FileUrl)
+                : r.FileUrl;
+
+            revisions.Add(new SubmissionRevisionResponse
+            {
+                Id = r.Id,
+                Version = r.Version,
+                SubmissionType = r.SubmissionType,
+                TextAnswer = r.TextAnswer,
+                FileUrl = signedUrl,
+                LinkUrl = r.LinkUrl,
+                Comment = r.Comment,
+                CreatedAt = r.CreatedAt
+            });
+        }
 
         var isLate = s.Assignment != null && s.SubmittedAt > s.Assignment.DueDate;
 

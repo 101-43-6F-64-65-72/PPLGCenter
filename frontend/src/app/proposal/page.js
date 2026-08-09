@@ -9,7 +9,7 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import useAuth from "@/hooks/useAuth";
 import { extracurricularService } from "@/services/extracurricularService";
 import { proposalService } from "@/services/proposalService";
-import uploadImageToCloudinary from "@/services/cloudinaryService";
+import uploadImageToCloudinary, { uploadPdfDocument } from "@/services/cloudinaryService";
 
 export default function ProposalPage() {
   const { user, isAuthenticated, role } = useAuth();
@@ -365,9 +365,10 @@ export default function ProposalPage() {
       const fileToUpload = selectedFiles[0];
 
       if (fileToUpload?.rawFile) {
-        fileUrl = await uploadImageToCloudinary(fileToUpload.rawFile);
-      } else if (fileToUpload?.url && fileToUpload.url.startsWith("http")) {
-        fileUrl = fileToUpload.url;
+        const uploadRes = await uploadPdfDocument(fileToUpload.rawFile, "proposals");
+        fileUrl = uploadRes?.path || uploadRes?.url || "";
+      } else if (fileToUpload?.url || fileToUpload?.path) {
+        fileUrl = fileToUpload.path || fileToUpload.url;
       }
 
       if (!fileUrl) {

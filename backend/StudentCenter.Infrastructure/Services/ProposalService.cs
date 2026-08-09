@@ -5,17 +5,24 @@ using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
 
+using StudentCenter.Application.Interfaces;
+
 namespace StudentCenter.Infrastructure.Services;
 
 public class ProposalService : IProposalService
 {
     private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly IFileStorageService _fileStorageService;
 
-    public ProposalService(AppDbContext context, INotificationService notificationService)
+    public ProposalService(
+        AppDbContext context,
+        INotificationService notificationService,
+        IFileStorageService fileStorageService)
     {
         _context = context;
         _notificationService = notificationService;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<PagedResult<ProposalResponse>> GetProposalsAsync(int page, int pageSize, Guid? userId = null, ProposalStatus? status = null, Guid? requestingUserId = null, string? requestingUserRole = null)
@@ -101,6 +108,14 @@ public class ProposalService : IProposalService
             })
             .ToListAsync();
 
+        foreach (var item in items)
+        {
+            if (!string.IsNullOrWhiteSpace(item.FileUrl))
+            {
+                item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
+            }
+        }
+
         return new PagedResult<ProposalResponse>
         {
             Items = items,
@@ -112,7 +127,7 @@ public class ProposalService : IProposalService
 
     public async Task<ProposalResponse?> GetProposalByIdAsync(Guid id)
     {
-        return await _context.Proposals
+        var item = await _context.Proposals
             .AsNoTracking()
             .Where(p => p.Id == id)
             .Select(p => new ProposalResponse
@@ -135,6 +150,13 @@ public class ProposalService : IProposalService
                 ReviewedAt = p.ReviewedAt
             })
             .FirstOrDefaultAsync();
+
+        if (item != null && !string.IsNullOrWhiteSpace(item.FileUrl))
+        {
+            item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
+        }
+
+        return item;
     }
 
     public async Task<ProposalResponse> CreateProposalAsync(CreateProposalRequest request, Guid userId)
@@ -185,13 +207,15 @@ public class ProposalService : IProposalService
             );
         }
 
+        var signedUrl = await _fileStorageService.CreateSignedUrlAsync(proposal.FileUrl);
+
         return new ProposalResponse
         {
             Id = proposal.Id,
             Title = proposal.Title,
             Description = proposal.Description,
             Category = proposal.Category,
-            FileUrl = proposal.FileUrl,
+            FileUrl = signedUrl,
             Status = proposal.Status,
             SubmittedByUserId = proposal.SubmittedByUserId,
             SubmittedByUserName = user.FullName,
@@ -229,13 +253,15 @@ public class ProposalService : IProposalService
 
         await _context.SaveChangesAsync();
 
+        var updatedSignedUrl = await _fileStorageService.CreateSignedUrlAsync(proposal.FileUrl);
+
         return new ProposalResponse
         {
             Id = proposal.Id,
             Title = proposal.Title,
             Description = proposal.Description,
             Category = proposal.Category,
-            FileUrl = proposal.FileUrl,
+            FileUrl = updatedSignedUrl,
             Status = proposal.Status,
             SubmittedByUserId = proposal.SubmittedByUserId,
             SubmittedByUserName = proposal.SubmittedByUser.FullName,

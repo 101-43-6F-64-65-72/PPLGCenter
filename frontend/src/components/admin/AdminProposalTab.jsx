@@ -63,7 +63,7 @@ const ProposalSkeleton = () => (
 
 export default function AdminProposalTab() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("semua"); // 'semua' | 'pending' | 'approved' | 'rejected'
+  const [statusFilter, setStatusFilter] = useState("semua"); // 'semua' | 'pending_admin' | 'approved' | 'rejected'
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [adminNote, setAdminNote] = useState("");
   const [proposals, setProposals] = useState([]);
@@ -81,7 +81,7 @@ export default function AdminProposalTab() {
       const res = await proposalService.getProposals();
       if (!res || !res.success) {
         setApiState("error");
-        setErrorMessage(res?.message || "Gagal mengambil data proposal dari server.");
+        setErrorMessage(res?.message || "Gagal mengambil data proposal.");
         setProposals([]);
         return;
       }
@@ -139,7 +139,13 @@ export default function AdminProposalTab() {
             reviewedDate: item.reviewedAt
               ? new Date(item.reviewedAt).toLocaleDateString("id-ID", {
                   day: "numeric",
-        setProposals(items);
+                  month: "short",
+                  year: "numeric",
+                })
+              : null,
+          };
+        });
+        setProposals(mapped);
         setApiState("success");
       } else {
         setProposals([]);
@@ -154,54 +160,42 @@ export default function AdminProposalTab() {
   }, []);
 
   useEffect(() => {
-    loadProposals();
-  }, [loadProposals]);
+    fetchProposals();
+  }, [fetchProposals]);
 
   const filteredProposals = proposals.filter((item) => {
     const q = searchQuery.toLowerCase();
     const titleMatch = (item.title || "").toLowerCase().includes(q);
     const orgMatch = (item.organization || "").toLowerCase().includes(q);
-    const submitterMatch = (item.submittedByName || "").toLowerCase().includes(q);
+    const submitterMatch = (item.submittedByUserName || "").toLowerCase().includes(q);
     const matchesSearch = titleMatch || orgMatch || submitterMatch;
 
     if (!matchesSearch) return false;
-    if (activeTab === "semua") return true;
-    if (activeTab === "pending_admin") return item.statusText === "PendingAdmin";
-    if (activeTab === "approved") return item.statusText === "Approved";
-    if (activeTab === "rejected") return item.statusText === "Rejected";
+    if (statusFilter === "semua") return true;
+    if (statusFilter === "pending_admin" || statusFilter === "pending") return item.statusKey === "pending";
+    if (statusFilter === "approved") return item.statusKey === "approved";
+    if (statusFilter === "rejected") return item.statusKey === "rejected";
 
     return true;
   });
 
-  const handleOpenReview = (proposal) => {
-    setSelectedProposal(proposal);
-    setReviewNotes(proposal.rejectionReason || "");
-    setReviewError("");
-    setIsReviewModalOpen(true);
-  };
-
-  const handleReviewAction = async (isApproved) => {
-    if (!selectedProposal) return;
+  const handleUpdateStatus = async (proposalId, statusNum) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
-    setReviewError("");
-
-    const actionText = isApproved ? "menyetujui" : "menolak";
     try {
-      const res = await proposalService.reviewByAdmin(selectedProposal.id, {
-        isApproved,
-        notes: reviewNotes.trim(),
+      const res = await proposalService.updateProposalStatus(proposalId, {
+        status: statusNum,
+        rejectionReason: adminNote || (statusNum === 2 ? "Ditolak oleh Admin" : ""),
       });
-
-      if (res.success) {
-        setIsReviewModalOpen(false);
+      if (res && res.success) {
         setSelectedProposal(null);
-        setReviewNotes("");
-        await loadProposals();
+        setAdminNote("");
+        await fetchProposals();
       } else {
-        setReviewError(res.message || `Gagal ${actionText} proposal.`);
+        alert(res?.message || "Gagal memperbarui status proposal.");
       }
     } catch (err) {
-      setReviewError(err?.message || `Gagal ${actionText} proposal.`);
+      alert(err?.message || "Gagal memperbarui status proposal.");
     } finally {
       setIsSubmitting(false);
     }
@@ -231,9 +225,9 @@ export default function AdminProposalTab() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setStatusFilter(tab.id)}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
+                statusFilter === tab.id
                   ? "bg-[#2c1ee8] text-white shadow-sm"
                   : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100"
               }`}
@@ -249,7 +243,7 @@ export default function AdminProposalTab() {
         <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between gap-3 text-rose-700 text-xs font-bold">
           <span>{errorMessage}</span>
           <button
-            onClick={loadProposals}
+            onClick={fetchProposals}
             className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs hover:bg-rose-700 transition"
           >
             Coba Lagi
