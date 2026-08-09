@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StudentCenter.Api.Middleware;
+using StudentCenter.Application.Interfaces;
 using StudentCenter.Application.Services;
 using StudentCenter.Infrastructure.Data;
 using StudentCenter.Infrastructure.Data.Seeders;
