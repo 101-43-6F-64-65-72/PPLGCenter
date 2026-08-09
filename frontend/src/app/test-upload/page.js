@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { API_CONFIG } from "@/config/api";
+import uploadImageToCloudinary from "@/services/cloudinaryService";
 
 export default function TestUploadPage() {
   const [file, setFile] = useState(null);
@@ -24,6 +25,7 @@ export default function TestUploadPage() {
   const [folder, setFolder] = useState("test-uploads");
   const [customToken, setCustomToken] = useState("");
   const [tokenSource, setTokenSource] = useState("None");
+  const [uploadMethod, setUploadMethod] = useState("direct"); // "direct" or "backend"
   
   const [loading, setLoading] = useState(false);
   const [uploadedResult, setUploadedResult] = useState(null);
@@ -106,6 +108,49 @@ export default function TestUploadPage() {
     const startTime = performance.now();
     addLog(`Memulai upload file '${file.name}' (${(file.size / 1024).toFixed(1)} KB)...`, "info");
 
+    if (uploadMethod === "direct") {
+      addLog(`Metode: Direct Browser Upload (Frontend -> Cloudinary CDN API)`, "info");
+      addLog(`Target Cloud Name: vzq8p7ot`, "info");
+      try {
+        addLog(`Membuat SHA-1 Signature & Mengirim Direct Request ke Cloudinary...`, "info");
+        const url = await uploadImageToCloudinary(file, folder);
+        
+        const endTime = performance.now();
+        const duration = Math.round(endTime - startTime);
+        setLatency(duration);
+
+        if (url) {
+          addLog(`Direct Upload Berhasil dalam ${duration} ms!`, "success");
+          addLog(`Result URL: ${url}`, "success");
+          setUploadedResult({
+            success: true,
+            message: "Gambar berhasil diunggah langsung via Frontend Cloudinary Service.",
+            data: { url, path: url, fileName: file.name, size: file.size }
+          });
+        } else {
+          addLog(`Direct Upload Gagal (tidak mengembalikan URL)`, "error");
+          setErrorDetails({
+            status: 400,
+            statusText: "Direct Upload Failed",
+            message: "Gagal mengunggah gambar secara langsung ke Cloudinary."
+          });
+        }
+      } catch (err) {
+        const endTime = performance.now();
+        setLatency(Math.round(endTime - startTime));
+        addLog(`Error Direct Upload: ${err.message}`, "error");
+        setErrorDetails({
+          status: 0,
+          statusText: "Frontend Error",
+          message: err.message
+        });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Backend route upload
     const formData = new FormData();
     formData.append("file", file);
     formData.append("folder", folder);
@@ -113,7 +158,7 @@ export default function TestUploadPage() {
     const backendUrl = API_CONFIG.BASE_URL.replace(/\/$/, "");
     const uploadEndpoint = `${backendUrl}/api/upload`;
 
-    addLog(`Target Endpoint: POST ${uploadEndpoint}`, "info");
+    addLog(`Metode: Backend Proxy Upload (${uploadEndpoint})`, "info");
 
     const headers = {};
     if (customToken?.trim()) {
@@ -124,7 +169,7 @@ export default function TestUploadPage() {
     }
 
     try {
-      addLog(`Mengirim HTTP POST request ke server...`, "info");
+      addLog(`Mengirim HTTP POST request ke server backend...`, "info");
       
       const res = await fetch(uploadEndpoint, {
         method: "POST",
@@ -277,35 +322,37 @@ export default function TestUploadPage() {
               )}
             </div>
 
-            {/* Upload Settings */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Folder Target (Cloudinary / Supabase):
-                </label>
-                <input
-                  type="text"
-                  value={folder}
-                  onChange={(e) => setFolder(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
-                  placeholder="e.g. images, proposals, test-uploads"
-                />
-              </div>
+            {/* Upload Method Selector */}
+            <div className="pt-2">
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                Metode Pengiriman File:
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setUploadMethod("direct")}
+                  className={`py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 transition ${
+                    uploadMethod === "direct"
+                      ? "bg-indigo-600/30 border-indigo-500 text-indigo-300 shadow"
+                      : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                  }`}
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  Direct Frontend (Cloudinary API)
+                </button>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  JWT Token Status ({tokenSource}):
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={customToken}
-                    onChange={(e) => setCustomToken(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono pr-8"
-                    placeholder="Auto-detected atau paste Bearer token"
-                  />
-                  <Key className="w-4 h-4 text-slate-500 absolute right-2.5 top-2.5" />
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setUploadMethod("backend")}
+                  className={`py-2 px-3 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 transition ${
+                    uploadMethod === "backend"
+                      ? "bg-indigo-600/30 border-indigo-500 text-indigo-300 shadow"
+                      : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  Via Backend Proxy (/api/upload)
+                </button>
               </div>
             </div>
 
@@ -319,14 +366,13 @@ export default function TestUploadPage() {
                 {loading ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                    Mengunggah ke Cloudinary...
+                    Mengunggah...
                   </>
                 ) : (
                   <>
                     <UploadCloud className="w-4 h-4" />
-                    Uji Upload Sekarang
+                    Uji Upload {uploadMethod === "direct" ? "Direct Frontend" : "Via Backend"}
                   </>
-                )}
               </button>
               {file && (
                 <button
