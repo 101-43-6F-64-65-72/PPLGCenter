@@ -2,6 +2,7 @@
 
 import React from "react";
 import { X, Crown, Users, CheckCircle2, Medal, Target, Award, ListCheck } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function CandidatePairDetailModal({
   pair,
@@ -62,7 +63,7 @@ export default function CandidatePairDetailModal({
             <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center gap-4">
               <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center text-white font-black text-2xl overflow-hidden shadow-md flex-shrink-0">
                 {pair.photoUrl ? (
-                  <img src={pair.photoUrl} alt={pair.chairmanName} className="w-full h-full object-cover" />
+                  <img src={resolveImageUrl(pair.photoUrl)} alt={pair.chairmanName} className="w-full h-full object-cover" />
                 ) : (
                   pair.chairmanName?.[0] ?? "K"
                 )}
@@ -86,7 +87,7 @@ export default function CandidatePairDetailModal({
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-gray-700 font-black text-2xl overflow-hidden shadow-sm flex-shrink-0">
                   {pair.vicePhotoUrl ? (
-                    <img src={pair.vicePhotoUrl} alt={pair.viceName} className="w-full h-full object-cover" />
+                    <img src={resolveImageUrl(pair.vicePhotoUrl)} alt={pair.viceName} className="w-full h-full object-cover" />
                   ) : (
                     pair.viceName?.[0] ?? "W"
                   )}

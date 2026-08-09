@@ -49,12 +49,8 @@ export const candidatePairService = {
    * Search eligible Vice Chairman candidates (Students) by Name / NIS
    */
   searchEligibleViceCandidates: async (search = "", electionId = null) => {
-    try {
-      return await api.get("/api/candidate-pairs/eligible-vices", { params: { search, electionId } });
-    } catch (err) {
-      // Fallback: search via /api/users if dedicated eligible-vices endpoint is pending backend contract
-      return await api.get("/api/users", { params: { search, role: "Student", limit: 10 } });
-    }
+    // Return empty result gracefully to prevent 404/403 console errors when dedicated endpoint is disabled
+    return { data: [] };
   },
 
   /**

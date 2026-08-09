@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { X, Shield, Crown, AlertCircle, Loader2 } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils";
 
 export default function VoteModal({ pair, onClose, onConfirm, isLoading }) {
   const [confirmed, setConfirmed] = useState(false);
@@ -50,7 +51,7 @@ export default function VoteModal({ pair, onClose, onConfirm, isLoading }) {
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center text-white font-black text-lg overflow-hidden">
                 {pair.photoUrl
-                  ? <img src={pair.photoUrl} alt={pair.chairmanName} className="w-full h-full object-cover" />
+                  ? <img src={resolveImageUrl(pair.photoUrl)} alt={pair.chairmanName} className="w-full h-full object-cover" />
                   : pair.chairmanName?.[0] ?? "K"
                 }
               </div>
@@ -76,7 +77,7 @@ export default function VoteModal({ pair, onClose, onConfirm, isLoading }) {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 font-bold overflow-hidden">
                   {pair.vicePhotoUrl
-                    ? <img src={pair.vicePhotoUrl} alt={pair.viceName} className="w-full h-full object-cover" />
+                    ? <img src={resolveImageUrl(pair.vicePhotoUrl)} alt={pair.viceName} className="w-full h-full object-cover" />
                     : pair.viceName?.[0] ?? "W"
                   }
                 </div>

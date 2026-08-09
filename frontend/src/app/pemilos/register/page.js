@@ -6,6 +6,7 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import { USER_ROLES } from "@/constants/userRoles";
 import candidatePairService from "@/services/candidatePairService";
 import useAuth from "@/hooks/useAuth";
+import { resolveImageUrl } from "@/lib/utils";
 import {
   PenSquare, Users, CheckCircle2, Loader2, Crown,
   AlertCircle, Send, Search, Eye, X, UserCheck, ShieldCheck, FileText
@@ -342,7 +343,7 @@ function RegisterContent() {
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center text-white font-black text-xl overflow-hidden shadow-md shrink-0">
                       {pairForm.photoUrl || user?.photoUrl || user?.avatar ? (
-                        <img src={pairForm.photoUrl || user?.photoUrl || user?.avatar} alt={user?.fullName} className="w-full h-full object-cover" />
+                        <img src={resolveImageUrl(pairForm.photoUrl || user?.photoUrl || user?.avatar)} alt={user?.fullName} className="w-full h-full object-cover" />
                       ) : (
                         user?.fullName?.[0] ?? "K"
                       )}
@@ -379,7 +380,7 @@ function RegisterContent() {
                     <div className="flex items-center gap-3 pt-1">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xl overflow-hidden shadow-md shrink-0">
                         {pairForm.vicePhotoUrl || selectedVice?.photoUrl || selectedVice?.avatar ? (
-                          <img src={pairForm.vicePhotoUrl || selectedVice?.photoUrl || selectedVice?.avatar} alt={selectedVice?.fullName || selectedVice?.name} className="w-full h-full object-cover" />
+                          <img src={resolveImageUrl(pairForm.vicePhotoUrl || selectedVice?.photoUrl || selectedVice?.avatar)} alt={selectedVice?.fullName || selectedVice?.name} className="w-full h-full object-cover" />
                         ) : (
                           (selectedVice?.fullName || selectedVice?.name)?.[0] ?? "W"
                         )}

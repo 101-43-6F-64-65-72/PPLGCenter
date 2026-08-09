@@ -2,6 +2,7 @@
 
 import React from "react";
 import { CheckCircle2, Clock, XCircle, Users, Star, Crown, Medal } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils";
 
 const STATUS_CONFIG = {
   WaitingVice: {
@@ -92,7 +93,7 @@ export default function CandidatePairCard({
           <div className="relative">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-200 overflow-hidden">
               {pair.photoUrl ? (
-                <img src={pair.photoUrl} alt={pair.chairmanName} className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(pair.photoUrl)} alt={pair.chairmanName} className="w-full h-full object-cover" />
               ) : (
                 pair.chairmanName?.[0] ?? "K"
               )}
@@ -122,7 +123,7 @@ export default function CandidatePairCard({
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 font-bold text-lg overflow-hidden shadow-sm">
               {pair.vicePhotoUrl ? (
-                <img src={pair.vicePhotoUrl} alt={pair.viceName} className="w-full h-full object-cover" />
+                <img src={resolveImageUrl(pair.vicePhotoUrl)} alt={pair.viceName} className="w-full h-full object-cover" />
               ) : (
                 pair.viceName?.[0] ?? "W"
               )}

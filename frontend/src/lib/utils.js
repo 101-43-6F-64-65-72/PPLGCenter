@@ -5,24 +5,45 @@ import { API_CONFIG } from "@/config/api";
  * Handles full URLs (https://...), relative paths (/uploads/...), and fallback images.
  */
 export const resolveImageUrl = (src, fallback = "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&auto=format&fit=crop&q=80") => {
-  if (!src || src.includes("dummypic")) return fallback;
+  if (!src || typeof src !== "string" || src.includes("dummypic")) return fallback;
 
-  // Replace local dev backend URLs (http://localhost:5051) with production API URL when deployed or running over HTTPS
-  if (typeof src === "string" && src.includes("localhost:")) {
-    const isHttpsProduction = typeof window !== "undefined" && window.location.protocol === "https:";
-    const isProdApi = API_CONFIG.BASE_URL && !API_CONFIG.BASE_URL.includes("localhost");
+  const isHttpsProduction = typeof window !== "undefined" && window.location.protocol === "https:";
+  const prodApiUrl = (API_CONFIG.BASE_URL && !API_CONFIG.BASE_URL.includes("localhost"))
+    ? API_CONFIG.BASE_URL
+    : "https://studentcenter-backend.onrender.com";
 
-    if (isHttpsProduction || isProdApi) {
-      const baseUrl = isProdApi ? API_CONFIG.BASE_URL : "https://studentcenter-backend.onrender.com";
-      return src.replace(/http:\/\/localhost:\d+/, baseUrl);
+  // Case 1: Replace hardcoded localhost dev URLs (e.g. http://localhost:5051/uploads/...)
+  if (src.includes("localhost:")) {
+    if (isHttpsProduction || (API_CONFIG.BASE_URL && !API_CONFIG.BASE_URL.includes("localhost"))) {
+      return src.replace(/http:\/\/localhost:\d+/, prodApiUrl);
     }
   }
 
-  if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/") || src.startsWith("data:")) {
+  // Case 2: Relative uploads path (e.g. /uploads/feb7404f...)
+  if (src.startsWith("/")) {
+    if (isHttpsProduction) {
+      return `${prodApiUrl}${src}`;
+    }
+    const baseUrl = API_CONFIG.BASE_URL || "";
+    return `${baseUrl}${src}`;
+  }
+
+  // Case 3: Already complete HTTPS or Data URL
+  if (src.startsWith("https://") || src.startsWith("data:")) {
     return src;
   }
-  const baseUrl = API_CONFIG.BASE_URL;
-  return `${baseUrl}/${src.startsWith("/") ? src.slice(1) : src}`;
+
+  // Case 4: Insecure HTTP URL loaded on HTTPS page (prevent Mixed Content)
+  if (src.startsWith("http://") && isHttpsProduction) {
+    return src.replace("http://", "https://");
+  }
+
+  if (src.startsWith("http://")) {
+    return src;
+  }
+
+  const baseUrl = API_CONFIG.BASE_URL || prodApiUrl;
+  return `${baseUrl}/${src}`;
 };
 
 /**
