@@ -55,8 +55,7 @@ public class ProposalController : ControllerBase
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
         var result = await _proposalService.CreateProposalAsync(request, userId.Value);
-        return CreatedAtAction(nameof(GetProposal), new { id = result.Id },
-            ApiResponse<ProposalResponse>.Ok("Proposal created successfully", result));
+        return Ok(ApiResponse<ProposalResponse>.Ok("Proposal created successfully", result));
     }
 
     [Authorize(Roles = "Student,Teacher,Admin")]
