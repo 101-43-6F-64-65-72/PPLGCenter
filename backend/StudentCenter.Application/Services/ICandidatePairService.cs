@@ -8,6 +8,7 @@ public interface ICandidatePairService
     Task<CandidatePairResponse?> GetCandidatePairByIdAsync(Guid candidatePairId, Guid? currentUserId = null);
 
     Task<CandidatePairResponse> RegisterChairmanAsync(RegisterChairmanRequest request, Guid chairmanUserId);
+    Task<CandidatePairResponse> RegisterPairAsync(RegisterPairRequest request, Guid chairmanUserId);
     Task<CandidatePairResponse> ApplyViceAsync(Guid candidatePairId, ApplyViceRequest request, Guid viceUserId);
     Task<bool> ChairmanReviewViceAsync(Guid candidatePairId, bool isAccepted, Guid chairmanUserId);
     Task<bool> TeacherReviewPairAsync(Guid candidatePairId, ReviewCandidatePairRequest request, Guid teacherUserId);

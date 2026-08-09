@@ -69,6 +69,21 @@ public class CandidatePairsController : ControllerBase
         return Ok(ApiResponse<CandidatePairResponse>.Ok("Pendaftaran Calon Ketua berhasil diajukan!", result));
     }
 
+    /// <summary>
+    /// Unified atomic registration of a Ketua + Wakil pair in one request.
+    /// The logged-in user is automatically the Chairman.
+    /// </summary>
+    [Authorize(Roles = "Student")]
+    [HttpPost("register-pair")]
+    public async Task<IActionResult> RegisterPair([FromBody] RegisterPairRequest request)
+    {
+        var userId = _currentUserService.UserId;
+        if (!userId.HasValue) return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak ditemukan."));
+
+        var result = await _candidatePairService.RegisterPairAsync(request, userId.Value);
+        return Ok(ApiResponse<CandidatePairResponse>.Ok("Pendaftaran Pasangan Calon berhasil diajukan! Menunggu review guru pembina.", result));
+    }
+
     [Authorize(Roles = "Student")]
     [HttpPost("{id:guid}/apply-vice")]
     public async Task<IActionResult> ApplyVice(Guid id, [FromBody] ApplyViceRequest request)

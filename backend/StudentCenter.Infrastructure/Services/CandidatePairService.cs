@@ -173,6 +173,118 @@ public class CandidatePairService : ICandidatePairService
         return MapToResponse(pair, 0);
     }
 
+    public async Task<CandidatePairResponse> RegisterPairAsync(RegisterPairRequest request, Guid chairmanUserId)
+    {
+        // ── Validate Election ──────────────────────────────────────────────
+        var election = await _context.Elections
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == request.ElectionId && e.DeletedAt == null);
+
+        if (election is null)
+            throw new KeyNotFoundException("Sesi pemilihan tidak ditemukan.");
+
+        if (election.Status != ElectionStatus.Open)
+            throw new InvalidOperationException("Pemilihan tidak dalam status aktif/terbuka untuk pendaftaran pasangan calon.");
+
+        // ── Validate Chairman ──────────────────────────────────────────────
+        var chairmanEligibility = await CheckEligibilityAsync(request.ElectionId, chairmanUserId);
+        if (!chairmanEligibility.IsOsisMember)
+            throw new UnauthorizedAccessException("Hanya anggota aktif OSIS yang berhak mendaftar sebagai Calon Ketua OSIS.");
+        if (!chairmanEligibility.Eligible)
+            throw new InvalidOperationException(chairmanEligibility.Reasons.FirstOrDefault() ?? "Calon Ketua tidak memenuhi syarat untuk mendaftar.");
+
+        // ── Validate Vice ──────────────────────────────────────────────────
+        if (request.ViceUserId == chairmanUserId)
+            throw new InvalidOperationException("Calon Ketua tidak dapat mendaftarkan dirinya sendiri sebagai Calon Wakil.");
+
+        var viceUser = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == request.ViceUserId);
+
+        if (viceUser is null || viceUser.Role != UserRole.Student || !viceUser.IsActive)
+            throw new InvalidOperationException("Calon Wakil tidak valid atau tidak ditemukan.");
+
+        // Check Vice is OSIS member
+        var osisEkskulIds = await _context.Extracurriculars
+            .AsNoTracking()
+            .Where(e => e.IsActive && (e.Name.ToLower().Contains("osis") || e.Category.ToLower().Contains("kepemimpinan")))
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        bool isViceOsisMember = false;
+        if (osisEkskulIds.Any())
+        {
+            isViceOsisMember = await _context.ExtracurricularMembers
+                .AsNoTracking()
+                .AnyAsync(m => osisEkskulIds.Contains(m.ExtracurricularId)
+                    && m.StudentId == request.ViceUserId
+                    && (m.Status == "Active" || m.Status == "Approved"));
+        }
+
+        if (!isViceOsisMember)
+        {
+            // Also accept if they appear in OsisCabinetHistories or approved OsisApplications
+            bool inCabinet = await _context.OsisCabinetHistories
+                .AsNoTracking()
+                .AnyAsync(h => h.StudentId == request.ViceUserId);
+
+            bool inApprovedApp = await _context.OsisApplications
+                .AsNoTracking()
+                .AnyAsync(a => a.ApplicantStudentId == request.ViceUserId && a.Status == RecruitmentApplicationStatus.Approved);
+
+            isViceOsisMember = inCabinet || inApprovedApp;
+        }
+
+        if (!isViceOsisMember)
+            throw new InvalidOperationException("Calon Wakil harus merupakan anggota aktif OSIS.");
+
+        // Check Vice not already registered in this election
+        var viceAlreadyRegistered = await _context.CandidatePairs
+            .AsNoTracking()
+            .AnyAsync(c => c.ElectionId == request.ElectionId
+                && c.Status != CandidatePairStatus.Rejected
+                && (c.ChairmanUserId == request.ViceUserId || c.ViceUserId == request.ViceUserId));
+
+        if (viceAlreadyRegistered)
+            throw new InvalidOperationException("Calon Wakil yang dipilih sudah terdaftar dalam pasangan calon lain di pemilihan ini.");
+
+        // ── Determine Candidate Number ─────────────────────────────────────
+        var existingCount = await _context.CandidatePairs
+            .AsNoTracking()
+            .CountAsync(c => c.ElectionId == request.ElectionId);
+        var candidateNumber = existingCount + 1;
+
+        // ── Create Pair Atomically ─────────────────────────────────────────
+        var pair = new CandidatePair
+        {
+            Id = Guid.NewGuid(),
+            ElectionId = request.ElectionId,
+            CandidateNumber = candidateNumber,
+            ChairmanUserId = chairmanUserId,
+            ViceUserId = request.ViceUserId,
+            Vision = request.Vision.Trim(),
+            Mission = request.Mission.Trim(),
+            Programs = request.Programs.Trim(),
+            PhotoUrl = request.PhotoUrl,
+            VicePhotoUrl = request.VicePhotoUrl,
+            // Skip WaitingVice/WaitingChairman, go directly to teacher review
+            Status = CandidatePairStatus.WaitingTeacher,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.CandidatePairs.Add(pair);
+        await _context.SaveChangesAsync();
+
+        // Reload with navigation properties for proper mapping
+        var savedPair = await _context.CandidatePairs
+            .Include(c => c.ChairmanUser).ThenInclude(u => u.Class)
+            .Include(c => c.ViceUser!).ThenInclude(u => u!.Class)
+            .FirstAsync(c => c.Id == pair.Id);
+
+        return MapToResponse(savedPair, 0);
+    }
+
     public async Task<CandidatePairResponse> ApplyViceAsync(Guid candidatePairId, ApplyViceRequest request, Guid viceUserId)
     {
         var pair = await _context.CandidatePairs.FirstOrDefaultAsync(c => c.Id == candidatePairId);

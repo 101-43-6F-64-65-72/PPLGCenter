@@ -12,6 +12,21 @@ public class RegisterChairmanRequest
     public int CandidateNumber { get; set; } = 1;
 }
 
+/// <summary>
+/// Unified request to register a Chairman + Vice pair atomically in one request.
+/// The current logged-in user is automatically assigned as Chairman.
+/// </summary>
+public class RegisterPairRequest
+{
+    public Guid ElectionId { get; set; }
+    public Guid ViceUserId { get; set; }
+    public string Vision { get; set; } = string.Empty;
+    public string Mission { get; set; } = string.Empty;
+    public string Programs { get; set; } = string.Empty;
+    public string? PhotoUrl { get; set; }
+    public string? VicePhotoUrl { get; set; }
+}
+
 public class ApplyViceRequest
 {
     public string? ViceVision { get; set; }

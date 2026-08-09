@@ -58,23 +58,23 @@ export const candidatePairService = {
   },
 
   /**
-   * Submit single Unified Candidate Pair Registration (Chairman + Vice Chairman)
-   * Data payload: { electionId, viceUserId, vision, mission, programs, photoUrl, vicePhotoUrl }
+   * Unified atomic registration of a Chairman + Vice pair.
+   * The logged-in user is automatically set as Chairman by the backend.
+   * Payload: { electionId, viceUserId, vision, mission, programs, photoUrl?, vicePhotoUrl? }
    */
   createCandidatePair: async (data) => {
-    try {
-      return await api.post("/api/candidate-pairs", data);
-    } catch (err) {
-      // Fallback contract mapping
-      return await api.post("/api/candidate-pairs/register-pair", data);
-    }
+    return await api.post("/api/candidate-pairs/register-pair", data);
   },
 
   /**
    * Fetch current user's registered CandidatePair for an election
    */
   getMyCandidatePair: async (electionId) => {
-    return await api.get(`/api/candidate-pairs/my-pair`, { params: { electionId } });
+    try {
+      return await api.get("/api/candidate-pairs/my-pair", { params: { electionId } });
+    } catch {
+      return { data: null };
+    }
   },
 };
 
