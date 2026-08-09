@@ -85,9 +85,10 @@ export default function ProposalPage() {
     try {
       // 1. Pass currentUserId to REST API endpoint (GET /api/proposals?userId={currentUserId})
       const res = await proposalService.getProposals({ userId: currentUserId });
-      if (res && res.success && Array.isArray(res.data)) {
+      const rawItems = Array.isArray(res?.data) ? res.data : (res?.data?.items || res?.data?.data || []);
+      if (res && res.success) {
         // 2. Client-side defensive filter to ensure strictly only current user's proposals are mapped
-        const userProposalsOnly = res.data.filter((item) => {
+        const userProposalsOnly = rawItems.filter((item) => {
           const itemUserId = item.submittedByUserId || item.SubmittedByUserId;
           if (!itemUserId) return true; // Accept if backend already filtered and omitted user ID
           return String(itemUserId).toLowerCase() === String(currentUserId).toLowerCase();

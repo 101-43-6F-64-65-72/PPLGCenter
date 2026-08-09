@@ -27,8 +27,9 @@ export default function OsisProposalTab({ proposals = [], onStatusUpdate }) {
   React.useEffect(() => {
     if (proposals.length === 0) {
       proposalService.getProposals().then((res) => {
-        if (res && res.success && Array.isArray(res.data)) {
-          const mapped = res.data.map((item) => {
+        const rawItems = Array.isArray(res?.data) ? res.data : (res?.data?.items || res?.data?.data || []);
+        if (res && res.success && rawItems) {
+          const mapped = rawItems.map((item) => {
             let org = "Ekstrakurikuler";
             let rawTitle = item.title || item.Title || "";
             const tagMatch = rawTitle.match(/^\[+(.*?)\]+\s*(.*)$/);

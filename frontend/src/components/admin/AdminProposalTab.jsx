@@ -86,7 +86,7 @@ export default function AdminProposalTab() {
         return;
       }
 
-      const items = Array.isArray(res.data) ? res.data : [];
+      const items = Array.isArray(res.data) ? res.data : (res.data?.items || res.data?.data || []);
       if (items.length > 0) {
         const mapped = items.map((item) => {
           const rawTitle = item.title || item.Title || "";
