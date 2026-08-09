@@ -244,89 +244,91 @@ function ProfileContent() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans">
       <Navbar />
-
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16">
-        <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-[#2C1EE8] via-indigo-700 to-purple-800 p-6 sm:p-10 text-white shadow-xl">
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-            <div className="relative group shrink-0">
-              <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl bg-white/10 flex items-center justify-center">
-                {avatarPreview || user?.photoUrl ? (
-                  <img
-                    src={avatarPreview || user?.photoUrl}
-                    alt={savedName}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-indigo-100 text-3xl font-bold text-[#2C1EE8] sm:text-4xl">
-                    {savedName.charAt(0).toUpperCase() || "U"}
-                  </div>
-                )}
-
-                {isUploadingAvatar && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[2px] text-white rounded-full transition-all animate-pulse">
-                    <svg className="animate-spin h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-200">Profil</span>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={openFilePicker}
-                  disabled={isUploadingAvatar}
-                  className="absolute bottom-2 right-2 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-[#2C1EE8] shadow-lg transition hover:scale-105 hover:bg-[#2C1EE8] hover:text-white cursor-pointer disabled:opacity-50"
-                  aria-label="Ubah foto profil"
-                  title="Ubah foto profil"
-                >
-                  {isUploadingAvatar ? (
-                    <div className="w-4 h-4 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin" />
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
+        {/* Banner Card */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#2C1EE8] via-indigo-700 to-purple-800 p-6 sm:p-10 text-white shadow-xl">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="relative group shrink-0">
+                <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl bg-white/10 flex items-center justify-center">
+                  {avatarPreview || user?.photoUrl ? (
+                    <img
+                      src={avatarPreview || user?.photoUrl}
+                      alt={savedName}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <Camera className="h-4.5 w-4.5" />
+                    <div className="flex h-full w-full items-center justify-center bg-indigo-100 text-3xl font-bold text-[#2C1EE8] sm:text-4xl">
+                      {savedName.charAt(0).toUpperCase() || "U"}
+                    </div>
                   )}
-                </button>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                />
+                  {isUploadingAvatar && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[2px] text-white rounded-full transition-all animate-pulse">
+                      <svg className="animate-spin h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-200">Profil</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={openFilePicker}
+                    disabled={isUploadingAvatar}
+                    className="absolute bottom-2 right-2 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-[#2C1EE8] shadow-lg transition hover:scale-105 hover:bg-[#2C1EE8] hover:text-white cursor-pointer disabled:opacity-50"
+                    aria-label="Ubah foto profil"
+                    title="Ubah foto profil"
+                  >
+                    {isUploadingAvatar ? (
+                      <div className="w-4 h-4 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Camera className="h-4.5 w-4.5" />
+                    )}
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                  <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+                  <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                     {savedName}
                   </h1>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-1 text-xs font-semibold text-[#2C1EE8]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3.5 py-1 text-xs font-semibold text-white backdrop-blur-md">
                     <Shield className="h-3.5 w-3.5" />
                     {roleLabel}
                   </span>
                   {Array.isArray(advisorFor) && advisorFor.map((ekskul) => (
                     <span
                       key={ekskul.id || ekskul.name}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-1 text-xs font-extrabold text-emerald-800"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/20 px-3.5 py-1 text-xs font-extrabold text-emerald-100 backdrop-blur-md"
                     >
-                      <Award className="h-3.5 w-3.5 text-emerald-600" />
+                      <Award className="h-3.5 w-3.5 text-emerald-300" />
                       Pembina {ekskul.name}
                     </span>
                   ))}
                   {Array.isArray(memberships) && memberships.map((ekskul) => (
                     <span
                       key={ekskul.extracurricularId || ekskul.id || ekskul.name}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-3.5 py-1 text-xs font-extrabold text-purple-800"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-purple-300/40 bg-purple-500/20 px-3.5 py-1 text-xs font-extrabold text-purple-100 backdrop-blur-md"
                     >
-                      <GraduationCap className="h-3.5 w-3.5 text-purple-600" />
+                      <GraduationCap className="h-3.5 w-3.5 text-purple-300" />
                       Anggota {ekskul.name}
                     </span>
                   ))}
                 </div>
 
-                <p className="mt-2 text-sm font-medium text-gray-500 sm:text-base">
-                  ID Akun: <span className="font-semibold text-gray-900 font-mono">{savedEmail}</span>
+                <p className="mt-2 text-sm font-medium text-blue-100 sm:text-base">
+                  ID Akun: <span className="font-semibold text-white font-mono">{savedEmail}</span>
                 </p>
               </div>
             </div>
@@ -336,16 +338,15 @@ function ProfileContent() {
               size="md"
               onClick={logout}
               leftIcon={<LogOut className="h-4 w-4" />}
-              className="border-red-200! text-red-600! hover:bg-red-50! hover:border-red-300!"
+              className="border-white/30! text-white! hover:bg-white/10! bg-white/10 backdrop-blur-md"
             >
               Keluar Sesi
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* Academic / Institutional Info Panel */}
-      <AcademicInfoCard user={user} isStudent={isStudent} isTeacher={isTeacher} isAdmin={isAdmin} />
+        {/* Academic / Institutional Info Panel */}
+        <AcademicInfoCard user={user} isStudent={isStudent} isTeacher={isTeacher} isAdmin={isAdmin} />
 
       {/* Main Profile Form Card */}
       <div className="rounded-[28px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
