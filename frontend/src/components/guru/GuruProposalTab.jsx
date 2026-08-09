@@ -365,7 +365,7 @@ export default function GuruProposalTab() {
                 </div>
                 <div className="col-span-2">
                   <span className="text-xs text-gray-400 block font-bold mb-1">File Dokumen PDF:</span>
-                  {selectedProposal.fileUrl && selectedProposal.fileUrl.startsWith("http") ? (
+                  {selectedProposal.fileUrl ? (
                     <a
                       href={selectedProposal.fileUrl}
                       target="_blank"

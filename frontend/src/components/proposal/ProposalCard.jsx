@@ -84,7 +84,7 @@ export default function ProposalCard({
       {/* Bottom Actions Bar (Full Horizontal Row) */}
       <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          {proposal.fileUrl && proposal.fileUrl.startsWith("http") ? (
+          {proposal.fileUrl ? (
             <a
               href={proposal.fileUrl}
               target="_blank"
