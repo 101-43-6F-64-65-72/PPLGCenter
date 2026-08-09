@@ -107,7 +107,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
     if (!selectedEkskul?.id) return;
     try {
       await extracurricularService.updateMemberStatus(selectedEkskul.id, memberId, status);
-      toast.success(status === "Active" ? "✓ Pendaftaran siswa berhasil disetujui!" : "Pendaftaran siswa ditolak.");
+      toast.success(status === "Active" ? "Pendaftaran siswa berhasil disetujui!" : "Pendaftaran siswa ditolak.");
       loadMembers();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Gagal memperbarui status keanggotaan.");
@@ -122,7 +122,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
         rejectionReason: notes,
         notes,
       });
-      toast.success(isApproved ? "✓ Candidate pair berhasil disetujui Pembina!" : "Candidate pair ditolak.");
+      toast.success(isApproved ? "Candidate pair berhasil disetujui Pembina!" : "Candidate pair ditolak.");
       loadPemilosCandidates();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Gagal memproses verifikasi kandidat.");
@@ -137,7 +137,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
       const uploadedUrl = await uploadImageToCloudinary(fileToUpload);
       if (uploadedUrl) {
         setImageUrl(uploadedUrl);
-        toast.success("✓ Gambar berhasil diunggah.");
+        toast.success("Gambar berhasil diunggah.");
       } else {
         setUploadError("Gagal mengunggah gambar. Silakan coba lagi.");
       }
@@ -173,7 +173,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
         advisorWhatsapp: selectedEkskul.advisorWhatsapp || selectedEkskul.supervisor?.phoneNumber || null,
         isActive: selectedEkskul.isActive ?? true,
       });
-      toast.success("✓ Informasi ekskul berhasil diperbarui!");
+      toast.success("Informasi ekskul berhasil diperbarui!");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Gagal memperbarui ekskul.");
     } finally {
@@ -381,7 +381,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : "bg-gray-100 text-gray-600 border-gray-200"
                             }`}>
-                              ● {m.status === "Pending" ? "Menunggu Persetujuan" : m.status || "Aktif"}
+                              {m.status === "Pending" ? "Menunggu Persetujuan" : m.status || "Aktif"}
                             </span>
 
                             {(m.status === "Pending" || m.status === "Menunggu") && (

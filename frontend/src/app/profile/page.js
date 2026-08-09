@@ -113,7 +113,7 @@ function ProfileContent() {
 
         const res = await profileService.updateProfile(user.id, payload);
         if (res?.success || res?.data) {
-          setStatusMessage({ type: "success", text: "✓ Foto profil berhasil diunggah dan disimpan!" });
+          setStatusMessage({ type: "success", text: "Foto profil berhasil diunggah dan disimpan!" });
           await fetchProfile();
         } else {
           setStatusMessage({ type: "error", text: "Foto diunggah tapi gagal disimpan. Silakan coba lagi." });
@@ -163,7 +163,7 @@ function ProfileContent() {
       const res = await profileService.updateProfile(user.id, payload);
 
       if (res?.success || res?.data) {
-        setStatusMessage({ type: "success", text: "✓ Profil berhasil diperbarui!" });
+        setStatusMessage({ type: "success", text: "Profil berhasil diperbarui!" });
         setSavedName(fullName);
         setSavedEmail(email);
         setIsEditingInfo(false);
@@ -220,7 +220,7 @@ function ProfileContent() {
       if (res?.success || res?.data) {
         setStatusMessage({
           type: "success",
-          text: "✓ Password berhasil diperbarui!",
+          text: "Password berhasil diperbarui!",
         });
         setOldPassword("");
         setNewPassword("");

@@ -195,8 +195,9 @@ function RecruitmentContent() {
                     </div>
 
                     {alreadyApplied ? (
-                      <div className="text-center text-xs font-bold text-emerald-600 py-2">
-                        ✓ Sudah mendaftar
+                      <div className="flex items-center justify-center gap-1 text-xs font-bold text-emerald-600 py-2">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Sudah mendaftar</span>
                       </div>
                     ) : isOpen ? (
                       <button

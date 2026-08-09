@@ -151,7 +151,7 @@ export default function AdminUsersTab() {
       if (res?.success || res?.data || res?.id) {
         setStatusMessage({
           type: "success",
-          text: `✓ Akun ${formData.fullName} berhasil didaftarkan!`,
+          text: `Akun ${formData.fullName} berhasil didaftarkan!`,
         });
         setFormData({ fullName: "", email: "", password: "", role: 2, nis: "", nip: "", phoneNumber: "" });
         setIsRegisterModalOpen(false);
@@ -179,7 +179,7 @@ export default function AdminUsersTab() {
       await userService.deleteUser(userId);
       setStatusMessage({
         type: "success",
-        text: `✓ Akun ${fullName} telah dihapus dari sistem.`,
+        text: `Akun ${fullName} telah dihapus dari sistem.`,
       });
       if (selectedUserDetail?.id === userId) setSelectedUserDetail(null);
       await loadUsers();

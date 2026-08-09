@@ -84,7 +84,7 @@ export default function ExtracurricularDetailPage() {
 
     if (isPending) {
       return {
-        label: "⏳ Menunggu Persetujuan Pembina",
+        label: "Menunggu Persetujuan Pembina",
         disabled: true,
         onClick: null,
         className: "bg-amber-100 text-amber-800 border border-amber-300 font-extrabold cursor-not-allowed opacity-90 shadow-sm",
@@ -93,7 +93,7 @@ export default function ExtracurricularDetailPage() {
 
     if (isJoined) {
       return {
-        label: "✓ Terdaftar sebagai Anggota Aktif",
+        label: "Terdaftar sebagai Anggota Aktif",
         disabled: true,
         onClick: null,
         className: "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold cursor-not-allowed opacity-90",
@@ -612,7 +612,7 @@ export default function ExtracurricularDetailPage() {
           editingItem={data}
           onSuccess={async () => {
             setIsEditModalOpen(false);
-            showToastNotification("✓ Informasi ekstrakurikuler berhasil diperbarui!", "success");
+            showToastNotification("Informasi ekstrakurikuler berhasil diperbarui!", "success");
             await refetch();
           }}
         />

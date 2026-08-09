@@ -293,7 +293,7 @@ export default function ProposalPage() {
     try {
       const res = await proposalService.deleteProposal(id);
       if (res.success) {
-        setSuccessMessage("✓ Proposal berhasil dihapus.");
+        setSuccessMessage("Proposal berhasil dihapus.");
         await fetchProposals();
       } else {
         setUploadError(res.message || "Gagal menghapus proposal.");
@@ -394,8 +394,8 @@ export default function ProposalPage() {
       if (res && res.success) {
         setSuccessMessage(
           isEditing
-            ? "✓ Proposal berhasil diperbarui!"
-            : "✓ Proposal berhasil diajukan!"
+            ? "Proposal berhasil diperbarui!"
+            : "Proposal berhasil diajukan!"
         );
         await fetchProposals();
 

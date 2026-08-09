@@ -47,8 +47,8 @@ export default function LoginPage() {
         className="absolute top-0 left-0 right-0 h-1/2 z-10 overflow-hidden bg-[#071329] border-b border-white/10"
       >
         <Image
-          src="/images/hero-building.png"
-          alt="SMK Negeri 2 Surakarta Building"
+          src="/images/tempat/halamandepansmkn2ska.jpg"
+          alt="Halaman Depan SMK Negeri 2 Surakarta"
           fill
           className="object-cover object-top brightness-60"
           priority
@@ -64,8 +64,8 @@ export default function LoginPage() {
         className="absolute bottom-0 left-0 right-0 h-1/2 z-10 overflow-hidden bg-[#0a1931]"
       >
         <Image
-          src="/images/hero-building.png"
-          alt="SMK Negeri 2 Surakarta Building"
+          src="/images/tempat/halamandepansmkn2ska.jpg"
+          alt="Halaman Depan SMK Negeri 2 Surakarta"
           fill
           className="object-cover object-bottom brightness-60"
           priority

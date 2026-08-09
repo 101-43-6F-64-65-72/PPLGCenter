@@ -75,7 +75,7 @@ export default function GuruFacilityTab() {
     setIsSubmitting(true);
     try {
       await bookingService.updateBookingStatus(bookingId, statusNum, note);
-      toast.success(statusNum === 1 ? "✓ Peminjaman fasilitas berhasil disetujui!" : "Peminjaman fasilitas ditolak.");
+      toast.success(statusNum === 1 ? "Peminjaman fasilitas berhasil disetujui!" : "Peminjaman fasilitas ditolak.");
       await fetchBookings();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Gagal memperbarui status peminjaman.");

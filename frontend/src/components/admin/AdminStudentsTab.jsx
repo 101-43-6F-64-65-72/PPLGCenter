@@ -606,9 +606,9 @@ export default function AdminStudentsTab() {
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-2 text-xs">
                 <p className="font-black text-gray-900">Laporan Hasil Import:</p>
                 <div className="flex gap-4 text-xs font-bold">
-                  <span className="text-emerald-600">✓ Berhasil: {importReport.successCount}</span>
-                  <span className="text-amber-600">⊘ Dilewati: {importReport.skippedCount}</span>
-                  <span className="text-rose-600">✕ Gagal: {importReport.failedCount}</span>
+                  <span className="text-emerald-600">Berhasil: {importReport.successCount}</span>
+                  <span className="text-amber-600">Dilewati: {importReport.skippedCount}</span>
+                  <span className="text-rose-600">Gagal: {importReport.failedCount}</span>
                 </div>
                 {importReport.errors?.length > 0 && (
                   <div className="max-h-24 overflow-y-auto pt-2 border-t border-gray-200 space-y-1 text-[11px] font-mono text-rose-700">

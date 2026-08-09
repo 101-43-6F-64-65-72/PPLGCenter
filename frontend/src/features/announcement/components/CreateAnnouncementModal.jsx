@@ -36,7 +36,7 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
       const uploadedUrl = await uploadImageToCloudinary(file);
       if (uploadedUrl) {
         setImageUrl(uploadedUrl);
-        setUploadSuccessMsg("✓ Gambar berhasil diunggah!");
+        setUploadSuccessMsg("Gambar berhasil diunggah!");
       }
     } catch {
       setErrorMsg("Gagal mengunggah");

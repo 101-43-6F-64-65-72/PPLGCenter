@@ -56,8 +56,8 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
             className="fixed top-0 left-0 right-0 h-1/2 z-50 overflow-hidden bg-[#071329] border-b border-white/10"
           >
             <Image
-              src="/images/hero-building.png"
-              alt="SMK Negeri 2 Surakarta Building"
+              src="/images/tempat/halamandepansmkn2ska.jpg"
+              alt="Halaman Depan SMK Negeri 2 Surakarta"
               fill
               sizes="100vw"
               className="object-cover object-top brightness-60"
@@ -75,8 +75,8 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
             className="fixed bottom-0 left-0 right-0 h-1/2 z-50 overflow-hidden bg-[#0a1931]"
           >
             <Image
-              src="/images/hero-building.png"
-              alt="SMK Negeri 2 Surakarta Building"
+              src="/images/tempat/halamandepansmkn2ska.jpg"
+              alt="Halaman Depan SMK Negeri 2 Surakarta"
               fill
               sizes="100vw"
               className="object-cover object-bottom brightness-60"

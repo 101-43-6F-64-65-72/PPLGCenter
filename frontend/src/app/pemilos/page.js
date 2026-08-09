@@ -223,7 +223,7 @@ function PemilosContent() {
     setIsVoting(true);
     try {
       await candidatePairService.castVote(selectedElectionId, votingPair.id);
-      toast.success("Suara Anda berhasil diberikan! 🎉");
+      toast.success("Suara Anda berhasil diberikan!");
       setHasVoted(true);
       setVotingPair(null);
       await loadPairsAndResults();

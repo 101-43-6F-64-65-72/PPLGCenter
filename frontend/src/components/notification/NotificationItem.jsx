@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 function formatTimeAgo(dateInput) {
   if (!dateInput) return "";
@@ -92,7 +93,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
             title="Tandai Dibaca"
             className="p-1 text-slate-400 hover:text-indigo-400 text-xs"
           >
-            ✓
+            <Check className="w-3.5 h-3.5" />
           </button>
         )}
         {onDelete && (

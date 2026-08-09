@@ -197,7 +197,7 @@ function RegisterContent() {
       };
 
       await candidatePairService.createCandidatePair(payload);
-      toast.success("✓ Pendaftaran Pasangan Calon berhasil diajukan!");
+      toast.success("Pendaftaran Pasangan Calon berhasil diajukan!");
       setShowPreview(false);
       loadPairs(selectedElectionId);
     } catch (err) {
@@ -286,7 +286,7 @@ function RegisterContent() {
                       ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                       : "bg-rose-100 text-rose-800 border border-rose-300"
                   }`}>
-                    {eligibility.isOsisMember ? "✓ Anggota OSIS Aktif" : "✗ Bukan Anggota OSIS"}
+                    {eligibility.isOsisMember ? "Anggota OSIS Aktif" : "Bukan Anggota OSIS"}
                   </span>
                 </div>
                 {!eligibility.eligible && eligibility.reasons && eligibility.reasons.length > 0 && (
@@ -607,7 +607,7 @@ function MyPairStatusCard({ pair, currentUserId }) {
     WaitingChairman: "Menunggu Verifikasi Ketua",
     WaitingTeacher: "Menunggu Review Pembina OSIS",
     WaitingAdmin: "Menunggu Verifikasi Final Admin",
-    Approved: "✓ Disetujui & Resmi Berpasangan",
+    Approved: "Disetujui & Resmi Berpasangan",
     Rejected: "Ditolak / Perlu Perbaikan",
   };
 
