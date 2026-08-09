@@ -21,27 +21,22 @@ public class CloudinaryService : ICloudinaryService
         _httpClient = new HttpClient();
     }
 
-    private string? CloudName =>
-        _configuration["Cloudinary:CloudName"] ??
-        Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME");
+    private string? Clean(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return value.Trim().Trim('"').Trim('\'');
+    }
 
-    private string? ApiKey =>
-        _configuration["Cloudinary:ApiKey"] ??
-        Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY");
+    private string? CloudName => Clean(_configuration["Cloudinary:CloudName"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME"));
+    private string? ApiKey => Clean(_configuration["Cloudinary:ApiKey"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY"));
+    private string? ApiSecret => Clean(_configuration["Cloudinary:ApiSecret"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET"));
+    private string? UploadPreset => Clean(_configuration["Cloudinary:UploadPreset"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_UPLOAD_PRESET"));
 
-    private string? ApiSecret =>
-        _configuration["Cloudinary:ApiSecret"] ??
-        Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
-
-    private string DefaultFolder =>
-        _configuration["Cloudinary:Folder"] ??
-        Environment.GetEnvironmentVariable("CLOUDINARY_FOLDER") ??
-        "student-center";
+    private string DefaultFolder => Clean(_configuration["Cloudinary:Folder"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_FOLDER")) ?? "student-center";
 
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(CloudName) &&
-        !string.IsNullOrWhiteSpace(ApiKey) &&
-        !string.IsNullOrWhiteSpace(ApiSecret);
+        (!string.IsNullOrWhiteSpace(UploadPreset) || (!string.IsNullOrWhiteSpace(ApiKey) && !string.IsNullOrWhiteSpace(ApiSecret)));
 
     public async Task<string> UploadImageAsync(
         Stream fileStream,
@@ -52,19 +47,10 @@ public class CloudinaryService : ICloudinaryService
     {
         if (!IsConfigured)
         {
-            throw new InvalidOperationException("Cloudinary credentials are not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.");
+            throw new InvalidOperationException("Cloudinary credentials are not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET (or CLOUDINARY_UPLOAD_PRESET) environment variables.");
         }
 
         var targetFolder = string.IsNullOrWhiteSpace(folder) ? DefaultFolder : folder.Trim();
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-
-        // Parameter signature string sorting (alphabetical order per Cloudinary API): folder={folder}&timestamp={timestamp}{apiSecret}
-        var stringToSign = $"folder={targetFolder}&timestamp={timestamp}{ApiSecret}";
-
-        using var sha1 = SHA1.Create();
-        var hashBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToSign));
-        var signature = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-
         using var content = new MultipartFormDataContent();
 
         var fileContent = new StreamContent(fileStream);
@@ -74,22 +60,51 @@ public class CloudinaryService : ICloudinaryService
         }
 
         content.Add(fileContent, "file", fileName);
-        content.Add(new StringContent(ApiKey!), "api_key");
-        content.Add(new StringContent(timestamp), "timestamp");
-        content.Add(new StringContent(targetFolder), "folder");
-        content.Add(new StringContent(signature), "signature");
+
+        if (!string.IsNullOrWhiteSpace(UploadPreset))
+        {
+            // Unsigned upload mode using preset
+            content.Add(new StringContent(UploadPreset), "upload_preset");
+            if (!string.IsNullOrWhiteSpace(targetFolder))
+            {
+                content.Add(new StringContent(targetFolder), "folder");
+            }
+            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary using unsigned upload preset '{Preset}'...", fileName, UploadPreset);
+        }
+        else
+        {
+            // Signed upload mode using SHA1 signature
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+
+            var sortedParams = new SortedDictionary<string, string>
+            {
+                { "folder", targetFolder },
+                { "timestamp", timestamp }
+            };
+
+            var paramString = string.Join("&", sortedParams.Select(kv => $"{kv.Key}={kv.Value}"));
+            var stringToSign = $"{paramString}{ApiSecret}";
+
+            using var sha1 = SHA1.Create();
+            var hashBytes = sha1.ComputeHash(Encoding.UTF8.GetBytes(stringToSign));
+            var signature = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+            content.Add(new StringContent(ApiKey!), "api_key");
+            content.Add(new StringContent(timestamp), "timestamp");
+            content.Add(new StringContent(targetFolder), "folder");
+            content.Add(new StringContent(signature), "signature");
+
+            _logger.LogInformation("Uploading image '{FileName}' to Cloudinary using signed API key '{ApiKey}'...", fileName, ApiKey);
+        }
 
         var uploadUrl = $"https://api.cloudinary.com/v1_1/{CloudName}/image/upload";
-
-        _logger.LogInformation("Uploading image '{FileName}' to Cloudinary folder '{Folder}'...", fileName, targetFolder);
-
         var response = await _httpClient.PostAsync(uploadUrl, content, cancellationToken);
         var jsonResponse = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
             _logger.LogError("Cloudinary API Upload Failed [{StatusCode}]: {Response}", response.StatusCode, jsonResponse);
-            throw new InvalidOperationException($"Gagal mengunggah gambar ke Cloudinary: {response.StatusCode} - {jsonResponse}");
+            throw new InvalidOperationException($"Cloudinary Upload Failed [{response.StatusCode}]: {jsonResponse}");
         }
 
         using var doc = JsonDocument.Parse(jsonResponse);
@@ -119,7 +134,7 @@ public class CloudinaryService : ICloudinaryService
         string? imageUrlOrPublicId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(imageUrlOrPublicId) || !IsConfigured)
+        if (string.IsNullOrWhiteSpace(imageUrlOrPublicId) || !IsConfigured || string.IsNullOrWhiteSpace(ApiKey) || string.IsNullOrWhiteSpace(ApiSecret))
         {
             return false;
         }
@@ -171,23 +186,21 @@ public class CloudinaryService : ICloudinaryService
             return input.Trim();
         }
 
-        // Example: https://res.cloudinary.com/cloudname/image/upload/v1234567890/student-center/folder/sample.jpg
         try
         {
             var uri = new Uri(input);
-            var path = uri.AbsolutePath; // /cloudname/image/upload/v1234567890/student-center/folder/sample.jpg
+            var path = uri.AbsolutePath;
             var uploadIndex = path.IndexOf("/upload/", StringComparison.OrdinalIgnoreCase);
             if (uploadIndex < 0) return null;
 
-            var afterUpload = path.Substring(uploadIndex + "/upload/".Length); // v1234567890/student-center/folder/sample.jpg
+            var afterUpload = path.Substring(uploadIndex + "/upload/".Length);
             var segments = afterUpload.Split('/');
 
-            // Skip version segment if present (e.g. v1234567890)
             var startIndex = (segments.Length > 0 && segments[0].StartsWith("v") && long.TryParse(segments[0].Substring(1), out _))
                 ? 1
                 : 0;
 
-            var publicIdWithExt = string.Join("/", segments.Skip(startIndex)); // student-center/folder/sample.jpg
+            var publicIdWithExt = string.Join("/", segments.Skip(startIndex));
             var lastDot = publicIdWithExt.LastIndexOf('.');
             return lastDot > 0 ? publicIdWithExt.Substring(0, lastDot) : publicIdWithExt;
         }
