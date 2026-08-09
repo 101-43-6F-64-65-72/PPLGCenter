@@ -16,4 +16,5 @@ public interface ICandidatePairService
     Task<bool> CastVoteAsync(Guid electionId, Guid candidatePairId, Guid voterUserId);
     Task<PemilosLiveResultResponse?> GetLiveResultsAsync(Guid electionId, Guid? currentUserId = null);
     Task<ElectionEligibilityResponse> CheckEligibilityAsync(Guid electionId, Guid studentId);
+    Task<List<UserResponse>> GetEligibleViceCandidatesAsync(string? search = null, Guid? electionId = null, Guid? currentUserId = null);
 }

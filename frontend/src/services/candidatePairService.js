@@ -49,8 +49,12 @@ export const candidatePairService = {
    * Search eligible Vice Chairman candidates (Students) by Name / NIS
    */
   searchEligibleViceCandidates: async (search = "", electionId = null) => {
-    // Return empty result gracefully to prevent 404/403 console errors when dedicated endpoint is disabled
-    return { data: [] };
+    try {
+      return await api.get("/api/candidate-pairs/eligible-vices", { params: { search, electionId } });
+    } catch (err) {
+      console.error("Gagal mencari calon wakil:", err);
+      return { data: [] };
+    }
   },
 
   /**

@@ -45,6 +45,7 @@ export function useExtracurricularDetail(slug) {
       const activeState = item.isActive ?? item.IsActive ?? true;
 
       const formatted = {
+        ...item,
         id: exId,
         name: exName,
         category: cat,
@@ -55,10 +56,14 @@ export function useExtracurricularDetail(slug) {
         imageUrl: item.imageUrl || item.ImageUrl || null,
         instructor: item.supervisor?.name || item.advisorName || item.managedByUser?.fullName || item.instructor || "Pembina Ekstrakurikuler",
         supervisor: item.supervisor || null,
-        schedule: item.schedule || {
-          day: "Sesuai Jadwal",
-          time: "15.30 - 17.00 WIB",
-          location: "Lingkungan SMKN 2 Surakarta",
+        supervisorTeacherId: item.supervisorTeacherId || item.managedByUserId || item.supervisor?.id || null,
+        scheduleDay: item.scheduleDay || (item.schedule && typeof item.schedule === 'object' ? item.schedule.day : null) || "Senin",
+        scheduleTime: item.scheduleTime || (item.schedule && typeof item.schedule === 'object' ? item.schedule.time : null) || "15:30 - 17:00",
+        location: item.location || (item.schedule && typeof item.schedule === 'object' ? item.schedule.location : null) || "Lingkungan SMKN 2 Surakarta",
+        schedule: (item.schedule && typeof item.schedule === 'object') ? item.schedule : {
+          day: item.scheduleDay || "Sesuai Jadwal",
+          time: item.scheduleTime || "15.30 - 17.00 WIB",
+          location: item.location || "Lingkungan SMKN 2 Surakarta",
         },
       };
 

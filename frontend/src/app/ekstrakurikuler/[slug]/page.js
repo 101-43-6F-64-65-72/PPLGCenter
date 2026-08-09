@@ -9,6 +9,7 @@ import useAuth from "@/hooks/useAuth";
 import useExtracurricularDetail from "@/hooks/useExtracurricularDetail";
 import JoinExtracurricularModal from "@/components/ekstrakurikuler/JoinExtracurricularModal";
 import LeaveExtracurricularModal from "@/components/ekstrakurikuler/LeaveExtracurricularModal";
+import CreateExtracurricularModal from "@/components/ekstrakurikuler/CreateExtracurricularModal";
 import { extracurricularService } from "@/services/extracurricularService";
 import { resolveImageUrl } from "@/lib/utils";
 import {
@@ -18,7 +19,9 @@ import {
   Check,
   LogOut,
   ShieldAlert,
-  Users
+  Users,
+  Edit,
+  Edit2
 } from "lucide-react";
 
 export default function ExtracurricularDetailPage() {
@@ -40,15 +43,25 @@ export default function ExtracurricularDetailPage() {
 
   const [isConfirmJoinOpen, setIsConfirmJoinOpen] = useState(false);
   const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubmittingJoin, setIsSubmittingJoin] = useState(false);
   const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
   const [modalError, setModalError] = useState("");
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
-  // Role Checks
+  // Role & Authorization Checks (Only Pembimbing and Admin can edit)
   const isStudentRole = !isAuthenticated || role === "Student" || role === "OSIS";
   const isTeacherRole = role === "Teacher";
   const isAdminRole = role === "Admin" || role === "Super Admin";
+
+  const isPembimbing = isTeacherRole && (
+    !data?.supervisorTeacherId ||
+    String(data?.supervisorTeacherId || data?.managedByUserId || data?.supervisor?.id || "") === String(user?.id || user?.Id || "") ||
+    (user?.fullName && data?.instructor?.toLowerCase()?.includes(user.fullName.toLowerCase())) ||
+    (user?.name && data?.instructor?.toLowerCase()?.includes(user.name.toLowerCase())) ||
+    (user?.fullName && data?.advisorName?.toLowerCase()?.includes(user.fullName.toLowerCase()))
+  );
+  const canEditExtracurricular = isAdminRole || isPembimbing;
 
   const showToastNotification = (message, type = "success") => {
     setToast({ show: true, message, type });
@@ -235,8 +248,8 @@ export default function ExtracurricularDetailPage() {
       )}
 
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        {/* Back Link */}
-        <div className="mb-6">
+        {/* Back Link & Edit Action Bar */}
+        <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
           <Link
             href="/ekstrakurikuler"
             className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-[#2c1ee8] transition-colors"
@@ -252,6 +265,17 @@ export default function ExtracurricularDetailPage() {
             </svg>
             <span>Kembali ke Daftar Ekstrakurikuler</span>
           </Link>
+
+          {canEditExtracurricular && (
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-extrabold transition-all shadow-md shadow-amber-500/20 cursor-pointer active:scale-95"
+            >
+              <Edit className="w-4 h-4" />
+              <span>Edit Ekstrakurikuler</span>
+            </button>
+          )}
         </div>
 
         {isLoading ? (
@@ -441,24 +465,26 @@ export default function ExtracurricularDetailPage() {
                         Anda masuk sebagai <strong>Pembina/Guru</strong>. Guru tidak dapat menjadi anggota ekstrakurikuler.
                       </p>
 
-                      <div className="flex items-center gap-3 pt-1">
+                      <div className="flex items-center gap-3 pt-1 flex-wrap">
+                        {canEditExtracurricular && (
+                          <button
+                            type="button"
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            <span>Edit Informasi & Cover</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => router.push("/guru")}
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-[#2c1ee8] hover:text-[#2c1ee8] transition-all cursor-pointer"
                         >
                           <Users className="w-4 h-4" />
                           <span>Kelola Anggota</span>
                         </button>
-
-                        <a
-                          href="https://wa.me/6282322377070"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-[#2c1ee8] hover:text-[#2c1ee8] transition-all"
-                        >
-                          <span>Hubungi Pembina</span>
-                        </a>
                       </div>
                     </div>
                   ) : isAdminRole ? (
@@ -472,7 +498,18 @@ export default function ExtracurricularDetailPage() {
                         Anda masuk sebagai <strong>Admin</strong>. Admin tidak dapat menjadi anggota ekstrakurikuler.
                       </p>
 
-                      <div className="flex items-center gap-3 pt-1">
+                      <div className="flex items-center gap-3 pt-1 flex-wrap">
+                        {canEditExtracurricular && (
+                          <button
+                            type="button"
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            <span>Edit Informasi & Cover</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => router.push("/admin")}
@@ -481,15 +518,6 @@ export default function ExtracurricularDetailPage() {
                           <Users className="w-4 h-4" />
                           <span>Lihat Data Anggota</span>
                         </button>
-
-                        <a
-                          href="https://wa.me/6282322377070"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:border-[#2c1ee8] hover:text-[#2c1ee8] transition-all"
-                        >
-                          <span>Hubungi Pembina</span>
-                        </a>
                       </div>
                     </div>
                   ) : (
@@ -565,6 +593,20 @@ export default function ExtracurricularDetailPage() {
         isSubmitting={isSubmittingLeave}
         errorMessage={modalError}
       />
+
+      {/* Edit Extracurricular Modal for Pembimbing & Admin */}
+      {canEditExtracurricular && (
+        <CreateExtracurricularModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          editingItem={data}
+          onSuccess={async () => {
+            setIsEditModalOpen(false);
+            showToastNotification("✓ Informasi ekstrakurikuler berhasil diperbarui!", "success");
+            await refetch();
+          }}
+        />
+      )}
 
       <Footer />
     </div>

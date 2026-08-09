@@ -121,7 +121,7 @@ function RegisterContent() {
 
   // Debounced search for eligible Vice candidates
   useEffect(() => {
-    if (!viceSearchTerm.trim() || viceSearchTerm.length < 2) {
+    if (!viceSearchTerm.trim()) {
       setViceSearchResults([]);
       return;
     }
@@ -436,7 +436,7 @@ function RegisterContent() {
                         </div>
                       )}
 
-                      {viceSearchTerm.length >= 2 && !searchingVice && viceSearchResults.length === 0 && (
+                      {viceSearchTerm.length >= 1 && !searchingVice && viceSearchResults.length === 0 && (
                         <p className="text-xs text-gray-400 italic">Tidak ada siswa ditemukan.</p>
                       )}
                     </div>

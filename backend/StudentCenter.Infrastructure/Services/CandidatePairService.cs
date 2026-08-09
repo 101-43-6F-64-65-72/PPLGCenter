@@ -432,4 +432,69 @@ public class CandidatePairService : ICandidatePairService
             CreatedAt = p.CreatedAt
         };
     }
+
+    public async Task<List<UserResponse>> GetEligibleViceCandidatesAsync(string? search = null, Guid? electionId = null, Guid? currentUserId = null)
+    {
+        var query = _context.Users
+            .AsNoTracking()
+            .Include(u => u.Class)
+            .Where(u => u.IsActive && u.Role == UserRole.Student);
+
+        if (currentUserId.HasValue)
+        {
+            query = query.Where(u => u.Id != currentUserId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var searchLower = search.Trim().ToLower();
+            query = query.Where(u =>
+                (u.FullName != null && u.FullName.ToLower().Contains(searchLower)) ||
+                (u.NIS != null && u.NIS.ToLower().Contains(searchLower)) ||
+                (u.NISN != null && u.NISN.ToLower().Contains(searchLower)) ||
+                (u.Username != null && u.Username.ToLower().Contains(searchLower)) ||
+                (u.Email != null && u.Email.ToLower().Contains(searchLower)));
+        }
+
+        if (electionId.HasValue)
+        {
+            var registeredUserIds = await _context.CandidatePairs
+                .AsNoTracking()
+                .Where(c => c.ElectionId == electionId.Value && c.Status != CandidatePairStatus.Rejected)
+                .SelectMany(c => new[] { c.ChairmanUserId, c.ViceUserId })
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .ToListAsync();
+
+            if (registeredUserIds.Any())
+            {
+                query = query.Where(u => !registeredUserIds.Contains(u.Id));
+            }
+        }
+
+        var users = await query
+            .OrderBy(u => u.FullName)
+            .Take(15)
+            .ToListAsync();
+
+        return users.Select(u => new UserResponse
+        {
+            Id = u.Id,
+            FullName = u.FullName,
+            Email = u.Email,
+            Username = u.Username,
+            NIS = u.NIS,
+            NISN = u.NISN,
+            PhoneNumber = u.PhoneNumber,
+            PhotoUrl = u.PhotoUrl,
+            Role = u.Role.ToString(),
+            IsActive = u.IsActive,
+            ClassId = u.ClassId,
+            ClassName = u.Class?.Name,
+            StudentNumber = u.StudentNumber,
+            Gender = u.Gender,
+            CreatedAt = u.CreatedAt,
+            UpdatedAt = u.UpdatedAt
+        }).ToList();
+    }
 }

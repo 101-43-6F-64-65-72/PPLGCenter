@@ -20,6 +20,15 @@ public class CandidatePairsController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("eligible-vices")]
+    public async Task<IActionResult> GetEligibleViceCandidates([FromQuery] string? search = null, [FromQuery] Guid? electionId = null)
+    {
+        var currentUserId = _currentUserService.UserId;
+        var result = await _candidatePairService.GetEligibleViceCandidatesAsync(search, electionId, currentUserId);
+        return Ok(ApiResponse<List<UserResponse>>.Ok("Daftar calon wakil berhasil diambil", result));
+    }
+
+    [Authorize]
     [HttpGet("election/{electionId:guid}")]
     public async Task<IActionResult> GetPairs(Guid electionId)
     {
