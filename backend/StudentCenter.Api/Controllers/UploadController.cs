@@ -190,7 +190,26 @@ public class UploadController : ControllerBase
             await file.CopyToAsync(stream);
         }
 
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var publicBaseUrl = _configuration["PUBLIC_BASE_URL"] 
+            ?? Environment.GetEnvironmentVariable("PUBLIC_BASE_URL");
+
+        string baseUrl;
+        if (!string.IsNullOrWhiteSpace(publicBaseUrl))
+        {
+            baseUrl = publicBaseUrl.TrimEnd('/');
+        }
+        else
+        {
+            var scheme = Request.Headers["X-Forwarded-Proto"].FirstOrDefault() ?? Request.Scheme;
+            if (string.Equals(scheme, "http", StringComparison.OrdinalIgnoreCase) &&
+                !Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
+                !Request.Host.Host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+            {
+                scheme = "https";
+            }
+            baseUrl = $"{scheme}://{Request.Host}";
+        }
+
         var fileUrl = $"{baseUrl}/uploads/{uniqueFileName}";
 
         return Ok(ApiResponse<UploadResponse>.Ok("File berhasil diunggah.", new UploadResponse

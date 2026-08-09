@@ -379,6 +379,7 @@ export default function ProposalPage() {
       const payload = {
         title: fullTitle,
         description: formData.description.trim(),
+        category: organization,
         fileUrl: fileUrl,
       };
 
