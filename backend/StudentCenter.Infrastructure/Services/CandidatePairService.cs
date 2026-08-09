@@ -435,16 +435,86 @@ public class CandidatePairService : ICandidatePairService
 
     public async Task<List<UserResponse>> GetEligibleViceCandidatesAsync(string? search = null, Guid? electionId = null, Guid? currentUserId = null)
     {
+        // 1. Fetch OSIS Extracurricular IDs
+        var osisEkskulIds = await _context.Extracurriculars
+            .AsNoTracking()
+            .Where(e => e.IsActive && (e.Name.ToLower().Contains("osis") || e.Category.ToLower().Contains("kepemimpinan")))
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        // 2. Fetch Student IDs who are registered OSIS members
+        List<Guid> osisMemberStudentIds = new();
+        if (osisEkskulIds.Any())
+        {
+            osisMemberStudentIds = await _context.ExtracurricularMembers
+                .AsNoTracking()
+                .Where(m => osisEkskulIds.Contains(m.ExtracurricularId) && (m.Status == "Active" || m.Status == "Approved"))
+                .Select(m => m.StudentId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        var osisCabinetStudentIds = await _context.OsisCabinetHistories
+            .AsNoTracking()
+            .Select(h => h.StudentId)
+            .ToListAsync();
+
+        var osisApprovedAppStudentIds = await _context.OsisApplications
+            .AsNoTracking()
+            .Where(a => a.Status == RecruitmentApplicationStatus.Approved)
+            .Select(a => a.ApplicantStudentId)
+            .ToListAsync();
+
+        var allOsisStudentIds = osisMemberStudentIds
+            .Concat(osisCabinetStudentIds)
+            .Concat(osisApprovedAppStudentIds)
+            .Distinct()
+            .ToList();
+
+        // 3. Fetch User IDs already registered as Chairman or Vice in CandidatePairs for this election
+        List<Guid> registeredUserIds = new();
+        if (electionId.HasValue)
+        {
+            var chairmanIds = await _context.CandidatePairs
+                .AsNoTracking()
+                .Where(c => c.ElectionId == electionId.Value && c.Status != CandidatePairStatus.Rejected)
+                .Select(c => c.ChairmanUserId)
+                .ToListAsync();
+
+            var viceIds = await _context.CandidatePairs
+                .AsNoTracking()
+                .Where(c => c.ElectionId == electionId.Value && c.Status != CandidatePairStatus.Rejected && c.ViceUserId != null)
+                .Select(c => c.ViceUserId!.Value)
+                .ToListAsync();
+
+            registeredUserIds = chairmanIds.Concat(viceIds).Distinct().ToList();
+        }
+
+        // 4. Build Main Query for Student Users
         var query = _context.Users
             .AsNoTracking()
             .Include(u => u.Class)
             .Where(u => u.IsActive && u.Role == UserRole.Student);
 
+        // Filter: Must be OSIS member if OSIS records exist
+        if (allOsisStudentIds.Any())
+        {
+            query = query.Where(u => allOsisStudentIds.Contains(u.Id));
+        }
+
+        // Filter: Exclude current user (cannot select self as Vice)
         if (currentUserId.HasValue)
         {
             query = query.Where(u => u.Id != currentUserId.Value);
         }
 
+        // Filter: Exclude users already registered in candidate pairs
+        if (registeredUserIds.Any())
+        {
+            query = query.Where(u => !registeredUserIds.Contains(u.Id));
+        }
+
+        // Filter: Text Search on FullName, NIS, NISN, Username, Email
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchLower = search.Trim().ToLower();
@@ -456,25 +526,9 @@ public class CandidatePairService : ICandidatePairService
                 (u.Email != null && u.Email.ToLower().Contains(searchLower)));
         }
 
-        if (electionId.HasValue)
-        {
-            var registeredUserIds = await _context.CandidatePairs
-                .AsNoTracking()
-                .Where(c => c.ElectionId == electionId.Value && c.Status != CandidatePairStatus.Rejected)
-                .SelectMany(c => new[] { c.ChairmanUserId, c.ViceUserId })
-                .Where(id => id.HasValue)
-                .Select(id => id!.Value)
-                .ToListAsync();
-
-            if (registeredUserIds.Any())
-            {
-                query = query.Where(u => !registeredUserIds.Contains(u.Id));
-            }
-        }
-
         var users = await query
             .OrderBy(u => u.FullName)
-            .Take(15)
+            .Take(20)
             .ToListAsync();
 
         return users.Select(u => new UserResponse
