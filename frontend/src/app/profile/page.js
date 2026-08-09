@@ -11,6 +11,7 @@ import { Shield, LogOut, User, Lock, Mail, Phone, MapPin, CheckCircle, AlertCirc
 import { GraduationCap, BookOpen, Award, Hash } from "lucide-react";
 import Button from "@/components/ui/Button";
 import profileService from "@/services/profileService";
+import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 
 export default function ProfilePage() {
   return (
@@ -29,8 +30,12 @@ export default function ProfilePage() {
 }
 
 function ProfileContent() {
-  const { user, role, memberships, advisorFor, logout, fetchProfile } = useAuth();
+  const { user, role, memberships, advisorFor, logout, fetchProfile, loading } = useAuth();
   const fileInputRef = useRef(null);
+
+  if (loading || !user) {
+    return <ProfileSkeleton />;
+  }
 
 
   // Active sub-tab state ('info' | 'password')
@@ -272,11 +277,21 @@ function ProfileContent() {
                   </div>
                 )}
 
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[2px] text-white rounded-full transition-all animate-pulse">
+                    <svg className="animate-spin h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-200">Cloudinary</span>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={openFilePicker}
                   disabled={isUploadingAvatar}
-                  className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-[#2C1EE8] shadow-lg transition hover:scale-105 hover:bg-[#2C1EE8] hover:text-white cursor-pointer disabled:opacity-50"
+                  className="absolute bottom-2 right-2 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-[#2C1EE8] shadow-lg transition hover:scale-105 hover:bg-[#2C1EE8] hover:text-white cursor-pointer disabled:opacity-50"
                   aria-label="Ubah foto profil"
                   title="Ubah foto profil"
                 >
@@ -549,9 +564,19 @@ function ProfileContent() {
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
                 >
-                  {isSaving ? "Menyimpan Profil..." : "Simpan Perubahan Profil"}
+                  {isSaving ? (
+                    <>
+                      <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Menyimpan Perubahan...</span>
+                    </>
+                  ) : (
+                    "Simpan Perubahan Profil"
+                  )}
                 </button>
               </div>
             </form>
@@ -616,9 +641,19 @@ function ProfileContent() {
             <button
               type="submit"
               disabled={isSaving}
-              className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
             >
-              {isSaving ? "Memperbarui Password..." : "Perbarui Password Akun"}
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Memperbarui Password...</span>
+                </>
+              ) : (
+                "Perbarui Password Akun"
+              )}
             </button>
           </form>
         )}

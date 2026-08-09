@@ -8,9 +8,9 @@ using StudentCenter.Api.Models.Responses;
 namespace StudentCenter.Api.Controllers;
 
 /// <summary>
-/// Manages user administration operations (Admin only).
+/// Manages user operations and administration.
 /// </summary>
-[Authorize(Roles = "Admin")]
+[Authorize]
 [ApiController]
 [Route("api/users")]
 public class UsersController : ControllerBase
@@ -24,6 +24,7 @@ public class UsersController : ControllerBase
         _currentUserService = currentUserService;
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IActionResult> GetUsers(
         [FromQuery] int page = 1,
@@ -54,6 +55,7 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserResponse>.Ok("User retrieved successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
@@ -68,6 +70,31 @@ public class UsersController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
     {
+        var currentUserId = _currentUserService.UserId;
+        var isSelf = currentUserId.HasValue && currentUserId.Value == id;
+        var isAdmin = User.IsInRole("Admin");
+
+        if (!isSelf && !isAdmin)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail("Forbidden. You do not have permission to access this resource."));
+        }
+
+        // For non-admin self-updates, protect administrative fields
+        if (!isAdmin)
+        {
+            var existingUser = await _userService.GetUserByIdAsync(id);
+            if (existingUser != null)
+            {
+                if (Enum.TryParse<UserRole>(existingUser.Role, true, out var parsedRole))
+                {
+                    request.Role = parsedRole;
+                }
+                request.NIS = existingUser.NIS;
+                request.NISN = existingUser.NISN;
+                request.NIP = existingUser.NIP;
+            }
+        }
+
         var result = await _userService.UpdateUserAsync(id, request);
         if (result is null)
             return NotFound(ApiResponse<object>.Fail("User not found"));
@@ -75,6 +102,7 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserResponse>.Ok("User updated successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPatch("{id:guid}/status")]
     public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusRequest request)
     {
@@ -85,6 +113,7 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserResponse>.Ok("User status updated successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
@@ -12,12 +13,14 @@ public class UserService : IUserService
 {
     private readonly AppDbContext _context;
     private readonly IJwtService _jwtService;
+    private readonly ILogger<UserService> _logger;
     private readonly PasswordHasher<User> _passwordHasher;
- 
-    public UserService(AppDbContext context, IJwtService jwtService)
+
+    public UserService(AppDbContext context, IJwtService jwtService, ILogger<UserService> logger)
     {
         _context = context;
         _jwtService = jwtService;
+        _logger = logger;
         _passwordHasher = new PasswordHasher<User>();
     }
 
@@ -26,6 +29,7 @@ public class UserService : IUserService
         var identifier = request.GetEffectiveIdentifier();
         if (string.IsNullOrWhiteSpace(identifier))
         {
+            _logger.LogWarning("Login failed: Identifier is empty. LoginType: {LoginType}", request.LoginType);
             return new LoginResult { Status = LoginStatus.UserNotFound };
         }
 
@@ -54,11 +58,13 @@ public class UserService : IUserService
         }
         else if (loginType.Equals("Teacher", StringComparison.OrdinalIgnoreCase))
         {
-            // Teacher: authenticate by NIP only
+            // Teacher: authenticate by NIP, Email, or Username
             user = await baseQuery
                 .FirstOrDefaultAsync(u =>
                     u.Role == UserRole.Teacher &&
-                    u.NIP != null && u.NIP.ToLower() == identifierLower);
+                    ((u.NIP != null && u.NIP.ToLower() == identifierLower) ||
+                     u.Email.ToLower() == identifierLower ||
+                     (u.Username != null && u.Username.ToLower() == identifierLower)));
 
             userType = "Teacher";
             primaryIdentifier = identifier;
@@ -80,6 +86,7 @@ public class UserService : IUserService
 
         if (user is null)
         {
+            _logger.LogWarning("Login failed: User not found for Identifier '{Identifier}' with LoginType '{LoginType}'.", identifier, loginType);
             return new LoginResult { Status = LoginStatus.UserNotFound };
         }
 
@@ -87,11 +94,13 @@ public class UserService : IUserService
 
         if (result == PasswordVerificationResult.Failed)
         {
+            _logger.LogWarning("Login failed: Invalid password for User '{Email}' (Role: {Role}).", user.Email, user.Role);
             return new LoginResult { Status = LoginStatus.InvalidPassword };
         }
 
         if (!user.IsActive)
         {
+            _logger.LogWarning("Login failed: Account '{Email}' is inactive.", user.Email);
             return new LoginResult { Status = LoginStatus.UserInactive };
         }
 
