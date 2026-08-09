@@ -8,6 +8,7 @@ import useAuth from "@/hooks/useAuth";
 import { extracurricularService } from "@/services/extracurricularService";
 import EkstrakurikulerSkeleton from "@/components/ekstrakurikuler/EkstrakurikulerSkeleton";
 import AnimatedContent from "@/components/common/AnimatedContent";
+import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import CreateExtracurricularModal from "@/components/ekstrakurikuler/CreateExtracurricularModal";
 import { PlusCircle, ShieldCheck } from "lucide-react";
 
@@ -83,8 +84,19 @@ export default function EkstrakurikulerPage() {
         setErrorMessage("No extracurricular data available.");
       }
     } catch (err) {
-      setApiState("error");
-      setErrorMessage("Terjadi kesalahan yang tidak terduga saat memuat data.");
+      const isUnauthorized =
+        err?.statusCode === 401 ||
+        err?.response?.status === 401 ||
+        err?.message?.includes("Sesi") ||
+        err?.message?.includes("Unauthorized") ||
+        err?.message?.includes("login");
+
+      if (isUnauthorized) {
+        setApiState("unauthorized");
+      } else {
+        setApiState("error");
+        setErrorMessage("Terjadi kesalahan yang tidak terduga saat memuat data.");
+      }
       setCategories([]);
     } finally {
       setIsLoading(false);
@@ -243,7 +255,9 @@ export default function EkstrakurikulerPage() {
             isLoading={isLoading}
             skeleton={<EkstrakurikulerSkeleton categoriesCount={2} itemsPerCategory={3} />}
           >
-            {apiState === "error" ? (
+            {apiState === "unauthorized" ? (
+              <LoginRequiredFallback featureName="Ekstrakurikuler" />
+            ) : apiState === "error" ? (
               /* Error State UI with Retry Button */
               <div className="rounded-2xl border border-red-200 bg-red-50/50 p-10 text-center shadow-xs">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 text-red-600 mb-4">

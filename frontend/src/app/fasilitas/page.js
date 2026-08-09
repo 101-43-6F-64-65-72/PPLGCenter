@@ -6,11 +6,13 @@ import Footer from "@/components/Footer";
 import FacilitySection from "@/components/fasilitas/FacilitySection";
 import ScheduleModal from "@/components/fasilitas/ScheduleModal";
 import CartModal from "@/components/fasilitas/CartModal";
+import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import { Search, ShoppingBag } from "lucide-react";
 import facilityService from "@/services/facilityService";
 
 export default function FasilitasPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("semua"); // 'semua' | 'tersedia'
   const [selectedFacility, setSelectedFacility] = useState(null);
@@ -28,6 +30,7 @@ export default function FasilitasPage() {
     let isMounted = true;
     async function loadFacilityData() {
       setIsLoading(true);
+      setIsUnauthorized(false);
       try {
         const res = await facilityService.getFacilities({ pageSize: 100 });
         // Normalize: res.data may be PagedResult { items, totalCount } or flat array
@@ -53,7 +56,16 @@ export default function FasilitasPage() {
           setPlacesData(mapped);
         }
       } catch (err) {
-        if (isMounted) setPlacesData([]);
+        const checkUnauth =
+          err?.statusCode === 401 ||
+          err?.response?.status === 401 ||
+          err?.message?.includes("Sesi") ||
+          err?.message?.includes("Unauthorized") ||
+          err?.message?.includes("login");
+        if (isMounted) {
+          if (checkUnauth) setIsUnauthorized(true);
+          setPlacesData([]);
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -170,13 +182,17 @@ export default function FasilitasPage() {
         </div>
 
         {/* SECTION: TEMPAT / FASILITAS */}
-        <FacilitySection
-          title="FASILITAS TEMPAT"
-          type="facility"
-          items={filteredPlaces}
-          isLoading={isLoading}
-          onItemAction={(item) => handleOpenModal(item)}
-        />
+        {isUnauthorized ? (
+          <LoginRequiredFallback featureName="Katalog Fasilitas" />
+        ) : (
+          <FacilitySection
+            title="FASILITAS TEMPAT"
+            type="facility"
+            items={filteredPlaces}
+            isLoading={isLoading}
+            onItemAction={(item) => handleOpenModal(item)}
+          />
+        )}
       </main>
 
       <Footer />

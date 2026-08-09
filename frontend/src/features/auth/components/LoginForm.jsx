@@ -41,7 +41,7 @@ export const LoginForm = () => {
       return;
     }
     if (!identifier.trim()) {
-      const idLabel = loginType === "Student" ? "NIS atau NISN" : loginType === "Teacher" ? "NIP" : "Email atau Username Admin";
+      const idLabel = loginType === "Student" ? "NIS atau NISN" : loginType === "Teacher" ? "NIP atau Email" : "Email atau Username Admin";
       setErrorMessage(`${idLabel} wajib diisi`);
       return;
     }
@@ -138,7 +138,7 @@ export const LoginForm = () => {
         {/* Identifier Input */}
         <div className="space-y-1.5">
           <label className="block text-sm font-bold text-white/80">
-            {loginType === "Student" ? "NIS / NISN" : loginType === "Teacher" ? "NIP" : "Email / Username Admin"}
+            {loginType === "Student" ? "NIS / NISN" : loginType === "Teacher" ? "NIP / Email" : "Email / Username Admin"}
           </label>
           <Input
             name="identifier"
@@ -147,7 +147,7 @@ export const LoginForm = () => {
               loginType === "Student"
                 ? "Masukkan NIS atau NISN"
                 : loginType === "Teacher"
-                ? "Masukkan NIP"
+                ? "Masukkan NIP atau Email"
                 : "Masukkan Email atau Username Admin"
             }
             isRequired

@@ -8,6 +8,7 @@ import AnnouncementHeroCarousel from "@/features/announcement/components/Announc
 import AnnouncementSkeleton from "@/features/announcement/components/AnnouncementSkeleton";
 import ErrorAlert from "@/components/common/ErrorAlert";
 import EmptyState from "@/components/common/EmptyState";
+import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import { Search, ChevronLeft, ChevronRight } from "@/components/common/Icons";
 import { useRouter } from "next/navigation";
 
@@ -163,18 +164,24 @@ export default function MadingPage() {
 
           {isError && (
             <div className="my-8">
-              <ErrorAlert
-                title="Gagal Memuat Pengumuman"
-                message={error?.message || "Terjadi kesalahan saat memuat data dari server."}
-              />
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={() => refetch()}
-                  className="px-6 py-2.5 bg-[#1d4ed8] text-white rounded-full text-sm font-semibold hover:bg-blue-800 transition-colors"
-                >
-                  Coba Lagi
-                </button>
-              </div>
+              {error?.statusCode === 401 || error?.response?.status === 401 || error?.message?.includes("Sesi") || error?.message?.includes("Unauthorized") || error?.message?.includes("login") ? (
+                <LoginRequiredFallback featureName="Mading Digital" />
+              ) : (
+                <>
+                  <ErrorAlert
+                    title="Gagal Memuat Pengumuman"
+                    message={error?.message || "Terjadi kesalahan saat memuat data dari server."}
+                  />
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => refetch()}
+                      className="px-6 py-2.5 bg-[#1d4ed8] text-white rounded-full text-sm font-semibold hover:bg-blue-800 transition-colors"
+                    >
+                      Coba Lagi
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

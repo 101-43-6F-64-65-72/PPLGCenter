@@ -135,7 +135,7 @@ export default function Navbar() {
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-gray-900 font-extrabold text-base sm:text-lg xl:text-xl tracking-tight group-hover:text-[#2c1ee8] transition-colors whitespace-nowrap">
-                Student Center SMKN 2
+                Student Center
               </span>
               <span className="text-gray-500 font-medium text-[11px] sm:text-xs xl:text-sm whitespace-nowrap">
                 SMK Negeri 2 Surakarta

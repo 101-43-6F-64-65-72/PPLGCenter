@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import useAuth from "@/hooks/useAuth";
 import calendarService from "@/services/calendarService";
+import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -96,11 +97,13 @@ export default function KalenderPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch Events from Backend API Endpoint
   const fetchEvents = useCallback(async () => {
     setLoading(true);
+    setIsUnauthorized(false);
     try {
       const res = await calendarService.getEvents({ page: 1, pageSize: 100 });
       if (res?.success && res?.data) {
@@ -124,6 +127,13 @@ export default function KalenderPage() {
       }
     } catch (err) {
       console.error("Gagal memuat data kegiatan kalender:", err);
+      const checkUnauth =
+        err?.statusCode === 401 ||
+        err?.response?.status === 401 ||
+        err?.message?.includes("Sesi") ||
+        err?.message?.includes("Unauthorized") ||
+        err?.message?.includes("login");
+      if (checkUnauth) setIsUnauthorized(true);
       setEvents([]);
     } finally {
       setLoading(false);
@@ -368,8 +378,11 @@ export default function KalenderPage() {
           ))}
         </div>
 
-        {/* Main 2-Column Responsive Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {isUnauthorized ? (
+          <LoginRequiredFallback featureName="Kalender Akademik" />
+        ) : (
+          /* Main 2-Column Responsive Layout */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* LEFT COLUMN: Filters, Search, and Main Calendar Grid (lg:col-span-8) */}
           <div className="lg:col-span-8 space-y-6">
@@ -812,7 +825,7 @@ export default function KalenderPage() {
 
           </div>
 
-        </div>
+        )}
 
         {/* MODAL: EVENT DETAILS OVERLAY WIDGET */}
         <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)}>

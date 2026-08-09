@@ -10,6 +10,7 @@ import VoteModal from "@/components/pemilos/VoteModal";
 import PemilosLiveResults from "@/components/pemilos/PemilosLiveResults";
 import candidatePairService from "@/services/candidatePairService";
 import useAuth from "@/hooks/useAuth";
+import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import {
   Vote, BarChart3, Sparkles, RefreshCw,
   AlertCircle, Loader2, Users
@@ -32,6 +33,7 @@ function PemilosContent() {
   const [liveResults, setLiveResults] = useState(null);
   const [loadingElections, setLoadingElections] = useState(true);
   const [loadingPairs, setLoadingPairs] = useState(false);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
   const [votingPair, setVotingPair] = useState(null);
   const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
@@ -41,6 +43,7 @@ function PemilosContent() {
   useEffect(() => {
     const fetchElections = async () => {
       setLoadingElections(true);
+      setIsUnauthorized(false);
       try {
         const res = await candidatePairService.getElections?.();
         const rawData = res?.data ?? res;
@@ -54,6 +57,13 @@ function PemilosContent() {
         setElections(list);
         if (list.length > 0 && list[0]?.id) setSelectedElectionId(list[0].id);
       } catch (err) {
+        const checkUnauth =
+          err?.statusCode === 401 ||
+          err?.response?.status === 401 ||
+          err?.message?.includes("Sesi") ||
+          err?.message?.includes("Unauthorized") ||
+          err?.message?.includes("login");
+        if (checkUnauth) setIsUnauthorized(true);
         console.error("Failed to load elections list:", err);
       } finally {
         setLoadingElections(false);
@@ -86,6 +96,13 @@ function PemilosContent() {
       const resultsObj = rawResults?.data ?? rawResults ?? null;
       setLiveResults(resultsObj);
     } catch (err) {
+      const checkUnauth =
+        err?.statusCode === 401 ||
+        err?.response?.status === 401 ||
+        err?.message?.includes("Sesi") ||
+        err?.message?.includes("Unauthorized") ||
+        err?.message?.includes("login");
+      if (checkUnauth) setIsUnauthorized(true);
       console.error("Failed to load pairs & live results:", err);
     } finally {
       setLoadingPairs(false);
@@ -183,7 +200,11 @@ function PemilosContent() {
           </div>
         </div>
 
-        {/* Voted banner */}
+        {isUnauthorized ? (
+          <LoginRequiredFallback featureName="Pemilos (E-Voting Ketua OSIS)" />
+        ) : (
+          <>
+            {/* Voted banner */}
         {hasVoted && (
           <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
@@ -278,6 +299,8 @@ function PemilosContent() {
               <PemilosLiveResults result={liveResults} />
             )}
           </div>
+        )}
+        </>
         )}
       </main>
 
