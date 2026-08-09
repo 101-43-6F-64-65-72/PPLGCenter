@@ -112,14 +112,14 @@ public class UploadController : ControllerBase
         // ── PDF UPLOAD PATH: SUPABASE STORAGE ──
         if (isPdf)
         {
-            var folder = string.IsNullOrWhiteSpace(request.Folder) ? "proposals" : request.Folder.Trim();
+            var pdfFolder = string.IsNullOrWhiteSpace(request.Folder) ? "proposals" : request.Folder.Trim();
 
             if (_fileStorageService.IsConfigured)
             {
                 try
                 {
                     using var stream = file.OpenReadStream();
-                    var storagePath = await _fileStorageService.UploadPdfAsync(stream, file.FileName, file.ContentType, folder);
+                    var storagePath = await _fileStorageService.UploadPdfAsync(stream, file.FileName, file.ContentType, pdfFolder);
                     var signedUrl = await _fileStorageService.CreateSignedUrlAsync(storagePath);
 
                     return Ok(ApiResponse<UploadResponse>.Ok("Dokumen berhasil diunggah.", new UploadResponse
@@ -148,14 +148,14 @@ public class UploadController : ControllerBase
         }
 
         // ── IMAGE UPLOAD PATH: CLOUDINARY OR LOCAL DISK FALLBACK ──
-        var folder = string.IsNullOrWhiteSpace(request.Folder) ? "images" : request.Folder.Trim();
+        var imageFolder = string.IsNullOrWhiteSpace(request.Folder) ? "images" : request.Folder.Trim();
 
         if (_cloudinaryService.IsConfigured)
         {
             try
             {
                 using var stream = file.OpenReadStream();
-                var cloudinaryUrl = await _cloudinaryService.UploadImageAsync(stream, file.FileName, file.ContentType, folder);
+                var cloudinaryUrl = await _cloudinaryService.UploadImageAsync(stream, file.FileName, file.ContentType, imageFolder);
 
                 if (!string.IsNullOrEmpty(cloudinaryUrl))
                 {
