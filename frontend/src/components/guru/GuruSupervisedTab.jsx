@@ -108,6 +108,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
       const notes = reviewNotes[pairId] || (isApproved ? "Disetujui oleh Guru Pembina" : "Ditolak oleh Guru Pembina");
       await candidatePairService.teacherReviewPair(pairId, {
         isApproved,
+        rejectionReason: notes,
         notes,
       });
       toast.success(isApproved ? "✓ Candidate pair berhasil disetujui Pembina!" : "Candidate pair ditolak.");

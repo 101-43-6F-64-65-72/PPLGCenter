@@ -237,14 +237,22 @@ public class ExtracurricularService : IExtracurricularService
         if (extracurricular is null)
             return null;
 
-        if (extracurricular.ManagedByUserId != managerId)
+        bool isAuthorized = extracurricular.ManagedByUserId == managerId || extracurricular.SupervisorTeacherId == managerId;
+        if (!isAuthorized)
+        {
+            isAuthorized = await _context.ExtracurricularAdvisors
+                .AsNoTracking()
+                .AnyAsync(a => a.ExtracurricularId == id && a.TeacherId == managerId);
+        }
+
+        if (!isAuthorized)
         {
             var manager = await _context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == managerId);
 
             if (manager?.Role != UserRole.Admin)
-                throw new UnauthorizedAccessException("Anda hanya dapat mengedit ekstrakurikuler yang Anda kelola.");
+                throw new UnauthorizedAccessException("Anda hanya dapat mengedit ekstrakurikuler yang Anda bina atau kelola.");
         }
 
         User? supervisorTeacher = null;

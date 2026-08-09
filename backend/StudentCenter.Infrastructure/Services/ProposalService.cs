@@ -64,7 +64,18 @@ public class ProposalService : IProposalService
                 };
             }
 
-            query = query.Where(p => allSupervisedNames.Any(name => p.Category.ToLower() == name || p.Category.ToLower().Contains(name)));
+            var candidateProposals = await _context.Proposals
+                .AsNoTracking()
+                .Select(p => new { p.Id, Category = p.Category ?? string.Empty, Title = p.Title ?? string.Empty })
+                .ToListAsync();
+
+            var matchingIds = candidateProposals
+                .Where(p => allSupervisedNames.Any(name =>
+                    p.Category.ToLower().Contains(name) || p.Title.ToLower().Contains(name)))
+                .Select(p => p.Id)
+                .ToList();
+
+            query = query.Where(p => matchingIds.Contains(p.Id));
         }
         else if (requestingUserRole == "Student" && requestingUserId.HasValue)
         {
@@ -318,18 +329,19 @@ public class ProposalService : IProposalService
 
         if (reviewer.Role == UserRole.Teacher)
         {
-            // Teacher MUST be supervisor/advisor for the specific extracurricular that the proposal belongs to.
-            // Category string-match is the current mechanism (Proposal has no ExtracurricularId FK yet).
-            // A teacher with ZERO supervision gets 403 for ALL proposals — no bypass.
-            var isSupervisorForThisProposal = await _context.Extracurriculars.AnyAsync(e =>
-                e.SupervisorTeacherId == reviewerId &&
-                e.IsActive &&
-                e.Name != null &&
-                (e.Name.ToLower() == proposal.Category!.ToLower() || proposal.Category!.ToLower().Contains(e.Name.ToLower())))
-                || await _context.ExtracurricularAdvisors.AnyAsync(a =>
-                a.TeacherId == reviewerId &&
-                a.Extracurricular.IsActive &&
-                (a.Extracurricular.Name.ToLower() == proposal.Category!.ToLower() || proposal.Category!.ToLower().Contains(a.Extracurricular.Name.ToLower())));
+            var propCat = (proposal.Category ?? string.Empty).ToLower();
+            var propTitle = (proposal.Title ?? string.Empty).ToLower();
+
+            var supervisedEkskulNames = await _context.Extracurriculars
+                .AsNoTracking()
+                .Where(e => (e.SupervisorTeacherId == reviewerId || _context.ExtracurricularAdvisors.Any(a => a.TeacherId == reviewerId && a.ExtracurricularId == e.Id)) && e.IsActive)
+                .Select(e => e.Name.ToLower())
+                .ToListAsync();
+
+            bool isSupervisorForThisProposal = supervisedEkskulNames.Any(name =>
+                (!string.IsNullOrEmpty(propCat) && (propCat == name || propCat.Contains(name))) ||
+                (!string.IsNullOrEmpty(propTitle) && propTitle.Contains(name))
+            );
 
             if (!isSupervisorForThisProposal)
                 throw new UnauthorizedAccessException("Anda hanya dapat me-review proposal untuk ekstrakurikuler/organisasi yang Anda bina.");

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import bookingService from "@/services/bookingService";
 import AnimatedContent from "@/components/common/AnimatedContent";
+import toast from "react-hot-toast";
 
 const FacilitySkeleton = () => (
   <div className="divide-y divide-gray-100 animate-pulse">
@@ -43,10 +44,10 @@ export default function GuruFacilityTab() {
     setErrorMessage("");
 
     try {
-      const res = await bookingService.getVerifiedBookings();
-      if (res && res.success && Array.isArray(res.data)) {
-        setBookings(res.data);
-        setApiState(res.data.length > 0 ? "success" : "empty");
+      const data = await bookingService.getBookings({ pageSize: 100 });
+      if (Array.isArray(data)) {
+        setBookings(data);
+        setApiState(data.length > 0 ? "success" : "empty");
       } else {
         setBookings([]);
         setApiState("empty");
@@ -69,23 +70,20 @@ export default function GuruFacilityTab() {
     );
   });
 
-  const handleUpdateStatus = async (bookingId, newStatus) => {
+  const handleUpdateStatus = async (bookingId, statusNum) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await bookingService.updateBookingStatus(bookingId, newStatus, note);
+      await bookingService.updateBookingStatus(bookingId, statusNum, note);
+      toast.success(statusNum === 1 ? "✓ Peminjaman fasilitas berhasil disetujui!" : "Peminjaman fasilitas ditolak.");
+      await fetchBookings();
     } catch (err) {
-      console.warn("Async booking update warning:", err);
+      toast.error(err?.response?.data?.message || "Gagal memperbarui status peminjaman.");
     } finally {
       setIsSubmitting(false);
+      setSelectedBooking(null);
+      setNote("");
     }
-    setBookings((prev) =>
-      prev.map((b) =>
-        b.id === bookingId ? { ...b, status: newStatus } : b
-      )
-    );
-    setSelectedBooking(null);
-    setNote("");
   };
 
   useEffect(() => {
@@ -246,13 +244,13 @@ export default function GuruFacilityTab() {
 
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
-                onClick={() => handleUpdateStatus(selectedBooking.id, "Ditolak Guru Pembina")}
+                onClick={() => handleUpdateStatus(selectedBooking.id, 2)}
                 className="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
               >
                 Tolak Peminjaman
               </button>
               <button
-                onClick={() => handleUpdateStatus(selectedBooking.id, "Disetujui Guru Pembina")}
+                onClick={() => handleUpdateStatus(selectedBooking.id, 1)}
                 className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-4 h-4" />

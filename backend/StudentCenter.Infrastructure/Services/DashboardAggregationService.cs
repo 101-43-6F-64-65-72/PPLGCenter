@@ -201,11 +201,13 @@ public class DashboardAggregationService : IDashboardAggregationService
         var allSupervisedNames = allSupervisedEkskuls.Select(e => e.Name.ToLower()).ToList();
 
         // Pending proposals scoped to supervised ekskul names
+        var pendingProposalsRawGlobal = await _context.Proposals.AsNoTracking()
+            .Where(p => p.Status == ProposalStatus.Pending && p.Category != null)
+            .Select(p => new { p.Id, Category = p.Category!.ToLower() })
+            .ToListAsync();
+
         var pendingProposalsCount = allSupervisedNames.Any()
-            ? await _context.Proposals.CountAsync(p =>
-                p.Status == ProposalStatus.Pending &&
-                p.Category != null &&
-                allSupervisedNames.Any(name => p.Category.ToLower() == name || p.Category.ToLower().Contains(name)))
+            ? pendingProposalsRawGlobal.Count(p => allSupervisedNames.Any(name => p.Category == name || p.Category.Contains(name)))
             : 0;
 
         // Member count scoped to supervised (via SupervisorTeacherId only — no ManagedByUserId confusion)

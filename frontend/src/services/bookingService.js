@@ -61,6 +61,7 @@ export const bookingService = {
       }
       const response = await apiClient.put(endpoint, {
         status: statusNum,
+        rejectionReason: note,
         note,
       });
       return response;
