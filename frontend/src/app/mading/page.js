@@ -92,6 +92,14 @@ export default function MadingPage() {
     announcements = data;
   }
 
+  if (activeCategory === "Populer") {
+    announcements = [...announcements].sort((a, b) => {
+      const scoreA = (a.reactionCount || a.ReactionCount || 0) + (a.commentCount || a.CommentCount || 0);
+      const scoreB = (b.reactionCount || b.ReactionCount || 0) + (b.commentCount || b.CommentCount || 0);
+      return scoreB - scoreA;
+    });
+  }
+
   const meta = {
     totalPages: data?.data?.totalPages || data?.meta?.totalPages || 1,
     totalItems: data?.data?.totalCount || data?.meta?.totalItems || announcements.length,
@@ -100,12 +108,13 @@ export default function MadingPage() {
 
   const categories = [
     "Semua",
-    "Olahraga",
-    "Sains & Teknologi",
-    "Seni & Budaya",
-    "Organisasi",
-    "Artikel",
-    "Hiburan",
+    "Populer",
+    "Akademik",
+    "OSIS",
+    "Ekstrakurikuler",
+    "Libur Nasional",
+    "Ujian",
+    "General",
   ];
 
   return (

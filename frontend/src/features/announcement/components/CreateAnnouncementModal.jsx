@@ -180,12 +180,12 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:border-[#2c1ee8] focus:ring-2 focus:ring-blue-100 outline-none bg-white"
               >
-                <option value="Olahraga">Olahraga</option>
-                <option value="Sains & Teknologi">Sains & Teknologi</option>
-                <option value="Seni & Budaya">Seni & Budaya</option>
-                <option value="Organisasi">Organisasi</option>
-                <option value="Artikel">Artikel</option>
-                <option value="Hiburan">Hiburan</option>
+                <option value="Akademik">Akademik</option>
+                <option value="OSIS">OSIS</option>
+                <option value="Ekstrakurikuler">Ekstrakurikuler</option>
+                <option value="Libur Nasional">Libur Nasional</option>
+                <option value="Ujian">Ujian</option>
+                <option value="General">General / Umum</option>
               </select>
             </div>
 
