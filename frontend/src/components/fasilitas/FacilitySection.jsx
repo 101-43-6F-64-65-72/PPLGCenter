@@ -24,11 +24,18 @@ export default function FacilitySection({
       {/* Section Header */}
       <div className="flex items-center justify-between mb-6 px-1">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 uppercase">
-            {title}
-          </h2>
-          <p className="mt-1 text-xs sm:text-sm text-gray-500 font-medium">
-            Pilih tempat atau ruangan sekolah yang ingin Anda pinjam
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950 uppercase">
+              {title}
+            </h2>
+            {items.length > 0 && (
+              <span className="bg-blue-50 text-[#2c1ee8] border border-blue-200/80 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                {items.length} Tempat
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-xs sm:text-sm text-slate-600 font-normal">
+            Pilih tempat atau ruangan sekolah yang ingin Anda cek ketersediaan dan ajukan peminjaman
           </p>
         </div>
       </div>

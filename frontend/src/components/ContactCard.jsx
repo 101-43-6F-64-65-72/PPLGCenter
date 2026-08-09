@@ -1,7 +1,10 @@
-import React from 'react';
-import Image from 'next/image';
+import React from "react";
+import Image from "next/image";
 
-export default function ContactCard({ phone = "+62 823-2237-7070", avatarSrc = "/images/contact-avatar.png" }) {
+export default function ContactCard({
+  phone = "+62 823-2237-7070",
+  avatarSrc = "/images/contact-avatar.png",
+}) {
   return (
     <div className="inline-flex items-center gap-3 lg:gap-4 bg-white border-2 border-[#2c1ee8] rounded-full pl-6 pr-1.5 py-1.5 shadow-sm select-none">
       <span className="text-[#2c1ee8] font-bold text-base sm:text-lg lg:text-xl tracking-tight">
