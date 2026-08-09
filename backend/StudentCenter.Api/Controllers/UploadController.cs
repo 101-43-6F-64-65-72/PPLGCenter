@@ -136,8 +136,13 @@ public class UploadController : ControllerBase
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[Supabase PDF Upload Error] {ex.Message}. Falling back to local storage.");
+                    Console.WriteLine($"[Supabase PDF Upload Error] {ex.Message}");
+                    return BadRequest(ApiResponse<object>.Fail($"Gagal mengunggah dokumen PDF: {ex.Message}"));
                 }
+            }
+            else
+            {
+                return BadRequest(ApiResponse<object>.Fail("Layanan penyimpanan PDF belum dikonfigurasi pada server."));
             }
         }
 

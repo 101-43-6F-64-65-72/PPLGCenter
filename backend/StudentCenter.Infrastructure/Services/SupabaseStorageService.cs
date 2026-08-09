@@ -155,6 +155,16 @@ public class SupabaseStorageService : IFileStorageService
                 {
                     return signedPath;
                 }
+
+                if (signedPath.StartsWith("/object/", StringComparison.OrdinalIgnoreCase))
+                {
+                    signedPath = "/storage/v1" + signedPath;
+                }
+                else if (!signedPath.StartsWith("/storage/v1", StringComparison.OrdinalIgnoreCase))
+                {
+                    signedPath = "/storage/v1/" + signedPath.TrimStart('/');
+                }
+
                 return $"{_supabaseUrl}{signedPath}";
             }
         }
