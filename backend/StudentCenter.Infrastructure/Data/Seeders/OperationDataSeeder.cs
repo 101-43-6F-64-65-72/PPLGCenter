@@ -271,6 +271,8 @@ public static class OperationDataSeeder
                     });
                 }
             }
+        }
+
         // ── 6. Seed Calendar Events ──────────────────────────────────────────
         if (!await context.CalendarEvents.AnyAsync())
         {

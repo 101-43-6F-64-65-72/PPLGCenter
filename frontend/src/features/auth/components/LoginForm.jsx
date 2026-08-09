@@ -21,7 +21,6 @@ export const LoginForm = () => {
   const [isForgotOpen, setIsForgotOpen] = useState(false);
   
   // Fields state
-  const [fullName, setFullName] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   
@@ -36,10 +35,6 @@ export const LoginForm = () => {
     setSuccessMessage("");
 
     // Validation
-    if (loginType !== "Admin" && !fullName.trim()) {
-      setErrorMessage("Nama lengkap wajib diisi");
-      return;
-    }
     if (!identifier.trim()) {
       const idLabel = loginType === "Student" ? "NIS atau NISN" : loginType === "Teacher" ? "NIP atau Email" : "Email atau Username Admin";
       setErrorMessage(`${idLabel} wajib diisi`);
@@ -54,7 +49,6 @@ export const LoginForm = () => {
     try {
       const payload = {
         loginType,
-        fullName: loginType === "Admin" ? "Admin" : fullName,
         identifier,
         password,
       };
@@ -80,7 +74,6 @@ export const LoginForm = () => {
   // Reset inputs when switching loginType
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    setFullName("");
     setIdentifier("");
     setPassword("");
     setErrorMessage("");
@@ -115,23 +108,6 @@ export const LoginForm = () => {
         {successMessage && (
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold flex items-center gap-2">
             <span>{successMessage}</span>
-          </div>
-        )}
-
-        {/* Full Name Input (Not for Admin) */}
-        {loginType !== "Admin" && (
-          <div className="space-y-1.5">
-            <label className="block text-sm font-bold text-white/80">Nama Lengkap</label>
-            <Input
-              name="fullName"
-              type="text"
-              placeholder="Masukkan nama lengkap"
-              isRequired
-              variant="dark"
-              leftIcon={<User className="w-5 h-5 text-[#2c1ee8]" />}
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
           </div>
         )}
 

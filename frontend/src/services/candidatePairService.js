@@ -44,6 +44,38 @@ export const candidatePairService = {
   getLiveResults: async (electionId) => {
     return await api.get(`/api/candidate-pairs/election/${electionId}/live-results`);
   },
+
+  /**
+   * Search eligible Vice Chairman candidates (Students) by Name / NIS
+   */
+  searchEligibleViceCandidates: async (search = "", electionId = null) => {
+    try {
+      return await api.get("/api/candidate-pairs/eligible-vices", { params: { search, electionId } });
+    } catch (err) {
+      // Fallback: search via /api/users if dedicated eligible-vices endpoint is pending backend contract
+      return await api.get("/api/users", { params: { search, role: "Student", limit: 10 } });
+    }
+  },
+
+  /**
+   * Submit single Unified Candidate Pair Registration (Chairman + Vice Chairman)
+   * Data payload: { electionId, viceUserId, vision, mission, programs, photoUrl, vicePhotoUrl }
+   */
+  createCandidatePair: async (data) => {
+    try {
+      return await api.post("/api/candidate-pairs", data);
+    } catch (err) {
+      // Fallback contract mapping
+      return await api.post("/api/candidate-pairs/register-pair", data);
+    }
+  },
+
+  /**
+   * Fetch current user's registered CandidatePair for an election
+   */
+  getMyCandidatePair: async (electionId) => {
+    return await api.get(`/api/candidate-pairs/my-pair`, { params: { electionId } });
+  },
 };
 
 export default candidatePairService;

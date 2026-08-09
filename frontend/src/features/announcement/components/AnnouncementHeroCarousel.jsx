@@ -196,6 +196,20 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
                 </span>
                 <span className="w-1 h-1 rounded-full bg-blue-200" />
                 <span className="text-gray-200">Oleh: {slide.author || "Redaksi Sekolah"}</span>
+
+                {(slide.reactionCount || slide.ReactionCount || slide.reactionsCount || 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-white/10 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
+                    <span>👍</span>
+                    <span>{slide.reactionCount ?? slide.ReactionCount ?? slide.reactionsCount}</span>
+                  </span>
+                )}
+
+                {(slide.commentCount || slide.CommentCount || slide.commentsCount || 0) > 0 && (
+                  <span className="inline-flex items-center gap-1 bg-white/10 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
+                    <span>💬</span>
+                    <span>{slide.commentCount ?? slide.CommentCount ?? slide.commentsCount}</span>
+                  </span>
+                )}
               </div>
 
               <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-medium line-clamp-3">

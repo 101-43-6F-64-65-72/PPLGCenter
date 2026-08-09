@@ -36,9 +36,24 @@ const STATUS_CONFIG = {
   },
 };
 
-export default function CandidatePairCard({ pair, rank, isWinner, showVoteCount, onVote, hasVoted, onApplyVice, onChairmanReview, canApplyVice, canChairmanReview }) {
+export default function CandidatePairCard({
+  pair,
+  rank,
+  isWinner,
+  showVoteCount,
+  onVote,
+  onViewDetail,
+  hasVoted,
+  isElectionOpen,
+  electionTimeState,
+  onApplyVice,
+  onChairmanReview,
+  canApplyVice,
+  canChairmanReview,
+}) {
   const statusConfig = STATUS_CONFIG[pair.statusText] || STATUS_CONFIG.WaitingVice;
-  const isApproved = pair.statusText === "Approved";
+  const isApproved = pair.statusText === "Approved" || pair.status === 5;
+  const canVote = isApproved && !hasVoted && onVote && isElectionOpen && electionTimeState === "ONGOING";
 
   return (
     <div
@@ -179,30 +194,31 @@ export default function CandidatePairCard({ pair, rank, isWinner, showVoteCount,
         )}
 
         {/* Action buttons */}
-        <div className="mt-5 flex gap-2">
-          {isApproved && !hasVoted && onVote && (
+        <div className="mt-5 flex flex-col sm:flex-row gap-2">
+          {onViewDetail && (
+            <button
+              onClick={() => onViewDetail(pair)}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs sm:text-sm py-2.5 px-3 rounded-2xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-gray-200"
+            >
+              <span>Detail Visi Misi</span>
+            </button>
+          )}
+
+          {canVote && (
             <button
               onClick={() => onVote(pair.id)}
-              className="flex-1 bg-[#2c1ee8] hover:bg-blue-700 text-white font-bold text-sm py-2.5 px-4 rounded-2xl transition-all duration-200 shadow-md shadow-blue-200 hover:shadow-lg flex items-center justify-center gap-2"
+              className="flex-1 bg-[#2c1ee8] hover:bg-blue-700 text-white font-bold text-xs sm:text-sm py-2.5 px-3 rounded-2xl transition-all shadow-md shadow-blue-200 flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Medal className="w-4 h-4" />
-              Pilih Pasangan Ini
+              <span>Pilih Pasangan Ini</span>
             </button>
           )}
+
           {isApproved && hasVoted && (
-            <div className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-bold">
+            <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs sm:text-sm font-bold">
               <CheckCircle2 className="w-4 h-4" />
-              Anda sudah memilih
+              <span>Anda Sudah Memilih</span>
             </div>
-          )}
-          {canApplyVice && !pair.viceUserId && pair.statusText === "WaitingVice" && (
-            <button
-              onClick={() => onApplyVice?.(pair.id)}
-              className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm py-2.5 px-4 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              <Users className="w-4 h-4" />
-              Daftar Sebagai Wakil
-            </button>
           )}
         </div>
       </div>

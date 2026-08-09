@@ -55,7 +55,9 @@ public class AnnouncementService : IAnnouncementService
                 CreatedAt = a.CreatedAt,
                 UpdatedAt = a.UpdatedAt,
                 CreatedByUserId = a.CreatedByUserId,
-                CreatedByUserName = a.CreatedByUser.FullName
+                CreatedByUserName = a.CreatedByUser.FullName,
+                ReactionCount = a.Reactions.Count,
+                CommentCount = a.Comments.Count
             })
             .ToListAsync();
 
@@ -150,7 +152,9 @@ public class AnnouncementService : IAnnouncementService
             CreatedAt = announcement.CreatedAt,
             UpdatedAt = announcement.UpdatedAt,
             CreatedByUserId = announcement.CreatedByUserId,
-            CreatedByUserName = announcement.CreatedByUser.FullName
+            CreatedByUserName = announcement.CreatedByUser.FullName,
+            ReactionCount = await _context.Set<AnnouncementReaction>().CountAsync(r => r.AnnouncementId == announcement.Id),
+            CommentCount = await _context.Set<AnnouncementComment>().CountAsync(c => c.AnnouncementId == announcement.Id)
         };
     }
 

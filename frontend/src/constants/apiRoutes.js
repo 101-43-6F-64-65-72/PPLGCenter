@@ -45,6 +45,13 @@ export const API_ROUTES = {
   ANNOUNCEMENTS: {
     LIST: "/api/announcements",
     DETAIL: (id) => `/api/announcements/${id}`,
+    REACTIONS: (id) => `/api/announcements/${id}/reactions`,
+    COMMENTS: (id) => `/api/announcements/${id}/comments`,
+  },
+  ANNOUNCEMENT_COMMENTS: {
+    BY_ANNOUNCEMENT: (id) => `/api/announcements/${id}/comments`,
+    DELETE: (announcementId, commentId) => `/api/announcements/${announcementId}/comments/${commentId}`,
+    TOGGLE_LOCK: (announcementId) => `/api/announcements/${announcementId}/comments/toggle-lock`,
   },
   BOOKINGS: {
     LIST: "/api/bookings",
@@ -89,6 +96,7 @@ export const API_ROUTES = {
   USERS: {
     LIST: "/api/users",
     DETAIL: (id) => `/api/users/${id}`,
+    TEACHERS: "/api/users/teachers",
     IMPORT_STUDENTS: "/api/users/import-students",
     IMPORT_TEACHERS: "/api/users/import-teachers",
     EXPORT_STUDENTS: "/api/users/export-students",

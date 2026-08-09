@@ -108,7 +108,7 @@ public class AnnouncementController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _commentService.AddCommentAsync(id, request, userId.Value);
+        var result = await _commentService.AddCommentAsync(id, request, userId.Value, request.ParentCommentId);
         return Ok(ApiResponse<CommentResponse>.Ok("Comment added successfully", result));
     }
 
@@ -167,5 +167,14 @@ public class AnnouncementController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Reaction not found"));
 
         return Ok(ApiResponse<object>.Ok("Reaction removed successfully"));
+    }
+
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/reactions")]
+    public async Task<IActionResult> GetReactions(Guid id)
+    {
+        var userId = _currentUserService.UserId;
+        var result = await _reactionService.GetReactionSummaryAsync(id, userId);
+        return Ok(ApiResponse<StudentCenter.Application.DTOs.AnnouncementReactionSummaryResponse>.Ok("Reactions retrieved successfully", result));
     }
 }

@@ -8,7 +8,7 @@ import candidatePairService from "@/services/candidatePairService";
 import useAuth from "@/hooks/useAuth";
 import {
   PenSquare, Users, CheckCircle2, Loader2, Crown,
-  ChevronDown, ChevronUp, AlertCircle, Send, Vote
+  AlertCircle, Send, Search, Eye, X, UserCheck, ShieldCheck, FileText
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -26,23 +26,28 @@ function RegisterContent() {
   const [selectedElectionId, setSelectedElectionId] = useState("");
   const [pairs, setPairs] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeForm, setActiveForm] = useState(null); // 'chairman' | 'vice:{pairId}'
   const [submitting, setSubmitting] = useState(false);
+  const [eligibility, setEligibility] = useState(null);
 
-  const [chairmanForm, setChairmanForm] = useState({
-    candidateNumber: 1,
+  // Vice candidate search states
+  const [viceSearchTerm, setViceSearchTerm] = useState("");
+  const [viceSearchResults, setViceSearchResults] = useState([]);
+  const [searchingVice, setSearchingVice] = useState(false);
+  const [selectedVice, setSelectedVice] = useState(null);
+
+  // Unified Candidate Pair Form State
+  const [pairForm, setPairForm] = useState({
     vision: "",
     mission: "",
     programs: "",
     photoUrl: "",
-  });
-
-  const [viceForm, setViceForm] = useState({
-    viceVision: "",
-    viceMission: "",
     vicePhotoUrl: "",
   });
 
+  // Preview Modal state
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Fetch elections on mount
   useEffect(() => {
     const fetchElections = async () => {
       setLoading(true);
@@ -56,13 +61,17 @@ function RegisterContent() {
           : Array.isArray(rawData?.data)
           ? rawData.data
           : [];
-        setElections(list);
-        if (list.length > 0 && list[0]?.id) {
-          setSelectedElectionId(list[0].id);
-          loadPairs(list[0].id);
+        
+        // Exclude deleted elections
+        const validList = list.filter((e) => !e.deletedAt && !e.DeletedAt);
+        setElections(validList);
+
+        if (validList.length > 0 && validList[0]?.id) {
+          setSelectedElectionId(validList[0].id);
+          loadPairs(validList[0].id);
         }
       } catch (err) {
-        console.error("Gagal memuat daftar pemilu:", err);
+        console.error("Gagal memuat sesi pemilos:", err);
       } finally {
         setLoading(false);
       }
@@ -70,28 +79,31 @@ function RegisterContent() {
     fetchElections();
   }, []);
 
-  const [eligibility, setEligibility] = useState(null);
-  const [checkingEligibility, setCheckingEligibility] = useState(false);
-
   const loadPairs = async (electionId) => {
     setLoading(true);
-    setCheckingEligibility(true);
     try {
       const [pairsRes, eligRes] = await Promise.allSettled([
         candidatePairService.getPairs(electionId),
         candidatePairService.getEligibility(electionId),
       ]);
       if (pairsRes.status === "fulfilled") {
-        setPairs(pairsRes.value?.data?.data ?? []);
+        const rawPairs = pairsRes.value?.data ?? pairsRes.value;
+        const list = Array.isArray(rawPairs)
+          ? rawPairs
+          : Array.isArray(rawPairs?.items)
+          ? rawPairs.items
+          : Array.isArray(rawPairs?.data)
+          ? rawPairs.data
+          : [];
+        setPairs(list);
       }
       if (eligRes.status === "fulfilled") {
         setEligibility(eligRes.value?.data ?? eligRes.value?.data?.data ?? null);
       }
     } catch {
-      toast.error("Gagal memuat data pemilihan");
+      toast.error("Gagal memuat data pendaftaran pemilos.");
     } finally {
       setLoading(false);
-      setCheckingEligibility(false);
     }
   };
 
@@ -99,94 +111,127 @@ function RegisterContent() {
     const id = e.target.value;
     setSelectedElectionId(id);
     setEligibility(null);
+    setSelectedVice(null);
+    setViceSearchTerm("");
+    setViceSearchResults([]);
     if (id) loadPairs(id);
     else setPairs([]);
   };
 
-  const handleRegisterChairman = async (e) => {
-    e.preventDefault();
-    if (!selectedElectionId) {
-      toast.error("Pilih pemilihan terlebih dahulu");
+  // Debounced search for eligible Vice candidates
+  useEffect(() => {
+    if (!viceSearchTerm.trim() || viceSearchTerm.length < 2) {
+      setViceSearchResults([]);
       return;
     }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setSearchingVice(true);
+      try {
+        const res = await candidatePairService.searchEligibleViceCandidates(viceSearchTerm, selectedElectionId);
+        const rawData = res?.data ?? res;
+        const list = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData?.items)
+          ? rawData.items
+          : Array.isArray(rawData?.data)
+          ? rawData.data
+          : [];
+
+        // Filter out Chairman (current logged in user) & invalid roles
+        const filteredList = list.filter((s) => String(s.id) !== String(user?.id));
+        setViceSearchResults(filteredList);
+      } catch (err) {
+        console.error("Gagal mencari calon wakil:", err);
+      } finally {
+        setSearchingVice(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [viceSearchTerm, selectedElectionId, user?.id]);
+
+  const handleSelectVice = (student) => {
+    setSelectedVice(student);
+    setViceSearchTerm("");
+    setViceSearchResults([]);
+    if (student?.photoUrl || student?.avatar) {
+      setPairForm((prev) => ({ ...prev, vicePhotoUrl: student.photoUrl || student.avatar }));
+    }
+  };
+
+  // Check if current user is already registered in a pair
+  const myPair = pairs.find(
+    (p) => String(p.chairmanUserId) === String(user?.id) || String(p.viceUserId) === String(user?.id)
+  );
+
+  const handleSubmitPair = async () => {
+    if (!selectedElectionId) {
+      toast.error("Pilih sesi pemilihan terlebih dahulu.");
+      return;
+    }
+    if (!selectedVice) {
+      toast.error("Pilih Calon Wakil terlebih dahulu.");
+      return;
+    }
+    if (String(selectedVice.id) === String(user?.id)) {
+      toast.error("Anda tidak dapat memilih diri sendiri sebagai Calon Wakil.");
+      return;
+    }
+    if (!pairForm.vision.trim() || !pairForm.mission.trim() || !pairForm.programs.trim()) {
+      toast.error("Lengkapi Visi, Misi, dan Program Kerja terlebih dahulu.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await candidatePairService.registerChairman({
+      const payload = {
         electionId: selectedElectionId,
-        candidateNumber: parseInt(chairmanForm.candidateNumber),
-        vision: chairmanForm.vision,
-        mission: chairmanForm.mission,
-        programs: chairmanForm.programs,
-        photoUrl: user?.photoUrl || user?.avatar || "",
-      });
-      toast.success("✓ Pendaftaran Calon Ketua berhasil diajukan!");
-      setActiveForm(null);
+        viceUserId: selectedVice.id,
+        vision: pairForm.vision,
+        mission: pairForm.mission,
+        programs: pairForm.programs,
+        photoUrl: pairForm.photoUrl || user?.photoUrl || user?.avatar || "",
+        vicePhotoUrl: pairForm.vicePhotoUrl || selectedVice?.photoUrl || selectedVice?.avatar || "",
+      };
+
+      await candidatePairService.createCandidatePair(payload);
+      toast.success("✓ Pendaftaran Pasangan Calon berhasil diajukan!");
+      setShowPreview(false);
       loadPairs(selectedElectionId);
     } catch (err) {
-      toast.error(err?.response?.data?.message ?? "Gagal mendaftar");
+      const msg = err?.message || err?.response?.data?.message || "Gagal mengajukan pendaftaran pasangan.";
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
   };
-
-  const handleApplyVice = async (e, pairId) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await candidatePairService.applyVice(pairId, {
-        viceVision: viceForm.viceVision,
-        viceMission: viceForm.viceMission,
-        vicePhotoUrl: user?.photoUrl || user?.avatar || "",
-      });
-      toast.success("✓ Permohonan Calon Wakil berhasil diajukan!");
-      setActiveForm(null);
-      setViceForm({ viceVision: "", viceMission: "", vicePhotoUrl: "" });
-      loadPairs(selectedElectionId);
-    } catch (err) {
-      toast.error(err?.response?.data?.message ?? "Gagal mendaftar");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleChairmanReview = async (pairId, accept) => {
-    try {
-      await candidatePairService.chairmanReviewVice(pairId, accept);
-      toast.success(accept ? "Calon Wakil disetujui!" : "Calon Wakil ditolak.");
-      loadPairs(selectedElectionId);
-    } catch (err) {
-      toast.error(err?.response?.data?.message ?? "Gagal memproses");
-    }
-  };
-
-  const waitingVicePairs = pairs.filter(
-    (p) => p.statusText === "WaitingVice" && p.chairmanUserId !== user?.id
-  );
-
-  const myPairs = pairs.filter(
-    (p) => p.chairmanUserId === user?.id || p.viceUserId === user?.id
-  );
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
       <Navbar />
-      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-20">
 
-        {/* Header */}
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-20">
+        
+        {/* Header Banner */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#2c1ee8]/10 text-[#2c1ee8] text-xs font-extrabold tracking-wide mb-3 border border-[#2c1ee8]/20">
             <PenSquare className="w-4 h-4" />
-            <span>PENDAFTARAN PASANGAN CALON</span>
+            <span>PENDAFTARAN KANDIDAT OSIS</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">Daftar Calon PEMILOS</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
+            Daftar Pasangan Pemilos
+          </h1>
           <p className="text-sm text-gray-500 mt-1 max-w-xl">
-            Daftarkan diri sebagai Calon Ketua OSIS, atau lamar sebagai Calon Wakil pada pasangan yang sedang mencari mitra.
+            Daftarkan diri Anda sebagai Calon Ketua, pilih Calon Wakil Anda, dan ajukan seluruh data sebagai SATU Pasangan Kandidat.
           </p>
         </div>
 
-        {/* Election Selector Dropdown */}
+        {/* Election Session Selector Dropdown */}
         <div className="bg-white border border-gray-100 rounded-3xl p-5 mb-6 shadow-sm">
-          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">Pilih Sesi Pemilihan (Pemilos)</label>
+          <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-2">
+            Sesi Pemilihan Pemilos
+          </label>
           <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={selectedElectionId}
@@ -210,12 +255,12 @@ function RegisterContent() {
               disabled={!selectedElectionId || loading}
               className="px-6 py-2.5 bg-[#2c1ee8] text-white rounded-2xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Muat Sesi"}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Refresh Sesi"}
             </button>
           </div>
         </div>
 
-        {/* Eligibility Status Banner */}
+        {/* Eligibility Status Banner (if checked by API) */}
         {selectedElectionId && eligibility && (
           <div className={`mb-6 p-5 rounded-3xl border ${
             eligibility.eligible
@@ -255,177 +300,298 @@ function RegisterContent() {
           </div>
         )}
 
-        {/* My Registered Candidate Card (If Already Registered) */}
-        {myPairs.length > 0 ? (
-          <div className="mb-8">
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Status Pendaftaran Kandidat Anda</span>
-            </h2>
-            <div className="space-y-4">
-              {myPairs.map((pair) => (
-                <MyPairDetailedCard
-                  key={pair.id}
-                  pair={pair}
-                  user={user}
-                  isChairman={pair.chairmanUserId === user?.id}
-                  onChairmanReview={pair.statusText === "WaitingChairman" && pair.chairmanUserId === user?.id ? handleChairmanReview : undefined}
-                />
-              ))}
+        {/* CONDITION 1: User Already Registered a CandidatePair */}
+        {myPair ? (
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-6">
+            <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 flex items-center gap-3">
+              <ShieldCheck className="w-6 h-6 text-[#2c1ee8] flex-shrink-0" />
+              <div>
+                <h3 className="font-extrabold text-blue-900 text-sm sm:text-base">
+                  Anda Sudah Mendaftarkan Pasangan Kandidat
+                </h3>
+                <p className="text-xs text-blue-700">
+                  Data pendaftaran pasangan Anda telah tercatat pada sesi ini. Status pendaftaran dikendalikan oleh panitia/admin.
+                </p>
+              </div>
             </div>
+
+            <MyPairStatusCard pair={myPair} currentUserId={user?.id} />
           </div>
         ) : (
-          /* Register as Chairman Form (Only visible if not registered yet) */
-          <div className="bg-white border border-gray-100 rounded-3xl shadow-sm mb-6 overflow-hidden">
-            <button
-              className="w-full flex items-center justify-between p-5 text-left cursor-pointer hover:bg-gray-50/80 transition"
-              onClick={() => setActiveForm(activeForm === "chairman" ? null : "chairman")}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center shadow-sm">
-                  <Crown className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-extrabold text-gray-900 text-sm sm:text-base">Daftar Sebagai Calon Ketua OSIS</p>
-                  <p className="text-xs text-gray-500">Buat pasangan baru dan buka pendaftaran untuk Calon Wakil</p>
-                </div>
-              </div>
-              {activeForm === "chairman" ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-            </button>
+          /* CONDITION 2: Single Unified Candidate Pair Form */
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8">
+            
+            {/* Section 1: Chairman & Vice Chairman Selection */}
+            <div>
+              <h2 className="text-sm font-black text-gray-800 uppercase tracking-wide mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <Users className="w-4 h-4 text-[#2c1ee8]" />
+                <span>1. Pasangan Calon (Ketua & Wakil)</span>
+              </h2>
 
-            {activeForm === "chairman" && (
-              <form onSubmit={handleRegisterChairman} className="px-5 pb-6 border-t border-gray-100 pt-5 space-y-4">
-                {/* Auto-filled user profile banner */}
-                <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 text-[#2c1ee8] flex items-center justify-center font-black text-sm shrink-0 overflow-hidden">
-                    {user?.photoUrl || user?.avatar ? (
-                      <img src={user.photoUrl || user.avatar} alt={user.fullName} className="w-full h-full object-cover" />
-                    ) : (
-                      user?.fullName?.charAt(0)?.toUpperCase() || "S"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                
+                {/* Chairman Card (Auto logged-in user) */}
+                <div className="p-5 rounded-2xl bg-blue-50/70 border border-blue-100 relative space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-blue-600 bg-white px-2.5 py-0.5 rounded-full border border-blue-200">
+                      👑 Calon Ketua (Otomatis)
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-bold">Akun Anda</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center text-white font-black text-xl overflow-hidden shadow-md shrink-0">
+                      {pairForm.photoUrl || user?.photoUrl || user?.avatar ? (
+                        <img src={pairForm.photoUrl || user?.photoUrl || user?.avatar} alt={user?.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        user?.fullName?.[0] ?? "K"
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-extrabold text-gray-900 text-sm truncate">
+                        {user?.fullName || user?.name || "Siswa"}
+                      </h3>
+                      <p className="text-xs text-gray-500 font-medium">
+                        {user?.className || user?.class || "Siswa SMKN 2"} {user?.nis ? `· NIS ${user.nis}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vice Chairman Search & Selection Card */}
+                <div className="p-5 rounded-2xl bg-gray-50 border border-gray-200 relative space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-gray-600 bg-white px-2.5 py-0.5 rounded-full border border-gray-200">
+                      🤝 Calon Wakil
+                    </span>
+                    {selectedVice && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVice(null)}
+                        className="text-xs font-bold text-rose-600 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" /> Ubah Wakil
+                      </button>
                     )}
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-900">{user?.fullName || "Siswa"}</p>
-                    <p className="text-[11px] text-gray-500 font-mono">
-                      {user?.nis ? `NIS: ${user.nis}` : user?.email} · {user?.className || "Siswa SMKN 2 Surakarta"}
-                    </p>
-                  </div>
-                </div>
 
-                <div>
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">Nomor Urut Pasangan</label>
-                  <input
-                    type="number" min="1" max="99" required
-                    value={chairmanForm.candidateNumber}
-                    onChange={(e) => setChairmanForm({ ...chairmanForm, candidateNumber: e.target.value })}
-                    className="w-full sm:w-48 border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">Visi Utama</label>
-                  <textarea required rows={2}
-                    value={chairmanForm.vision}
-                    onChange={(e) => setChairmanForm({ ...chairmanForm, vision: e.target.value })}
-                    placeholder="Tuliskan visi utama kepemimpinan Anda..."
-                    className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">Misi</label>
-                  <textarea required rows={3}
-                    value={chairmanForm.mission}
-                    onChange={(e) => setChairmanForm({ ...chairmanForm, mission: e.target.value })}
-                    placeholder="Tuliskan poin-poin misi Anda..."
-                    className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">Program Kerja Unggulan</label>
-                  <textarea required rows={3}
-                    value={chairmanForm.programs}
-                    onChange={(e) => setChairmanForm({ ...chairmanForm, programs: e.target.value })}
-                    placeholder="Rincian program kerja unggulan..."
-                    className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none"
-                  />
-                </div>
-
-                <button type="submit" disabled={submitting || !selectedElectionId || (eligibility && !eligibility.eligible)}
-                  className="flex items-center gap-2 px-8 py-3 bg-[#2c1ee8] text-white rounded-2xl text-xs sm:text-sm font-extrabold hover:bg-blue-700 disabled:opacity-50 transition-all cursor-pointer shadow-md shadow-blue-500/20">
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  {eligibility && !eligibility.eligible ? "Belum Memenuhi Syarat (Lihat Alasan)" : "Ajukan Pendaftaran"}
-                </button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* Open pairs looking for Vice */}
-        {!myPairs.length && waitingVicePairs.length > 0 && (
-          <div>
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Pasangan yang Mencari Calon Wakil ({waitingVicePairs.length})
-            </h2>
-            <div className="space-y-4">
-              {waitingVicePairs.map((pair) => (
-                <div key={pair.id} className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden">
-                  <div className="p-5">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center text-white font-black text-lg">
-                        {pair.chairmanName?.[0] ?? "K"}
+                  {selectedVice ? (
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xl overflow-hidden shadow-md shrink-0">
+                        {pairForm.vicePhotoUrl || selectedVice?.photoUrl || selectedVice?.avatar ? (
+                          <img src={pairForm.vicePhotoUrl || selectedVice?.photoUrl || selectedVice?.avatar} alt={selectedVice?.fullName || selectedVice?.name} className="w-full h-full object-cover" />
+                        ) : (
+                          (selectedVice?.fullName || selectedVice?.name)?.[0] ?? "W"
+                        )}
                       </div>
-                      <div>
-                        <p className="font-black text-gray-900">{pair.chairmanName}</p>
-                        <p className="text-xs text-gray-400">{pair.chairmanClass} · Pasangan #{pair.candidateNumber}</p>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-extrabold text-gray-900 text-sm truncate">
+                          {selectedVice?.fullName || selectedVice?.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 font-medium">
+                          {selectedVice?.className || selectedVice?.class || "Siswa SMKN 2"} {selectedVice?.nis ? `· NIS ${selectedVice.nis}` : ""}
+                        </p>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-600 line-clamp-2 mb-4 leading-relaxed italic">"{pair.vision}"</p>
-                    <button
-                      onClick={() => setActiveForm(activeForm === `vice:${pair.id}` ? null : `vice:${pair.id}`)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gray-900 text-white text-xs font-bold hover:bg-gray-800 transition-colors cursor-pointer"
-                    >
-                      <Users className="w-3.5 h-3.5" />
-                      Lamar Sebagai Wakil
-                    </button>
-                  </div>
+                  ) : (
+                    <div className="space-y-2 pt-1">
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
+                        <input
+                          type="text"
+                          value={viceSearchTerm}
+                          onChange={(e) => setViceSearchTerm(e.target.value)}
+                          placeholder="Cari Wakil berdasarkan Nama atau NIS..."
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-2xl text-xs sm:text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30"
+                        />
+                        {searchingVice && (
+                          <Loader2 className="w-4 h-4 text-[#2c1ee8] animate-spin absolute right-3.5 top-3" />
+                        )}
+                      </div>
 
-                  {activeForm === `vice:${pair.id}` && (
-                    <form onSubmit={(e) => handleApplyVice(e, pair.id)} className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-3">
-                      <div>
-                        <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">Visi (sebagai Wakil)</label>
-                        <textarea rows={2} value={viceForm.viceVision}
-                          onChange={(e) => setViceForm({ ...viceForm, viceVision: e.target.value })}
-                          className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">Misi (sebagai Wakil)</label>
-                        <textarea rows={2} value={viceForm.viceMission}
-                          onChange={(e) => setViceForm({ ...viceForm, viceMission: e.target.value })}
-                          className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none"
-                        />
-                      </div>
-                      <button type="submit" disabled={submitting}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white rounded-2xl text-xs sm:text-sm font-extrabold hover:bg-gray-800 disabled:opacity-50 transition-colors cursor-pointer">
-                        {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                        Kirim Permohonan
-                      </button>
-                    </form>
+                      {/* Vice Search Results List */}
+                      {viceSearchResults.length > 0 && (
+                        <div className="max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-2xl shadow-lg divide-y divide-gray-100 text-xs">
+                          {viceSearchResults.map((student) => (
+                            <div
+                              key={student.id}
+                              className="p-3 flex items-center justify-between hover:bg-blue-50/50 transition-colors"
+                            >
+                              <div>
+                                <p className="font-bold text-gray-900">{student.fullName || student.name}</p>
+                                <p className="text-gray-400 text-[11px]">
+                                  {student.className || student.class || "Siswa"} {student.nis ? `· NIS ${student.nis}` : ""}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectVice(student)}
+                                className="px-3 py-1.5 rounded-xl bg-[#2c1ee8] text-white font-bold hover:bg-blue-700 transition cursor-pointer text-xs flex items-center gap-1"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" /> Pilih
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {viceSearchTerm.length >= 2 && !searchingVice && viceSearchResults.length === 0 && (
+                        <p className="text-xs text-gray-400 italic">Tidak ada siswa ditemukan.</p>
+                      )}
+                    </div>
                   )}
                 </div>
-              ))}
+
+              </div>
             </div>
+
+            {/* Section 2: Visi, Misi, Program Kerja */}
+            <div className="space-y-4">
+              <h2 className="text-sm font-black text-gray-800 uppercase tracking-wide mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <FileText className="w-4 h-4 text-[#2c1ee8]" />
+                <span>2. Visi, Misi & Program Kerja Pasangan</span>
+              </h2>
+
+              <div>
+                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">
+                  Visi Pasangan <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={pairForm.vision}
+                  onChange={(e) => setPairForm({ ...pairForm, vision: e.target.value })}
+                  placeholder="Tuliskan visi utama kepemimpinan Pasangan Anda..."
+                  className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none font-normal"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">
+                  Misi Pasangan <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={pairForm.mission}
+                  onChange={(e) => setPairForm({ ...pairForm, mission: e.target.value })}
+                  placeholder="Tuliskan poin-poin misi kerja Pasangan Anda..."
+                  className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none font-normal"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">
+                  Program Kerja Unggulan <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={pairForm.programs}
+                  onChange={(e) => setPairForm({ ...pairForm, programs: e.target.value })}
+                  placeholder="Rincian program kerja prioritas OSIS..."
+                  className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none font-normal"
+                />
+              </div>
+            </div>
+
+            {/* Form Actions (Preview & Submit) */}
+            <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={!selectedVice || !pairForm.vision || !pairForm.mission || !pairForm.programs}
+                onClick={() => setShowPreview(true)}
+                className="px-6 py-3 border border-gray-300 rounded-2xl text-xs sm:text-sm font-extrabold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition cursor-pointer flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" /> Preview Pasangan
+              </button>
+
+              <button
+                type="button"
+                disabled={submitting || !selectedVice || !pairForm.vision || !pairForm.mission || !pairForm.programs || (eligibility && !eligibility.eligible)}
+                onClick={handleSubmitPair}
+                className="px-8 py-3 bg-[#2c1ee8] text-white rounded-2xl text-xs sm:text-sm font-extrabold hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-2"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Ajukan Pasangan
+              </button>
+            </div>
+
           </div>
         )}
       </main>
+
+      {/* Unified Candidate Pair Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPreview(false)} />
+          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl overflow-hidden z-10 p-6 sm:p-8 space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div>
+                <span className="text-xs font-black text-[#2c1ee8] uppercase tracking-wider block">PREVIEW PASANGAN KANDIDAT</span>
+                <h3 className="text-lg font-black text-gray-900">
+                  {user?.fullName || "Calon Ketua"} & {selectedVice?.fullName || selectedVice?.name || "Calon Wakil"}
+                </h3>
+              </div>
+              <button onClick={() => setShowPreview(false)} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-center">
+                <Crown className="w-5 h-5 text-[#2c1ee8] mx-auto mb-1" />
+                <span className="text-[10px] font-bold text-gray-400 block uppercase">Calon Ketua</span>
+                <p className="font-extrabold text-sm text-gray-900 truncate">{user?.fullName}</p>
+                <p className="text-xs text-gray-500 font-mono">{user?.className || "Siswa"}</p>
+              </div>
+
+              <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-center">
+                <UserCheck className="w-5 h-5 text-emerald-600 mx-auto mb-1" />
+                <span className="text-[10px] font-bold text-gray-400 block uppercase">Calon Wakil</span>
+                <p className="font-extrabold text-sm text-gray-900 truncate">{selectedVice?.fullName || selectedVice?.name}</p>
+                <p className="text-xs text-gray-500 font-mono">{selectedVice?.className || "Siswa"}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs text-gray-700">
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="font-bold text-gray-900 uppercase block mb-0.5">Visi</span>
+                <p>{pairForm.vision}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="font-bold text-gray-900 uppercase block mb-0.5">Misi</span>
+                <p className="whitespace-pre-line">{pairForm.mission}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <span className="font-bold text-gray-900 uppercase block mb-0.5">Program Kerja</span>
+                <p className="whitespace-pre-line">{pairForm.programs}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="flex-1 py-3 border border-gray-300 rounded-2xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+              >
+                Kembali Edit
+              </button>
+              <button
+                disabled={submitting}
+                onClick={handleSubmitPair}
+                className="flex-1 py-3 bg-[#2c1ee8] text-white rounded-2xl text-xs font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-md shadow-blue-500/20"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Ya, Ajukan Pasangan Ini"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function MyPairDetailedCard({ pair, user, isChairman, onChairmanReview }) {
+function MyPairStatusCard({ pair, currentUserId }) {
   const statusColors = {
     WaitingVice: "bg-amber-50 border-amber-200 text-amber-700",
     WaitingChairman: "bg-blue-50 border-blue-200 text-blue-700",
@@ -437,132 +603,57 @@ function MyPairDetailedCard({ pair, user, isChairman, onChairmanReview }) {
 
   const statusLabels = {
     WaitingVice: "Menunggu Calon Wakil",
-    WaitingChairman: "Menunggu ACC Ketua",
+    WaitingChairman: "Menunggu Verifikasi Ketua",
     WaitingTeacher: "Menunggu Review Pembina OSIS",
-    WaitingAdmin: "Menunggu Persetujuan Admin",
+    WaitingAdmin: "Menunggu Verifikasi Final Admin",
     Approved: "✓ Disetujui & Resmi Berpasangan",
-    Rejected: "Ditandai Tidak Disetujui",
+    Rejected: "Ditolak / Perlu Perbaikan",
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-5">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2c1ee8] to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
-            #{pair.candidateNumber}
-          </div>
-          <div>
-            <h3 className="font-black text-gray-900 text-base sm:text-lg">
-              Pasangan Calon Nomor Urut #{pair.candidateNumber}
-            </h3>
-            <p className="text-xs text-gray-500 font-medium">
-              {isChairman ? "Status Pendaftaran Anda sebagai Calon Ketua" : "Status Pendaftaran Anda sebagai Calon Wakil"}
-            </p>
-          </div>
-        </div>
-
-        <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black border self-start sm:self-auto ${statusColors[pair.statusText] || "bg-gray-100 border-gray-200 text-gray-600"}`}>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-black text-gray-500 uppercase tracking-wide">
+          Pasangan #{pair.candidateNumber || "-"}
+        </span>
+        <span className={`px-3.5 py-1 rounded-full text-xs font-extrabold border ${statusColors[pair.statusText] || "bg-gray-100 text-gray-700"}`}>
           {statusLabels[pair.statusText] || pair.statusText}
         </span>
       </div>
 
-      {/* Grid Pair Display (Ketua & Wakil) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Box Ketua */}
-        <div className="p-4 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-[#2c1ee8] text-[10px] font-black uppercase">
-              👑 Calon Ketua OSIS
-            </span>
-          </div>
+      {pair.rejectionReason && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800 space-y-1">
+          <span className="font-extrabold uppercase tracking-wide block">Alasan Penolakan:</span>
+          <p>{pair.rejectionReason}</p>
+        </div>
+      )}
 
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-[#2c1ee8] flex items-center justify-center font-black text-sm shrink-0 overflow-hidden border border-indigo-200">
-              {pair.photoUrl ? (
-                <img src={pair.photoUrl} alt={pair.chairmanName} className="w-full h-full object-cover" />
-              ) : (
-                pair.chairmanName?.charAt(0)?.toUpperCase() || "K"
-              )}
-            </div>
-            <div>
-              <p className="font-extrabold text-gray-900 text-sm">{pair.chairmanName}</p>
-              <p className="text-xs text-gray-500 font-mono">{pair.chairmanClass || "Siswa"}</p>
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center gap-3">
+          <Crown className="w-5 h-5 text-[#2c1ee8] flex-shrink-0" />
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold text-gray-400 block uppercase">Calon Ketua</span>
+            <p className="font-extrabold text-sm text-gray-900 truncate">{pair.chairmanName}</p>
+            <p className="text-xs text-gray-500 font-mono">{pair.chairmanClass || "Siswa"}</p>
           </div>
-
-          {pair.vision && (
-            <div className="text-xs text-gray-600 bg-white p-3 rounded-xl border border-gray-100">
-              <span className="font-bold text-gray-800 block text-[11px] uppercase tracking-wider mb-0.5">Visi Utama:</span>
-              <p className="italic leading-relaxed">"{pair.vision}"</p>
-            </div>
-          )}
         </div>
 
-        {/* Box Wakil */}
-        <div className="p-4 rounded-2xl bg-emerald-50/40 border border-emerald-100 space-y-3 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase">
-                🤝 Calon Wakil OSIS
-              </span>
-            </div>
-
-            {pair.viceName ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-black text-sm shrink-0 overflow-hidden border border-emerald-200">
-                    {pair.vicePhotoUrl ? (
-                      <img src={pair.vicePhotoUrl} alt={pair.viceName} className="w-full h-full object-cover" />
-                    ) : (
-                      pair.viceName?.charAt(0)?.toUpperCase() || "W"
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-extrabold text-gray-900 text-sm">{pair.viceName}</p>
-                    <p className="text-xs text-gray-500 font-mono">{pair.viceClass || "Siswa"}</p>
-                  </div>
-                </div>
-
-                {pair.viceVision && (
-                  <div className="text-xs text-gray-600 bg-white p-3 rounded-xl border border-gray-100">
-                    <span className="font-bold text-gray-800 block text-[11px] uppercase tracking-wider mb-0.5">Visi Wakil:</span>
-                    <p className="italic leading-relaxed">"{pair.viceVision}"</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="p-6 text-center text-xs space-y-1">
-                <p className="font-extrabold text-amber-700">Slot Calon Wakil Masih Kosong</p>
-                <p className="text-gray-500">Menunggu siswa lain melamar sebagai calon wakil Anda.</p>
-              </div>
-            )}
+        <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-100 flex items-center gap-3">
+          <UserCheck className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold text-gray-400 block uppercase">Calon Wakil</span>
+            <p className="font-extrabold text-sm text-gray-900 truncate">{pair.viceName || "Belum ada"}</p>
+            <p className="text-xs text-gray-500 font-mono">{pair.viceClass || "Siswa"}</p>
           </div>
-
-          {/* Action ACC Wakil oleh Ketua */}
-          {onChairmanReview && pair.viceName && (
-            <div className="pt-3 border-t border-emerald-200/60 flex items-center justify-between gap-2">
-              <span className="text-[11px] font-bold text-blue-800">Pelamar Wakil Baru:</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onChairmanReview(pair.id, true)}
-                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition cursor-pointer flex items-center gap-1"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Setujui Wakil
-                </button>
-                <button
-                  onClick={() => onChairmanReview(pair.id, false)}
-                  className="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-extrabold hover:bg-rose-700 transition cursor-pointer flex items-center gap-1"
-                >
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  Tolak
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {pair.vision && (
+        <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-xs text-gray-700 space-y-1">
+          <span className="font-bold text-gray-900 uppercase block">Visi Pasangan:</span>
+          <p>{pair.vision}</p>
+        </div>
+      )}
     </div>
   );
 }

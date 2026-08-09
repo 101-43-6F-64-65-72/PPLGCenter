@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { X, Upload, Plus, AlertCircle, CheckCircle2, Loader2, Image as ImageIcon } from "lucide-react";
 import { extracurricularService } from "@/services/extracurricularService";
 import uploadImageToCloudinary from "@/services/cloudinaryService";
+import TeacherSelect from "@/components/common/TeacherSelect";
 
 const CATEGORY_OPTIONS = [
   "Teknologi & Software",
@@ -24,6 +25,9 @@ export default function CreateExtracurricularModal({
     category: "Teknologi & Software",
     maxMembers: 50,
     description: "",
+    supervisorTeacherId: "",
+    advisorName: "",
+    advisorWhatsapp: "",
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -35,6 +39,16 @@ export default function CreateExtracurricularModal({
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrorMessage("");
+  };
+
+  const handleTeacherChange = (teacherId, teacherObj) => {
+    setFormData((prev) => ({
+      ...prev,
+      supervisorTeacherId: teacherId || "",
+      advisorName: teacherObj ? (teacherObj.fullName || teacherObj.name) : "",
+      advisorWhatsapp: teacherObj ? (teacherObj.phoneNumber || "") : "",
+    }));
     setErrorMessage("");
   };
 
@@ -91,6 +105,9 @@ export default function CreateExtracurricularModal({
         maxMembers: Number(formData.maxMembers),
         description: formData.description.trim(),
         imageUrl: imageUrl,
+        supervisorTeacherId: formData.supervisorTeacherId || null,
+        advisorName: formData.advisorName ? formData.advisorName.trim() : null,
+        advisorWhatsapp: formData.advisorWhatsapp ? formData.advisorWhatsapp.trim() : null,
       };
 
       const res = await extracurricularService.createExtracurricular(payload);
@@ -104,6 +121,9 @@ export default function CreateExtracurricularModal({
           category: "Teknologi & Software",
           maxMembers: 50,
           description: "",
+          supervisorTeacherId: "",
+          advisorName: "",
+          advisorWhatsapp: "",
         });
         setSelectedFile(null);
         setImagePreview(null);
@@ -163,6 +183,14 @@ export default function CreateExtracurricularModal({
               className="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 text-xs sm:text-sm text-gray-900 focus:bg-white focus:border-[#2c1ee8] focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all font-semibold"
             />
           </div>
+
+          {/* Teacher Selection (Guru Pembimbing) */}
+          <TeacherSelect
+            value={formData.supervisorTeacherId}
+            onChange={handleTeacherChange}
+            label="Pilih Guru Pembimbing / Pembina"
+            placeholder="Cari NIP atau Nama Guru..."
+          />
 
           {/* Kategori & Max Members */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

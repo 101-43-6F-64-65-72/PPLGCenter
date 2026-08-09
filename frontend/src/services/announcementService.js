@@ -46,6 +46,111 @@ export const announcementService = {
       return { success: false, message: error?.message };
     }
   },
+
+  // ── Comment Endpoints ──
+  async getComments(announcementId, params = {}) {
+    const page = params.page || 1;
+    const pageSize = params.pageSize || 20;
+    try {
+      const response = await apiClient.get(
+        `${API_ROUTES.ANNOUNCEMENT_COMMENTS.BY_ANNOUNCEMENT(announcementId)}?page=${page}&pageSize=${pageSize}`
+      );
+      return response;
+    } catch (error) {
+      console.warn(`GET comments error for announcement ${announcementId}:`, error?.message);
+      return { success: false, items: [], totalCount: 0 };
+    }
+  },
+
+  async addComment(announcementId, content, parentCommentId = null) {
+    try {
+      const response = await apiClient.post(
+        API_ROUTES.ANNOUNCEMENT_COMMENTS.BY_ANNOUNCEMENT(announcementId),
+        { content, parentCommentId }
+      );
+      return response;
+    } catch (error) {
+      console.warn(`POST comment error for announcement ${announcementId}:`, error?.message);
+      throw error;
+    }
+  },
+
+  async deleteComment(announcementId, commentId) {
+    try {
+      const response = await apiClient.delete(
+        API_ROUTES.ANNOUNCEMENT_COMMENTS.DELETE(announcementId, commentId)
+      );
+      return response;
+    } catch (error) {
+      console.warn(`DELETE comment ${commentId} error:`, error?.message);
+      throw error;
+    }
+  },
+
+  async toggleCommentsLock(announcementId) {
+    try {
+      const response = await apiClient.post(
+        API_ROUTES.ANNOUNCEMENT_COMMENTS.TOGGLE_LOCK(announcementId)
+      );
+      return response;
+    } catch (error) {
+      console.warn(`Toggle comments lock error for announcement ${announcementId}:`, error?.message);
+      throw error;
+    }
+  },
+
+  // ── Reaction Endpoints ──
+  async getReactions(announcementId) {
+    try {
+      const response = await apiClient.get(
+        API_ROUTES.ANNOUNCEMENTS.REACTIONS(announcementId)
+      );
+      return response?.data || response;
+    } catch (error) {
+      console.warn(`GET reactions error for announcement ${announcementId}:`, error?.message);
+      return null;
+    }
+  },
+
+  async toggleReaction(announcementId, type) {
+    try {
+      const response = await apiClient.post(
+        API_ROUTES.ANNOUNCEMENTS.REACTIONS(announcementId),
+        { type }
+      );
+      return response;
+    } catch (error) {
+      console.warn(`Toggle reaction ${type} error for announcement ${announcementId}:`, error?.message);
+      throw error;
+    }
+  },
+
+  async removeReaction(announcementId) {
+    try {
+      const response = await apiClient.delete(
+        API_ROUTES.ANNOUNCEMENTS.REACTIONS(announcementId)
+      );
+      return response;
+    } catch (error) {
+      console.warn(`Remove reaction error for announcement ${announcementId}:`, error?.message);
+      throw error;
+    }
+  },
+
+  // ── GitHub Emojis Integration ──
+  async getGitHubEmojis() {
+    try {
+      const res = await fetch("https://api.github.com/emojis", {
+        headers: { Accept: "application/vnd.github.v3+json" },
+      });
+      if (!res.ok) throw new Error(`GitHub API error: ${res.statusText}`);
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.warn("Failed to fetch GitHub emojis:", error?.message);
+      return null;
+    }
+  },
 };
 
 export default announcementService;

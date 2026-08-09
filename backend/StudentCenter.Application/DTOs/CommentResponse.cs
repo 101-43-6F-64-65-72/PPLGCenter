@@ -8,4 +8,6 @@ public class CommentResponse
     public Guid AnnouncementId { get; set; }
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string? UserPhotoUrl { get; set; }
+    public Guid? ParentCommentId { get; set; }
 }

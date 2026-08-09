@@ -72,7 +72,9 @@ public class AnnouncementCommentService : IAnnouncementCommentService
             CreatedAt = comment.CreatedAt,
             AnnouncementId = comment.AnnouncementId,
             UserId = comment.UserId,
-            UserName = user?.FullName ?? string.Empty
+            UserName = user?.FullName ?? string.Empty,
+            UserPhotoUrl = user?.PhotoUrl,
+            ParentCommentId = comment.ParentCommentId
         };
     }
 
@@ -99,7 +101,9 @@ public class AnnouncementCommentService : IAnnouncementCommentService
                 CreatedAt = c.CreatedAt,
                 AnnouncementId = c.AnnouncementId,
                 UserId = c.UserId,
-                UserName = c.User.FullName
+                UserName = c.User.FullName,
+                UserPhotoUrl = c.User.PhotoUrl,
+                ParentCommentId = c.ParentCommentId
             })
             .ToListAsync();
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Activity, Plus, Search, Edit2, Trash2, AlertCircle, UserCheck } from "lucide-react";
 import extracurricularService from "@/services/extracurricularService";
 import apiClient from "@/lib/api";
+import TeacherSelect from "@/components/common/TeacherSelect";
 
 export default function AdminExtracurricularsTab() {
   const [clubs, setClubs] = useState([]);
@@ -291,31 +292,20 @@ export default function AdminExtracurricularsTab() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Guru Pembina (User Relation)</label>
-                <select
-                  value={formData.supervisorTeacherId}
-                  onChange={(e) => {
-                    const teacherId = e.target.value;
-                    const selected = teachers.find((t) => t.id === teacherId);
-                    setFormData({
-                      ...formData,
-                      supervisorTeacherId: teacherId,
-                      advisorName: selected ? selected.fullName : formData.advisorName,
-                      advisorWhatsapp: selected ? (selected.phoneNumber || formData.advisorWhatsapp) : formData.advisorWhatsapp,
-                    });
-                  }}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-pink-600"
-                >
-                  <option value="">Pilih Guru Pembina (Tidak Ada)</option>
-                  {teachers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.fullName} {t.nip ? `(NIP: ${t.nip})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-gray-400 mt-1">Mengambil dari daftar seluruh guru aktif di sekolah</p>
-              </div>
+              <TeacherSelect
+                value={formData.supervisorTeacherId}
+                teachersList={teachers}
+                onChange={(teacherId, selected) => {
+                  setFormData({
+                    ...formData,
+                    supervisorTeacherId: teacherId || "",
+                    advisorName: selected ? (selected.fullName || selected.name) : formData.advisorName,
+                    advisorWhatsapp: selected ? (selected.phoneNumber || formData.advisorWhatsapp) : formData.advisorWhatsapp,
+                  });
+                }}
+                label="Guru Pembina (User Relation)"
+                placeholder="Cari NIP atau Nama Guru Pembina..."
+              />
 
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Kategori *</label>

@@ -6,14 +6,16 @@ import Navbar from "@/components/Navbar";
 import AuthGuard from "@/components/layout/AuthGuard";
 import { USER_ROLES } from "@/constants/userRoles";
 import CandidatePairCard from "@/components/pemilos/CandidatePairCard";
+import CandidatePairDetailModal from "@/components/pemilos/CandidatePairDetailModal";
 import VoteModal from "@/components/pemilos/VoteModal";
 import PemilosLiveResults from "@/components/pemilos/PemilosLiveResults";
 import candidatePairService from "@/services/candidatePairService";
+import electionService from "@/services/electionService";
 import useAuth from "@/hooks/useAuth";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import {
   Vote, BarChart3, Sparkles, RefreshCw,
-  AlertCircle, Loader2, Users
+  AlertCircle, Loader2, Users, Clock, Calendar, CheckCircle2
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -26,7 +28,7 @@ export default function PemilosPage() {
 }
 
 function PemilosContent() {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [elections, setElections] = useState([]);
   const [selectedElectionId, setSelectedElectionId] = useState(null);
   const [pairs, setPairs] = useState([]);
@@ -35,44 +37,136 @@ function PemilosContent() {
   const [loadingPairs, setLoadingPairs] = useState(false);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
   const [votingPair, setVotingPair] = useState(null);
+  const [detailPair, setDetailPair] = useState(null);
   const [isVoting, setIsVoting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
   const [activeTab, setActiveTab] = useState("ballot"); // ballot | results
+  const [timeRemaining, setTimeRemaining] = useState("");
+  const [now, setNow] = useState(new Date());
 
-  // Load elections list
+  // Ticker for real-time countdown
   useEffect(() => {
-    const fetchElections = async () => {
-      setLoadingElections(true);
-      setIsUnauthorized(false);
-      try {
-        const res = await candidatePairService.getElections?.();
-        const rawData = res?.data ?? res;
-        const list = Array.isArray(rawData)
-          ? rawData
-          : Array.isArray(rawData?.items)
-          ? rawData.items
-          : Array.isArray(rawData?.data)
-          ? rawData.data
-          : [];
-        setElections(list);
-        if (list.length > 0 && list[0]?.id) setSelectedElectionId(list[0].id);
-      } catch (err) {
-        const checkUnauth =
-          err?.statusCode === 401 ||
-          err?.response?.status === 401 ||
-          err?.message?.includes("Sesi") ||
-          err?.message?.includes("Unauthorized") ||
-          err?.message?.includes("login");
-        if (checkUnauth) setIsUnauthorized(true);
-        console.error("Failed to load elections list:", err);
-      } finally {
-        setLoadingElections(false);
-      }
-    };
-    fetchElections();
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  // Load pairs & results when election selected
+  // Fetch elections list
+  const fetchElections = useCallback(async () => {
+    setLoadingElections(true);
+    setIsUnauthorized(false);
+    try {
+      let res;
+      if (typeof electionService.getElections === "function") {
+        res = await electionService.getElections();
+      } else {
+        res = await candidatePairService.getElections();
+      }
+      const rawData = res?.data ?? res;
+      const list = Array.isArray(rawData)
+        ? rawData
+        : Array.isArray(rawData?.items)
+        ? rawData.items
+        : Array.isArray(rawData?.data)
+        ? rawData.data
+        : [];
+
+      // Filter out deleted elections (DeletedAt != null)
+      const validElections = list.filter((e) => !e.deletedAt && !e.DeletedAt);
+
+      setElections(validElections);
+      if (validElections.length > 0 && !selectedElectionId) {
+        // Default to first open/ongoing election or latest
+        const ongoing = validElections.find(
+          (e) => (e.statusText === "Open" || e.status === 1) && new Date(e.startDate) <= new Date() && new Date(e.endDate) >= new Date()
+        );
+        setSelectedElectionId(ongoing?.id || validElections[0].id);
+      }
+    } catch (err) {
+      const checkUnauth =
+        err?.statusCode === 401 ||
+        err?.response?.status === 401 ||
+        err?.message?.includes("Sesi") ||
+        err?.message?.includes("Unauthorized") ||
+        err?.message?.includes("login");
+      if (checkUnauth) setIsUnauthorized(true);
+      console.error("Failed to load elections list:", err);
+    } finally {
+      setLoadingElections(false);
+    }
+  }, [selectedElectionId]);
+
+  useEffect(() => {
+    fetchElections();
+  }, [fetchElections]);
+
+  const selectedElection = elections.find((e) => String(e.id) === String(selectedElectionId)) || elections[0] || null;
+
+  // Compute time-based state (BEFORE, ONGOING, ENDED)
+  const getElectionTimeState = useCallback((election) => {
+    if (!election?.startDate || !election?.endDate) return "UNKNOWN";
+    const start = new Date(election.startDate);
+    const end = new Date(election.endDate);
+    const currentTime = new Date();
+
+    if (currentTime < start) return "BEFORE";
+    if (currentTime >= start && currentTime <= end) return "ONGOING";
+    return "ENDED";
+  }, []);
+
+  const electionTimeState = getElectionTimeState(selectedElection);
+
+  // Authoritative status check: Backend status MUST be Open/1 AND timeState MUST be ONGOING
+  const isBackendOpen =
+    selectedElection?.statusText === "Open" ||
+    selectedElection?.status === 1 ||
+    liveResults?.status === "Open" ||
+    liveResults?.status === 1;
+
+  const isElectionOpen = isBackendOpen && electionTimeState === "ONGOING";
+
+  // Countdown timer logic
+  useEffect(() => {
+    if (!selectedElection?.startDate || !selectedElection?.endDate) {
+      setTimeRemaining("");
+      return;
+    }
+
+    const start = new Date(selectedElection.startDate);
+    const end = new Date(selectedElection.endDate);
+    const currentTime = new Date();
+
+    let targetDate;
+    if (currentTime < start) {
+      targetDate = start;
+    } else if (currentTime <= end) {
+      targetDate = end;
+    } else {
+      setTimeRemaining("Pemilihan telah berakhir");
+      return;
+    }
+
+    const diffMs = targetDate - currentTime;
+    if (diffMs <= 0) {
+      setTimeRemaining("Memproses perubahan status...");
+      fetchElections();
+      return;
+    }
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+    const timeStr = `${hours}j ${minutes}m ${seconds}s`;
+    if (currentTime < start) {
+      setTimeRemaining(`Dimulai dalam ${timeStr}`);
+    } else {
+      setTimeRemaining(`Berakhir dalam ${timeStr}`);
+    }
+  }, [now, selectedElection, fetchElections]);
+
+  // Load pairs & live results for selected election
   const loadPairsAndResults = useCallback(async () => {
     if (!selectedElectionId) return;
     setLoadingPairs(true);
@@ -95,6 +189,12 @@ function PemilosContent() {
       const rawResults = resultsRes?.data ?? resultsRes;
       const resultsObj = rawResults?.data ?? rawResults ?? null;
       setLiveResults(resultsObj);
+
+      // Check HasVoted from backend election response or live results
+      const userHasVoted = !!(selectedElection?.hasVoted || resultsObj?.hasVoted || resultsObj?.userHasVoted);
+      if (userHasVoted) {
+        setHasVoted(true);
+      }
     } catch (err) {
       const checkUnauth =
         err?.statusCode === 401 ||
@@ -107,15 +207,15 @@ function PemilosContent() {
     } finally {
       setLoadingPairs(false);
     }
-  }, [selectedElectionId]);
+  }, [selectedElectionId, selectedElection]);
 
   useEffect(() => {
     loadPairsAndResults();
   }, [loadPairsAndResults]);
 
   const handleVote = (pairId) => {
-    const pair = pairs.find((p) => p.id === pairId);
-    setVotingPair(pair);
+    const pair = pairs.find((p) => String(p.id) === String(pairId));
+    if (pair) setVotingPair(pair);
   };
 
   const handleConfirmVote = async () => {
@@ -126,21 +226,47 @@ function PemilosContent() {
       toast.success("Suara Anda berhasil diberikan! 🎉");
       setHasVoted(true);
       setVotingPair(null);
-      loadPairsAndResults();
+      await loadPairsAndResults();
     } catch (err) {
-      const msg = err?.response?.data?.message ?? "Gagal memberikan suara.";
-      toast.error(msg);
-      if (msg.includes("sudah")) setHasVoted(true);
+      const status = err?.statusCode || err?.response?.status;
+      const msg = err?.message || err?.response?.data?.message || "Gagal memberikan suara.";
+      
+      if (status === 409 || msg.includes("sudah") || msg.includes("pernah")) {
+        toast.error("Anda sudah memilih pada pemilihan ini.");
+        setHasVoted(true);
+      } else if (status === 403) {
+        toast.error("Anda tidak memiliki hak akses untuk voting pada pemilihan ini.");
+      } else if (status === 404) {
+        toast.error("Sesi pemilihan atau pasangan calon tidak ditemukan.");
+      } else {
+        toast.error(msg);
+      }
+      setVotingPair(null);
     } finally {
       setIsVoting(false);
     }
   };
 
-  const approvedPairs = pairs.filter((p) => p.statusText === "Approved");
-  const isElectionOpen = liveResults?.status === "Open";
+  // Only approved candidate pairs (statusText === 'Approved' or status === 5)
+  const approvedPairs = pairs.filter((p) => p.statusText === "Approved" || p.status === 5);
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "-";
+    try {
+      return new Date(dateStr).toLocaleString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return dateStr;
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
       <Navbar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-20">
@@ -150,6 +276,7 @@ function PemilosContent() {
             <Vote className="w-4 h-4" />
             <span>PEMILIHAN KETUA OSIS — PEMILOS</span>
           </div>
+
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight">
@@ -159,6 +286,7 @@ function PemilosContent() {
                 Gunakan hak suara Anda secara digital, aman, dan transparan. Satu akun, satu suara.
               </p>
             </div>
+
             <div className="flex items-center gap-2">
               <Link
                 href="/pemilos/register"
@@ -170,13 +298,33 @@ function PemilosContent() {
               <button
                 onClick={loadPairsAndResults}
                 disabled={loadingPairs}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-gray-200 bg-white text-xs sm:text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-gray-200 bg-white text-xs sm:text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingPairs ? "animate-spin" : ""}`} />
-                Refresh
+                <span>Refresh</span>
               </button>
             </div>
           </div>
+
+          {/* Multiple Elections Selector Pills (if more than 1 election exists) */}
+          {elections.length > 1 && (
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-1">Pilih Sesi:</span>
+              {elections.map((el) => (
+                <button
+                  key={el.id}
+                  onClick={() => setSelectedElectionId(el.id)}
+                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all border cursor-pointer ${
+                    String(el.id) === String(selectedElectionId)
+                      ? "bg-[#2c1ee8] text-white border-[#2c1ee8] shadow-md shadow-blue-500/20"
+                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  {el.title}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Tab switcher */}
           <div className="flex items-center gap-2 mt-6 border-b border-gray-200 pb-0">
@@ -187,7 +335,7 @@ function PemilosContent() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-t-2xl text-sm font-bold transition-all border-b-2 -mb-px ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-t-2xl text-sm font-bold transition-all border-b-2 -mb-px cursor-pointer ${
                   activeTab === id
                     ? "border-[#2c1ee8] text-[#2c1ee8] bg-white"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -202,109 +350,189 @@ function PemilosContent() {
 
         {isUnauthorized ? (
           <LoginRequiredFallback featureName="Pemilos (E-Voting Ketua OSIS)" />
+        ) : loadingElections ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
+            <p className="text-sm text-gray-500 font-medium">Memuat sesi pemilihan OSIS...</p>
+          </div>
+        ) : elections.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+            <Vote className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+            <h3 className="text-lg font-bold text-gray-700">Belum Ada Sesi Pemilihan Active</h3>
+            <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">
+              Saat ini belum ada jadwal pemilihan ketua OSIS yang terdaftar di server sekolah.
+            </p>
+          </div>
         ) : (
           <>
-            {/* Voted banner */}
-        {hasVoted && (
-          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-emerald-800 text-sm">Suara Anda sudah tercatat!</p>
-              <p className="text-xs text-emerald-600">Terima kasih telah berpartisipasi dalam Pemilos. Suara Anda bersifat rahasia dan tidak dapat diubah.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Ballot tab */}
-        {activeTab === "ballot" && (
-          <>
-            {/* Election status chip */}
-            {liveResults && (
-              <div className="mb-6 flex items-center gap-3">
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                  isElectionOpen
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                    : "bg-gray-100 border-gray-200 text-gray-600"
-                }`}>
-                  <span className={`w-2 h-2 rounded-full ${isElectionOpen ? "bg-emerald-400 animate-pulse" : "bg-gray-400"}`}></span>
-                  {isElectionOpen ? "Pemilihan Sedang Berlangsung" : `Status: ${liveResults.status}`}
+            {/* Voted Banner */}
+            {hasVoted && (
+              <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
-                {liveResults && (
-                  <span className="text-xs text-gray-400">
-                    {liveResults.electionTitle}
-                  </span>
+                <div>
+                  <p className="font-bold text-emerald-800 text-sm">Suara Anda Sudah Terdaftar!</p>
+                  <p className="text-xs text-emerald-600">
+                    Terima kasih telah berpartisipasi dalam Pemilos. Hak suara Anda aman, rahasia, dan tidak dapat diubah lagi.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Ballot Tab */}
+            {activeTab === "ballot" && (
+              <>
+                {/* Election Status Banner */}
+                {selectedElection && (
+                  <div className="mb-6 bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold border ${
+                              electionTimeState === "ONGOING" && isBackendOpen
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : electionTimeState === "BEFORE"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : "bg-gray-100 text-gray-600 border-gray-200"
+                            }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${
+                                electionTimeState === "ONGOING" && isBackendOpen
+                                  ? "bg-emerald-500 animate-pulse"
+                                  : electionTimeState === "BEFORE"
+                                  ? "bg-amber-500"
+                                  : "bg-gray-400"
+                              }`}
+                            />
+                            {electionTimeState === "ONGOING" && isBackendOpen
+                              ? "Pemilihan Sedang Berlangsung"
+                              : electionTimeState === "BEFORE"
+                              ? "Pemilihan Belum Dimulai"
+                              : "Pemilihan Telah Berakhir"}
+                          </span>
+
+                          <span className="text-xs font-medium text-gray-400">
+                            (Status Server: {selectedElection.statusText || liveResults?.status || "Aktif"})
+                          </span>
+                        </div>
+
+                        <h2 className="text-lg font-black text-gray-900 mt-2">
+                          {selectedElection.title}
+                        </h2>
+                        {selectedElection.description && (
+                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 line-clamp-2">
+                            {selectedElection.description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Live Countdown & Period Info */}
+                      <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 flex flex-col items-start sm:items-end flex-shrink-0">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 mb-1">
+                          <Clock className="w-4 h-4 text-[#2c1ee8]" />
+                          <span>{timeRemaining || "Jadwal Pemilihan"}</span>
+                        </div>
+                        <div className="text-[11px] text-gray-500 flex items-center gap-1 font-medium">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>
+                            {formatDate(selectedElection.startDate)} – {formatDate(selectedElection.endDate)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </div>
+
+                {/* Candidate Pairs Grid */}
+                {loadingPairs ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
+                    <p className="text-sm text-gray-500 font-medium">Memuat daftar pasangan calon...</p>
+                  </div>
+                ) : approvedPairs.length === 0 ? (
+                  <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8">
+                    <Users className="w-16 h-16 mx-auto text-gray-200 mb-4" />
+                    <h3 className="text-base font-bold text-gray-500">Belum Ada Pasangan Resmi</h3>
+                    <p className="text-sm text-gray-400 mt-1">Pasangan calon yang telah disetujui akan muncul di sini.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {approvedPairs.map((pair, i) => (
+                      <CandidatePairCard
+                        key={pair.id}
+                        pair={pair}
+                        rank={i + 1}
+                        isWinner={liveResults?.winnerPair?.id === pair.id}
+                        showVoteCount={liveResults?.isResultsVisible}
+                        hasVoted={hasVoted}
+                        isElectionOpen={isElectionOpen}
+                        electionTimeState={electionTimeState}
+                        onVote={handleVote}
+                        onViewDetail={(p) => setDetailPair(p)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Pending Verification Pairs */}
+                {pairs.filter((p) => p.statusText !== "Approved" && p.status !== 5).length > 0 && (
+                  <div className="mt-10">
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                      <h3 className="text-sm font-black text-gray-600 uppercase tracking-wide">
+                        Dalam Proses Verifikasi
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {pairs
+                        .filter((p) => p.statusText !== "Approved" && p.status !== 5)
+                        .map((pair) => (
+                          <CandidatePairCard
+                            key={pair.id}
+                            pair={pair}
+                            showVoteCount={false}
+                            onViewDetail={(p) => setDetailPair(p)}
+                          />
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            {loadingPairs ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
-                <p className="text-sm text-gray-500 font-medium">Memuat daftar pasangan calon...</p>
-              </div>
-            ) : approvedPairs.length === 0 ? (
-              <div className="text-center py-20">
-                <Users className="w-16 h-16 mx-auto text-gray-200 mb-4" />
-                <h3 className="text-base font-bold text-gray-500">Belum Ada Pasangan Resmi</h3>
-                <p className="text-sm text-gray-400 mt-1">Pasangan calon yang telah disetujui akan muncul di sini.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {approvedPairs.map((pair, i) => (
-                  <CandidatePairCard
-                    key={pair.id}
-                    pair={pair}
-                    rank={i + 1}
-                    isWinner={liveResults?.winnerPair?.id === pair.id}
-                    showVoteCount={liveResults?.isResultsVisible}
-                    hasVoted={hasVoted}
-                    onVote={isElectionOpen && !hasVoted ? handleVote : undefined}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Pending pairs */}
-            {pairs.filter((p) => p.statusText !== "Approved").length > 0 && (
-              <div className="mt-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertCircle className="w-4 h-4 text-amber-500" />
-                  <h3 className="text-sm font-black text-gray-600 uppercase tracking-wide">Dalam Proses Verifikasi</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pairs.filter((p) => p.statusText !== "Approved").map((pair) => (
-                    <CandidatePairCard
-                      key={pair.id}
-                      pair={pair}
-                      showVoteCount={false}
-                    />
-                  ))}
-                </div>
+            {/* Results Tab */}
+            {activeTab === "results" && (
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                {loadingPairs ? (
+                  <div className="flex items-center justify-center py-16 gap-3">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#2c1ee8]" />
+                    <p className="text-sm text-gray-500">Memuat hasil suara...</p>
+                  </div>
+                ) : (
+                  <PemilosLiveResults result={liveResults} />
+                )}
               </div>
             )}
           </>
         )}
-
-        {/* Results tab */}
-        {activeTab === "results" && (
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            {loadingPairs ? (
-              <div className="flex items-center justify-center py-16 gap-3">
-                <Loader2 className="w-6 h-6 animate-spin text-[#2c1ee8]" />
-                <p className="text-sm text-gray-500">Memuat hasil suara...</p>
-              </div>
-            ) : (
-              <PemilosLiveResults result={liveResults} />
-            )}
-          </div>
-        )}
-        </>
-        )}
       </main>
 
-      {/* Vote Modal */}
+      {/* Candidate Pair Detail Modal */}
+      {detailPair && (
+        <CandidatePairDetailModal
+          pair={detailPair}
+          onClose={() => setDetailPair(null)}
+          onVote={handleVote}
+          hasVoted={hasVoted}
+          isElectionOpen={isElectionOpen}
+          electionTimeState={electionTimeState}
+        />
+      )}
+
+      {/* Vote Confirmation Modal */}
       {votingPair && (
         <VoteModal
           pair={votingPair}

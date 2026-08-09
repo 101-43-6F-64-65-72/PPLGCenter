@@ -12,4 +12,6 @@ public class AnnouncementResponse
     public DateTime UpdatedAt { get; set; }
     public Guid CreatedByUserId { get; set; }
     public string CreatedByUserName { get; set; } = string.Empty;
+    public int ReactionCount { get; set; }
+    public int CommentCount { get; set; }
 }

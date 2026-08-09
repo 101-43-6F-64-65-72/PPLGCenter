@@ -131,8 +131,8 @@ public class CalendarService : ICalendarService
             Id = Guid.NewGuid(),
             Title = request.Title.Trim(),
             Description = request.Description?.Trim(),
-            StartDate = request.StartDate ?? request.EventDate,
-            EndDate = request.EndDate ?? request.StartDate ?? request.EventDate,
+            StartDate = request.StartDate != default ? request.StartDate : request.EventDate,
+            EndDate = request.EndDate != default ? request.EndDate : request.StartDate,
             StartTime = request.StartTime,
             EndTime = request.EndTime,
             Location = request.Location?.Trim(),
@@ -168,8 +168,8 @@ public class CalendarService : ICalendarService
 
         calendarEvent.Title = request.Title.Trim();
         calendarEvent.Description = request.Description?.Trim();
-        calendarEvent.StartDate = request.StartDate ?? request.EventDate;
-        calendarEvent.EndDate = request.EndDate ?? request.StartDate ?? request.EventDate;
+        calendarEvent.StartDate = request.StartDate != default ? request.StartDate : request.EventDate;
+        calendarEvent.EndDate = request.EndDate != default ? request.EndDate : request.StartDate;
         calendarEvent.StartTime = request.StartTime;
         calendarEvent.EndTime = request.EndTime;
         calendarEvent.Location = request.Location?.Trim();

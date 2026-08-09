@@ -59,4 +59,30 @@ public class AnnouncementReactionService : IAnnouncementReactionService
 
         return true;
     }
+
+    public async Task<StudentCenter.Application.DTOs.AnnouncementReactionSummaryResponse> GetReactionSummaryAsync(Guid announcementId, Guid? userId)
+    {
+        var reactions = await _context.Set<AnnouncementReaction>()
+            .AsNoTracking()
+            .Where(r => r.AnnouncementId == announcementId)
+            .ToListAsync();
+
+        var counts = reactions
+            .GroupBy(r => r.Type)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        string? userReaction = null;
+        if (userId.HasValue)
+        {
+            userReaction = reactions.FirstOrDefault(r => r.UserId == userId.Value)?.Type;
+        }
+
+        return new StudentCenter.Application.DTOs.AnnouncementReactionSummaryResponse
+        {
+            AnnouncementId = announcementId,
+            TotalReactions = reactions.Count,
+            Counts = counts,
+            UserReaction = userReaction
+        };
+    }
 }

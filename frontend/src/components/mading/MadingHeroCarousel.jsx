@@ -40,7 +40,7 @@ export default function MadingHeroCarousel() {
           </h1>
 
           <p className="text-sm sm:text-base lg:text-lg text-blue-100/90 leading-relaxed max-w-xl mb-8 font-normal drop-shadow">
-            Informasi publikasi mading digital SMK Negeri 2 Surakarta bersumber langsung dari REST API.
+            Informasi publikasi mading digital SMK Negeri 2 Surakarta bersumber langsung.
           </p>
 
           <button

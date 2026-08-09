@@ -143,6 +143,24 @@ export const userService = {
     return response;
   },
 
+  /**
+   * Fetch active teachers list for dropdown/selection
+   */
+  async getTeachers() {
+    const endpoint = API_ROUTES.USERS.TEACHERS;
+    try {
+      const response = await apiClient.get(endpoint);
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        statusCode: error?.statusCode || 500,
+        message: error?.message || "Gagal memuat daftar guru",
+        data: [],
+      };
+    }
+  },
+
   // Alias used by AdminTeacherSubjectsTab — maps to getUsers
   async getAllUsers(params = {}) {
     return await this.getUsers(params);
