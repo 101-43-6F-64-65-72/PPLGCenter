@@ -116,9 +116,14 @@ export default function AdminAnnouncementsTab() {
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus pengumuman ini dari mading digital?")) {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus pengumuman ini dari mading digital?")) return;
+    try {
+      await announcementService.deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
+    } catch (err) {
+      console.error("Gagal menghapus mading:", err);
+      alert(err?.response?.data?.message || err?.message || "Gagal menghapus pengumuman.");
     }
   };
 

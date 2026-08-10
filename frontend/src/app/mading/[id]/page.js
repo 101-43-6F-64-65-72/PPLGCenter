@@ -5,21 +5,33 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import useAuth from "@/hooks/useAuth";
+import announcementService from "@/services/announcementService";
 import { useAnnouncement } from "@/features/announcement/hooks/useAnnouncement";
 import { useAnnouncements } from "@/features/announcement/hooks/useAnnouncements";
 import AnnouncementDetailSkeleton from "@/features/announcement/components/AnnouncementDetailSkeleton";
 import AnnouncementCommentSection from "@/features/announcement/components/AnnouncementCommentSection";
 import { ArrowLeft, FileText, Download, User, Shield, Pin } from "@/components/common/Icons";
+import { Edit3, X, Save } from "lucide-react";
 import { resolveImageUrl, formatDate } from "@/lib/utils";
 
 export default function AnnouncementDetailPage() {
   const routeParams = useParams();
   const id = routeParams?.id;
 
+  const { user, role } = useAuth();
   const [readingProgress, setReadingProgress] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  const { data, isLoading } = useAnnouncement(id);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    category: "Informasi Sekolah",
+    content: "",
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const { data, isLoading, refetch } = useAnnouncement(id);
   const { data: listData } = useAnnouncements({ page: 1, pageSize: 6 });
 
   // Article reading progress bar listener
@@ -76,6 +88,54 @@ export default function AnnouncementDetailPage() {
   const formattedDate = formatDate(announcement.createdAt);
   const coverImage = getCoverImage(announcement);
   const authorName = announcement.author || announcement.createdBy || announcement.authorName || "Redaksi Sekolah";
+
+  const isEdited = Boolean(
+    announcement?.isEdited ||
+    (announcement?.updatedAt &&
+      announcement?.createdAt &&
+      new Date(announcement.updatedAt).getTime() - new Date(announcement.createdAt).getTime() > 2000)
+  );
+
+  const currentUserId = user?.id || user?.sub || user?.userId;
+  const currentUserRole = (role || user?.role || "").toLowerCase();
+
+  const isAuthorOrAdmin = Boolean(
+    user &&
+    (currentUserRole === "admin" ||
+     (announcement?.createdByUserId && String(currentUserId) === String(announcement.createdByUserId)) ||
+     (user.fullName && announcement?.createdByUserName && user.fullName === announcement.createdByUserName))
+  );
+
+  const handleOpenEdit = () => {
+    setEditForm({
+      title: announcement.title || "",
+      category: announcement.category || "Informasi Sekolah",
+      content: announcement.content || announcement.summary || "",
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editForm.title.trim() || !editForm.content.trim()) return;
+    setIsSavingEdit(true);
+    try {
+      await announcementService.updateAnnouncement(announcement.id, {
+        title: editForm.title.trim(),
+        category: editForm.category,
+        content: editForm.content.trim(),
+        isPinned: !!announcement.isPinned,
+        coverImageUrl: announcement.coverImageUrl || announcement.imageUrl || undefined,
+      });
+      setIsEditOpen(false);
+      refetch && refetch();
+      window.location.reload();
+    } catch (err) {
+      alert("Gagal memperbarui mading: " + (err?.response?.data?.message || err?.message || "Terjadi kesalahan."));
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
 
   // Calculate dynamic reading time based on word count
   const wordCount = (announcement.content || announcement.summary || "").split(/\s+/).length;
@@ -162,6 +222,14 @@ export default function AnnouncementDetailPage() {
                       <span className="bg-blue-50 text-[#1d4ed8] font-semibold text-xs px-3 py-0.5 rounded-full border border-blue-100">
                         {announcement.category || "Pengumuman"}
                       </span>
+                      {isEdited && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span className="bg-amber-50 text-amber-800 font-extrabold text-xs px-2.5 py-0.5 rounded-full border border-amber-200">
+                            Di edit
+                          </span>
+                        </>
+                      )}
                       {announcement.isPinned && (
                         <>
                           <span className="text-gray-300">•</span>
@@ -173,16 +241,28 @@ export default function AnnouncementDetailPage() {
                       )}
                     </div>
 
-                    {/* Share Link Action */}
-                    <button
-                      onClick={handleCopyLink}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-[#1d4ed8] rounded-full border border-gray-200/80 text-xs font-semibold transition-all cursor-pointer"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
-                      <span>{copied ? "Link Tersalin!" : "Bagikan Berita"}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {isAuthorOrAdmin && (
+                        <button
+                          onClick={handleOpenEdit}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#2c1ee8] text-white hover:bg-[#2218a3] rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Edit Mading</span>
+                        </button>
+                      )}
+
+                      {/* Share Link Action */}
+                      <button
+                        onClick={handleCopyLink}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-[#1d4ed8] rounded-full border border-gray-200/80 text-xs font-semibold transition-all cursor-pointer"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        <span>{copied ? "Link Tersalin!" : "Bagikan Berita"}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* 2. Hero Image */}
@@ -205,6 +285,11 @@ export default function AnnouncementDetailPage() {
                       ))
                     ) : (
                       <p>{announcement.summary || "Belum ada konten teks mading."}</p>
+                    )}
+                    {isEdited && (
+                      <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-block mt-2">
+                        Di edit
+                      </span>
                     )}
                   </div>
 
@@ -234,8 +319,15 @@ export default function AnnouncementDetailPage() {
                     </div>
                   )}
 
-                  {/* 4. Publish Date */}
-                  <div className="mt-10 pt-4 border-t border-gray-100 flex justify-end text-xs sm:text-sm font-medium text-gray-500">
+                  {/* 4. Publish Date & Edit status */}
+                  <div className="mt-10 pt-4 border-t border-gray-100 flex items-center justify-between text-xs sm:text-sm font-medium text-gray-500">
+                    {isEdited ? (
+                      <span className="text-amber-700 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                        Di edit • {formatDate(announcement.updatedAt)}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
                     <span>{formattedDate}</span>
                   </div>
                 </article>
@@ -396,6 +488,85 @@ export default function AnnouncementDetailPage() {
           </>
         )}
       </main>
+
+      {/* Edit Mading Modal */}
+      {isEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-[#2c1ee8]" />
+                <span>Edit Pengumuman Mading</span>
+              </h3>
+              <button
+                onClick={() => setIsEditOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full cursor-pointer transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Judul Pengumuman *</label>
+                <input
+                  type="text"
+                  required
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#2c1ee8]"
+                  placeholder="Judul mading..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Kategori Mading *</label>
+                <select
+                  value={editForm.category}
+                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#2c1ee8] bg-white"
+                >
+                  <option value="Informasi Sekolah">Informasi Sekolah</option>
+                  <option value="Kegiatan Siswa">Kegiatan Siswa</option>
+                  <option value="Prestasi & Lomba">Prestasi & Lomba</option>
+                  <option value="Akademik & Ujian">Akademik & Ujian</option>
+                  <option value="Fasilitas & Layanan">Fasilitas & Layanan</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Isi / Konten Mading *</label>
+                <textarea
+                  required
+                  rows={6}
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                  className="w-full p-4 rounded-2xl border border-gray-200 text-xs font-medium focus:outline-none focus:border-[#2c1ee8] leading-relaxed"
+                  placeholder="Tuliskan isi pengumuman mading secara rinci..."
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditOpen(false)}
+                  className="px-5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition cursor-pointer disabled:opacity-50 shadow-md"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingEdit ? "Menyimpan..." : "Simpan Perubahan"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

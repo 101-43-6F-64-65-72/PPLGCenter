@@ -47,6 +47,26 @@ export const announcementService = {
     }
   },
 
+  async updateAnnouncement(id, data) {
+    try {
+      const response = await apiClient.put(API_ROUTES.ANNOUNCEMENTS.DETAIL(id), data);
+      return response;
+    } catch (error) {
+      console.warn(`Backend API endpoint PUT /announcements/${id} error:`, error?.message);
+      throw error;
+    }
+  },
+
+  async deleteAnnouncement(id) {
+    try {
+      const response = await apiClient.delete(API_ROUTES.ANNOUNCEMENTS.DETAIL(id));
+      return response;
+    } catch (error) {
+      console.warn(`Backend API endpoint DELETE /announcements/${id} error:`, error?.message);
+      throw error;
+    }
+  },
+
   // ── Comment Endpoints ──
   async getComments(announcementId, params = {}) {
     const page = params.page || 1;
