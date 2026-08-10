@@ -299,45 +299,58 @@ function PemilosContent() {
       <Navbar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-20">
-        {/* Page Header */}
-        <div className="mb-6 border-b border-slate-200 pb-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
-                E-VOTING PEMILIHAN KETUA & WAKIL KETUA OSIS
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                Pemilihan Ketua OSIS (PEMILOS)
-              </h1>
-            </div>
+          {/* Page Header */}
+          <div className="mb-6 border-b border-slate-200 pb-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                  E-VOTING PEMILIHAN KETUA & WAKIL KETUA OSIS
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  Pemilihan Ketua OSIS (PEMILOS)
+                </h1>
+              </div>
 
-            <div className="flex items-center gap-2">
-              {!!(selectedElection?.cabinetStructureJson || selectedElection?.CabinetStructureJson || liveResults?.cabinetStructureJson || liveResults?.CabinetStructureJson) ? (
-                <button
-                  disabled
-                  title="Pendaftaran ditutup karena voting Pemilos telah resmi dimulai oleh Guru Pembina"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-200 text-slate-500 text-xs font-bold cursor-not-allowed border border-slate-300"
-                >
-                  <Users className="w-4 h-4 text-slate-400" />
-                  <span>+ Daftar Kandidat (Ditutup)</span>
-                </button>
-              ) : (
-                <Link
-                  href="/pemilos/register"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>+ Daftar Kandidat</span>
-                </Link>
-              )}
-              <button
-                onClick={loadPairsAndResults}
-                disabled={loadingPairs}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                <RefreshCw className={`w-4 h-4 ${loadingPairs ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
-              </button>
+              {/* Strict 3-State Header Action Button */}
+              {(() => {
+                const electionStatus = selectedElection?.status ?? liveResults?.status;
+                const hasCabStructure = !!(selectedElection?.cabinetStructureJson || selectedElection?.CabinetStructureJson || liveResults?.cabinetStructureJson || liveResults?.CabinetStructureJson);
+                const isClosed = electionStatus === 2 || electionStatus === "Closed" || selectedElection?.statusText === "Closed";
+                const isOngoing = !isClosed && (electionStatus === 1 || electionStatus === "Open" || selectedElection?.statusText === "Open") && hasCabStructure;
+                const pemilosState = isClosed ? "CLOSED" : isOngoing ? "ONGOING" : "SETUP";
+
+                return (
+                  <div className="flex items-center gap-2">
+                    {pemilosState === "SETUP" ? (
+                      <Link
+                        href="/pemilos/register"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                      >
+                        <Users className="w-4 h-4" />
+                        <span>+ Daftar Kandidat</span>
+                      </Link>
+                    ) : (
+                      <button
+                        disabled
+                        title={pemilosState === "ONGOING" ? "Pendaftaran ditutup karena voting sedang berlangsung" : "Pemilos telah berakhir"}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-200 text-slate-500 text-xs font-bold cursor-not-allowed border border-slate-300"
+                      >
+                        <Users className="w-4 h-4 text-slate-400" />
+                        <span>+ Daftar Kandidat (Ditutup)</span>
+                      </button>
+                    )}
+
+                    <button
+                      onClick={loadPairsAndResults}
+                      disabled={loadingPairs}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loadingPairs ? "animate-spin" : ""}`} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -381,7 +394,6 @@ function PemilosContent() {
               </button>
             ))}
           </div>
-        </div>
 
         {isUnauthorized ? (
           <LoginRequiredFallback featureName="Pemilos (E-Voting Ketua OSIS)" />
@@ -488,63 +500,134 @@ function PemilosContent() {
                   </div>
                 )}
 
-                {/* Candidate Pairs Grid OR Finished Pemilos Banner */}
-                {selectedElection?.status === 2 || selectedElection?.statusText === "Closed" ? (
-                  <div className="bg-white rounded-3xl border border-purple-100 p-8 sm:p-10 shadow-sm text-center space-y-5">
-                    <div className="w-16 h-16 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto shadow-xs">
-                      <Trophy className="w-8 h-8" />
+                {/* Strict 3-State Ballot Section */}
+                {(() => {
+                  const electionStatus = selectedElection?.status ?? liveResults?.status;
+                  const hasCabStructure = !!(selectedElection?.cabinetStructureJson || selectedElection?.CabinetStructureJson || liveResults?.cabinetStructureJson || liveResults?.CabinetStructureJson);
+                  const isClosed = electionStatus === 2 || electionStatus === "Closed" || selectedElection?.statusText === "Closed";
+                  const isOngoing = !isClosed && (electionStatus === 1 || electionStatus === "Open" || selectedElection?.statusText === "Open") && hasCabStructure;
+                  const pemilosState = isClosed ? "CLOSED" : isOngoing ? "ONGOING" : "SETUP";
+
+                  if (pemilosState === "CLOSED") {
+                    return (
+                      <div className="bg-white rounded-3xl border border-purple-100 p-8 sm:p-10 shadow-sm text-center space-y-5">
+                        <div className="w-16 h-16 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto shadow-xs">
+                          <Trophy className="w-8 h-8" />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="inline-block px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700 text-xs font-black uppercase tracking-wider">
+                            Pemilos Selesai
+                          </span>
+                          <h3 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight pt-1">
+                            🎉 Pemilos Berakhir & Pemenang Ditetapkan!
+                          </h3>
+                          <p className="text-xs sm:text-sm text-gray-600 max-w-lg mx-auto leading-relaxed pt-1">
+                            Pemungutan suara telah resmi ditutup oleh Guru Pembina OSIS. Pasangan calon terpilih bersama susunan kabinet baru telah ditetapkan sebagai Kepengurusan OSIS Periode Baru.
+                          </p>
+                        </div>
+                        <div className="pt-2">
+                          <Link
+                            href="/osis/structure"
+                            className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#2c1ee8] text-white font-extrabold text-xs sm:text-sm hover:bg-blue-700 transition-all shadow-md active:scale-95 cursor-pointer"
+                          >
+                            <GitBranch className="w-4 h-4" />
+                            <span>📜 Lihat Struktur OSIS Baru</span>
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (pemilosState === "SETUP") {
+                    return (
+                      <div className="space-y-6">
+                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-xs">
+                          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                          <div>
+                            <h4 className="font-bold text-amber-900 uppercase tracking-wider">Bilik Suara Belum Dibuka</h4>
+                            <p className="font-medium text-amber-800 mt-0.5">
+                              Pendaftaran kandidat sedang dibuka / menunggu penetapan jadwal dan pembukaan e-voting oleh Guru Pembina OSIS. Pasangan calon terdaftar yang disetujui akan tampil di bawah ini.
+                            </p>
+                          </div>
+                        </div>
+
+                        {approvedPairs.length === 0 ? (
+                          <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 p-8">
+                            <Users className="w-16 h-16 mx-auto text-gray-200 mb-4" />
+                            <h3 className="text-base font-bold text-gray-500">Belum Ada Pasangan Resmi</h3>
+                            <p className="text-sm text-gray-400 mt-1">Siswa dapat mendaftar paslon melalui tombol &quot;+ Daftar Kandidat&quot; di kanan atas.</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                            {approvedPairs.map((pair, i) => (
+                              <CandidatePairCard
+                                key={pair.id}
+                                pair={pair}
+                                rank={i + 1}
+                                isWinner={false}
+                                showVoteCount={false}
+                                hasVoted={hasVoted}
+                                isElectionOpen={false}
+                                electionTimeState="BEFORE"
+                                isMinCandidatesMet={isMinCandidatesMet}
+                                onVote={() => toast.error("Bilik suara belum dibuka oleh Guru Pembina OSIS.")}
+                                onViewDetail={(p) => setDetailPair(p)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // State 2: ONGOING (Voting aktif)
+                  return (
+                    <div className="space-y-6">
+                      {!isMinCandidatesMet && (
+                        <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-xs">
+                          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                          <div>
+                            <h4 className="font-bold text-amber-900 uppercase tracking-wider">Pemungutan Suara Belum Dapat Dilaksanakan</h4>
+                            <p className="font-medium text-amber-800 mt-0.5">
+                              Pemilos membutuhkan minimal 2 pasangan kandidat yang terdaftar dan disetujui. Saat ini baru terdapat {approvedPairs.length} pasangan calon resmi.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {loadingPairs ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-3">
+                          <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
+                          <p className="text-sm text-gray-500 font-medium">Memuat daftar pasangan calon...</p>
+                        </div>
+                      ) : approvedPairs.length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8">
+                          <Users className="w-16 h-16 mx-auto text-gray-200 mb-4" />
+                          <h3 className="text-base font-bold text-gray-500">Belum Ada Pasangan Resmi</h3>
+                          <p className="text-sm text-gray-400 mt-1">Pasangan calon yang telah disetujui akan muncul di sini.</p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                          {approvedPairs.map((pair, i) => (
+                            <CandidatePairCard
+                              key={pair.id}
+                              pair={pair}
+                              rank={i + 1}
+                              isWinner={false}
+                              showVoteCount={liveResults?.isResultsVisible}
+                              hasVoted={hasVoted}
+                              isElectionOpen={true}
+                              electionTimeState="ONGOING"
+                              isMinCandidatesMet={isMinCandidatesMet}
+                              onVote={handleVote}
+                              onViewDetail={(p) => setDetailPair(p)}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-1">
-                      <span className="inline-block px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700 text-xs font-black uppercase tracking-wider">
-                        Pemilos Selesai
-                      </span>
-                      <h3 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight pt-1">
-                        🎉 Pemilos Berakhir & Pemenang Ditetapkan!
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 max-w-lg mx-auto leading-relaxed pt-1">
-                        Pemungutan suara telah resmi ditutup oleh Guru Pembina OSIS. Pasangan calon terpilih bersama susunan kabinet baru telah ditetapkan sebagai Kepengurusan OSIS Periode Baru.
-                      </p>
-                    </div>
-                    <div className="pt-2">
-                      <Link
-                        href="/osis/structure"
-                        className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#2c1ee8] text-white font-extrabold text-xs sm:text-sm hover:bg-blue-700 transition-all shadow-md active:scale-95"
-                      >
-                        <GitBranch className="w-4 h-4" />
-                        <span>📜 Lihat Struktur OSIS Baru</span>
-                      </Link>
-                    </div>
-                  </div>
-                ) : loadingPairs ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
-                    <p className="text-sm text-gray-500 font-medium">Memuat daftar pasangan calon...</p>
-                  </div>
-                ) : approvedPairs.length === 0 ? (
-                  <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8">
-                    <Users className="w-16 h-16 mx-auto text-gray-200 mb-4" />
-                    <h3 className="text-base font-bold text-gray-500">Belum Ada Pasangan Resmi</h3>
-                    <p className="text-sm text-gray-400 mt-1">Pasangan calon yang telah disetujui akan muncul di sini.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-                    {approvedPairs.map((pair, i) => (
-                      <CandidatePairCard
-                        key={pair.id}
-                        pair={pair}
-                        rank={i + 1}
-                        isWinner={false} // Hapus pemenang sementara
-                        showVoteCount={liveResults?.isResultsVisible}
-                        hasVoted={hasVoted}
-                        isElectionOpen={isElectionOpen}
-                        electionTimeState={electionTimeState}
-                        isMinCandidatesMet={isMinCandidatesMet}
-                        onVote={handleVote}
-                        onViewDetail={(p) => setDetailPair(p)}
-                      />
-                    ))}
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Section Struktur Kabinet OSIS Pendukung */}
                 {(() => {
