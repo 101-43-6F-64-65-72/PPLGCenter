@@ -256,6 +256,23 @@ public class AnnouncementService : IAnnouncementService
         if (announcement is null)
             return false;
 
+        // Remove child comments and reactions first to prevent Foreign Key constraint 500 errors
+        var comments = await _context.Set<AnnouncementComment>()
+            .Where(c => c.AnnouncementId == id)
+            .ToListAsync();
+        if (comments.Count > 0)
+        {
+            _context.Set<AnnouncementComment>().RemoveRange(comments);
+        }
+
+        var reactions = await _context.Set<AnnouncementReaction>()
+            .Where(r => r.AnnouncementId == id)
+            .ToListAsync();
+        if (reactions.Count > 0)
+        {
+            _context.Set<AnnouncementReaction>().RemoveRange(reactions);
+        }
+
         _context.Set<Announcement>().Remove(announcement);
         await _context.SaveChangesAsync();
 
