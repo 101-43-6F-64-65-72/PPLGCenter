@@ -42,6 +42,10 @@ export const osisRecruitmentService = {
   addCabinetMember: async (data) => {
     return await api.post("/api/osis/recruitment/cabinet-structure", null, { params: data });
   },
+
+  deleteCabinetMember: async (id) => {
+    return await api.delete(`/api/osis/recruitment/cabinet-structure/${id}`);
+  },
 };
 
 export default osisRecruitmentService;

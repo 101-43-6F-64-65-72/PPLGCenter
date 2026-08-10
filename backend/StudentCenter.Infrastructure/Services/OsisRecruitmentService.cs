@@ -291,6 +291,16 @@ public class OsisRecruitmentService : IOsisRecruitmentService
         };
     }
 
+    public async Task<bool> DeleteCabinetMemberAsync(Guid id)
+    {
+        var entry = await _context.OsisCabinetHistories.FindAsync(id);
+        if (entry is null) return false;
+
+        _context.OsisCabinetHistories.Remove(entry);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     private async Task<OsisApplicationResponse> GetApplicationByIdInternalAsync(Guid id)
     {
         var app = await _context.OsisApplications

@@ -104,11 +104,20 @@ public class OsisRecruitmentController : ControllerBase
         return Ok(ApiResponse<List<OsisCabinetMemberResponse>>.Ok("Struktur kabinet OSIS berhasil diambil", result));
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Teacher")]
     [HttpPost("cabinet-structure")]
     public async Task<IActionResult> AddCabinetMember([FromQuery] Guid academicYearId, [FromQuery] Guid studentId, [FromQuery] string positionTitle, [FromQuery] string department, [FromQuery] string? photoUrl)
     {
         var result = await _recruitmentService.AddCabinetMemberAsync(academicYearId, studentId, positionTitle, department, photoUrl);
         return Ok(ApiResponse<OsisCabinetMemberResponse>.Ok("Anggota kabinet OSIS berhasil ditambahkan", result));
+    }
+
+    [Authorize(Roles = "Admin,Teacher")]
+    [HttpDelete("cabinet-structure/{id:guid}")]
+    public async Task<IActionResult> DeleteCabinetMember(Guid id)
+    {
+        var success = await _recruitmentService.DeleteCabinetMemberAsync(id);
+        if (!success) return NotFound(ApiResponse<object>.Fail("Anggota kabinet tidak ditemukan."));
+        return Ok(ApiResponse<object>.Ok("Anggota kabinet berhasil dihapus"));
     }
 }

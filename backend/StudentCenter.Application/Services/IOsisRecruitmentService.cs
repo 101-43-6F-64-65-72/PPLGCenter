@@ -19,4 +19,5 @@ public interface IOsisRecruitmentService
     // Cabinet History & Structure
     Task<List<OsisCabinetMemberResponse>> GetCabinetStructureAsync(Guid? academicYearId = null);
     Task<OsisCabinetMemberResponse> AddCabinetMemberAsync(Guid academicYearId, Guid studentId, string positionTitle, string department, string? photoUrl);
+    Task<bool> DeleteCabinetMemberAsync(Guid id);
 }

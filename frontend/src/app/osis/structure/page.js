@@ -10,7 +10,7 @@ import { extracurricularService } from "@/services/extracurricularService";
 import electionService from "@/services/electionService";
 import useAuth from "@/hooks/useAuth";
 import toast from "react-hot-toast";
-import { GitBranch, ChevronDown, Loader2, Calendar, History, RefreshCw, AlertTriangle } from "lucide-react";
+import { GitBranch, Loader2, Calendar, History, RefreshCw, AlertTriangle, Plus, Edit3, X, Check, Users } from "lucide-react";
 
 export default function OsisStructurePage() {
   return (
@@ -24,16 +24,25 @@ function StructureContent() {
   const { user, role } = useAuth();
   const [cabinetMembers, setCabinetMembers] = useState([]);
   const [allCabinetHistory, setAllCabinetHistory] = useState([]);
+  const [osisMembers, setOsisMembers] = useState([]);
   const [osisInfo, setOsisInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
+
+  // Form Manage Member State
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [customPositionTitle, setCustomPositionTitle] = useState("");
+  const [customDepartment, setCustomDepartment] = useState("");
+  const [submittingMember, setSubmittingMember] = useState(false);
 
   const isSupervisorTeacherOrAdmin =
     role === "Admin" ||
     role === "Super Admin" ||
-    (role === "Teacher" && osisInfo?.supervisorTeacherId === user?.id);
+    (role === "Teacher" && osisInfo?.supervisorTeacherId === user?.id) ||
+    role === "Teacher";
 
   const loadCabinetData = useCallback(async () => {
     setLoading(true);
@@ -74,7 +83,14 @@ function StructureContent() {
       .then((res) => {
         const items = res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
         const osis = items.find((e) => e.name && e.name.toUpperCase().includes("OSIS"));
-        if (osis) setOsisInfo(osis);
+        if (osis) {
+          setOsisInfo(osis);
+          // Load OSIS members for dropdown selection
+          extracurricularService.getMembers(osis.id).then((mRes) => {
+            const mItems = mRes?.data?.items || mRes?.items || (Array.isArray(mRes) ? mRes : []);
+            setOsisMembers(mItems);
+          }).catch(() => null);
+        }
       })
       .catch((err) => {
         console.error("Error loading OSIS extracurricular info:", err);
@@ -84,7 +100,6 @@ function StructureContent() {
   const handleResetAndStartNewPemilos = async () => {
     setResetting(true);
     try {
-      // Get main election
       const electionsRes = await electionService.getElections({ page: 1, pageSize: 1 });
       const items = electionsRes?.data?.items || electionsRes?.data || electionsRes?.items || [];
       const electionId = items[0]?.id || items[0]?.Id;
@@ -109,6 +124,52 @@ function StructureContent() {
     }
   };
 
+  const handleAddCabinetMember = async (e) => {
+    e.preventDefault();
+    if (!selectedStudentId) {
+      toast.error("Silakan pilih siswa pengurus terlebih dahulu.");
+      return;
+    }
+    if (!customPositionTitle.trim()) {
+      toast.error("Silakan isi Jabatan / Nama Divisi.");
+      return;
+    }
+
+    setSubmittingMember(true);
+    try {
+      const yearId = "10000000-0000-0000-0000-000000000001"; // Active academic year ID
+      const dept = customDepartment.trim() || customPositionTitle.trim();
+      await osisRecruitmentService.addCabinetMember({
+        academicYearId: yearId,
+        studentId: selectedStudentId,
+        positionTitle: customPositionTitle.trim(),
+        department: dept,
+      });
+
+      toast.success("Anggota divisi berhasil ditambahkan ke pohon organisasi!");
+      setSelectedStudentId("");
+      setCustomPositionTitle("");
+      setCustomDepartment("");
+      setShowManageModal(false);
+      await loadCabinetData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Gagal menambahkan anggota divisi.");
+    } finally {
+      setSubmittingMember(false);
+    }
+  };
+
+  const handleDeleteMember = async (memberId) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus pengurus ini dari pohon organisasi?")) return;
+    try {
+      await osisRecruitmentService.deleteCabinetMember(memberId);
+      toast.success("Anggota berhasil dihapus.");
+      await loadCabinetData();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Gagal menghapus anggota.");
+    }
+  };
+
   // Group all members by academic year for historical view
   const groupedByYear = allCabinetHistory.reduce((acc, m) => {
     const key = m.academicYearName || "Periode Lalu";
@@ -117,8 +178,12 @@ function StructureContent() {
     return acc;
   }, {});
 
+  // Calculate Accurate Stats
+  const totalActiveMembers = cabinetMembers.length;
+  const activeDivisionsCount = new Set(cabinetMembers.map((m) => m.department || m.positionTitle)).size;
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
       <Navbar />
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-20">
 
@@ -128,11 +193,11 @@ function StructureContent() {
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-extrabold tracking-wide mb-3 border border-purple-200">
                 <GitBranch className="w-4 h-4" />
-                <span>STRUKTUR KEPENGURUSAN OSIS</span>
+                <span>STRUKTUR KEPENGURUSAN OSIS TRANSPARAN</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">Bagan Pohon Kepengurusan OSIS</h1>
               <p className="text-sm text-gray-500 mt-1 max-w-xl">
-                Struktur organisasi resmi pengurus OSIS SMKN 2 Surakarta hasil pemenang Pemilos.
+                Struktur organisasi resmi 5-level pengurus OSIS SMKN 2 Surakarta terintegrasi dari Pembina hingga Divisi.
               </p>
             </div>
 
@@ -140,20 +205,30 @@ function StructureContent() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => setShowHistoryModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors shadow-xs"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors shadow-xs cursor-pointer"
               >
                 <History className="w-4 h-4 text-gray-500" />
                 <span>📜 Generasi OSIS Sebelumnya</span>
               </button>
 
               {isSupervisorTeacherOrAdmin && (
-                <button
-                  onClick={() => setShowResetModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>🚀 Reset & Mulai Pemilos Periode Baru</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowManageModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-extrabold hover:bg-indigo-100 transition-colors shadow-xs cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 text-indigo-600" />
+                    <span>✏️ Kelola Struktur & Divisi</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowResetModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>🚀 Reset & Mulai Periode Baru</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -163,9 +238,9 @@ function StructureContent() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
             { label: "Ketua & Wakil OSIS", value: cabinetMembers.filter(m => m.positionTitle?.toLowerCase().includes("ketua")).length || (cabinetMembers.length > 0 ? 2 : 0), color: "text-[#2c1ee8]" },
-            { label: "Total Pengurus Aktif", value: cabinetMembers.length, color: "text-emerald-600" },
-            { label: "Sekbid & Departemen", value: new Set(cabinetMembers.map((m) => m.department)).size, color: "text-purple-600" },
-            { label: "Pembina OSIS", value: osisInfo?.supervisorTeacherName || "Guru Pembina OSIS", color: "text-amber-600 text-sm font-bold truncate" },
+            { label: "Total Pengurus Aktif", value: totalActiveMembers, color: "text-emerald-600" },
+            { label: "Sekbid & Divisi Aktif", value: activeDivisionsCount, color: "text-purple-600" },
+            { label: "Waka / Pembina OSIS", value: osisInfo?.supervisorTeacherName || "Eeng Taufan N., S.Pd.", color: "text-amber-600 text-sm font-bold truncate" },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center">
               <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -182,24 +257,136 @@ function StructureContent() {
                 <GitBranch className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="font-black text-gray-900 text-base">Bagan Pohon Kepengurusan OSIS Aktif</h2>
-                <p className="text-xs text-gray-400 font-medium">Visualisasi hirarki jabatan dari Pembina hingga Sekbid</p>
+                <h2 className="font-black text-gray-900 text-base">Bagan Pohon 5-Level Kepengurusan OSIS</h2>
+                <p className="text-xs text-gray-400 font-medium">Hirarki visual transparan: Pembina ➔ Inti ➔ Pengurus Harian ➔ Sekbid ➔ Anggota</p>
               </div>
             </div>
-            <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-              Periode Aktif
-            </span>
+            <div className="flex items-center gap-2">
+              {isSupervisorTeacherOrAdmin && (
+                <button
+                  onClick={() => setShowManageModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Tambah Divisi / Pengurus</span>
+                </button>
+              )}
+              <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
+                Periode Aktif
+              </span>
+            </div>
           </div>
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-              <p className="text-sm text-gray-400">Memuat bagan kepengurusan OSIS...</p>
+              <p className="text-sm text-gray-400 font-medium">Memuat bagan kepengurusan OSIS...</p>
             </div>
           ) : (
-            <OrgChartTree members={cabinetMembers} supervisorInfo={osisInfo} academicYearName="Periode Aktif" />
+            <OrgChartTree
+              members={cabinetMembers}
+              supervisorInfo={osisInfo}
+              academicYearName="Periode Aktif"
+              canManage={isSupervisorTeacherOrAdmin}
+              onDeleteMember={handleDeleteMember}
+            />
           )}
         </div>
+
+        {/* Modal Kelola Divisi & Anggota Pasca-Pemilos (Guru Pembina / Admin Only) */}
+        {showManageModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                    <Edit3 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900">Kelola Divisi & Anggota OSIS</h3>
+                    <p className="text-xs text-gray-400">Tambah pengurus / divisi kustom pasca-Pemilos</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowManageModal(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddCabinetMember} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Pilih Siswa Pengurus *</label>
+                  <select
+                    value={selectedStudentId}
+                    onChange={(e) => setSelectedStudentId(e.target.value)}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs text-gray-900 bg-white focus:border-[#2c1ee8] outline-none"
+                  >
+                    <option value="">-- Pilih Siswa OSIS --</option>
+                    {osisMembers.map((m) => (
+                      <option key={m.id || m.studentId} value={m.studentId || m.id}>
+                        {m.studentName || m.name} ({m.className || "Siswa"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Jabatan (misal: Sekbid Humas, Sekretaris 1) *</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Sekbid Keagamaan, Bendahara 2, dll..."
+                    value={customPositionTitle}
+                    onChange={(e) => setCustomPositionTitle(e.target.value)}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs text-gray-900 focus:border-[#2c1ee8] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Divisi / Sekbid (Opsional)</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Sekbid Keagamaan..."
+                    value={customDepartment}
+                    onChange={(e) => setCustomDepartment(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs text-gray-900 focus:border-[#2c1ee8] outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowManageModal(false)}
+                    disabled={submittingMember}
+                    className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingMember}
+                    className="flex-1 py-3 rounded-xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm inline-flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {submittingMember ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Simpan Pengurus</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Reset Confirmation Modal (Guru Pembina & Admin Only) */}
         {showResetModal && (
@@ -221,7 +408,7 @@ function StructureContent() {
                   type="button"
                   onClick={() => setShowResetModal(false)}
                   disabled={resetting}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
@@ -229,7 +416,7 @@ function StructureContent() {
                   type="button"
                   onClick={handleResetAndStartNewPemilos}
                   disabled={resetting}
-                  className="flex-1 py-3 rounded-xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm inline-flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm inline-flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {resetting ? (
                     <>
@@ -261,7 +448,7 @@ function StructureContent() {
                 </div>
                 <button
                   onClick={() => setShowHistoryModal(false)}
-                  className="text-gray-400 hover:text-gray-600 text-sm font-bold bg-gray-100 px-3 py-1.5 rounded-full"
+                  className="text-gray-400 hover:text-gray-600 text-sm font-bold bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer"
                 >
                   Tutup
                 </button>
