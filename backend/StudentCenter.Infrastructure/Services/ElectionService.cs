@@ -554,8 +554,8 @@ public class ElectionService : IElectionService
             .ToListAsync();
         _context.CandidatePairs.RemoveRange(pairs);
 
-        // 3. Reset Election status to Open (fresh registration state)
-        election.Status = ElectionStatus.Open;
+        // 3. Reset Election status to Draft (0 = fresh setup state)
+        election.Status = ElectionStatus.Draft;
         election.CabinetStructureJson = null;
         election.StartDate = DateTime.UtcNow;
         election.EndDate = DateTime.UtcNow.AddDays(7);

@@ -432,32 +432,38 @@ function PemilosContent() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div className="space-y-3 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide border ${
-                              electionTimeState === "ONGOING" && isBackendOpen
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : electionTimeState === "BEFORE"
-                                ? "bg-amber-50 text-amber-700 border-amber-200"
-                                : "bg-gray-100 text-gray-600 border-gray-200"
-                            }`}
-                          >
-                            <span
-                              className={`w-2 h-2 rounded-full ${
-                                electionTimeState === "ONGOING" && isBackendOpen
-                                  ? "bg-emerald-500 animate-pulse"
-                                  : "bg-gray-400"
-                              }`}
-                            />
-                            {electionTimeState === "ONGOING" && isBackendOpen
-                              ? "Pemilihan Sedang Berlangsung"
-                              : electionTimeState === "BEFORE"
-                              ? "Pemilihan Belum Dimulai"
-                              : "Pemilihan Telah Berakhir"}
-                          </span>
+                          {(() => {
+                            const eStat = selectedElection?.status ?? liveResults?.status;
+                            const hasCab = !!(selectedElection?.cabinetStructureJson || selectedElection?.CabinetStructureJson || liveResults?.cabinetStructureJson || liveResults?.CabinetStructureJson);
+                            const isClosedState = eStat === 2 || eStat === "Closed" || selectedElection?.statusText === "Closed";
+                            const isOngoingState = !isClosedState && (eStat === 1 || eStat === "Open" || selectedElection?.statusText === "Open") && hasCab;
 
-                          <span className="text-xs font-medium text-gray-400">
-                            (Status: {selectedElection.statusText || liveResults?.status || "Aktif"})
-                          </span>
+                            const badgeText = isClosedState
+                              ? "Pemilihan Telah Berakhir"
+                              : isOngoingState
+                              ? "Pemilihan Sedang Berlangsung"
+                              : "Belum Dimulai (Pendaftaran Kandidat)";
+
+                            const badgeStyle = isClosedState
+                              ? "bg-purple-50 text-purple-700 border-purple-200"
+                              : isOngoingState
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200";
+
+                            const statusLabel = isClosedState ? "Closed" : isOngoingState ? "Open" : "Draft (Setup)";
+
+                            return (
+                              <>
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide border ${badgeStyle}`}>
+                                  <span className={`w-2 h-2 rounded-full ${isOngoingState ? "bg-emerald-500 animate-pulse" : isClosedState ? "bg-purple-500" : "bg-amber-500"}`} />
+                                  {badgeText}
+                                </span>
+                                <span className="text-xs font-medium text-gray-400">
+                                  (Status: {statusLabel})
+                                </span>
+                              </>
+                            );
+                          })()}
                         </div>
 
                         <h2 className="text-lg font-black text-gray-900 mt-2">
