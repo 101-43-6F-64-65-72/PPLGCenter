@@ -41,13 +41,13 @@ export const facilityService = {
   },
 
   getMyManagedFacilities: async () => {
-    const res = await api.get("/facilities/my-managed");
+    const res = await api.get("/api/facilities/my-managed");
     const data = res?.data ?? res;
     return { data: Array.isArray(data) ? data : [] };
   },
 
   getManagedBookings: async (params = {}) => {
-    const res = await api.get("/facilities/managed-bookings", { params });
+    const res = await api.get("/api/facilities/managed-bookings", { params });
     const pagedResult = res?.data ?? res;
     const items = pagedResult?.items ?? (Array.isArray(pagedResult) ? pagedResult : []);
     return items;

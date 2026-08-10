@@ -428,45 +428,57 @@ public class ElectionService : IElectionService
             var activeYear = await _context.AcademicYears.FirstOrDefaultAsync(a => a.IsActive)
                 ?? await _context.AcademicYears.OrderByDescending(a => a.StartDate).FirstOrDefaultAsync();
 
-            if (activeYear != null)
+            if (activeYear is null)
             {
-                // Deactivate previous active cabinet members
-                var previousMembers = await _context.OsisCabinetHistories
-                    .Where(h => h.AcademicYearId == activeYear.Id && h.IsActive)
-                    .ToListAsync();
-                foreach (var prev in previousMembers)
+                activeYear = new AcademicYear
                 {
-                    prev.IsActive = false;
-                }
+                    Id = Guid.NewGuid(),
+                    Name = "2025/2026",
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddYears(1),
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.AcademicYears.Add(activeYear);
+                await _context.SaveChangesAsync();
+            }
 
-                // Add Chairman
+            // Deactivate previous active cabinet members
+            var previousMembers = await _context.OsisCabinetHistories
+                .Where(h => h.IsActive)
+                .ToListAsync();
+            foreach (var prev in previousMembers)
+            {
+                prev.IsActive = false;
+            }
+
+            // Add Chairman
+            _context.OsisCabinetHistories.Add(new OsisCabinetHistory
+            {
+                Id = Guid.NewGuid(),
+                AcademicYearId = activeYear.Id,
+                StudentId = winningPair.ChairmanUserId,
+                PositionTitle = "Ketua OSIS",
+                Department = "BPH",
+                PhotoUrl = winningPair.PhotoUrl ?? winningPair.ChairmanUser?.PhotoUrl,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            // Add Vice Chairman
+            if (winningPair.ViceUserId.HasValue)
+            {
                 _context.OsisCabinetHistories.Add(new OsisCabinetHistory
                 {
                     Id = Guid.NewGuid(),
                     AcademicYearId = activeYear.Id,
-                    StudentId = winningPair.ChairmanUserId,
-                    PositionTitle = "Ketua OSIS",
+                    StudentId = winningPair.ViceUserId.Value,
+                    PositionTitle = "Wakil Ketua OSIS",
                     Department = "BPH",
-                    PhotoUrl = winningPair.PhotoUrl ?? winningPair.ChairmanUser?.PhotoUrl,
+                    PhotoUrl = winningPair.VicePhotoUrl ?? winningPair.ViceUser?.PhotoUrl,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 });
-
-                // Add Vice Chairman
-                if (winningPair.ViceUserId.HasValue)
-                {
-                    _context.OsisCabinetHistories.Add(new OsisCabinetHistory
-                    {
-                        Id = Guid.NewGuid(),
-                        AcademicYearId = activeYear.Id,
-                        StudentId = winningPair.ViceUserId.Value,
-                        PositionTitle = "Wakil Ketua OSIS",
-                        Department = "BPH",
-                        PhotoUrl = winningPair.VicePhotoUrl ?? winningPair.ViceUser?.PhotoUrl,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                }
             }
         }
 
