@@ -25,6 +25,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import facilityService from "@/services/facilityService";
+import userService from "@/services/userService";
 import apiClient from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
 
@@ -52,8 +53,13 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
     // Fetch teachers list for manager selection
     const fetchTeachers = async () => {
       try {
-        const res = await apiClient.get("/users", { params: { role: "Teacher", pageSize: 200 } });
-        const list = res?.data?.items || res?.items || (Array.isArray(res?.data) ? res.data : []);
+        const res = await userService.getTeachers();
+        let list = [];
+        if (res?.data) {
+          list = Array.isArray(res.data) ? res.data : (res.data.items || []);
+        } else if (Array.isArray(res)) {
+          list = res;
+        }
         setTeachers(list);
       } catch (err) {
         console.error("Failed to load teachers for facility manager dropdown:", err);
