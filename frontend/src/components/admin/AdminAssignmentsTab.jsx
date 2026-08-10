@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { assignmentService } from "@/services/assignmentService";
-import { CheckSquare, Calendar, Trash2, Search, RefreshCw, AlertCircle, Clock } from "lucide-react";
+import { CheckSquare, Trash2, Search, RefreshCw, AlertCircle, Clock, Eye } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Table, { TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/Table";
+import ErrorAlert from "@/components/common/ErrorAlert";
 
 export default function AdminAssignmentsTab({ onSelectAssignmentForReview }) {
   const [assignments, setAssignments] = useState([]);
@@ -47,110 +52,109 @@ export default function AdminAssignmentsTab({ onSelectAssignmentForReview }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Master Tugas (Assignments)</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Monitoring tugas, deadline, dan pengumpulan siswa</p>
+      {/* Top Header */}
+      <PageHeader
+        icon={CheckSquare}
+        title="Master Tugas (Assignments)"
+        description="Monitoring tugas, deadline, dan pengumpulan submisi siswa."
+        badge={<Badge variant="info">Master Tugas</Badge>}
+        actions={
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={fetchAssignments}
+            leftIcon={<RefreshCw className="w-4 h-4" />}
+          >
+            Segarkan
+          </Button>
+        }
+      />
+
+      {error && <ErrorAlert title="Gagal Memuat Tugas" message={error} onClose={() => setError("")} />}
+
+      {/* Filter / Search Bar */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex items-center justify-between gap-4">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Cari judul tugas, kelas, mapel, atau guru..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#2c1ee8]"
+          />
         </div>
-        <button
-          onClick={fetchAssignments}
-          className="flex items-center gap-2 px-3 py-2 text-sm bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-200"
-        >
-          <RefreshCw className="w-4 h-4" /> Segarkan
-        </button>
       </div>
 
-      {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg text-sm flex items-center gap-2">
-          <AlertCircle className="w-5 h-5 flex-shrink-0" />
-          {error}
-        </div>
-      )}
-
-      {/* Search */}
-      <div className="relative">
-        <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-        <input
-          type="text"
-          placeholder="Cari judul tugas, kelas, mapel, atau guru..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]"
-        />
-      </div>
-
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-slate-500">Memuat daftar tugas...</div>
-        ) : filteredAssignments.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">Tidak ada tugas ditemukan.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium">
-                <tr>
-                  <th className="p-4">Judul Tugas</th>
-                  <th className="p-4">Kelas & Mapel</th>
-                  <th className="p-4">Guru</th>
-                  <th className="p-4">Tenggat Waktu (Due Date)</th>
-                  <th className="p-4">Skor Maks</th>
-                  <th className="p-4">Submisi / Dinilai</th>
-                  <th className="p-4 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                {filteredAssignments.map((a) => {
-                  const isPastDue = new Date(a.dueDate) < new Date();
-                  return (
-                    <tr key={a.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
-                      <td className="p-4 font-medium text-slate-800 dark:text-slate-200">
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-[#2c1ee8]" />
-                          {a.title}
-                        </div>
-                        {a.description && <div className="text-xs text-slate-400 line-clamp-1">{a.description}</div>}
-                      </td>
-                      <td className="p-4">
-                        <div className="text-slate-800 dark:text-white font-medium">{a.className}</div>
-                        <div className="text-xs text-slate-400">{a.subjectName}</div>
-                      </td>
-                      <td className="p-4 text-slate-600 dark:text-slate-300">{a.teacherName}</td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300">
-                          <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          {new Date(a.dueDate).toLocaleString("id-ID")}
-                        </div>
-                        {isPastDue && <span className="text-[10px] text-rose-600 font-medium">Deadline Lewat</span>}
-                      </td>
-                      <td className="p-4 text-slate-700 font-mono text-xs">{a.maxScore}</td>
-                      <td className="p-4">
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
-                          {a.submissionCount} Terkumpul ({a.gradedCount} Dinilai)
-                        </span>
-                      </td>
-                      <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => onSelectAssignmentForReview && onSelectAssignmentForReview(a)}
-                          className="px-2.5 py-1 text-xs bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100"
-                        >
-                          Tinjau Submisi
-                        </button>
-                        <button
-                          onClick={() => handleDelete(a.id)}
-                          className="px-2.5 py-1 text-xs bg-rose-50 text-rose-700 rounded hover:bg-rose-100"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 inline" /> Hapus
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Table Container */}
+      <Table>
+        <TableHeader variant="navy">
+          <tr>
+            <TableCell isHeader>Judul Tugas</TableCell>
+            <TableCell isHeader>Kelas & Mapel</TableCell>
+            <TableCell isHeader>Guru Pengampu</TableCell>
+            <TableCell isHeader>Tenggat Waktu (Due Date)</TableCell>
+            <TableCell isHeader>Skor Maks</TableCell>
+            <TableCell isHeader>Submisi / Dinilai</TableCell>
+            <TableCell isHeader className="text-right">Aksi</TableCell>
+          </tr>
+        </TableHeader>
+        <TableBody isLoading={loading} isEmpty={filteredAssignments.length === 0} emptyText="Tidak ada tugas ditemukan" colSpan={7}>
+          {filteredAssignments.map((a) => {
+            const isPastDue = new Date(a.dueDate) < new Date();
+            return (
+              <TableRow key={a.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2 font-black text-gray-900">
+                    <CheckSquare className="w-4 h-4 text-[#2c1ee8] shrink-0" />
+                    <span>{a.title}</span>
+                  </div>
+                  {a.description && <div className="text-xs text-gray-400 font-medium line-clamp-1 mt-0.5">{a.description}</div>}
+                </TableCell>
+                <TableCell>
+                  <div className="font-bold text-gray-900">{a.className || "—"}</div>
+                  <div className="text-[10px] text-gray-400 font-extrabold text-[#2c1ee8]">{a.subjectName}</div>
+                </TableCell>
+                <TableCell className="font-semibold text-gray-700">{a.teacherName || "—"}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1.5 text-xs font-semibold">
+                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                    <span>{new Date(a.dueDate).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
+                  </div>
+                  <Badge variant={isPastDue ? "danger" : "success"} size="sm" className="mt-1">
+                    {isPastDue ? "Lewat Tenggat" : "Aktif"}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-mono font-bold text-gray-800">{a.maxScore ?? 100}</TableCell>
+                <TableCell>
+                  <span className="font-mono font-extrabold text-[#2c1ee8]">
+                    {a.submissionsCount || 0} submisi
+                  </span>
+                </TableCell>
+                <TableCell className="text-right space-x-1">
+                  {onSelectAssignmentForReview && (
+                    <Button
+                      variant="secondary"
+                      size="xs"
+                      onClick={() => onSelectAssignmentForReview(a)}
+                      leftIcon={<Eye className="w-3.5 h-3.5" />}
+                    >
+                      Review Submisi
+                    </Button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(a.id)}
+                    className="p-1.5 rounded-xl border border-gray-200 hover:bg-rose-50 hover:text-rose-600 text-gray-400 transition cursor-pointer"
+                    title="Hapus Tugas"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }

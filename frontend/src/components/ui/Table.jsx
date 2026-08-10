@@ -13,12 +13,13 @@ export const Table = ({ children, className = "" }) => {
   );
 };
 
-export const TableHeader = ({ children, className = "" }) => {
-  return (
-    <thead className={`bg-gray-50/80 border-b border-gray-100 text-gray-400 font-extrabold uppercase tracking-wider text-[11px] ${className}`}>
-      {children}
-    </thead>
-  );
+export const TableHeader = ({ children, variant = "navy", className = "" }) => {
+  const bgStyles =
+    variant === "navy"
+      ? "bg-gradient-to-r from-[#071225] via-[#0b1630] to-[#111b33] text-slate-100 font-black uppercase tracking-wider text-[11px] border-b border-slate-800"
+      : "bg-gray-50/90 border-b border-gray-100 text-gray-500 font-extrabold uppercase tracking-wider text-[11px]";
+
+  return <thead className={`${bgStyles} ${className}`}>{children}</thead>;
 };
 
 export const TableBody = ({ children, isLoading = false, isEmpty = false, emptyText = "Tidak ada data ditemukan", colSpan = 5, className = "" }) => {
