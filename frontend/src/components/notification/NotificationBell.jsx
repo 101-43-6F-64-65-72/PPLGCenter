@@ -31,11 +31,9 @@ export default function NotificationBell() {
 
     try {
       const res = await notificationService.getUnreadCount();
-      if (res?.data !== undefined) {
-        setUnreadCount(res.data);
-      }
+      const count = typeof res?.data === "number" ? res.data : typeof res === "number" ? res : 0;
+      setUnreadCount(count);
     } catch (err) {
-      // If 401 Unauthorized or token missing, stop polling immediately to prevent backend spam
       if (err?.statusCode === 401 || err?.response?.status === 401 || !getStoredToken()) {
         stopPolling();
         setUnreadCount(0);
@@ -52,9 +50,11 @@ export default function NotificationBell() {
 
     try {
       const res = await notificationService.getSummary();
-      if (res?.data) {
-        setNotifications(res.data.recentUnread || []);
-        setUnreadCount(res.data.unreadCount || 0);
+      const payload = res?.data || res || {};
+      const list = payload.recentUnread || payload.items || (Array.isArray(payload) ? payload : []);
+      setNotifications(list);
+      if (typeof payload.unreadCount === "number") {
+        setUnreadCount(payload.unreadCount);
       }
     } catch (err) {
       if (err?.statusCode === 401 || err?.response?.status === 401 || !getStoredToken()) {

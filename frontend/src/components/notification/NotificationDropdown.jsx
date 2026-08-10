@@ -1,15 +1,17 @@
 import React from "react";
 import Link from "next/link";
 import NotificationItem from "./NotificationItem";
+import { CheckCheck } from "lucide-react";
 
 export default function NotificationDropdown({ notifications, unreadCount, onMarkAllRead, onMarkRead, onClose }) {
   return (
-    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl z-50 overflow-hidden backdrop-blur-xl">
-      <div className="p-3.5 bg-slate-800/80 border-b border-slate-700/60 flex items-center justify-between">
+    <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-gray-100 rounded-3xl shadow-2xl z-50 overflow-hidden font-sans animate-in fade-in duration-200">
+      {/* Header */}
+      <div className="p-4 bg-gradient-to-r from-[#071225] via-[#0b1630] to-[#111b33] text-white flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-slate-100 text-sm">Notifikasi</h3>
+          <h3 className="font-extrabold text-sm tracking-tight">Pusat Notifikasi</h3>
           {unreadCount > 0 && (
-            <span className="bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs px-2 py-0.5 rounded-full font-medium">
+            <span className="bg-[#2c1ee8] text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs">
               {unreadCount} baru
             </span>
           )}
@@ -17,18 +19,21 @@ export default function NotificationDropdown({ notifications, unreadCount, onMar
         {unreadCount > 0 && (
           <button
             onClick={onMarkAllRead}
-            className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+            className="text-xs text-blue-200 hover:text-white font-bold transition-colors flex items-center gap-1 cursor-pointer"
           >
-            Tandai semua dibaca
+            <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Tandai dibaca</span>
           </button>
         )}
       </div>
 
-      <div className="max-h-96 overflow-y-auto p-2 space-y-2 divide-y-0">
+      {/* List Container */}
+      <div className="max-h-96 overflow-y-auto p-3 space-y-2 bg-slate-50/50">
         {notifications.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 text-xs">
-            <span className="text-2xl mb-2 block">🔔</span>
-            Belum ada notifikasi
+          <div className="py-10 text-center text-gray-400 text-xs space-y-1">
+            <span className="text-3xl block mb-1">🔔</span>
+            <p className="font-bold text-gray-700">Belum ada notifikasi baru</p>
+            <p className="text-[11px] text-gray-400">Pemberitahuan aktivitas Anda akan muncul di sini.</p>
           </div>
         ) : (
           notifications.map((item) => (
@@ -41,11 +46,12 @@ export default function NotificationDropdown({ notifications, unreadCount, onMar
         )}
       </div>
 
-      <div className="p-2.5 bg-slate-800/60 border-t border-slate-700/60 text-center">
+      {/* Footer Link */}
+      <div className="p-3 bg-white border-t border-gray-100 text-center">
         <Link
           href="/notifications"
           onClick={onClose}
-          className="text-xs text-slate-300 hover:text-indigo-400 font-medium block w-full py-1 transition-colors"
+          className="text-xs font-black text-[#2c1ee8] hover:text-[#2013ce] block w-full py-1 transition-colors"
         >
           Lihat Semua Notifikasi →
         </Link>

@@ -9,10 +9,11 @@ import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
-import { Bell, Send, CheckCheck } from "lucide-react";
+import { Bell, Send, CheckCheck, X } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import NotificationItem from "@/components/notification/NotificationItem";
 import AuthGuard from "@/components/layout/AuthGuard";
+import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -42,9 +43,11 @@ export default function NotificationsPage() {
         if (filterRead !== "") params.isRead = filterRead === "read";
 
         const res = await notificationService.getNotifications(params);
-        if (isMounted && res?.data) {
-          setNotifications(res.data.items || []);
-          setTotalPages(Math.ceil((res.data.totalCount || 0) / 10) || 1);
+        if (isMounted) {
+          const items = res?.data?.items || res?.items || (Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []);
+          const total = res?.data?.totalCount || res?.totalCount || items.length;
+          setNotifications(items);
+          setTotalPages(Math.ceil((total || 0) / 10) || 1);
         }
       } catch (err) {
         console.error("Failed to fetch notifications", err);
@@ -67,10 +70,10 @@ export default function NotificationsPage() {
       if (filterRead !== "") params.isRead = filterRead === "read";
 
       const res = await notificationService.getNotifications(params);
-      if (res?.data) {
-        setNotifications(res.data.items || []);
-        setTotalPages(Math.ceil((res.data.totalCount || 0) / 10) || 1);
-      }
+      const items = res?.data?.items || res?.items || (Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []);
+      const total = res?.data?.totalCount || res?.totalCount || items.length;
+      setNotifications(items);
+      setTotalPages(Math.ceil((total || 0) / 10) || 1);
     } catch (err) {
       console.error("Failed to fetch notifications", err);
     } finally {
@@ -189,14 +192,17 @@ export default function NotificationsPage() {
 
           {/* Notification List */}
           {loading ? (
-            <div className="text-center py-16 text-slate-400 text-sm animate-pulse">
-              Memuat notifikasi...
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-xs gap-3">
+              <TwinOrbitSpinner size="lg" color="primary" />
+              <p className="text-xs font-bold text-gray-500 animate-pulse">Memuat notifikasi Anda...</p>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-12 text-center text-slate-400 space-y-2">
-              <span className="text-4xl block">📭</span>
-              <h3 className="text-base font-semibold text-slate-200">Tidak ada notifikasi</h3>
-              <p className="text-xs text-slate-500">Anda telah membaca seluruh notifikasi atau tidak ada data yang cocok dengan filter.</p>
+            <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center text-gray-400 space-y-2 shadow-xs">
+              <span className="text-4xl block mb-1">📭</span>
+              <h3 className="text-base font-extrabold text-gray-900">Tidak ada notifikasi</h3>
+              <p className="text-xs text-gray-500 font-medium max-w-sm mx-auto">
+                Anda telah membaca seluruh notifikasi atau belum ada pemberitahuan baru yang cocok dengan filter.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -213,23 +219,23 @@ export default function NotificationsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-slate-900/40 border border-slate-800 p-4 rounded-xl">
+            <div className="flex items-center justify-between bg-white border border-gray-100 p-4 rounded-2xl shadow-xs">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 text-xs bg-slate-800 disabled:opacity-40 hover:bg-slate-700 text-slate-200 rounded-lg"
+                className="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
               >
-                ← Sebelumnya
+                ← Halaman Sebelumnya
               </button>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs font-extrabold text-gray-700">
                 Halaman {page} dari {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="px-3 py-1.5 text-xs bg-slate-800 disabled:opacity-40 hover:bg-slate-700 text-slate-200 rounded-lg"
+                className="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
               >
-                Selanjutnya →
+                Halaman Selanjutnya →
               </button>
             </div>
           )}
@@ -239,54 +245,55 @@ export default function NotificationsPage() {
 
         {/* Broadcast Modal */}
         {broadcastModalOpen && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <span>📢</span> Kirim Broadcast Notifikasi
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+            <div className="bg-white border border-gray-100 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4 font-sans">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                  <span className="text-xl">📢</span>
+                  <span>Kirim Broadcast Notifikasi (Admin)</span>
                 </h3>
                 <button
                   onClick={() => setBroadcastModalOpen(false)}
-                  className="text-slate-400 hover:text-white"
+                  className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
-                  ✕
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               <form onSubmit={handleSendBroadcast} className="space-y-4">
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Judul Notifikasi *</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Judul Notifikasi *</label>
                   <input
                     type="text"
                     required
                     value={broadcastForm.title}
                     onChange={(e) => setBroadcastForm({ ...broadcastForm, title: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
-                    placeholder="Contoh: Pengumuman Libur Nasional"
+                    className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#2c1ee8] focus:bg-white font-medium"
+                    placeholder="Contoh: Pengumuman Libur Nasional Hari Raya"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Pesan / Body *</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Pesan / Detail Notifikasi *</label>
                   <textarea
                     required
                     rows={3}
                     value={broadcastForm.body}
                     onChange={(e) => setBroadcastForm({ ...broadcastForm, body: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
-                    placeholder="Tuliskan detail pesan broadcast..."
+                    className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl p-3.5 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#2c1ee8] focus:bg-white font-medium leading-relaxed"
+                    placeholder="Tuliskan detail pesan broadcast kepada pengguna..."
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-slate-300 mb-1">Target Role</label>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Target Pengguna</label>
                     <select
                       value={broadcastForm.targetRole}
                       onChange={(e) => setBroadcastForm({ ...broadcastForm, targetRole: e.target.value })}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2.5 text-xs text-gray-900 font-bold focus:outline-none focus:border-[#2c1ee8]"
                     >
-                      <option value="">Semua User</option>
+                      <option value="">Semua User (Global)</option>
                       <option value="Student">Siswa (Student)</option>
                       <option value="Teacher">Guru (Teacher)</option>
                       <option value="Admin">Admin</option>
@@ -294,11 +301,11 @@ export default function NotificationsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-300 mb-1">Prioritas</label>
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Tingkat Prioritas</label>
                     <select
                       value={broadcastForm.priority}
                       onChange={(e) => setBroadcastForm({ ...broadcastForm, priority: parseInt(e.target.value) })}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2.5 text-xs text-gray-900 font-bold focus:outline-none focus:border-[#2c1ee8]"
                     >
                       <option value={0}>Rendah (Low)</option>
                       <option value={1}>Normal</option>
@@ -309,30 +316,40 @@ export default function NotificationsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Action URL (Opsional)</label>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Tujuan Tautan / Action URL (Opsional)</label>
                   <input
                     type="text"
                     value={broadcastForm.actionUrl}
                     onChange={(e) => setBroadcastForm({ ...broadcastForm, actionUrl: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#2c1ee8] focus:bg-white font-medium"
                     placeholder="Contoh: /announcements"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2">
+                <div className="flex justify-end gap-3 pt-3 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={() => setBroadcastModalOpen(false)}
-                    className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white"
+                    className="px-5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
                     disabled={submittingBroadcast}
-                    className="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                    className="px-6 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2013ce] transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    {submittingBroadcast ? "Sending..." : "Kirim Sekarang"}
+                    {submittingBroadcast ? (
+                      <>
+                        <TwinOrbitSpinner size="xs" color="white" />
+                        <span>Mengirim...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Kirim Broadcast</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
