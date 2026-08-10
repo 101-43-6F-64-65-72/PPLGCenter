@@ -9,7 +9,10 @@ import AnnouncementSkeleton from "@/features/announcement/components/Announcemen
 import ErrorAlert from "@/components/common/ErrorAlert";
 import EmptyState from "@/components/common/EmptyState";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
+import useAuth from "@/hooks/useAuth";
+import CreateAnnouncementModal from "@/features/announcement/components/CreateAnnouncementModal";
 import { Search, ChevronLeft, ChevronRight } from "@/components/common/Icons";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 let motionImport = null;
@@ -38,13 +41,30 @@ const MotionDiv = motionImport?.div || FallbackDiv;
 const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
 
 export default function MadingPage() {
+  const { user, role, memberships, isAuthenticated } = useAuth();
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const pageSize = 6;
   const router = useRouter();
+
+  const userRole = (role || user?.role || "").toLowerCase();
+  const isAdmin = userRole === "admin";
+  const isTeacher = userRole === "teacher" || userRole === "guru";
+  const isOsisMember =
+    userRole === "osis" ||
+    (userRole === "student" &&
+      Array.isArray(memberships) &&
+      memberships.some(
+        (m) =>
+          m.name?.toLowerCase().includes("osis") ||
+          m.category?.toLowerCase().includes("osis")
+      ));
+
+  const canCreateMading = isAuthenticated && (isAdmin || isTeacher || isOsisMember);
 
   // Scroll listener for floating scroll-to-top button
   useEffect(() => {
@@ -141,16 +161,28 @@ export default function MadingPage() {
               </h2>
             </div>
 
-            <form onSubmit={handleSearchSubmit} className="w-full md:w-72 relative flex items-center">
-              <input
-                type="text"
-                placeholder="Cari pengumuman..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-200 bg-gray-50 text-sm outline-none focus:border-[#1d4ed8] focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all shadow-xs"
-              />
-              <Search className="w-4 h-4 text-gray-400 absolute left-3.5" />
-            </form>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+              <form onSubmit={handleSearchSubmit} className="w-full md:w-72 relative flex items-center">
+                <input
+                  type="text"
+                  placeholder="Cari pengumuman..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-200 bg-gray-50 text-sm outline-none focus:border-[#1d4ed8] focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all shadow-xs"
+                />
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5" />
+              </form>
+
+              {canCreateMading && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="px-5 py-2.5 rounded-full bg-[#1d4ed8] hover:bg-blue-800 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all transform hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Tambah Mading</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Sticky Category Filter Pills */}
@@ -294,6 +326,15 @@ export default function MadingPage() {
           </svg>
         </button>
       )}
+
+      {/* Create Announcement Modal for Teachers, Admins, and OSIS Members */}
+      <CreateAnnouncementModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          refetch();
+        }}
+      />
     </div>
   );
 }

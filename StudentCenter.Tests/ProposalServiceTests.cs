@@ -6,6 +6,7 @@ using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
 using StudentCenter.Infrastructure.Services;
+using StudentCenter.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace StudentCenter.Tests;
@@ -14,6 +15,7 @@ public class ProposalServiceTests
 {
     private readonly AppDbContext _context;
     private readonly Mock<INotificationService> _mockNotificationService;
+    private readonly Mock<IFileStorageService> _mockFileStorageService;
     private readonly ProposalService _service;
 
     public ProposalServiceTests()
@@ -23,7 +25,8 @@ public class ProposalServiceTests
             .Options;
         _context = new AppDbContext(options);
         _mockNotificationService = new Mock<INotificationService>();
-        _service = new ProposalService(_context, _mockNotificationService.Object);
+        _mockFileStorageService = new Mock<IFileStorageService>();
+        _service = new ProposalService(_context, _mockNotificationService.Object, _mockFileStorageService.Object);
     }
 
     [Fact]
@@ -314,11 +317,14 @@ public class ProposalServiceTests
         _mockNotificationService.Verify(
             x => x.NotifyUserAsync(
                 submitter,
-                "Proposal Approved",
+                "Proposal Disetujui",
                 It.IsAny<string>(),
-                NotificationType.Proposal,
+                NotificationType.ProposalApproved,
+                NotificationPriority.Normal,
                 proposal.Id.ToString(),
-                "Proposal"),
+                NotificationReferenceType.Proposal,
+                It.IsAny<string>(),
+                null, null, null),
             Times.Once);
     }
 
@@ -329,11 +335,13 @@ public class ProposalServiceTests
         var teacher = Guid.NewGuid();
         var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.Student };
         var user2 = new User { Id = teacher, FullName = "Teacher", Email = "teacher@test.com", Role = UserRole.Teacher };
+        var extra = new Extracurricular { Id = Guid.NewGuid(), Name = "Event", SupervisorTeacherId = teacher, IsActive = true };
         var proposal = new Proposal
         {
             Id = Guid.NewGuid(),
             Title = "Event",
             Description = "Desc",
+            Category = "Event",
             FileUrl = "https://example.com/file.pdf",
             Status = ProposalStatus.Pending,
             SubmittedByUserId = submitter,
@@ -341,6 +349,7 @@ public class ProposalServiceTests
             UpdatedAt = DateTime.UtcNow
         };
         _context.Users.AddRange(user1, user2);
+        _context.Extracurriculars.Add(extra);
         _context.Proposals.Add(proposal);
         await _context.SaveChangesAsync();
 

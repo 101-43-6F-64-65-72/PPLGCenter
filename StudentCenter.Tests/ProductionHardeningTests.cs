@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using StudentCenter.Api.Controllers;
 using StudentCenter.Application.DTOs;
+using StudentCenter.Application.Interfaces;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
@@ -45,7 +46,7 @@ public class ProductionHardeningTests
     {
         var mockEnv = new Mock<IWebHostEnvironment>();
         var mockConfig = new Mock<IConfiguration>();
-        var controller = new UploadController(mockEnv.Object, mockConfig.Object);
+        var controller = new UploadController(mockEnv.Object, mockConfig.Object, Mock.Of<IFileStorageService>(), Mock.Of<ICloudinaryService>());
 
         var fileMock = new Mock<IFormFile>();
         fileMock.Setup(f => f.FileName).Returns("malicious_script.exe");
@@ -62,7 +63,7 @@ public class ProductionHardeningTests
     {
         var mockEnv = new Mock<IWebHostEnvironment>();
         var mockConfig = new Mock<IConfiguration>();
-        var controller = new UploadController(mockEnv.Object, mockConfig.Object);
+        var controller = new UploadController(mockEnv.Object, mockConfig.Object, Mock.Of<IFileStorageService>(), Mock.Of<ICloudinaryService>());
 
         var fileMock = new Mock<IFormFile>();
         fileMock.Setup(f => f.FileName).Returns("large_video.mp4");

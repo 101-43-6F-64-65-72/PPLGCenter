@@ -30,20 +30,30 @@ export default function FacilityCard({
   category = "Umum",
   description = "",
   status = "tersedia",
+  isActive = true,
   time = "07.00 s.d 17.00 WIB",
   imageSrc = "/images/tempat/lapangansmkn2ska.jpg",
   onActionClick,
 }) {
-  const isAvailable = (status || "").toLowerCase() === "tersedia";
+  const isAvailable = isActive && (status || "").toLowerCase() === "tersedia";
   // Clean up title text if it starts with [SEED]
   const displayTitle = (title || "").replace(/^\[SEED\]\s*/i, "").trim();
   const resolvedImageSrc = getCategoryMatchingImage(displayTitle, location, imageSrc);
   const [imgSrc, setImgSrc] = useState(resolvedImageSrc);
 
+  const handleCardClick = () => {
+    if (!isAvailable) return;
+    onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, isActive, time, imageSrc: imgSrc });
+  };
+
   return (
     <div
-      onClick={() => onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, time, imageSrc: imgSrc })}
-      className="group flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:border-[#2c1ee8]/40 hover:shadow-xl hover:shadow-[#2c1ee8]/10 cursor-pointer"
+      onClick={handleCardClick}
+      className={`group flex flex-col justify-between overflow-hidden rounded-3xl border bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 ${
+        isAvailable
+          ? "border-slate-200/80 hover:-translate-y-1.5 hover:border-[#2c1ee8]/40 hover:shadow-xl hover:shadow-[#2c1ee8]/10 cursor-pointer"
+          : "border-slate-200 bg-slate-50/70 opacity-80 cursor-not-allowed"
+      }`}
     >
       <div>
         {/* Card Cover Header */}
@@ -51,7 +61,9 @@ export default function FacilityCard({
           <img
             src={imgSrc}
             alt={displayTitle}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`absolute inset-0 h-full w-full object-cover transition-transform duration-500 ${
+              isAvailable ? "group-hover:scale-105" : "grayscale filter"
+            }`}
             onError={() => {
               setImgSrc(getCategoryMatchingImage(displayTitle, location, null));
             }}
@@ -65,11 +77,11 @@ export default function FacilityCard({
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-wide border shadow-2xs backdrop-blur-md ${
                 isAvailable
                   ? "bg-emerald-500/90 text-white border-emerald-400/50"
-                  : "bg-amber-500/90 text-white border-amber-400/50"
+                  : "bg-rose-500/90 text-white border-rose-400/50"
               }`}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-              {isAvailable ? "Tersedia" : "Terpakai"}
+              {isAvailable ? "Tersedia" : "Nonaktif"}
             </span>
 
             {capacity > 0 && (
@@ -88,7 +100,9 @@ export default function FacilityCard({
             <span className="truncate max-w-[200px]">{location}</span>
           </div>
 
-          <h3 className="text-base sm:text-lg font-extrabold text-slate-900 group-hover:text-[#2c1ee8] transition-colors leading-snug line-clamp-2" title={displayTitle}>
+          <h3 className={`text-base sm:text-lg font-extrabold transition-colors leading-snug line-clamp-2 ${
+            isAvailable ? "text-slate-900 group-hover:text-[#2c1ee8]" : "text-slate-600"
+          }`} title={displayTitle}>
             {displayTitle}
           </h3>
 
@@ -109,15 +123,20 @@ export default function FacilityCard({
       <div className="mt-5 pt-1">
         <button
           type="button"
+          disabled={!isAvailable}
           onClick={(e) => {
             e.stopPropagation();
-            onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, time, imageSrc: imgSrc });
+            if (isAvailable) handleCardClick();
           }}
-          className="w-full rounded-2xl bg-slate-50 py-3 px-4 text-xs sm:text-sm font-extrabold text-[#2c1ee8] border border-blue-200/80 hover:bg-[#2c1ee8] hover:text-white hover:border-[#2c1ee8] transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer group/btn"
+          className={`w-full rounded-2xl py-3 px-4 text-xs sm:text-sm font-extrabold border transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs ${
+            isAvailable
+              ? "bg-slate-50 text-[#2c1ee8] border-blue-200/80 hover:bg-[#2c1ee8] hover:text-white hover:border-[#2c1ee8] cursor-pointer group/btn"
+              : "bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-75"
+          }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>Jadwal & Pinjam Tempat</span>
-          <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" />
+          <span>{isAvailable ? "Jadwal & Pinjam Tempat" : "Fasilitas Nonaktif"}</span>
+          {isAvailable && <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" />}
         </button>
       </div>
     </div>

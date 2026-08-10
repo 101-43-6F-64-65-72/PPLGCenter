@@ -91,6 +91,7 @@ export default function FasilitasPage() {
             const facilityCategory = item.category || item.Category || "Umum";
             const rawDesc = item.description || item.Description || "";
             const infoDescription = getDefaultFacilityDescription(facilityTitle, facilityCategory, rawDesc);
+            const isFacilityActive = item.isActive ?? item.IsActive ?? true;
 
             return {
               id: item.id || item.Id,
@@ -100,8 +101,9 @@ export default function FasilitasPage() {
               capacity: item.capacity ?? item.Capacity ?? 30,
               category: facilityCategory,
               description: infoDescription,
-              status: (item.isActive ?? item.IsActive ?? true) ? "tersedia" : "tidak tersedia",
-              time: "07.00 s.d 17.00 WIB",
+              isActive: isFacilityActive,
+              status: isFacilityActive ? "tersedia" : "tidak tersedia",
+              time: isFacilityActive ? "07.00 s.d 17.00 WIB" : "Tutup / Nonaktif",
               imageSrc: getCategoryMatchingImage(item),
             };
           });

@@ -24,6 +24,27 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
 import useAuth from "@/hooks/useAuth";
 
+function stripHtml(input) {
+  if (!input) return "";
+  let text = String(input).replace(/<[^>]*>/g, " ");
+
+  const entityMap = {
+    "&quot;": '"',
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&#39;": "'",
+    "&apos;": "'",
+    "&nbsp;": " ",
+    "&copy;": "©",
+    "&reg;": "®",
+  };
+
+  text = text.replace(/&[a-zA-Z0-9#]+;/g, (match) => entityMap[match] || "");
+  text = text.replace(/\s+/g, " ").trim();
+  return text;
+}
+
 export default function NotificationsPage() {
   const { user, role } = useAuth();
   
@@ -93,6 +114,7 @@ export default function NotificationsPage() {
     }
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
   useEffect(() => {
     if (activeTab === "my") {
       fetchNotifications();
@@ -100,6 +122,7 @@ export default function NotificationsPage() {
       fetchBroadcasts();
     }
   }, [page, filterType, filterRead, activeTab, isAuthorized]);
+  /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
   const handleMarkRead = async (id) => {
     try {
@@ -492,10 +515,10 @@ export default function NotificationsPage() {
 
                         <div>
                           <h4 className="text-sm sm:text-base font-black text-gray-900 mb-1">
-                            {b.title}
+                            {stripHtml(b.title)}
                           </h4>
                           <p className="text-xs text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">
-                            {b.body}
+                            {stripHtml(b.body)}
                           </p>
                         </div>
                       </div>

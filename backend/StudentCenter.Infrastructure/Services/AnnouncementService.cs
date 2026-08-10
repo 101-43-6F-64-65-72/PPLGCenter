@@ -186,10 +186,14 @@ public class AnnouncementService : IAnnouncementService
 
         if (allUserIds.Count > 0)
         {
+            var cleanText = System.Text.RegularExpressions.Regex.Replace(announcement.Content ?? string.Empty, "<.*?>", " ");
+            cleanText = System.Net.WebUtility.HtmlDecode(cleanText);
+            cleanText = System.Text.RegularExpressions.Regex.Replace(cleanText, @"\s+", " ").Trim();
+
             await _notificationService.NotifyUsersAsync(
                 allUserIds,
                 $"Pengumuman: {announcement.Title}",
-                announcement.Content.Length > 200 ? announcement.Content.Substring(0, 197) + "..." : announcement.Content,
+                cleanText.Length > 200 ? cleanText.Substring(0, 197) + "..." : cleanText,
                 NotificationType.Announcement,
                 NotificationPriority.Normal,
                 announcement.Id.ToString(),

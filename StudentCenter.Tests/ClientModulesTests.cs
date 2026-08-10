@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using StudentCenter.Application.DTOs;
+using StudentCenter.Application.Interfaces;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
@@ -31,6 +33,7 @@ public class ClientModulesTests
 
         context.Users.AddRange(admin, teacher, student1, student2);
         context.SaveChanges();
+        context.ChangeTracker.Clear();
     }
 
     [Fact]
@@ -81,10 +84,13 @@ public class ClientModulesTests
     {
         var context = GetInMemoryDbContext();
         var notificationService = new NotificationService(context);
-        var proposalService = new ProposalService(context, notificationService);
+        var proposalService = new ProposalService(context, notificationService, Mock.Of<IFileStorageService>());
 
-        var student = await context.Users.FirstAsync(u => u.Role == UserRole.Student);
-        var teacher = await context.Users.FirstAsync(u => u.Role == UserRole.Teacher);
+        var student = await context.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Student);
+        var teacher = await context.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Teacher);
+
+        context.Extracurriculars.Add(new Extracurricular { Id = Guid.NewGuid(), Name = "Kegiatan Siswa", SupervisorTeacherId = teacher.Id, IsActive = true });
+        await context.SaveChangesAsync();
 
         // Submit Proposal
         var proposal = await proposalService.CreateProposalAsync(new CreateProposalRequest
@@ -135,9 +141,9 @@ public class ClientModulesTests
         var notificationService = new NotificationService(context);
         var eksculService = new ExtracurricularService(context, notificationService);
 
-        var teacher = await context.Users.FirstAsync(u => u.Role == UserRole.Teacher);
-        var student1 = await context.Users.FirstAsync(u => u.Role == UserRole.Student && u.FullName == "Siswa 1");
-        var student2 = await context.Users.FirstAsync(u => u.Role == UserRole.Student && u.FullName == "Siswa 2");
+        var teacherId = (await context.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Teacher)).Id;
+        var student1Id = (await context.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Student && u.FullName == "Siswa 1")).Id;
+        var student2Id = (await context.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Student && u.FullName == "Siswa 2")).Id;
 
         // Create Ekscul with MaxMembers = 1
         var ekscul = await eksculService.CreateExtracurricularAsync(new CreateExtracurricularRequest
@@ -149,22 +155,22 @@ public class ClientModulesTests
             ScheduleDay = "Sabtu",
             ScheduleTime = "08:00 - 11:00",
             Location = "Lapangan Utama"
-        }, teacher.Id);
+        }, teacherId);
 
         // Student 1 joins
-        var join1 = await eksculService.JoinExtracurricularAsync(ekscul.Id, student1.Id);
+        var join1 = await eksculService.JoinExtracurricularAsync(ekscul.Id, student1Id);
         Assert.NotNull(join1);
 
         // Student 1 tries to join again -> Duplicate error
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
-            await eksculService.JoinExtracurricularAsync(ekscul.Id, student1.Id);
+            await eksculService.JoinExtracurricularAsync(ekscul.Id, student1Id);
         });
 
         // Student 2 tries to join -> Capacity Limit error
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
-            await eksculService.JoinExtracurricularAsync(ekscul.Id, student2.Id);
+            await eksculService.JoinExtracurricularAsync(ekscul.Id, student2Id);
         });
     }
 
@@ -175,17 +181,17 @@ public class ClientModulesTests
         var notificationService = new NotificationService(context);
         var facilityService = new FacilityService(context, NullLogger<FacilityService>.Instance);
         var eksculService = new ExtracurricularService(context, notificationService);
-        var proposalService = new ProposalService(context, notificationService);
+        var proposalService = new ProposalService(context, notificationService, Mock.Of<IFileStorageService>());
         var searchService = new SearchService(context);
 
-        var admin = await context.Users.FirstAsync(u => u.Role == UserRole.Admin);
-        var student = await context.Users.FirstAsync(u => u.Role == UserRole.Student);
+        var adminId = (await context.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Admin)).Id;
+        var studentId = (await context.Users.AsNoTracking().FirstAsync(u => u.Role == UserRole.Student)).Id;
 
         await facilityService.CreateFacilityAsync(new CreateFacilityRequest { Name = "Aula Utama Sekolah", Location = "Gedung A", Capacity = 500 });
-        await eksculService.CreateExtracurricularAsync(new CreateExtracurricularRequest { Name = "Robotika", Category = "Sains", MaxMembers = 20 }, admin.Id);
-        await proposalService.CreateProposalAsync(new CreateProposalRequest { Title = "Proposal Robotika Nasional", Description = "Lomba robotika tingkat provinsi.", FileUrl = "http://test/file.pdf" }, student.Id);
+        await eksculService.CreateExtracurricularAsync(new CreateExtracurricularRequest { Name = "Robotika", Category = "Sains", MaxMembers = 20 }, adminId);
+        await proposalService.CreateProposalAsync(new CreateProposalRequest { Title = "Proposal Robotika Nasional", Description = "Lomba robotika tingkat provinsi.", FileUrl = "http://test/file.pdf" }, studentId);
 
-        var searchRes = await searchService.SearchAsync("Robotika", 1, 10, student.Id, "Student");
+        var searchRes = await searchService.SearchAsync("Robotika", 1, 10, studentId, "Student");
         Assert.Single(searchRes.Extracurriculars);
         Assert.Single(searchRes.Proposals);
     }

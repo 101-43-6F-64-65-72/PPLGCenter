@@ -1,1 +1,413 @@
-"use client";\r\n\r\nimport React, { useState, useEffect, useCallback, useMemo } from "react";\r\nimport { classSubjectService } from "@/services/classSubjectService";\r\nimport { teacherSubjectService } from "@/services/teacherSubjectService";\r\nimport { schoolClassService } from "@/services/schoolClassService";\r\nimport { userService } from "@/services/userService";\r\nimport { subjectService } from "@/services/subjectService";\r\nimport { Search, Plus, Trash2, Layers, AlertCircle, Info } from "lucide-react";\r\n\r\nexport default function AdminClassSubjectsTab() {\r\n  const [list, setList] = useState([]);\r\n  const [classes, setClasses] = useState([]);\r\n  const [teacherSubjects, setTeacherSubjects] = useState([]);\r\n  const [teachers, setTeachers] = useState([]);\r\n  const [subjects, setSubjects] = useState([]);\r\n  const [loading, setLoading] = useState(true);\r\n\r\n  const [searchQuery, setSearchQuery] = useState("");\r\n  const [selectedClassId, setSelectedClassId] = useState("");\r\n  const [page, setPage] = useState(1);\r\n  const pageSize = 10;\r\n\r\n  const [isModalOpen, setIsModalOpen] = useState(false);\r\n  // formData now has classId + teacherId + subjectId (we resolve teacherSubjectId from them)\r\n  const [formData, setFormData] = useState({ classId: "", teacherId: "", subjectId: "" });\r\n  const [errorMsg, setErrorMsg] = useState("");\r\n\r\n  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);\r\n  const [deletingId, setDeletingId] = useState(null);\r\n\r\n  const loadData = useCallback(async () => {\r\n    setLoading(true);\r\n    try {\r\n      const [csRes, cRes, tsRes, tRes, sRes] = await Promise.all([\r\n        classSubjectService.getAll(),\r\n        schoolClassService.getAll(),\r\n        teacherSubjectService.getAll(),\r\n        userService.getAllUsers({ role: "Teacher", pageSize: 9999 }),\r\n        subjectService.getAll({ isActive: true }),\r\n      ]);\r\n      const extractArray = (res) => {\r\n        if (Array.isArray(res)) return res;\r\n        if (Array.isArray(res?.data)) return res.data;\r\n        if (Array.isArray(res?.items)) return res.items;\r\n        if (Array.isArray(res?.data?.items)) return res.data.items;\r\n        return [];\r\n      };\r\n      setList(extractArray(csRes));\r\n      setClasses(extractArray(cRes));\r\n      setTeacherSubjects(extractArray(tsRes));\r\n      setTeachers(extractArray(tRes));\r\n      setSubjects(extractArray(sRes));\r\n    } catch (err) {\r\n      console.error("Failed to load class subjects:", err);\r\n    } finally {\r\n      setLoading(false);\r\n    }\r\n  }, []);\r\n\r\n  /* eslint-disable react-hooks/set-state-in-effect */\r\n  useEffect(() => {\r\n    loadData();\r\n  }, [loadData]);\r\n  /* eslint-enable react-hooks/set-state-in-effect */\r\n\r\n  const filtered = list.filter((item) => {\r\n    const matchesSearch =\r\n      item.className.toLowerCase().includes(searchQuery.toLowerCase()) ||\r\n      item.subjectName.toLowerCase().includes(searchQuery.toLowerCase()) ||\r\n      item.teacherName.toLowerCase().includes(searchQuery.toLowerCase());\r\n\r\n    const matchesClass = !selectedClassId || item.classId === selectedClassId;\r\n\r\n    return matchesSearch && matchesClass;\r\n  });\r\n\r\n  const totalPages = Math.ceil(filtered.length / pageSize) || 1;\r\n  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);\r\n\r\n  // Resolve teacherSubjectId based on selected teacherId + subjectId\r\n  const resolvedTeacherSubject = useMemo(() => {\r\n    if (!formData.teacherId || !formData.subjectId) return null;\r\n    return teacherSubjects.find(\r\n      (ts) => ts.teacherId === formData.teacherId && ts.subjectId === formData.subjectId\r\n    ) || null;\r\n  }, [formData.teacherId, formData.subjectId, teacherSubjects]);\r\n\r\n  const handleOpenAdd = () => {\r\n    setFormData({ classId: classes[0]?.id || "", teacherId: "", subjectId: "" });\r\n    setErrorMsg("");\r\n    setIsModalOpen(true);\r\n  };\r\n\r\n  const handleSubmit = async (e) => {\r\n    e.preventDefault();\r\n    setErrorMsg("");\r\n\r\n    if (!resolvedTeacherSubject) {\r\n      setErrorMsg(\r\n        `Guru yang dipilih belum diassign ke mapel tersebut. Tambahkan terlebih dahulu di tab "Guru & Mata Pelajaran".`\r\n      );\r\n      return;\r\n    }\r\n\r\n    try {\r\n      await classSubjectService.create({\r\n        classId: formData.classId,\r\n        teacherSubjectId: resolvedTeacherSubject.id,\r\n      });\r\n      setIsModalOpen(false);\r\n      loadData();\r\n    } catch (err) {\r\n      setErrorMsg(err?.response?.data?.message || err.message || "Gagal menetapkan mata pelajaran kelas.");\r\n    }\r\n  };\r\n\r\n  const handleDelete = async () => {\r\n    if (!deletingId) return;\r\n    try {\r\n      await classSubjectService.delete(deletingId);\r\n      setIsDeleteModalOpen(false);\r\n      setDeletingId(null);\r\n      loadData();\r\n    } catch (err) {\r\n      alert(err?.response?.data?.message || "Gagal menghapus mata pelajaran kelas.");\r\n    }\r\n  };\r\n\r\n  // Subjects taught by the selected teacher (based on teacher-subjects table)\r\n  const subjectsForSelectedTeacher = useMemo(() => {\r\n    if (!formData.teacherId) return subjects;\r\n    const teacherSubjectIds = new Set(\r\n      teacherSubjects\r\n        .filter((ts) => ts.teacherId === formData.teacherId)\r\n        .map((ts) => ts.subjectId)\r\n    );\r\n    return subjects.filter((s) => teacherSubjectIds.has(s.id));\r\n  }, [formData.teacherId, teacherSubjects, subjects]);\r\n\r\n  return (\r\n    <div className="space-y-6">\r\n      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-xs">\r\n        <div>\r\n          <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">\r\n            <Layers className="w-5 h-5 text-amber-600" />\r\n            Mata Pelajaran Kelas (ClassSubjects)\r\n          </h2>\r\n          <p className="text-xs text-gray-500 font-medium mt-1">\r\n            Hubungkan Kelas dengan Pengampu Guru &amp; Mapel (Unique: Class + TeacherSubject).\r\n          </p>\r\n        </div>\r\n\r\n        <button\r\n          onClick={handleOpenAdd}\r\n          className="px-4 py-2.5 rounded-2xl bg-amber-600 text-white text-xs font-bold flex items-center gap-2 shadow-sm hover:bg-amber-700 transition cursor-pointer"\r\n        >\r\n          <Plus className="w-4 h-4" />\r\n          <span>Tetapkan Mapel Kelas</span>\r\n        </button>\r\n      </div>\r\n\r\n      {/* Filters */}\r\n      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row items-center gap-3">\r\n        <div className="relative flex-1 w-full">\r\n          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />\r\n          <input\r\n            type="text"\r\n            placeholder="Cari Kelas, Mapel, atau Guru Pengajar..."\r\n            value={searchQuery}\r\n            onChange={(e) => setSearchQuery(e.target.value)}\r\n            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 outline-none focus:border-amber-600"\r\n          />\r\n        </div>\r\n\r\n        <select\r\n          value={selectedClassId}\r\n          onChange={(e) => setSelectedClassId(e.target.value)}\r\n          className="w-full md:w-64 bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-700 outline-none focus:border-amber-600"\r\n        >\r\n          <option value="">Semua Kelas</option>\r\n          {classes.map((c) => (\r\n            <option key={c.id} value={c.id}>\r\n              {c.name} ({c.departmentCode})\r\n            </option>\r\n          ))}\r\n        </select>\r\n      </div>\r\n\r\n      {/* Table */}\r\n      <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">\r\n        <div className="overflow-x-auto">\r\n          <table className="w-full text-left border-collapse">\r\n            <thead>\r\n              <tr className="bg-gray-50/80 border-b border-gray-100 text-[11px] font-black text-gray-400 uppercase tracking-wider">\r\n                <th className="py-4 px-6">No</th>\r\n                <th className="py-4 px-6">Nama Kelas</th>\r\n                <th className="py-4 px-6">Kode Mapel</th>\r\n                <th className="py-4 px-6">Mata Pelajaran</th>\r\n                <th className="py-4 px-6">Guru Pengajar</th>\r\n                <th className="py-4 px-6 text-right">Aksi</th>\r\n              </tr>\r\n            </thead>\r\n            <tbody className="divide-y divide-gray-100 text-xs font-medium text-gray-700">\r\n              {loading ? (\r\n                <tr>\r\n                  <td colSpan={6} className="py-8 text-center text-gray-400">\r\n                    Memuat mata pelajaran kelas...\r\n                  </td>\r\n                </tr>\r\n              ) : paginated.length === 0 ? (\r\n                <tr>\r\n                  <td colSpan={6} className="py-8 text-center text-gray-400">\r\n                    Tidak ada mata pelajaran kelas ditemukan.\r\n                  </td>\r\n                </tr>\r\n              ) : (\r\n                paginated.map((item, idx) => (\r\n                  <tr key={item.id} className="hover:bg-gray-50/50 transition">\r\n                    <td className="py-4 px-6 text-gray-400 font-bold">{(page - 1) * pageSize + idx + 1}</td>\r\n                    <td className="py-4 px-6 font-bold text-gray-900">{item.className}</td>\r\n                    <td className="py-4 px-6">\r\n                      <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-black text-xs border border-amber-100">\r\n                        {item.subjectCode}\r\n                      </span>\r\n                    </td>\r\n                    <td className="py-4 px-6 font-bold">{item.subjectName}</td>\r\n                    <td className="py-4 px-6 font-bold text-gray-800">{item.teacherName}</td>\r\n                    <td className="py-4 px-6 text-right">\r\n                      <button\r\n                        onClick={() => {\r\n                          setDeletingId(item.id);\r\n                          setIsDeleteModalOpen(true);\r\n                        }}\r\n                        className="p-2 rounded-xl bg-gray-100 hover:bg-rose-50 hover:text-rose-600 text-gray-600 transition cursor-pointer"\r\n                        title="Hapus Penugasan Kelas"\r\n                      >\r\n                        <Trash2 className="w-3.5 h-3.5" />\r\n                      </button>\r\n                    </td>\r\n                  </tr>\r\n                ))\r\n              )}\r\n            </tbody>\r\n          </table>\r\n        </div>\r\n\r\n        {/* Pagination */}\r\n        <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">\r\n          <span>\r\n            Menampilkan {paginated.length} dari {filtered.length} Mapel Kelas\r\n          </span>\r\n          <div className="flex gap-1">\r\n            <button\r\n              disabled={page === 1}\r\n              onClick={() => setPage((p) => Math.max(1, p - 1))}\r\n              className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 cursor-pointer"\r\n            >\r\n              Prev\r\n            </button>\r\n            <span className="px-3 py-1.5 font-bold text-gray-800">\r\n              {page} / {totalPages}\r\n            </span>\r\n            <button\r\n              disabled={page === totalPages}\r\n              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}\r\n              className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 cursor-pointer"\r\n            >\r\n              Next\r\n            </button>\r\n          </div>\r\n        </div>\r\n      </div>\r\n\r\n      {/* Add Modal */}\r\n      {isModalOpen && (\r\n        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">\r\n          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-5 animate-in fade-in zoom-in duration-150">\r\n            <h3 className="text-lg font-black text-gray-900 tracking-tight">Tetapkan Mapel ke Kelas</h3>\r\n\r\n            {errorMsg && (\r\n              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-bold flex items-start gap-2">\r\n                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />\r\n                <span>{errorMsg}</span>\r\n              </div>\r\n            )}\r\n\r\n            <form onSubmit={handleSubmit} className="space-y-4">\r\n              {/* Class */}\r\n              <div>\r\n                <label className="block text-xs font-bold text-gray-600 mb-1">Pilih Kelas</label>\r\n                <select\r\n                  required\r\n                  value={formData.classId}\r\n                  onChange={(e) => setFormData({ ...formData, classId: e.target.value })}\r\n                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-amber-600"\r\n                >\r\n                  <option value="">-- Pilih Kelas --</option>\r\n                  {classes.map((c) => (\r\n                    <option key={c.id} value={c.id}>\r\n                      {c.name} ({c.departmentCode})\r\n                    </option>\r\n                  ))}\r\n                </select>\r\n              </div>\r\n\r\n              {/* Teacher */}\r\n              <div>\r\n                <label className="block text-xs font-bold text-gray-600 mb-1">Pilih Guru Pengampu</label>\r\n                <select\r\n                  required\r\n                  value={formData.teacherId}\r\n                  onChange={(e) => setFormData({ ...formData, teacherId: e.target.value, subjectId: "" })}\r\n                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-amber-600"\r\n                >\r\n                  <option value="">-- Pilih Guru --</option>\r\n                  {teachers.map((t) => (\r\n                    <option key={t.id} value={t.id}>\r\n                      {t.fullName || t.FullName} {(t.nip || t.NIP) ? `(NIP: ${t.nip || t.NIP})` : ""}\r\n                    </option>\r\n                  ))}\r\n                </select>\r\n              </div>\r\n\r\n              {/* Subject — filtered to subjects taught by selected teacher */}\r\n              <div>\r\n                <label className="block text-xs font-bold text-gray-600 mb-1">\r\n                  Pilih Mata Pelajaran\r\n                  {formData.teacherId && subjectsForSelectedTeacher.length === 0 && (\r\n                    <span className="ml-2 text-amber-600 font-normal">— Guru ini belum memiliki mapel yang diassign</span>\r\n                  )}\r\n                </label>\r\n                <select\r\n                  required\r\n                  value={formData.subjectId}\r\n                  onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}\r\n                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-amber-600"\r\n                >\r\n                  <option value="">-- Pilih Mapel --</option>\r\n                  {(formData.teacherId ? subjectsForSelectedTeacher : subjects).map((s) => (\r\n                    <option key={s.id} value={s.id}>\r\n                      {s.code} — {s.name}\r\n                    </option>\r\n                  ))}\r\n                </select>\r\n              </div>\r\n\r\n              {/* Resolution status */}\r\n              {formData.teacherId && formData.subjectId && (\r\n                resolvedTeacherSubject ? (\r\n                  <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 font-bold">\r\n                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />\r\n                    Kombinasi guru + mapel ditemukan. Siap disimpan.\r\n                  </div>\r\n                ) : (\r\n                  <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-bold">\r\n                    <Info className="w-4 h-4 shrink-0 mt-0.5" />\r\n                    <span>Guru ini belum diassign ke mapel tersebut. Silakan tambahkan di tab <strong>Guru &amp; Mata Pelajaran</strong> terlebih dahulu.</span>\r\n                  </div>\r\n                )\r\n              )}\r\n\r\n              <div className="flex justify-end gap-2 pt-4">\r\n                <button\r\n                  type="button"\r\n                  onClick={() => setIsModalOpen(false)}\r\n                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition cursor-pointer"\r\n                >\r\n                  Batal\r\n                </button>\r\n                <button\r\n                  type="submit"\r\n                  className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition cursor-pointer shadow-xs"\r\n                >\r\n                  Simpan Mapel Kelas\r\n                </button>\r\n              </div>\r\n            </form>\r\n          </div>\r\n        </div>\r\n      )}\r\n\r\n      {/* Delete Modal */}\r\n      {isDeleteModalOpen && (\r\n        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">\r\n          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-4 text-center">\r\n            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 mx-auto flex items-center justify-center font-bold">\r\n              <Trash2 className="w-6 h-6" />\r\n            </div>\r\n            <h3 className="text-base font-black text-gray-900">Hapus Mapel Kelas</h3>\r\n            <p className="text-xs text-gray-500 font-medium">\r\n              Apakah Anda yakin ingin menghapus penetapan mata pelajaran ini dari kelas?\r\n            </p>\r\n            <div className="flex gap-2 pt-2">\r\n              <button\r\n                onClick={() => setIsDeleteModalOpen(false)}\r\n                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"\r\n              >\r\n                Batal\r\n              </button>\r\n              <button\r\n                onClick={handleDelete}\r\n                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 cursor-pointer shadow-xs"\r\n              >\r\n                Hapus\r\n              </button>\r\n            </div>\r\n          </div>\r\n        </div>\r\n      )}\r\n    </div>\r\n  );\r\n}\r\n
+"use client";
+
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { classSubjectService } from "@/services/classSubjectService";
+import { teacherSubjectService } from "@/services/teacherSubjectService";
+import { schoolClassService } from "@/services/schoolClassService";
+import { userService } from "@/services/userService";
+import { subjectService } from "@/services/subjectService";
+import { Search, Plus, Trash2, Layers, AlertCircle, Info } from "lucide-react";
+
+export default function AdminClassSubjectsTab() {
+  const [list, setList] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [teacherSubjects, setTeacherSubjects] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  // formData now has classId + teacherId + subjectId (we resolve teacherSubjectId from them)
+  const [formData, setFormData] = useState({ classId: "", teacherId: "", subjectId: "" });
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [csRes, cRes, tsRes, tRes, sRes] = await Promise.all([
+        classSubjectService.getAll(),
+        schoolClassService.getAll(),
+        teacherSubjectService.getAll(),
+        userService.getAllUsers({ role: "Teacher", pageSize: 9999 }),
+        subjectService.getAll({ isActive: true }),
+      ]);
+      const extractArray = (res) => {
+        if (Array.isArray(res)) return res;
+        if (Array.isArray(res?.data)) return res.data;
+        if (Array.isArray(res?.items)) return res.items;
+        if (Array.isArray(res?.data?.items)) return res.data.items;
+        return [];
+      };
+      setList(extractArray(csRes));
+      setClasses(extractArray(cRes));
+      setTeacherSubjects(extractArray(tsRes));
+      setTeachers(extractArray(tRes));
+      setSubjects(extractArray(sRes));
+    } catch (err) {
+      console.error("Failed to load class subjects:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const filtered = list.filter((item) => {
+    const matchesSearch =
+      item.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.subjectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.teacherName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesClass = !selectedClassId || item.classId === selectedClassId;
+
+    return matchesSearch && matchesClass;
+  });
+
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Resolve teacherSubjectId based on selected teacherId + subjectId
+  const resolvedTeacherSubject = useMemo(() => {
+    if (!formData.teacherId || !formData.subjectId) return null;
+    return teacherSubjects.find(
+      (ts) => ts.teacherId === formData.teacherId && ts.subjectId === formData.subjectId
+    ) || null;
+  }, [formData.teacherId, formData.subjectId, teacherSubjects]);
+
+  const handleOpenAdd = () => {
+    setFormData({ classId: classes[0]?.id || "", teacherId: "", subjectId: "" });
+    setErrorMsg("");
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
+
+    if (!resolvedTeacherSubject) {
+      setErrorMsg(
+        `Guru yang dipilih belum diassign ke mapel tersebut. Tambahkan terlebih dahulu di tab "Guru & Mata Pelajaran".`
+      );
+      return;
+    }
+
+    try {
+      await classSubjectService.create({
+        classId: formData.classId,
+        teacherSubjectId: resolvedTeacherSubject.id,
+      });
+      setIsModalOpen(false);
+      loadData();
+    } catch (err) {
+      setErrorMsg(err?.response?.data?.message || err.message || "Gagal menetapkan mata pelajaran kelas.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingId) return;
+    try {
+      await classSubjectService.delete(deletingId);
+      setIsDeleteModalOpen(false);
+      setDeletingId(null);
+      loadData();
+    } catch (err) {
+      alert(err?.response?.data?.message || "Gagal menghapus mata pelajaran kelas.");
+    }
+  };
+
+  // Subjects taught by the selected teacher (based on teacher-subjects table)
+  const subjectsForSelectedTeacher = useMemo(() => {
+    if (!formData.teacherId) return subjects;
+    const teacherSubjectIds = new Set(
+      teacherSubjects
+        .filter((ts) => ts.teacherId === formData.teacherId)
+        .map((ts) => ts.subjectId)
+    );
+    return subjects.filter((s) => teacherSubjectIds.has(s.id));
+  }, [formData.teacherId, teacherSubjects, subjects]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-gray-100 shadow-xs">
+        <div>
+          <h2 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+            <Layers className="w-5 h-5 text-amber-600" />
+            Mata Pelajaran Kelas (ClassSubjects)
+          </h2>
+          <p className="text-xs text-gray-500 font-medium mt-1">
+            Hubungkan Kelas dengan Pengampu Guru &amp; Mapel (Unique: Class + TeacherSubject).
+          </p>
+        </div>
+
+        <button
+          onClick={handleOpenAdd}
+          className="px-4 py-2.5 rounded-2xl bg-amber-600 text-white text-xs font-bold flex items-center gap-2 shadow-sm hover:bg-amber-700 transition cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Tetapkan Mapel Kelas</span>
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row items-center gap-3">
+        <div className="relative flex-1 w-full">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Cari Kelas, Mapel, atau Guru Pengajar..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 outline-none focus:border-amber-600"
+          />
+        </div>
+
+        <select
+          value={selectedClassId}
+          onChange={(e) => setSelectedClassId(e.target.value)}
+          className="w-full md:w-64 bg-gray-50 border border-gray-200 rounded-xl py-2.5 px-3 text-xs font-bold text-gray-700 outline-none focus:border-amber-600"
+        >
+          <option value="">Semua Kelas</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name} ({c.departmentCode})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/80 border-b border-gray-100 text-[11px] font-black text-gray-400 uppercase tracking-wider">
+                <th className="py-4 px-6">No</th>
+                <th className="py-4 px-6">Nama Kelas</th>
+                <th className="py-4 px-6">Kode Mapel</th>
+                <th className="py-4 px-6">Mata Pelajaran</th>
+                <th className="py-4 px-6">Guru Pengajar</th>
+                <th className="py-4 px-6 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-xs font-medium text-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-400">
+                    Memuat mata pelajaran kelas...
+                  </td>
+                </tr>
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-gray-400">
+                    Tidak ada mata pelajaran kelas ditemukan.
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((item, idx) => (
+                  <tr key={item.id} className="hover:bg-gray-50/50 transition">
+                    <td className="py-4 px-6 text-gray-400 font-bold">{(page - 1) * pageSize + idx + 1}</td>
+                    <td className="py-4 px-6 font-bold text-gray-900">{item.className}</td>
+                    <td className="py-4 px-6">
+                      <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 font-black text-xs border border-amber-100">
+                        {item.subjectCode}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 font-bold">{item.subjectName}</td>
+                    <td className="py-4 px-6 font-bold text-gray-800">{item.teacherName}</td>
+                    <td className="py-4 px-6 text-right">
+                      <button
+                        onClick={() => {
+                          setDeletingId(item.id);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="p-2 rounded-xl bg-gray-100 hover:bg-rose-50 hover:text-rose-600 text-gray-600 transition cursor-pointer"
+                        title="Hapus Penugasan Kelas"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+          <span>
+            Menampilkan {paginated.length} dari {filtered.length} Mapel Kelas
+          </span>
+          <div className="flex gap-1">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
+            >
+              Prev
+            </button>
+            <span className="px-3 py-1.5 font-bold text-gray-800">
+              {page} / {totalPages}
+            </span>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="px-3 py-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-5 animate-in fade-in zoom-in duration-150">
+            <h3 className="text-lg font-black text-gray-900 tracking-tight">Tetapkan Mapel ke Kelas</h3>
+
+            {errorMsg && (
+              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600 font-bold flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Class */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Pilih Kelas</label>
+                <select
+                  required
+                  value={formData.classId}
+                  onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-amber-600"
+                >
+                  <option value="">-- Pilih Kelas --</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.departmentCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Teacher */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">Pilih Guru Pengampu</label>
+                <select
+                  required
+                  value={formData.teacherId}
+                  onChange={(e) => setFormData({ ...formData, teacherId: e.target.value, subjectId: "" })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-amber-600"
+                >
+                  <option value="">-- Pilih Guru --</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.fullName || t.FullName} {(t.nip || t.NIP) ? `(NIP: ${t.nip || t.NIP})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Subject — filtered to subjects taught by selected teacher */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 mb-1">
+                  Pilih Mata Pelajaran
+                  {formData.teacherId && subjectsForSelectedTeacher.length === 0 && (
+                    <span className="ml-2 text-amber-600 font-normal">— Guru ini belum memiliki mapel yang diassign</span>
+                  )}
+                </label>
+                <select
+                  required
+                  value={formData.subjectId}
+                  onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-800 outline-none focus:border-amber-600"
+                >
+                  <option value="">-- Pilih Mapel --</option>
+                  {(formData.teacherId ? subjectsForSelectedTeacher : subjects).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.code} — {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Resolution status */}
+              {formData.teacherId && formData.subjectId && (
+                resolvedTeacherSubject ? (
+                  <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    Kombinasi guru + mapel ditemukan. Siap disimpan.
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 font-bold">
+                    <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Guru ini belum diassign ke mapel tersebut. Silakan tambahkan di tab <strong>Guru &amp; Mata Pelajaran</strong> terlebih dahulu.</span>
+                  </div>
+                )
+              )}
+
+              <div className="flex justify-end gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition cursor-pointer shadow-xs"
+                >
+                  Simpan Mapel Kelas
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 mx-auto flex items-center justify-center font-bold">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black text-gray-900">Hapus Mapel Kelas</h3>
+            <p className="text-xs text-gray-500 font-medium">
+              Apakah Anda yakin ingin menghapus penetapan mata pelajaran ini dari kelas?
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 cursor-pointer shadow-xs"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

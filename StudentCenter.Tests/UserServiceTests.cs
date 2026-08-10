@@ -9,12 +9,15 @@ using StudentCenter.Infrastructure.Data;
 using StudentCenter.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.Extensions.Logging;
+
 namespace StudentCenter.Tests;
 
 public class UserServiceTests
 {
     private readonly AppDbContext _context;
     private readonly Mock<IJwtService> _mockJwtService;
+    private readonly Mock<ILogger<UserService>> _mockLogger;
     private readonly UserService _service;
 
     public UserServiceTests()
@@ -24,7 +27,8 @@ public class UserServiceTests
             .Options;
         _context = new AppDbContext(options);
         _mockJwtService = new Mock<IJwtService>();
-        _service = new UserService(_context, _mockJwtService.Object);
+        _mockLogger = new Mock<ILogger<UserService>>();
+        _service = new UserService(_context, _mockJwtService.Object, _mockLogger.Object);
     }
 
     // ─────────────────────────────────────────────────────────

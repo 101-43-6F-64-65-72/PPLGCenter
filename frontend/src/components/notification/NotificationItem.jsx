@@ -16,6 +16,27 @@ import {
   AlertCircle 
 } from "lucide-react";
 
+function stripHtml(input) {
+  if (!input) return "";
+  let text = String(input).replace(/<[^>]*>/g, " ");
+
+  const entityMap = {
+    "&quot;": '"',
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&#39;": "'",
+    "&apos;": "'",
+    "&nbsp;": " ",
+    "&copy;": "©",
+    "&reg;": "®",
+  };
+
+  text = text.replace(/&[a-zA-Z0-9#]+;/g, (match) => entityMap[match] || "");
+  text = text.replace(/\s+/g, " ").trim();
+  return text;
+}
+
 function formatTimeAgo(dateInput) {
   if (!dateInput) return "";
   const date = new Date(dateInput);
@@ -139,7 +160,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-1">
           <h4 className={`text-xs sm:text-sm font-black truncate ${!isRead ? priorityConfig.titleColor : "text-gray-900"}`}>
-            {notification.title}
+            {stripHtml(notification.title)}
           </h4>
           <div className="flex items-center gap-1.5 shrink-0">
             {priorityConfig.badge}
@@ -147,7 +168,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
           </div>
         </div>
         <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-medium">
-          {notification.body || notification.message}
+          {stripHtml(notification.body || notification.message)}
         </p>
         <span className="text-[10px] text-gray-400 font-semibold mt-1 block">{formattedTime}</span>
       </div>

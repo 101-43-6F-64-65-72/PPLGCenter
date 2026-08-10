@@ -328,6 +328,14 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     />
                   </div>
 
+                  {/* Inactive Facility Notice */}
+                  {(facility.isActive === false || facility.status === "tidak tersedia") && (
+                    <div className="mb-4 p-3.5 bg-rose-50 text-rose-800 border border-rose-200 rounded-2xl text-xs font-bold flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
+                      <span>Fasilitas ini sedang dinonaktifkan oleh sekolah dan tidak dapat dipinjam.</span>
+                    </div>
+                  )}
+
                   {/* Conflict Notice */}
                   {conflictMessage && (
                     <div className="mb-4 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-2xl text-xs font-semibold flex items-center gap-2">
@@ -423,9 +431,9 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     <button
                       type="button"
                       onClick={handleAddToCartClick}
-                      disabled={selectedSlots.length === 0 || isLoadingSlots}
+                      disabled={selectedSlots.length === 0 || isLoadingSlots || facility.isActive === false || facility.status === "tidak tersedia"}
                       className={`flex-1 px-5 py-3.5 font-bold text-sm rounded-2xl border transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
-                        selectedSlots.length > 0 && !isLoadingSlots
+                        selectedSlots.length > 0 && !isLoadingSlots && facility.isActive !== false && facility.status !== "tidak tersedia"
                           ? "border-[#2c1ee8] text-[#2c1ee8] bg-blue-50/60 hover:bg-blue-100/80 active:scale-95 shadow-sm"
                           : "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
                       }`}
@@ -437,9 +445,9 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     <button
                       type="button"
                       onClick={handleNextToForm}
-                      disabled={selectedSlots.length === 0 || isLoadingSlots}
+                      disabled={selectedSlots.length === 0 || isLoadingSlots || facility.isActive === false || facility.status === "tidak tersedia"}
                       className={`flex-1 px-5 py-3.5 font-bold text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer ${
-                        selectedSlots.length > 0 && !isLoadingSlots
+                        selectedSlots.length > 0 && !isLoadingSlots && facility.isActive !== false && facility.status !== "tidak tersedia"
                           ? "bg-[#2c1ee8] hover:bg-[#2218a3] text-white active:scale-95 shadow-blue-500/25"
                           : "bg-gray-200 text-gray-400 cursor-not-allowed"
                       }`}

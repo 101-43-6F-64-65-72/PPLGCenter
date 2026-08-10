@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
@@ -23,7 +25,7 @@ public class MasterUserManagementTests
     {
         using var context = GetDbContext(nameof(CreateStudent_Success));
         var jwtService = new JwtService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
-        var userService = new UserService(context, jwtService);
+        var userService = new UserService(context, jwtService, Mock.Of<ILogger<UserService>>());
 
         var req = new CreateUserRequest
         {
@@ -47,7 +49,7 @@ public class MasterUserManagementTests
     {
         using var context = GetDbContext(nameof(UpdateStudent_Success));
         var jwtService = new JwtService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
-        var userService = new UserService(context, jwtService);
+        var userService = new UserService(context, jwtService, Mock.Of<ILogger<UserService>>());
 
         var req = new CreateUserRequest
         {
@@ -81,7 +83,7 @@ public class MasterUserManagementTests
     {
         using var context = GetDbContext(nameof(DeleteStudent_Success));
         var jwtService = new JwtService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
-        var userService = new UserService(context, jwtService);
+        var userService = new UserService(context, jwtService, Mock.Of<ILogger<UserService>>());
 
         var created = await userService.CreateUserAsync(new CreateUserRequest
         {
@@ -103,7 +105,7 @@ public class MasterUserManagementTests
     {
         using var context = GetDbContext(nameof(CreateTeacher_Success));
         var jwtService = new JwtService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
-        var userService = new UserService(context, jwtService);
+        var userService = new UserService(context, jwtService, Mock.Of<ILogger<UserService>>());
 
         var created = await userService.CreateUserAsync(new CreateUserRequest
         {
@@ -125,7 +127,7 @@ public class MasterUserManagementTests
     {
         using var context = GetDbContext(nameof(AssignHomeroomTeacher_Success));
         var jwtService = new JwtService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
-        var userService = new UserService(context, jwtService);
+        var userService = new UserService(context, jwtService, Mock.Of<ILogger<UserService>>());
 
         // Seed teacher & class
         var teacher = new User
@@ -165,7 +167,7 @@ public class MasterUserManagementTests
     {
         using var context = GetDbContext(nameof(AssignAdvisor_Success));
         var jwtService = new JwtService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
-        var userService = new UserService(context, jwtService);
+        var userService = new UserService(context, jwtService, Mock.Of<ILogger<UserService>>());
 
         var teacher = new User { Id = Guid.NewGuid(), FullName = "Guru Pembina", Email = "pembina@school.com", Role = UserRole.Teacher, IsActive = true, PasswordHash = "hash" };
         var extra1 = new Extracurricular { Id = Guid.NewGuid(), Name = "Basket" };

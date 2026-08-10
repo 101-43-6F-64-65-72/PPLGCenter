@@ -1,47 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
-import { Newspaper, Plus, Search, CheckCircle2, Clock, Trash2, Eye, Share2, Sparkles } from "lucide-react";
-import RichTextEditor from "@/components/ui/RichTextEditor";
-
+import React, { useState, useEffect, useCallback } from "react";
+import { Newspaper, Plus, Eye, Trash2 } from "lucide-react";
 import announcementService from "@/services/announcementService";
+import CreateAnnouncementModal from "@/features/announcement/components/CreateAnnouncementModal";
 
 export default function OsisAnnouncementsTab() {
   const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  React.useEffect(() => {
-    announcementService.getAnnouncements().then((res) => {
-      if (res && Array.isArray(res.data)) setPosts(res.data);
-    });
+  const fetchAnnouncements = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await announcementService.getAnnouncements();
+      let items = [];
+      if (Array.isArray(res?.data?.items)) items = res.data.items;
+      else if (Array.isArray(res?.data)) items = res.data;
+      else if (Array.isArray(res?.items)) items = res.items;
+      else if (Array.isArray(res)) items = res;
+      setPosts(items);
+    } catch (err) {
+      console.error("Failed to load OSIS announcements:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState("Informasi Resmi OSIS");
-  const [newContent, setNewContent] = useState("");
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-  const handleCreatePost = (e) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-
-    const newPostItem = {
-      id: `post-${Date.now()}`,
-      title: newTitle,
-      category: newCategory,
-      date: new Date().toISOString().split("T")[0],
-      views: 1,
-      status: "Terpublikasi",
-      author: "Pengurus OSIS SMKN 2",
-    };
-
-    setPosts([newPostItem, ...posts]);
-    setNewTitle("");
-    setNewContent("");
-    setIsModalOpen(false);
-  };
-
-  const handleDeletePost = (id) => {
-    setPosts(posts.filter((p) => p.id !== id));
+  const handleDeletePost = async (id) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus mading ini?")) return;
+    try {
+      await announcementService.deleteAnnouncement(id);
+      fetchAnnouncements();
+    } catch (err) {
+      alert("Gagal menghapus mading.");
+    }
   };
 
   return (
@@ -62,7 +61,7 @@ export default function OsisAnnouncementsTab() {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md transition-all active:scale-95 cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md transition-all active:scale-95 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Buat Pengumuman Baru</span>
@@ -70,117 +69,60 @@ export default function OsisAnnouncementsTab() {
       </div>
 
       {/* Posts Grid List */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {posts.map((post) => (
-          <div
-            key={post.id}
-            className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-extrabold text-[#2c1ee8] bg-blue-50 px-2.5 py-1 rounded-lg">
-                  {post.category}
-                </span>
-                <span className={`font-bold ${post.status === "Terpublikasi" ? "text-emerald-600" : "text-amber-600"}`}>
-                  {post.status}
-                </span>
+      {loading ? (
+        <div className="py-12 text-center text-xs font-semibold text-gray-400">
+          Memuat daftar mading...
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="py-12 text-center bg-gray-50 rounded-3xl border border-gray-100 text-xs font-semibold text-gray-400">
+          Belum ada mading yang dipublikasikan. Klik &quot;Buat Pengumuman Baru&quot; untuk memublikasikan mading pertama.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {posts.map((post) => (
+            <div
+              key={post.id}
+              className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-extrabold text-[#2c1ee8] bg-blue-50 px-2.5 py-1 rounded-lg">
+                    {post.category || "OSIS"}
+                  </span>
+                  <span className="font-bold text-emerald-600">
+                    Terpublikasi
+                  </span>
+                </div>
+
+                <h4 className="text-base font-extrabold text-gray-900 leading-snug line-clamp-2">
+                  {post.title}
+                </h4>
               </div>
 
-              <h4 className="text-base font-extrabold text-gray-900 leading-snug">
-                {post.title}
-              </h4>
-            </div>
-
-            <div className="pt-4 border-t border-gray-100 mt-4 flex items-center justify-between text-xs text-gray-400">
-              <div className="flex items-center gap-2">
-                <Eye className="w-3.5 h-3.5" />
-                <span>{post.views} dilihat</span>
-              </div>
-              <button
-                onClick={() => handleDeletePost(post.id)}
-                className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                title="Hapus Mading"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Create Announcement Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-black text-gray-900">
-                Buat Pengumuman OSIS Baru
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreatePost} className="space-y-4 text-xs sm:text-sm">
-              <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider text-[11px] mb-1">
-                  Kategori Pengumuman
-                </label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white text-xs font-semibold focus:outline-none focus:border-[#2c1ee8]"
-                >
-                  <option value="Informasi Resmi OSIS">Informasi Resmi OSIS</option>
-                  <option value="Program Kerja & Event">Program Kerja & Event</option>
-                  <option value="Sarpras & Kegiatan">Sarpras & Kegiatan</option>
-                  <option value="Prestasi & Ekstrakurikuler">Prestasi & Ekstrakurikuler</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider text-[11px] mb-1">
-                  Judul Pengumuman
-                </label>
-                <input
-                  type="text"
-                  placeholder="Masukkan judul pengumuman OSIS..."
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-[#2c1ee8]"
-                  required
-                />
-              </div>
-
-              <RichTextEditor
-                label="Isi Konten Pengumuman"
-                value={newContent}
-                onChange={(val) => setNewContent(val)}
-                placeholder="Tuliskan pesan atau pengumuman lengkap untuk seluruh siswa..."
-              />
-
-              <div className="pt-2 flex items-center justify-end gap-2">
+              <div className="pt-4 border-t border-gray-100 mt-4 flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{post.reactionCount || post.ReactionCount || 0} Reaksi</span>
+                </div>
                 <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                  onClick={() => handleDeletePost(post.id)}
+                  className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                  title="Hapus Mading"
                 >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-                >
-                  Publikasikan Mading
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-            </form>
-          </div>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Real Create Announcement Modal */}
+      <CreateAnnouncementModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchAnnouncements}
+      />
     </div>
   );
 }
