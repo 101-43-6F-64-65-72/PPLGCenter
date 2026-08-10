@@ -488,8 +488,34 @@ function PemilosContent() {
                   </div>
                 )}
 
-                {/* Candidate Pairs Grid (Side-by-Side Comparison Layout) */}
-                {loadingPairs ? (
+                {/* Candidate Pairs Grid OR Finished Pemilos Banner */}
+                {selectedElection?.status === 2 || selectedElection?.statusText === "Closed" ? (
+                  <div className="bg-white rounded-3xl border border-purple-100 p-8 sm:p-10 shadow-sm text-center space-y-5">
+                    <div className="w-16 h-16 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mx-auto shadow-xs">
+                      <Trophy className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="inline-block px-3 py-1 rounded-full bg-purple-50 border border-purple-200 text-purple-700 text-xs font-black uppercase tracking-wider">
+                        Pemilos Selesai
+                      </span>
+                      <h3 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight pt-1">
+                        🎉 Pemilos Berakhir & Pemenang Ditetapkan!
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-600 max-w-lg mx-auto leading-relaxed pt-1">
+                        Pemungutan suara telah resmi ditutup oleh Guru Pembina OSIS. Pasangan calon terpilih bersama susunan kabinet baru telah ditetapkan sebagai Kepengurusan OSIS Periode Baru.
+                      </p>
+                    </div>
+                    <div className="pt-2">
+                      <Link
+                        href="/osis/structure"
+                        className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#2c1ee8] text-white font-extrabold text-xs sm:text-sm hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                      >
+                        <GitBranch className="w-4 h-4" />
+                        <span>📜 Lihat Struktur OSIS Baru</span>
+                      </Link>
+                    </div>
+                  </div>
+                ) : loadingPairs ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
                     <p className="text-sm text-gray-500 font-medium">Memuat daftar pasangan calon...</p>
@@ -507,7 +533,7 @@ function PemilosContent() {
                         key={pair.id}
                         pair={pair}
                         rank={i + 1}
-                        isWinner={liveResults?.winnerPair?.id === pair.id}
+                        isWinner={false} // Hapus pemenang sementara
                         showVoteCount={liveResults?.isResultsVisible}
                         hasVoted={hasVoted}
                         isElectionOpen={isElectionOpen}

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { extracurricularService } from "@/services/extracurricularService";
 import candidatePairService from "@/services/candidatePairService";
+import electionService from "@/services/electionService";
 import uploadImageToCloudinary from "@/services/cloudinaryService";
 import ImageCropUploader from "@/components/common/ImageCropUploader";
 import toast from "react-hot-toast";
@@ -232,15 +233,31 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
 
   const handleStopPemilos = async () => {
     if (!activeElectionId) return;
-    if (!window.confirm("Apakah Anda yakin ingin menghentikan sesi Pemilos ini? Voting akan ditutup.")) return;
+    if (!window.confirm("Apakah Anda yakin ingin menghentikan sesi Pemilos dan menyimpan hasil pemenang ke Struktur OSIS Baru?")) return;
 
     setIsStoppingPemilos(true);
     try {
       await candidatePairService.stopPemilos(activeElectionId);
-      toast.success("Sesi Pemilos telah dihentikan.");
+      toast.success("Sesi Pemilos dihentikan & pemenang resmi ditetapkan ke Struktur OSIS Baru!");
       loadPemilosCandidates();
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || "Gagal menghentikan Pemilos.");
+    } finally {
+      setIsStoppingPemilos(false);
+    }
+  };
+
+  const handleResetPemilos = async () => {
+    if (!activeElectionId) return;
+    if (!window.confirm("Apakah Anda yakin ingin mereset Pemilos dan mengarsipkan kepengurusan OSIS saat ini ke Generasi Sebelumnya?")) return;
+
+    setIsStoppingPemilos(true);
+    try {
+      await electionService.resetPemilos(activeElectionId);
+      toast.success("Pemilos direset untuk periode baru! Kepengurusan OSIS sebelumnya telah diarsipkan.");
+      loadPemilosCandidates();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Gagal mereset Pemilos.");
     } finally {
       setIsStoppingPemilos(false);
     }
@@ -801,10 +818,12 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
               </div>
             </div>
 
-            {/* Execution Buttons: Start & Stop Pemilos */}
+            {/* Execution Buttons: 3-Phase Pemilos Loop Action Buttons */}
             <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
               <div className="text-xs text-slate-500 font-medium">
-                {candidatePairs.filter((p) => p.statusText === "Approved" || p.status === 5).length < 2 ? (
+                {pemilosLiveResults?.status === 2 || pemilosLiveResults?.status === "Closed" ? (
+                  <span className="text-purple-700 font-bold">🎉 Pemilos Selesai! Pengurus OSIS baru telah tersimpan & aktif di Struktur OSIS.</span>
+                ) : candidatePairs.filter((p) => p.statusText === "Approved" || p.status === 5).length < 2 ? (
                   <span className="text-amber-600 font-bold">⚠️ Butuh minimal 2 paslon disetujui (Approved) untuk dapat memulai Pemilos.</span>
                 ) : (
                   <span className="text-emerald-600 font-bold">✓ Kuota minimal paslon terpenuhi. Pemilos siap dimulai.</span>
@@ -812,20 +831,29 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
               </div>
 
               <div className="flex items-center gap-2">
-                {pemilosLiveResults?.status === 1 || pemilosLiveResults?.status === "Open" ? (
+                {pemilosLiveResults?.status === 2 || pemilosLiveResults?.status === "Closed" ? (
+                  <button
+                    onClick={handleResetPemilos}
+                    disabled={isStoppingPemilos}
+                    className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition flex items-center gap-2 cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                  >
+                    {isStoppingPemilos ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                    <span>🔄 Ganti Struktur OSIS & Mulai Pemilos Periode Baru</span>
+                  </button>
+                ) : pemilosLiveResults?.status === 1 || pemilosLiveResults?.status === "Open" ? (
                   <button
                     onClick={handleStopPemilos}
                     disabled={isStoppingPemilos}
-                    className="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black transition flex items-center gap-2 cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
                   >
-                    {isStoppingPemilos ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
-                    <span>⛔ Stop / Akhiri Pemilos</span>
+                    {isStoppingPemilos ? <RefreshCw className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                    <span>🛑 Stop dan Simpan Hasil Pemilos</span>
                   </button>
                 ) : (
                   <button
                     onClick={handleStartPemilos}
-                    disabled={isStartingPemilos || candidatePairs.filter((p) => p.statusText === "Approved" || p.status === 5).length < 2}
-                    className="px-5 py-2.5 rounded-md bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={isStartingPemilos || candidatePairs.filter((p) => p.statusText === "Approved" || p.status === 5).length < 2 || !pemilosStartDate || !pemilosEndDate}
+                    className="px-6 py-2.5 rounded-2xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-black transition flex items-center gap-2 cursor-pointer shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {isStartingPemilos ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Vote className="w-4 h-4" />}
                     <span>🚀 Mulai Pemilos</span>

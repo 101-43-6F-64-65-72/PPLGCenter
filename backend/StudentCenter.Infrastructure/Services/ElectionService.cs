@@ -480,6 +480,46 @@ public class ElectionService : IElectionService
                     CreatedAt = DateTime.UtcNow
                 });
             }
+
+            // Parse CabinetStructureJson if available to populate Secretary & Treasurer
+            if (!string.IsNullOrWhiteSpace(election.CabinetStructureJson))
+            {
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(election.CabinetStructureJson);
+                    var root = doc.RootElement;
+
+                    void AddMemberIfValid(string propName, string title, string dept)
+                    {
+                        if (root.TryGetProperty(propName, out var elem) && elem.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            var studentIdStr = elem.GetString();
+                            if (Guid.TryParse(studentIdStr, out var sId) && sId != Guid.Empty)
+                            {
+                                _context.OsisCabinetHistories.Add(new OsisCabinetHistory
+                                {
+                                    Id = Guid.NewGuid(),
+                                    AcademicYearId = activeYear.Id,
+                                    StudentId = sId,
+                                    PositionTitle = title,
+                                    Department = dept,
+                                    IsActive = true,
+                                    CreatedAt = DateTime.UtcNow
+                                });
+                            }
+                        }
+                    }
+
+                    AddMemberIfValid("secretary1Id", "Sekretaris 1", "BPH");
+                    AddMemberIfValid("secretary2Id", "Sekretaris 2", "BPH");
+                    AddMemberIfValid("treasurer1Id", "Bendahara 1", "BPH");
+                    AddMemberIfValid("treasurer2Id", "Bendahara 2", "BPH");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[StopPemilos CabinetJson Parse Error] {ex.Message}");
+                }
+            }
         }
 
         await _context.SaveChangesAsync();
