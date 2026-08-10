@@ -461,6 +461,12 @@ public class CandidatePairService : ICandidatePairService
             throw new InvalidOperationException("Pasangan calon tidak valid atau belum disetujui.");
         }
 
+        var approvedPairsCount = await _context.CandidatePairs.CountAsync(c => c.ElectionId == electionId && c.Status == CandidatePairStatus.Approved);
+        if (approvedPairsCount < 2)
+        {
+            throw new InvalidOperationException("Voting Pemilos belum dapat dilaksanakan karena jumlah pasangan kandidat terdaftar kurang dari 2 pasang (minimal 2 pasang kandidat disetujui).");
+        }
+
         var alreadyVoted = await _context.CandidatePairVotes.AnyAsync(v => v.ElectionId == electionId && v.VoterUserId == voterUserId);
         if (alreadyVoted)
         {
@@ -552,12 +558,16 @@ public class CandidatePairService : ICandidatePairService
             VotedCandidateTitle = isPrivilegedAuditor ? $"Pasangan No. {v.CandidatePair?.CandidateNumber} ({v.CandidatePair?.ChairmanUser?.FullName})" : null,
         }).ToList();
 
+        var userHasVoted = currentUserId.HasValue && await _context.CandidatePairVotes.AnyAsync(v => v.ElectionId == electionId && v.VoterUserId == currentUserId.Value);
+
         return new PemilosLiveResultResponse
         {
             ElectionId = election.Id,
             ElectionTitle = election.Title,
             Status = election.Status,
             IsResultsVisible = isResultsVisible,
+            UserHasVoted = userHasVoted,
+            HasVoted = userHasVoted,
             TotalEligibleVoters = totalEligible,
             TotalVotesCast = isResultsVisible ? totalVotesCast : 0,
             ParticipationRate = isResultsVisible ? participationRate : 0,

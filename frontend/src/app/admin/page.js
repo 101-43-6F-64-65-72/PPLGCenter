@@ -64,49 +64,33 @@ function AdminPanelContent() {
 
         {/* Content Area */}
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto">
-          {/* Banner Header (Executive Gradient Card) */}
-          <div className="mb-8 space-y-6">
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#071329] via-[#0f172a] to-[#2c1ee8] p-6 sm:p-8 lg:p-10 text-white shadow-xl shadow-slate-900/10 border border-white/10">
-              <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+          {/* Top Clean Header */}
+          <div className="mb-6 border-b border-slate-200 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                  PANEL KONTROL KESISWAAN SMKN 2 SURAKARTA
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  Panel Control Center
+                </h1>
+              </div>
 
-              <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-blue-200 text-xs font-black tracking-wide border border-white/20">
-                    <ShieldAlert className="w-4 h-4 text-amber-300" />
-                    <span>PANEL KONTROL KESISWAAN & SUPER ADMIN</span>
-                  </div>
-
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                    Panel Control Center
-                  </h1>
-
-                  <p className="text-xs sm:text-sm text-blue-100/90 max-w-2xl leading-relaxed">
-                    Pusat kendali utama sistem Student Center SMKN 2 Surakarta. Kelola data akademik, akun pengguna, verifikasi proposal, inventaris fasilitas, dan publikasi mading digital.
-                  </p>
-                </div>
-
-                {/* Quick Session Info Pill */}
-                <div className="bg-white/10 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-white/20 space-y-1.5 shrink-0 min-w-[200px]">
-                  <div className="flex items-center gap-2 text-xs font-bold text-blue-200 uppercase tracking-wider">
-                    <Settings className="w-4 h-4 text-emerald-400" />
-                    <span>Otoritas Sesi</span>
-                  </div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/30 text-emerald-200 text-xs font-black border border-emerald-400/40">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Super Admin System</span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-900 text-white text-xs font-bold">
+                  <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Super Admin System</span>
+                </span>
               </div>
             </div>
 
             {/* Mobile Tab Select Dropdown (For Responsive Design) */}
-            <div className="lg:hidden">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Navigasi Panel</label>
+            <div className="lg:hidden mt-4">
               <select
                 suppressHydrationWarning={true}
                 value={activeTab}
                 onChange={(e) => setActiveTab(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-2xl py-3 px-4 text-xs font-bold text-gray-800 outline-none focus:border-[#2c1ee8] shadow-xs"
+                className="w-full bg-white border border-slate-200 rounded-md py-2 px-3 text-xs font-bold text-slate-800 outline-none focus:border-[#2c1ee8]"
               >
                 <option value="overview">Dashboard Overview</option>
                 <option value="students">Master Siswa</option>
@@ -137,64 +121,64 @@ function AdminPanelContent() {
 
           {/* Dynamic Tab Content */}
           {activeTab === "overview" && (
-            <div className="space-y-8">
+            <div className="space-y-6">
               <AdminStatCards />
 
               {/* Quick Actions Bar */}
-              <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm space-y-3">
-                <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Aksi Cepat Admin (Quick Actions)</h2>
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-2.5">
+                <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Aksi Cepat Admin</h2>
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("students")}
-                    className="px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-[#2c1ee8] text-xs font-extrabold flex items-center gap-2 border border-blue-100 transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition cursor-pointer"
                   >
-                    <GraduationCap className="w-4 h-4" />
+                    <GraduationCap className="w-3.5 h-3.5 text-slate-500" />
                     <span>+ Tambah Siswa</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("teachers")}
-                    className="px-4 py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-extrabold flex items-center gap-2 border border-emerald-100 transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition cursor-pointer"
                   >
-                    <BookOpen className="w-4 h-4" />
+                    <BookOpen className="w-3.5 h-3.5 text-slate-500" />
                     <span>+ Tambah Guru</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("schedules")}
-                    className="px-4 py-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-extrabold flex items-center gap-2 border border-indigo-100 transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition cursor-pointer"
                   >
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     <span>+ Buat Jadwal</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("departments")}
-                    className="px-4 py-2.5 rounded-2xl bg-violet-50 hover:bg-violet-100 text-violet-700 text-xs font-extrabold flex items-center gap-2 border border-violet-100 transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition cursor-pointer"
                   >
-                    <Briefcase className="w-4 h-4" />
+                    <Briefcase className="w-3.5 h-3.5 text-slate-500" />
                     <span>+ Tambah Jurusan</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("classes")}
-                    className="px-4 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-extrabold flex items-center gap-2 border border-amber-100 transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition cursor-pointer"
                   >
-                    <Layers className="w-4 h-4" />
+                    <Layers className="w-3.5 h-3.5 text-slate-500" />
                     <span>+ Tambah Kelas</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("students")}
-                    className="px-4 py-2.5 rounded-2xl bg-cyan-50 hover:bg-cyan-100 text-cyan-700 text-xs font-extrabold flex items-center gap-2 border border-cyan-100 transition cursor-pointer"
+                    className="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-200 transition cursor-pointer"
                   >
-                    <Upload className="w-4 h-4" />
+                    <Upload className="w-3.5 h-3.5 text-slate-500" />
                     <span>Import CSV</span>
                   </button>
                 </div>

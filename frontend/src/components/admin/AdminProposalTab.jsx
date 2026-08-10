@@ -160,7 +160,13 @@ export default function AdminProposalTab() {
   }, []);
 
   useEffect(() => {
-    fetchProposals();
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) fetchProposals();
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [fetchProposals]);
 
   const filteredProposals = proposals.filter((item) => {
@@ -202,34 +208,34 @@ export default function AdminProposalTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Search & Filter Header Bar */}
-      <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-gray-400" />
+      <div className="bg-white rounded-lg border border-slate-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Cari judul proposal, pengaju, atau organisasi..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-50 border border-gray-100 rounded-xl py-3 pl-10 pr-4 text-xs font-medium text-gray-900 outline-none focus:bg-white focus:border-[#2c1ee8] transition"
+            className="w-full bg-slate-50 border border-slate-200 rounded-md py-2 pl-9 pr-3 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-[#2c1ee8] transition"
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           {[
             { id: "semua", label: "Semua Proposal" },
-            { id: "pending_admin", label: "Menunggu Approval Admin" },
+            { id: "pending_admin", label: "Menunggu Approval" },
             { id: "approved", label: "Disetujui" },
             { id: "rejected", label: "Ditolak" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 statusFilter === tab.id
-                  ? "bg-[#2c1ee8] text-white shadow-sm"
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100"
+                  ? "bg-[#2c1ee8] text-white"
+                  : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200"
               }`}
             >
               {tab.label}
@@ -240,11 +246,11 @@ export default function AdminProposalTab() {
 
       {/* Error State Banner */}
       {errorMessage && (
-        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-between gap-3 text-rose-700 text-xs font-bold">
+        <div className="p-3 bg-rose-50 border border-rose-200 rounded-md flex items-center justify-between gap-3 text-rose-700 text-xs font-bold">
           <span>{errorMessage}</span>
           <button
             onClick={fetchProposals}
-            className="px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs hover:bg-rose-700 transition"
+            className="px-3 py-1 bg-rose-600 text-white rounded-md text-xs hover:bg-rose-700 transition"
           >
             Coba Lagi
           </button>
@@ -252,13 +258,12 @@ export default function AdminProposalTab() {
       )}
 
       {/* Proposal Table Container wrapped in AnimatedContent */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#2c1ee8]" />
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[#2c1ee8]" />
             <span>Persetujuan Final Proposal ({filteredProposals.length})</span>
           </h3>
-          <span className="text-xs text-gray-500 font-medium">Status Peninjauan Proposal</span>
         </div>
 
         <AnimatedContent isLoading={isLoading} skeleton={<ProposalSkeleton />}>
@@ -282,36 +287,28 @@ export default function AdminProposalTab() {
               </button>
             </div>
           ) : filteredProposals.length > 0 ? (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-slate-100">
               {filteredProposals.map((prop) => (
-                <div key={prop.id} className="p-5 hover:bg-gray-50/80 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1.5 max-w-2xl">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${prop.badgeStyle}`}>
+                <div key={prop.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="space-y-1 max-w-2xl">
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold border ${prop.badgeStyle}`}>
                         <ShieldCheck className="w-3.5 h-3.5" />
                         <span>{prop.statusText}</span>
                       </span>
-                      <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 rounded-md">
+                      <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                         {prop.organization}
                       </span>
-                      <span className="text-xs text-gray-400">Pengaju: {prop.submittedByUserName}</span>
-                      <span className="text-xs text-gray-400">• Tanggal: {prop.submittedDate}</span>
+                      <span className="text-slate-500">Pengaju: {prop.submittedByUserName} • {prop.submittedDate}</span>
                     </div>
 
-                    <h4 className="text-base font-extrabold text-gray-900 leading-snug">
+                    <h4 className="text-sm font-bold text-slate-900 leading-snug">
                       {prop.title}
                     </h4>
-                    <p className="text-xs text-gray-600 line-clamp-2">{prop.description}</p>
 
                     {prop.rejectionReason && (
-                      <p className="text-xs text-rose-700 font-semibold bg-rose-50 px-3 py-1 rounded-xl border border-rose-100">
+                      <p className="text-xs text-rose-700 font-semibold bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-100">
                         Catatan Reviu: {prop.rejectionReason}
-                      </p>
-                    )}
-
-                    {prop.reviewedByUserName && (
-                      <p className="text-xs text-gray-400 font-medium">
-                        Direviu oleh: <strong className="text-gray-700">{prop.reviewedByUserName}</strong> {prop.reviewedDate && `(${prop.reviewedDate})`}
                       </p>
                     )}
                   </div>
@@ -321,9 +318,9 @@ export default function AdminProposalTab() {
                       setSelectedProposal(prop);
                       setAdminNote(prop.rejectionReason || "");
                     }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all cursor-pointer shadow-sm active:scale-95 self-start md:self-center"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all cursor-pointer shrink-0 self-start md:self-center"
                   >
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-3.5 h-3.5" />
                     <span>Verifikasi Admin</span>
                   </button>
                 </div>
@@ -331,14 +328,9 @@ export default function AdminProposalTab() {
             </div>
           ) : (
             /* Empty State */
-            <div className="p-12 text-center space-y-3">
-              <div className="w-12 h-12 bg-blue-50 text-[#2c1ee8] rounded-2xl flex items-center justify-center mx-auto">
-                <FileText className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-gray-900">Belum Ada Proposal Ditemukan</h4>
-              <p className="text-xs text-gray-500 max-w-xs mx-auto">
-                Tidak ada proposal yang sesuai dengan kriteria pencarian atau filter status yang dipilih.
-              </p>
+            <div className="p-10 text-center space-y-2">
+              <FileText className="w-8 h-8 text-slate-300 mx-auto" />
+              <h4 className="text-xs font-bold text-slate-700">Belum Ada Proposal Ditemukan</h4>
             </div>
           )}
         </AnimatedContent>
@@ -346,20 +338,20 @@ export default function AdminProposalTab() {
 
       {/* Review Modal */}
       {selectedProposal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-start justify-between border-b border-gray-100 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white w-full max-w-2xl rounded-lg border border-slate-200 p-5 space-y-4 max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="flex items-start justify-between border-b border-slate-200 pb-3">
               <div>
-                <span className="text-xs font-extrabold text-[#2c1ee8] uppercase tracking-wider">
-                  Verifikasi Proposal Admin
+                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider block">
+                  VERIFIKASI PROPOSAL ADMIN
                 </span>
-                <h3 className="text-xl font-black text-gray-900 mt-1">
+                <h3 className="text-base font-bold text-slate-900 mt-0.5">
                   {selectedProposal.title}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedProposal(null)}
-                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-md cursor-pointer"
               >
                 ✕
               </button>

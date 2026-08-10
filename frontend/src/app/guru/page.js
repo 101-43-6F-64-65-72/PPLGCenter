@@ -91,54 +91,38 @@ function GuruPanelContent() {
 
       {/* Main Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-16">
-        {/* Banner Header (Executive Gradient Card) */}
-        <div className="mb-8 space-y-6">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#071329] via-[#0f172a] to-[#2c1ee8] p-6 sm:p-8 lg:p-10 text-white shadow-xl shadow-slate-900/10 border border-white/10">
-            <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+        {/* Top Clean Header */}
+        <div className="mb-6 border-b border-slate-200 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                PANEL TENAGA PENDIDIK & PEMBINA SMKN 2 SURAKARTA
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                {displayName}
+              </h1>
+            </div>
 
-            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md text-blue-200 text-xs font-black tracking-wide border border-white/20">
-                  <GraduationCap className="w-4 h-4 text-amber-300" />
-                  <span>PANEL GURU & PEMBINA KEGIATAN</span>
-                </div>
-
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                  Selamat Datang, {displayName}
-                </h1>
-
-                <p className="text-xs sm:text-sm text-blue-100/90 max-w-2xl leading-relaxed">
-                  Pusat kontrol dan verifikasi kegiatan kesiswaan SMKN 2 Surakarta. Tinjau permohonan proposal, pengajuan fasilitas, serta pengawasan unit binaan Anda.
-                </p>
-              </div>
-
-              {/* Profile & Role Badge Card */}
-              <div className="bg-white/10 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-white/20 space-y-2 shrink-0 max-w-sm">
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-200 uppercase tracking-wider">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Hak Akses Terautentikasi</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-500/30 text-white text-xs font-black border border-blue-400/40">
-                    <UserCheck className="w-3.5 h-3.5 text-blue-300" />
-                    Guru Pengampu
-                  </span>
-                  {supervisedExtracurriculars.map((ekskul) => (
-                    <span
-                      key={ekskul.id || ekskul.name}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/30 text-emerald-200 text-xs font-black border border-emerald-400/40"
-                    >
-                      <Award className="w-3.5 h-3.5 text-emerald-300" />
-                      Pembina {ekskul.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            {/* Profile & Role Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-900 text-white text-xs font-bold">
+                <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Guru Pengampu</span>
+              </span>
+              {supervisedExtracurriculars.map((ekskul) => (
+                <span
+                  key={ekskul.id || ekskul.name}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold"
+                >
+                  <Award className="w-3.5 h-3.5 text-emerald-600" />
+                  Pembina {ekskul.name}
+                </span>
+              ))}
             </div>
           </div>
 
           {/* Dynamic Navigation Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-gray-200 pt-2 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 border-b border-slate-200 pt-4 scrollbar-none">
             {tabs.map((tab) => {
               const IconComp = tab.icon;
               const isActive = activeTab === tab.id;
@@ -146,13 +130,13 @@ function GuruPanelContent() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? "bg-[#2c1ee8] text-white shadow-md shadow-blue-500/25 active:scale-95"
-                      : "bg-white text-gray-700 border border-gray-200/80 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-[#2c1ee8] text-white"
+                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
                   }`}
                 >
-                  <IconComp className="w-4 h-4" />
+                  <IconComp className="w-3.5 h-3.5" />
                   <span>{tab.label}</span>
                 </button>
               );

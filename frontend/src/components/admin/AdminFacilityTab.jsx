@@ -84,33 +84,28 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+      <div className="bg-white w-full max-w-lg rounded-lg border border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#2c1ee8]/10 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-[#2c1ee8]" />
-            </div>
-            <div>
-              <h3 className="text-base font-black text-gray-900">
-                {isEdit ? "Edit Fasilitas" : "Tambah Fasilitas Baru"}
-              </h3>
-              <p className="text-[11px] text-gray-400 font-medium">Hanya Admin yang dapat mengelola fasilitas</p>
-            </div>
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-lg z-10">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-[#2c1ee8]" />
+            <h3 className="text-base font-bold text-slate-900">
+              {isEdit ? "Edit Fasilitas" : "Tambah Fasilitas Baru"}
+            </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-md transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {error && (
-            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
-              <XCircle className="w-4 h-4 flex-shrink-0" />
+            <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+              <XCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
           )}
@@ -502,40 +497,35 @@ export default function AdminFacilityTab() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* ── Header ── */}
-      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#2c1ee8]/10 flex items-center justify-center">
-            <Building2 className="w-6 h-6 text-[#2c1ee8]" />
-          </div>
-          <div>
-            <h2 className="text-lg font-black text-gray-900">Manajemen Fasilitas & Sarpras</h2>
-            <p className="text-xs text-gray-500 font-medium">Kelola fasilitas sekolah dan persetujuan peminjaman</p>
-          </div>
+      <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-[#2c1ee8]" />
+          <h2 className="text-base font-bold text-slate-900">Manajemen Fasilitas & Sarpras</h2>
         </div>
 
         {/* Sub-tab Switcher */}
-        <div className="flex bg-gray-100 rounded-2xl p-1 gap-1">
+        <div className="flex bg-slate-100 rounded-md p-1 gap-1 border border-slate-200">
           <button
             onClick={() => setSubTab("facilities")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
               subTab === "facilities"
-                ? "bg-white text-[#2c1ee8] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-[#2c1ee8] shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            🏛️ Fasilitas
+            Fasilitas
           </button>
           <button
             onClick={() => setSubTab("bookings")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
               subTab === "bookings"
-                ? "bg-white text-[#2c1ee8] shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-[#2c1ee8] shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            📋 Approval Booking
+            Approval Booking
           </button>
         </div>
       </div>
@@ -546,32 +536,32 @@ export default function AdminFacilityTab() {
       {subTab === "facilities" && (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 suppressHydrationWarning={true}
                 type="text"
                 placeholder="Cari fasilitas, lokasi, atau kategori..."
                 value={searchFacility}
                 onChange={(e) => setSearchFacility(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+                className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2c1ee8] text-xs transition-all"
               />
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={loadFacilities}
-                className="p-2.5 rounded-2xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition cursor-pointer"
+                className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                 title="Refresh"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingFacilities ? "animate-spin" : ""}`} />
               </button>
               <button
                 onClick={() => { setEditingFacility(null); setShowFormModal(true); }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition shadow-md cursor-pointer active:scale-95"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition cursor-pointer shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span>Tambah Fasilitas</span>
+                <span>+ Tambah Fasilitas</span>
               </button>
             </div>
           </div>

@@ -47,6 +47,7 @@ export default function CandidatePairCard({
   hasVoted,
   isElectionOpen,
   electionTimeState,
+  isMinCandidatesMet = true,
   onApplyVice,
   onChairmanReview,
   canApplyVice,
@@ -54,7 +55,7 @@ export default function CandidatePairCard({
 }) {
   const statusConfig = STATUS_CONFIG[pair.statusText] || STATUS_CONFIG.WaitingVice;
   const isApproved = pair.statusText === "Approved" || pair.status === 5;
-  const canVote = isApproved && !hasVoted && onVote && isElectionOpen && electionTimeState === "ONGOING";
+  const canVote = isApproved && !hasVoted && onVote && isElectionOpen && electionTimeState === "ONGOING" && isMinCandidatesMet;
 
   return (
     <div
@@ -213,6 +214,13 @@ export default function CandidatePairCard({
               <Medal className="w-4 h-4" />
               <span>Pilih Pasangan Ini</span>
             </button>
+          )}
+
+          {isApproved && !hasVoted && !isMinCandidatesMet && electionTimeState === "ONGOING" && (
+            <div className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm font-bold" title="Voting butuh minimal 2 pasangan calon">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span>Voting Terkunci (Min. 2 Paslon)</span>
+            </div>
           )}
 
           {isApproved && hasVoted && (

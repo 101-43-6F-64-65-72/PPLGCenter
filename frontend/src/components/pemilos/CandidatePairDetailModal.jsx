@@ -11,11 +11,12 @@ export default function CandidatePairDetailModal({
   hasVoted,
   isElectionOpen,
   electionTimeState,
+  isMinCandidatesMet = true,
 }) {
   if (!pair) return null;
 
   const isApproved = pair.statusText === "Approved" || pair.status === 5;
-  const canVote = isElectionOpen && isApproved && !hasVoted && electionTimeState === "ONGOING";
+  const canVote = isElectionOpen && isApproved && !hasVoted && electionTimeState === "ONGOING" && isMinCandidatesMet;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
@@ -195,8 +196,12 @@ export default function CandidatePairDetailModal({
           )}
 
           {!canVote && !hasVoted && (
-            <div className="flex-1 max-w-xs py-3 px-4 rounded-2xl bg-gray-200 text-gray-500 text-xs sm:text-sm font-bold text-center">
-              {electionTimeState === "BEFORE" ? "Pemilihan Belum Dibuka" : "Pemilihan Telah Ditutup"}
+            <div className="flex-1 max-w-xs py-3 px-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs sm:text-sm font-bold text-center">
+              {!isMinCandidatesMet
+                ? "Voting Terkunci (Minimal 2 Paslon Disetujui)"
+                : electionTimeState === "BEFORE"
+                ? "Pemilihan Belum Dibuka"
+                : "Pemilihan Telah Ditutup"}
             </div>
           )}
         </div>

@@ -196,11 +196,16 @@ function PemilosContent() {
       const resultsObj = rawResults?.data ?? rawResults ?? null;
       setLiveResults(resultsObj);
 
-      // Check HasVoted from backend election response or live results
-      const userHasVoted = !!(selectedElection?.hasVoted || resultsObj?.hasVoted || resultsObj?.userHasVoted);
-      if (userHasVoted) {
-        setHasVoted(true);
-      }
+      // Check HasVoted from backend live results or selected election
+      const userHasVoted = !!(
+        resultsObj?.userHasVoted ||
+        resultsObj?.UserHasVoted ||
+        resultsObj?.hasVoted ||
+        resultsObj?.HasVoted ||
+        selectedElection?.hasVoted ||
+        selectedElection?.HasVoted
+      );
+      setHasVoted(userHasVoted);
     } catch (err) {
       const checkUnauth =
         err?.statusCode === 401 ||
@@ -242,9 +247,17 @@ function PemilosContent() {
     } catch (err) {
       const status = err?.statusCode || err?.response?.status;
       const msg = err?.message || err?.response?.data?.message || "Gagal memberikan suara.";
+      const lowerMsg = String(msg).toLowerCase();
       
-      if (status === 409 || msg.includes("sudah") || msg.includes("pernah")) {
-        toast.error("Anda sudah memilih pada pemilihan ini.");
+      if (
+        status === 400 ||
+        status === 409 ||
+        lowerMsg.includes("sudah") ||
+        lowerMsg.includes("pernah") ||
+        lowerMsg.includes("already voted") ||
+        lowerMsg.includes("voted")
+      ) {
+        toast.error("Anda telah menggunakan hak suara Anda pada pemilihan ini.");
         setHasVoted(true);
       } else if (status === 403) {
         toast.error("Anda tidak memiliki hak akses untuk voting pada pemilihan ini.");
@@ -263,6 +276,8 @@ function PemilosContent() {
   const approvedPairs = pairs.filter(
     (p) => p.statusText === "Approved" || p.status === 5 || p.statusText === "WaitingAdmin" || p.status === 4
   );
+
+  const isMinCandidatesMet = approvedPairs.length >= 2;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "-";
@@ -449,7 +464,20 @@ function PemilosContent() {
                   </div>
                 )}
 
-                {/* Candidate Pairs Grid */}
+                {/* Minimum Candidates Warning Banner */}
+                {!isMinCandidatesMet && electionTimeState === "ONGOING" && (
+                  <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-xs">
+                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                    <div>
+                      <h4 className="font-bold text-amber-900 uppercase tracking-wider">Pemungutan Suara Belum Dapat Dilaksanakan</h4>
+                      <p className="font-medium text-amber-800 mt-0.5">
+                        Pemilos membutuhkan minimal 2 pasangan kandidat yang terdaftar dan disetujui untuk dapat melaksanakan pemungutan suara. Saat ini baru terdapat {approvedPairs.length} pasangan calon resmi.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Candidate Pairs Grid (Side-by-Side Comparison Layout) */}
                 {loadingPairs ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
@@ -462,7 +490,7 @@ function PemilosContent() {
                     <p className="text-sm text-gray-400 mt-1">Pasangan calon yang telah disetujui akan muncul di sini.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
                     {approvedPairs.map((pair, i) => (
                       <CandidatePairCard
                         key={pair.id}
@@ -473,6 +501,7 @@ function PemilosContent() {
                         hasVoted={hasVoted}
                         isElectionOpen={isElectionOpen}
                         electionTimeState={electionTimeState}
+                        isMinCandidatesMet={isMinCandidatesMet}
                         onVote={handleVote}
                         onViewDetail={(p) => setDetailPair(p)}
                       />
@@ -534,6 +563,7 @@ function PemilosContent() {
           hasVoted={hasVoted}
           isElectionOpen={isElectionOpen}
           electionTimeState={electionTimeState}
+          isMinCandidatesMet={isMinCandidatesMet}
         />
       )}
 

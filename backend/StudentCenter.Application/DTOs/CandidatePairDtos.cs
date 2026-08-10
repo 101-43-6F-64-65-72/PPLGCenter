@@ -99,6 +99,8 @@ public class PemilosLiveResultResponse
     public string ElectionTitle { get; set; } = string.Empty;
     public ElectionStatus Status { get; set; }
     public bool IsResultsVisible { get; set; }
+    public bool UserHasVoted { get; set; }
+    public bool HasVoted { get; set; }
 
     public int TotalEligibleVoters { get; set; }
     public int TotalVotesCast { get; set; }
