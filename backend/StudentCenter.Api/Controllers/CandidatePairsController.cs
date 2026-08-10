@@ -58,7 +58,7 @@ public class CandidatePairsController : ControllerBase
         return Ok(ApiResponse<CandidatePairResponse>.Ok("Detail pasangan calon berhasil diambil", result));
     }
 
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student,Admin,Teacher")]
     [HttpPost("register-chairman")]
     public async Task<IActionResult> RegisterChairman([FromBody] RegisterChairmanRequest request)
     {
@@ -73,7 +73,7 @@ public class CandidatePairsController : ControllerBase
     /// Unified atomic registration of a Ketua + Wakil pair in one request.
     /// The logged-in user is automatically the Chairman.
     /// </summary>
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student,Admin,Teacher")]
     [HttpPost("register-pair")]
     public async Task<IActionResult> RegisterPair([FromBody] RegisterPairRequest request)
     {
@@ -84,7 +84,7 @@ public class CandidatePairsController : ControllerBase
         return Ok(ApiResponse<CandidatePairResponse>.Ok("Pendaftaran Pasangan Calon berhasil diajukan! Menunggu review guru pembina.", result));
     }
 
-    [Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student,Admin,Teacher")]
     [HttpPost("{id:guid}/apply-vice")]
     public async Task<IActionResult> ApplyVice(Guid id, [FromBody] ApplyViceRequest request)
     {

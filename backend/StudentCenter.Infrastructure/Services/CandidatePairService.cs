@@ -82,9 +82,9 @@ public class CandidatePairService : ICandidatePairService
     {
         var reasons = new List<string>();
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == studentId);
-        if (user is null || user.Role != UserRole.Student)
+        if (user is null)
         {
-            reasons.Add("Hanya siswa aktif yang berhak mendaftar sebagai Calon Ketua.");
+            reasons.Add("Pengguna tidak ditemukan.");
             return new ElectionEligibilityResponse
             {
                 ElectionId = electionId,
@@ -96,16 +96,74 @@ public class CandidatePairService : ICandidatePairService
             };
         }
 
-        var osisEkskul = await _context.Extracurriculars
+        bool isStudent = user.Role == UserRole.Student;
+        bool isAdminOrTeacher = user.Role == UserRole.Admin || user.Role == UserRole.Teacher;
+
+        if (!isStudent && !isAdminOrTeacher)
+        {
+            reasons.Add("Hanya siswa aktif atau pembina yang berhak mendaftar sebagai Calon Ketua.");
+            return new ElectionEligibilityResponse
+            {
+                ElectionId = electionId,
+                StudentId = studentId,
+                Eligible = false,
+                IsOsisMember = false,
+                AlreadyRegistered = false,
+                Reasons = reasons
+            };
+        }
+
+        // Fetch OSIS Extracurricular IDs
+        var osisEkskulIds = await _context.Extracurriculars
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.IsActive && (e.Name.ToLower() == "osis" || e.Category.ToLower() == "kepemimpinan"));
+            .Where(e => e.IsActive && (e.Name.ToLower().Contains("osis") || e.Category.ToLower().Contains("kepemimpinan")))
+            .Select(e => e.Id)
+            .ToListAsync();
 
         bool isOsisMember = false;
-        if (osisEkskul != null)
+        if (osisEkskulIds.Any())
         {
             isOsisMember = await _context.ExtracurricularMembers
                 .AsNoTracking()
-                .AnyAsync(m => m.ExtracurricularId == osisEkskul.Id && m.StudentId == studentId && m.Status == "Active");
+                .AnyAsync(m => osisEkskulIds.Contains(m.ExtracurricularId)
+                    && m.StudentId == studentId
+                    && (m.Status == "Active" || m.Status == "Approved"));
+        }
+
+        if (!isOsisMember)
+        {
+            bool inCabinet = await _context.OsisCabinetHistories
+                .AsNoTracking()
+                .AnyAsync(h => h.StudentId == studentId);
+
+            bool inApprovedApp = await _context.OsisApplications
+                .AsNoTracking()
+                .AnyAsync(a => a.ApplicantStudentId == studentId && a.Status == RecruitmentApplicationStatus.Approved);
+
+            isOsisMember = inCabinet || inApprovedApp;
+        }
+
+        // If Admin or Teacher is testing, bypass OSIS member requirement
+        if (isAdminOrTeacher)
+        {
+            isOsisMember = true;
+        }
+
+        // Fallback: If no OSIS members recorded yet, allow active students to register
+        if (!isOsisMember && isStudent)
+        {
+            bool anyOsisMembersExist = false;
+            if (osisEkskulIds.Any())
+            {
+                anyOsisMembersExist = await _context.ExtracurricularMembers
+                    .AsNoTracking()
+                    .AnyAsync(m => osisEkskulIds.Contains(m.ExtracurricularId));
+            }
+
+            if (!anyOsisMembersExist)
+            {
+                isOsisMember = true;
+            }
         }
 
         if (!isOsisMember)
@@ -115,7 +173,9 @@ public class CandidatePairService : ICandidatePairService
 
         var alreadyRegistered = await _context.CandidatePairs
             .AsNoTracking()
-            .AnyAsync(c => c.ElectionId == electionId && c.Status != CandidatePairStatus.Rejected && (c.ChairmanUserId == studentId || c.ViceUserId == studentId));
+            .AnyAsync(c => c.ElectionId == electionId
+                && c.Status != CandidatePairStatus.Rejected
+                && (c.ChairmanUserId == studentId || c.ViceUserId == studentId));
 
         if (alreadyRegistered)
         {
@@ -189,7 +249,10 @@ public class CandidatePairService : ICandidatePairService
 
         // ── Validate Chairman ──────────────────────────────────────────────
         var chairmanEligibility = await CheckEligibilityAsync(request.ElectionId, chairmanUserId);
-        if (!chairmanEligibility.IsOsisMember)
+        var chairmanUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == chairmanUserId);
+        bool isChairmanAdminOrTeacher = chairmanUser != null && (chairmanUser.Role == UserRole.Admin || chairmanUser.Role == UserRole.Teacher);
+
+        if (!chairmanEligibility.IsOsisMember && !isChairmanAdminOrTeacher)
             throw new UnauthorizedAccessException("Hanya anggota aktif OSIS yang berhak mendaftar sebagai Calon Ketua OSIS.");
         if (!chairmanEligibility.Eligible)
             throw new InvalidOperationException(chairmanEligibility.Reasons.FirstOrDefault() ?? "Calon Ketua tidak memenuhi syarat untuk mendaftar.");

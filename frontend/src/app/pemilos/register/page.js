@@ -172,15 +172,29 @@ function RegisterContent() {
       return;
     }
     if (!selectedVice) {
-      toast.error("Pilih Calon Wakil terlebih dahulu.");
+      toast.error("Pilih Calon Wakil Ketua terlebih dahulu.");
       return;
     }
     if (String(selectedVice.id) === String(user?.id)) {
       toast.error("Anda tidak dapat memilih diri sendiri sebagai Calon Wakil.");
       return;
     }
-    if (!pairForm.vision.trim() || !pairForm.mission.trim() || !pairForm.programs.trim()) {
-      toast.error("Lengkapi Visi, Misi, dan Program Kerja terlebih dahulu.");
+    if (!pairForm.vision.trim()) {
+      toast.error("Visi pasangan wajib diisi.");
+      return;
+    }
+    if (!pairForm.mission.trim()) {
+      toast.error("Misi pasangan wajib diisi.");
+      return;
+    }
+    if (!pairForm.programs.trim()) {
+      toast.error("Program kerja unggulan wajib diisi.");
+      return;
+    }
+
+    const isAdminOrTeacher = user?.role === USER_ROLES.ADMIN || user?.role === USER_ROLES.TEACHER || user?.role === "Admin" || user?.role === "Teacher";
+    if (eligibility && !eligibility.eligible && !isAdminOrTeacher) {
+      toast.error(eligibility.reasons?.[0] || "Anda belum memenuhi syarat untuk mendaftar.");
       return;
     }
 
@@ -189,9 +203,9 @@ function RegisterContent() {
       const payload = {
         electionId: selectedElectionId,
         viceUserId: selectedVice.id,
-        vision: pairForm.vision,
-        mission: pairForm.mission,
-        programs: pairForm.programs,
+        vision: pairForm.vision.trim(),
+        mission: pairForm.mission.trim(),
+        programs: pairForm.programs.trim(),
         photoUrl: pairForm.photoUrl || user?.photoUrl || user?.avatar || "",
         vicePhotoUrl: pairForm.vicePhotoUrl || selectedVice?.photoUrl || selectedVice?.avatar || "",
       };
@@ -500,8 +514,14 @@ function RegisterContent() {
             <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
               <button
                 type="button"
-                disabled={!selectedVice || !pairForm.vision || !pairForm.mission || !pairForm.programs}
-                onClick={() => setShowPreview(true)}
+                disabled={submitting}
+                onClick={() => {
+                  if (!selectedVice) return toast.error("Pilih Calon Wakil Ketua terlebih dahulu.");
+                  if (!pairForm.vision.trim()) return toast.error("Visi pasangan wajib diisi.");
+                  if (!pairForm.mission.trim()) return toast.error("Misi pasangan wajib diisi.");
+                  if (!pairForm.programs.trim()) return toast.error("Program kerja unggulan wajib diisi.");
+                  setShowPreview(true);
+                }}
                 className="px-6 py-3 border border-gray-300 rounded-2xl text-xs sm:text-sm font-extrabold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition cursor-pointer flex items-center gap-2"
               >
                 <Eye className="w-4 h-4" /> Preview Pasangan
@@ -509,7 +529,7 @@ function RegisterContent() {
 
               <button
                 type="button"
-                disabled={submitting || !selectedVice || !pairForm.vision || !pairForm.mission || !pairForm.programs || (eligibility && !eligibility.eligible)}
+                disabled={submitting}
                 onClick={handleSubmitPair}
                 className="px-8 py-3 bg-[#2c1ee8] text-white rounded-2xl text-xs sm:text-sm font-extrabold hover:bg-blue-700 disabled:opacity-50 transition cursor-pointer shadow-md shadow-blue-500/20 flex items-center gap-2"
               >
