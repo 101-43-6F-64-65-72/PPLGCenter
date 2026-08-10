@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils";
+import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
 
 /**
  * Aspect ratio definitions supported by the interactive cropper
@@ -714,9 +715,9 @@ export default function ImageCropUploader({
 
       {/* Loading Indicator during Upload */}
       {isUploading && (
-        <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs font-bold text-[#2c1ee8] flex items-center gap-2 animate-pulse">
-          <RefreshCw className="w-4 h-4 animate-spin" />
-          <span>Mengunggah gambar...</span>
+        <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs font-extrabold text-[#2c1ee8] flex items-center gap-3">
+          <TwinOrbitSpinner size="xs" color="primary" />
+          <span>Mengunggah & Memproses Gambar...</span>
         </div>
       )}
 

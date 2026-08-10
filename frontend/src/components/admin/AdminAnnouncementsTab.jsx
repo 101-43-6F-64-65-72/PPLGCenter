@@ -11,12 +11,14 @@ import {
 import announcementService from "@/services/announcementService";
 import uploadImageToCloudinary from "@/services/cloudinaryService";
 import ImageCropUploader from "@/components/common/ImageCropUploader";
+import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
 
 export default function AdminAnnouncementsTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -87,10 +89,11 @@ export default function AdminAnnouncementsTab() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting || isUploading) return;
     if (!formData.title.trim() || !formData.content.trim()) return;
 
-    // Only send coverImageUrl if it's a real HTTPS URL (Cloudinary CDN)
-    // Sending a Data URL or empty string with [Url] validator causes 400
+    setIsSubmitting(true);
+
     const validCoverUrl =
       coverImageUrl && coverImageUrl.startsWith("https://")
         ? coverImageUrl
@@ -110,6 +113,7 @@ export default function AdminAnnouncementsTab() {
     } catch (err) {
       console.warn("Async announcement creation warning:", err);
     } finally {
+      setIsSubmitting(false);
       setFormData({ title: "", category: "Informasi Sekolah", summary: "", content: "" });
       setCoverImageUrl("");
       setIsCreateOpen(false);
@@ -275,10 +279,20 @@ export default function AdminAnnouncementsTab() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                  disabled={isSubmitting || isUploading}
+                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Terbitkan Mading</span>
+                  {isSubmitting || isUploading ? (
+                    <>
+                      <TwinOrbitSpinner size="xs" color="white" />
+                      <span>{isUploading ? "Mengunggah Gambar..." : "Terbitkan Mading..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Terbitkan Mading</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
