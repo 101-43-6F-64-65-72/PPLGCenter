@@ -376,12 +376,17 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
           </div>
         ) : rootComments.length > 0 ? (
           rootComments.map((c) => {
-            const author = c.authorName || c.userName || "Pengguna";
+            const author = c.authorName || c.userName || c.UserName || "Pengguna";
             const canDelete = isTeacherOrAdmin || (user?.id && (user.id === c.userId || user.id === c.UserId));
             const childReplies = repliesMap[c.id || c.Id] || [];
 
             const photo = c.userPhotoUrl || c.UserPhotoUrl || c.photoUrl || c.PhotoUrl || c.authorPhotoUrl || c.AuthorPhotoUrl;
             const resolvedPhoto = photo ? resolveImageUrl(photo) : null;
+
+            const commentRole = (c.userRole || c.UserRole || "").toLowerCase();
+            const commentClass = c.userClassName || c.UserClassName;
+            const isCommentTeacher = commentRole === "teacher";
+            const isCommentAdmin = commentRole === "admin";
 
             return (
               <div key={c.id || c.Id} className="space-y-2">
@@ -395,7 +400,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                       className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs border border-gray-200"
                     />
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-black flex items-center justify-center text-[11px] shrink-0 mt-0.5 shadow-2xs">
+                    <div className={`w-7 h-7 rounded-full text-white font-black flex items-center justify-center text-[11px] shrink-0 mt-0.5 shadow-2xs ${isCommentAdmin ? "bg-gradient-to-br from-rose-500 to-red-600" : isCommentTeacher ? "bg-gradient-to-br from-emerald-500 to-teal-600" : "bg-gradient-to-br from-blue-600 to-indigo-700"}`}>
                       {author.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -403,12 +408,23 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                   {/* Facebook Comment Bubble */}
                   <div className="flex-1 min-w-0">
                     <div className="bg-gray-100/80 hover:bg-gray-100 p-3 rounded-2xl text-xs space-y-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="font-bold text-gray-900 truncate">{author}</span>
+                      <div className="flex items-start justify-between gap-1">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold text-gray-900 truncate">{author}</span>
+                          {isCommentAdmin && (
+                            <span className="text-[10px] font-bold text-rose-600">Admin</span>
+                          )}
+                          {isCommentTeacher && (
+                            <span className="text-[10px] font-bold text-emerald-600">Guru</span>
+                          )}
+                          {!isCommentAdmin && !isCommentTeacher && commentClass && (
+                            <span className="text-[10px] font-medium text-blue-600">{commentClass}</span>
+                          )}
+                        </div>
                         {canDelete && (
                           <button
                             onClick={() => handleDeleteComment(c.id || c.Id)}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity cursor-pointer"
+                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity cursor-pointer shrink-0"
                             title="Hapus"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -445,11 +461,16 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                 {childReplies.length > 0 && (
                   <div className="ml-5 sm:ml-7 pl-3 border-l-2 border-blue-200/60 space-y-2.5 mt-1">
                     {childReplies.map((reply) => {
-                      const replyAuthor = reply.authorName || reply.userName || "Pengguna";
+                      const replyAuthor = reply.authorName || reply.userName || reply.UserName || "Pengguna";
                       const canDeleteReply = isTeacherOrAdmin || (user?.id && (user.id === reply.userId || user.id === reply.UserId));
 
                       const replyPhoto = reply.userPhotoUrl || reply.UserPhotoUrl || reply.photoUrl || reply.PhotoUrl || reply.authorPhotoUrl || reply.AuthorPhotoUrl;
                       const resolvedReplyPhoto = replyPhoto ? resolveImageUrl(replyPhoto) : null;
+
+                      const replyRole = (reply.userRole || reply.UserRole || "").toLowerCase();
+                      const replyClass = reply.userClassName || reply.UserClassName;
+                      const isReplyTeacher = replyRole === "teacher";
+                      const isReplyAdmin = replyRole === "admin";
 
                       return (
                         <div key={reply.id || reply.Id} className="flex gap-2 items-start group">
@@ -461,19 +482,30 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                               className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs border border-gray-200"
                             />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-2xs">
+                            <div className={`w-6 h-6 rounded-full text-white font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-2xs ${isReplyAdmin ? "bg-gradient-to-br from-rose-500 to-red-600" : isReplyTeacher ? "bg-gradient-to-br from-emerald-500 to-teal-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
                               {replyAuthor.charAt(0).toUpperCase()}
                             </div>
                           )}
 
                           <div className="flex-1 min-w-0">
                             <div className="bg-blue-50/50 hover:bg-blue-50/80 p-2.5 rounded-2xl text-xs space-y-0.5 border border-blue-100/50">
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="font-bold text-gray-900 truncate">{replyAuthor}</span>
+                              <div className="flex items-start justify-between gap-1">
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-gray-900 truncate">{replyAuthor}</span>
+                                  {isReplyAdmin && (
+                                    <span className="text-[9px] font-bold text-rose-600">Admin</span>
+                                  )}
+                                  {isReplyTeacher && (
+                                    <span className="text-[9px] font-bold text-emerald-600">Guru</span>
+                                  )}
+                                  {!isReplyAdmin && !isReplyTeacher && replyClass && (
+                                    <span className="text-[9px] font-medium text-blue-600">{replyClass}</span>
+                                  )}
+                                </div>
                                 {canDeleteReply && (
                                   <button
                                     onClick={() => handleDeleteComment(reply.id || reply.Id)}
-                                    className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 transition-opacity cursor-pointer"
+                                    className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 transition-opacity cursor-pointer shrink-0"
                                     title="Hapus"
                                   >
                                     <Trash2 className="w-2.5 h-2.5" />

@@ -10,4 +10,6 @@ public class CommentResponse
     public string UserName { get; set; } = string.Empty;
     public string? UserPhotoUrl { get; set; }
     public Guid? ParentCommentId { get; set; }
+    public string? UserClassName { get; set; }
+    public string? UserRole { get; set; }
 }

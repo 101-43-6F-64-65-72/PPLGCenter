@@ -37,7 +37,9 @@ public class AnnouncementCommentService : IAnnouncementCommentService
                 throw new ValidationException("Komentar utama yang dituju telah dihapus.");
         }
 
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _context.Users
+            .Include(u => u.Class)
+            .FirstOrDefaultAsync(u => u.Id == userId);
 
         var comment = new AnnouncementComment
         {
@@ -75,7 +77,9 @@ public class AnnouncementCommentService : IAnnouncementCommentService
             UserId = comment.UserId,
             UserName = user?.FullName ?? string.Empty,
             UserPhotoUrl = user?.PhotoUrl,
-            ParentCommentId = comment.ParentCommentId
+            ParentCommentId = comment.ParentCommentId,
+            UserClassName = user?.Class?.Name,
+            UserRole = user?.Role.ToString()
         };
     }
 
@@ -104,7 +108,9 @@ public class AnnouncementCommentService : IAnnouncementCommentService
                 UserId = c.UserId,
                 UserName = c.User.FullName,
                 UserPhotoUrl = c.User.PhotoUrl,
-                ParentCommentId = c.ParentCommentId
+                ParentCommentId = c.ParentCommentId,
+                UserClassName = c.User.Class != null ? c.User.Class.Name : null,
+                UserRole = c.User.Role.ToString()
             })
             .ToListAsync();
 

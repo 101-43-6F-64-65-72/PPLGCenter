@@ -305,6 +305,20 @@ function ProfileContent() {
                     <Shield className="h-3.5 w-3.5" />
                     {roleLabel}
                   </span>
+                  {/* Student: class badge */}
+                  {isStudent && user?.className && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-300/40 bg-sky-500/20 px-3.5 py-1 text-xs font-extrabold text-sky-100 backdrop-blur-md">
+                      <GraduationCap className="h-3.5 w-3.5 text-sky-300" />
+                      {user.className}
+                    </span>
+                  )}
+                  {/* Teacher: NIP badge */}
+                  {isTeacher && user?.nip && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-300/40 bg-teal-500/20 px-3.5 py-1 text-xs font-extrabold text-teal-100 backdrop-blur-md">
+                      <Hash className="h-3.5 w-3.5 text-teal-300" />
+                      NIP {user.nip}
+                    </span>
+                  )}
                   {Array.isArray(advisorFor) && advisorFor.map((ekskul) => (
                     <span
                       key={ekskul.id || ekskul.name}
@@ -328,6 +342,20 @@ function ProfileContent() {
                 <p className="mt-2 text-sm font-medium text-blue-100 sm:text-base">
                   ID Akun: <span className="font-semibold text-white font-mono">{savedEmail}</span>
                 </p>
+                {/* Student: department subtitle */}
+                {isStudent && user?.departmentName && (
+                  <p className="mt-0.5 text-xs text-blue-200 font-medium">
+                    <BookOpen className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
+                    {user.departmentName}
+                  </p>
+                )}
+                {/* Teacher: position subtitle */}
+                {isTeacher && user?.position && (
+                  <p className="mt-0.5 text-xs text-teal-200 font-medium">
+                    <Award className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
+                    {user.position}
+                  </p>
+                )}
               </div>
             </div>
 
