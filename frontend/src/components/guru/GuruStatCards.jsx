@@ -18,7 +18,7 @@ export default function GuruStatCards({ teacherDash, supervisedExtracurriculars 
       value: String(pendingProposalCount),
       subtext: ekskulNames ? `Unit: ${ekskulNames}` : "Proposal unit binaan",
       icon: FileText,
-      badge: pendingProposalCount > 0 ? "Perlu Aksik" : "Selesai",
+      badge: pendingProposalCount > 0 ? "Perlu Aksi" : "Selesai",
       badgeColor: pendingProposalCount > 0 
         ? "bg-amber-50 text-amber-700 border-amber-200"
         : "bg-emerald-50 text-emerald-700 border-emerald-200",

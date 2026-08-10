@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import AuthGuard from "@/components/layout/AuthGuard";
 import { USER_ROLES } from "@/constants/userRoles";
 import CandidatePairCard from "@/components/pemilos/CandidatePairCard";
@@ -515,6 +516,8 @@ function PemilosContent() {
           </>
         )}
       </main>
+
+      <Footer />
 
       {/* Candidate Pair Detail Modal */}
       {detailPair && (

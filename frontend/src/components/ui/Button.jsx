@@ -3,7 +3,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 /**
  * Reusable Production Button Component
- * Supports variants (primary, secondary, outline, ghost, danger), sizes, loading, icons.
+ * Supports variants (primary, secondary, outline, ghost, danger/destructive), sizes (xs, sm, md, lg), loading, icons.
  */
 export const Button = React.forwardRef(
   (
@@ -24,25 +24,28 @@ export const Button = React.forwardRef(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]";
+      "inline-flex items-center justify-center font-bold rounded-2xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/25 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98]";
 
     const variants = {
       primary:
-        "bg-[#2c1ee8] hover:bg-[#2218a3] text-white shadow-md shadow-[#2c1ee8]/20 focus:ring-[#2c1ee8]",
+        "bg-[#2c1ee8] hover:bg-[#2013ce] text-white shadow-sm hover:shadow-md hover:shadow-[#2c1ee8]/20 focus:ring-[#2c1ee8]",
       secondary:
-        "bg-blue-50 hover:bg-blue-100 text-[#2c1ee8] focus:ring-blue-400",
+        "bg-blue-50 hover:bg-blue-100 text-[#2c1ee8] focus:ring-blue-400 border border-blue-100",
       outline:
-        "border-2 border-[#2c1ee8] text-[#2c1ee8] hover:bg-[#2c1ee8] hover:text-white focus:ring-[#2c1ee8]",
+        "border border-[#2c1ee8] text-[#2c1ee8] hover:bg-[#2c1ee8] hover:text-white focus:ring-[#2c1ee8]",
       ghost:
         "text-gray-700 hover:bg-gray-100 focus:ring-gray-300",
       danger:
-        "bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-500/20 focus:ring-red-500",
+        "bg-rose-600 hover:bg-rose-700 text-white shadow-sm hover:shadow-md hover:shadow-rose-500/20 focus:ring-rose-500",
+      destructive:
+        "bg-rose-600 hover:bg-rose-700 text-white shadow-sm hover:shadow-md hover:shadow-rose-500/20 focus:ring-rose-500",
     };
 
     const sizes = {
-      sm: "text-xs px-3 py-1.5 gap-1.5",
-      md: "text-sm px-5 py-2.5 gap-2",
-      lg: "text-base px-7 py-3.5 gap-2.5",
+      xs: "text-xs px-2.5 py-1 gap-1 rounded-xl",
+      sm: "text-xs px-3.5 py-1.5 gap-1.5 rounded-xl",
+      md: "text-sm px-5 py-2.5 gap-2 rounded-2xl",
+      lg: "text-base px-7 py-3.5 gap-2.5 rounded-2xl",
     };
 
     const widthClass = fullWidth ? "w-full" : "";
@@ -61,7 +64,7 @@ export const Button = React.forwardRef(
         ) : (
           leftIcon
         )}
-        <span>{children}</span>
+        {children && <span>{children}</span>}
         {!isLoading && rightIcon}
       </button>
     );
@@ -71,3 +74,4 @@ export const Button = React.forwardRef(
 Button.displayName = "Button";
 
 export default Button;
+

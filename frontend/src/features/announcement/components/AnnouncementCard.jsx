@@ -48,7 +48,7 @@ export const AnnouncementCard = ({ announcement, onClick }) => {
             unoptimized
           />
 
-          <span className="absolute top-3 left-3 bg-[#1d4ed8] text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md">
+          <span className="absolute top-3 left-3 bg-[#2c1ee8] text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md">
             {category || "Pengumuman"}
           </span>
 
@@ -67,7 +67,7 @@ export const AnnouncementCard = ({ announcement, onClick }) => {
             {/* Reaction & Comment Badges (Only show if > 0) */}
             <div className="flex items-center gap-2">
               {totalReactions > 0 && (
-                <span className="inline-flex items-center gap-1 bg-blue-50/80 text-[#1d4ed8] px-2 py-0.5 rounded-full border border-blue-100 text-[11px] font-bold">
+                <span className="inline-flex items-center gap-1 bg-blue-50/80 text-[#2c1ee8] px-2 py-0.5 rounded-full border border-blue-100 text-[11px] font-bold">
                   <span className="flex -space-x-1 items-center">
                     <span className="text-[10px]">👍</span>
                   </span>
@@ -84,7 +84,7 @@ export const AnnouncementCard = ({ announcement, onClick }) => {
             </div>
           </div>
 
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug mb-3 group-hover:text-[#1d4ed8] transition-colors line-clamp-2">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 leading-snug mb-3 group-hover:text-[#2c1ee8] transition-colors line-clamp-2">
             {title}
           </h3>
 

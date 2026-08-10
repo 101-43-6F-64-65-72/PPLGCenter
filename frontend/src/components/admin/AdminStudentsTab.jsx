@@ -8,6 +8,9 @@ import {
 import userService from "@/services/userService";
 import departmentService from "@/services/departmentService";
 import schoolClassService from "@/services/schoolClassService";
+import PageHeader from "@/components/ui/PageHeader";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 
 export default function AdminStudentsTab() {
   const [students, setStudents] = useState([]);
@@ -227,43 +230,43 @@ export default function AdminStudentsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Actions Header */}
-      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#2c1ee8] uppercase tracking-wider mb-1">
-            <GraduationCap className="w-4 h-4" />
-            <span>Master User Management</span>
-          </div>
-          <h2 className="text-xl font-black text-gray-900">Data Siswa</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Kelola seluruh data siswa, kelas, NIS/NISN, dan keanggotaan akademik.</p>
-        </div>
+      {/* Top Header */}
+      <PageHeader
+        icon={GraduationCap}
+        title="Data Siswa"
+        description="Kelola seluruh data siswa, kelas, NIS/NISN, dan keanggotaan akademik."
+        badge={<Badge variant="info">Master Siswa</Badge>}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportCsv}
+              leftIcon={<Download className="w-4 h-4 text-emerald-600" />}
+            >
+              Export CSV
+            </Button>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleExportCsv}
-            className="px-3.5 py-2.5 rounded-xl border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 text-xs font-bold flex items-center gap-2 transition"
-          >
-            <Download className="w-4 h-4 text-emerald-600" />
-            <span>Export CSV</span>
-          </button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => { setCsvContent(""); setImportReport(null); setShowImportModal(true); }}
+              leftIcon={<Upload className="w-4 h-4" />}
+            >
+              Import CSV
+            </Button>
 
-          <button
-            onClick={() => { setCsvContent(""); setImportReport(null); setShowImportModal(true); }}
-            className="px-3.5 py-2.5 rounded-xl border border-blue-200 text-[#2c1ee8] bg-blue-50 hover:bg-blue-100 text-xs font-bold flex items-center gap-2 transition"
-          >
-            <Upload className="w-4 h-4" />
-            <span>Import CSV</span>
-          </button>
-
-          <button
-            onClick={handleOpenAdd}
-            className="px-4 py-2.5 rounded-xl bg-[#2c1ee8] text-white hover:bg-blue-700 text-xs font-bold flex items-center gap-2 shadow-md shadow-blue-500/20 transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tambah Siswa</span>
-          </button>
-        </div>
-      </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleOpenAdd}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Tambah Siswa
+            </Button>
+          </>
+        }
+      />
 
       {/* Alert Feedback */}
       {feedback.text && (

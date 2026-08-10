@@ -1,6 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import PageHeader from "@/components/ui/PageHeader";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
+import { Bell, Send, CheckCheck } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import NotificationItem from "@/components/notification/NotificationItem";
 import AuthGuard from "@/components/layout/AuthGuard";
@@ -115,41 +124,45 @@ export default function NotificationsPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/60 backdrop-blur-xl border border-slate-800 p-6 rounded-2xl">
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span>🔔</span> Pusat Notifikasi
-              </h1>
-              <p className="text-sm text-slate-400 mt-1">
-                Kelola dan pantau seluruh notifikasi dan pengumuman aktivitas Anda
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleMarkAllRead}
-                className="px-4 py-2 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl transition-all"
-              >
-                Tandai Semua Dibaca
-              </button>
-              <button
-                onClick={() => setBroadcastModalOpen(true)}
-                className="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-1.5"
-              >
-                <span>📢</span> Kirim Broadcast
-              </button>
-            </div>
-          </div>
+      <div className="min-h-screen bg-slate-50 text-gray-900 flex flex-col font-sans">
+        <Navbar />
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 bg-slate-900/40 p-4 rounded-xl border border-slate-800/80">
-            <span className="text-xs text-slate-400 font-medium">Filter:</span>
+        <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-6">
+          {/* Header */}
+          <PageHeader
+            icon={Bell}
+            title="Pusat Notifikasi"
+            description="Kelola dan pantau seluruh notifikasi dan pengumuman aktivitas Anda."
+            badge={<Badge variant="info">Pemberitahuan System</Badge>}
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleMarkAllRead}
+                  leftIcon={<CheckCheck className="w-4 h-4 text-emerald-600" />}
+                >
+                  Tandai Semua Dibaca
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setBroadcastModalOpen(true)}
+                  leftIcon={<Send className="w-4 h-4" />}
+                >
+                  Kirim Broadcast
+                </Button>
+              </>
+            }
+          />
+
+          {/* Filters Bar */}
+          <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+            <span className="text-xs text-gray-500 font-bold">Filter:</span>
             <select
               value={filterType}
               onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-              className="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500"
+              className="bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-800 rounded-xl px-3 py-2 outline-none focus:border-[#2c1ee8]"
             >
               <option value="">Semua Tipe</option>
               <option value="0">Pengumuman</option>
@@ -166,7 +179,7 @@ export default function NotificationsPage() {
             <select
               value={filterRead}
               onChange={(e) => { setFilterRead(e.target.value); setPage(1); }}
-              className="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500"
+              className="bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-800 rounded-xl px-3 py-2 outline-none focus:border-[#2c1ee8]"
             >
               <option value="">Semua Status</option>
               <option value="unread">Belum Dibaca</option>
@@ -220,7 +233,9 @@ export default function NotificationsPage() {
               </button>
             </div>
           )}
-        </div>
+        </main>
+
+        <Footer />
 
         {/* Broadcast Modal */}
         {broadcastModalOpen && (
