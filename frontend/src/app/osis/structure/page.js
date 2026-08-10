@@ -197,7 +197,7 @@ function StructureContent() {
               <p className="text-sm text-gray-400">Memuat bagan kepengurusan OSIS...</p>
             </div>
           ) : (
-            <OrgChartTree members={cabinetMembers} academicYearName="Periode Aktif" />
+            <OrgChartTree members={cabinetMembers} supervisorInfo={osisInfo} academicYearName="Periode Aktif" />
           )}
         </div>
 

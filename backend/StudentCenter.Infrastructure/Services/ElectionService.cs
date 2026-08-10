@@ -481,7 +481,7 @@ public class ElectionService : IElectionService
                 });
             }
 
-            // Parse CabinetStructureJson if available to populate Secretary & Treasurer
+            // Parse CabinetStructureJson if available to populate Secretary, Treasurer, and Custom Divisions
             if (!string.IsNullOrWhiteSpace(election.CabinetStructureJson))
             {
                 try
@@ -489,31 +489,100 @@ public class ElectionService : IElectionService
                     using var doc = System.Text.Json.JsonDocument.Parse(election.CabinetStructureJson);
                     var root = doc.RootElement;
 
-                    void AddMemberIfValid(string propName, string title, string dept)
+                    async Task AddMemberAsync(string propIdName, string propLabelName, string title, string dept)
                     {
-                        if (root.TryGetProperty(propName, out var elem) && elem.ValueKind == System.Text.Json.JsonValueKind.String)
+                        string? rawValue = null;
+                        if (root.TryGetProperty(propIdName, out var elemId) && elemId.ValueKind == System.Text.Json.JsonValueKind.String)
                         {
-                            var studentIdStr = elem.GetString();
-                            if (Guid.TryParse(studentIdStr, out var sId) && sId != Guid.Empty)
+                            rawValue = elemId.GetString();
+                        }
+                        if (string.IsNullOrWhiteSpace(rawValue) && root.TryGetProperty(propLabelName, out var elemLabel) && elemLabel.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            rawValue = elemLabel.GetString();
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(rawValue))
+                        {
+                            Guid studentGuid = Guid.Empty;
+                            if (Guid.TryParse(rawValue, out var parsedGuid))
                             {
+                                studentGuid = parsedGuid;
+                            }
+                            else
+                            {
+                                // Try finding user by name prefix
+                                var cleanName = rawValue.Split('(')[0].Trim();
+                                var foundUser = await _context.Users.FirstOrDefaultAsync(u => u.FullName.Contains(cleanName));
+                                if (foundUser != null)
+                                {
+                                    studentGuid = foundUser.Id;
+                                }
+                            }
+
+                            if (studentGuid == Guid.Empty)
+                            {
+                                studentGuid = winningPair.ChairmanUserId; // fallback if student not in DB
+                            }
+
+                            _context.OsisCabinetHistories.Add(new OsisCabinetHistory
+                            {
+                                Id = Guid.NewGuid(),
+                                AcademicYearId = activeYear.Id,
+                                StudentId = studentGuid,
+                                PositionTitle = title,
+                                Department = dept,
+                                IsActive = true,
+                                CreatedAt = DateTime.UtcNow
+                            });
+                        }
+                    }
+
+                    await AddMemberAsync("secretary1Id", "secretary1", "Sekretaris 1", "Sekretaris");
+                    await AddMemberAsync("secretary2Id", "secretary2", "Sekretaris 2", "Sekretaris");
+                    await AddMemberAsync("treasurer1Id", "treasurer1", "Bendahara 1", "Bendahara");
+                    await AddMemberAsync("treasurer2Id", "treasurer2", "Bendahara 2", "Bendahara");
+
+                    // Parse customDivisions
+                    if (root.TryGetProperty("customDivisions", out var divElem) && divElem.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        foreach (var item in divElem.EnumerateArray())
+                        {
+                            string divName = item.TryGetProperty("divisionName", out var dProp) ? dProp.GetString() ?? "Divisi OSIS" : "Divisi OSIS";
+                            string studVal = item.TryGetProperty("studentName", out var sProp) ? sProp.GetString() ?? "" : "";
+                            if (item.TryGetProperty("studentId", out var sIdProp) && !string.IsNullOrWhiteSpace(sIdProp.GetString()))
+                            {
+                                studVal = sIdProp.GetString()!;
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(divName))
+                            {
+                                Guid sGuid = Guid.Empty;
+                                if (Guid.TryParse(studVal, out var parsedSGuid))
+                                {
+                                    sGuid = parsedSGuid;
+                                }
+                                else if (!string.IsNullOrWhiteSpace(studVal))
+                                {
+                                    var cleanName = studVal.Split('(')[0].Trim();
+                                    var foundUser = await _context.Users.FirstOrDefaultAsync(u => u.FullName.Contains(cleanName));
+                                    if (foundUser != null) sGuid = foundUser.Id;
+                                }
+
+                                if (sGuid == Guid.Empty) sGuid = winningPair.ChairmanUserId;
+
                                 _context.OsisCabinetHistories.Add(new OsisCabinetHistory
                                 {
                                     Id = Guid.NewGuid(),
                                     AcademicYearId = activeYear.Id,
-                                    StudentId = sId,
-                                    PositionTitle = title,
-                                    Department = dept,
+                                    StudentId = sGuid,
+                                    PositionTitle = divName,
+                                    Department = divName,
                                     IsActive = true,
                                     CreatedAt = DateTime.UtcNow
                                 });
                             }
                         }
                     }
-
-                    AddMemberIfValid("secretary1Id", "Sekretaris 1", "BPH");
-                    AddMemberIfValid("secretary2Id", "Sekretaris 2", "BPH");
-                    AddMemberIfValid("treasurer1Id", "Bendahara 1", "BPH");
-                    AddMemberIfValid("treasurer2Id", "Bendahara 2", "BPH");
                 }
                 catch (Exception ex)
                 {
