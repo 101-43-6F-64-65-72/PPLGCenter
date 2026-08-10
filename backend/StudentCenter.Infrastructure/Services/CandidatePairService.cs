@@ -182,12 +182,6 @@ public class CandidatePairService : ICandidatePairService
             reasons.Add("Anda sudah terdaftar dalam pasangan calon di pemilihan ini.");
         }
 
-        var election = await _context.Elections.AsNoTracking().FirstOrDefaultAsync(e => e.Id == electionId && e.DeletedAt == null);
-        if (election != null && election.Status != ElectionStatus.Open)
-        {
-            reasons.Add("Pemilihan tidak dalam status aktif.");
-        }
-
         bool eligible = isOsisMember && !alreadyRegistered && (reasons.Count == 0);
 
         return new ElectionEligibilityResponse
@@ -243,9 +237,6 @@ public class CandidatePairService : ICandidatePairService
 
         if (election is null)
             throw new KeyNotFoundException("Sesi pemilihan tidak ditemukan.");
-
-        if (election.Status != ElectionStatus.Open)
-            throw new InvalidOperationException("Pemilihan tidak dalam status aktif/terbuka untuk pendaftaran pasangan calon.");
 
         // ── Validate Chairman ──────────────────────────────────────────────
         var chairmanEligibility = await CheckEligibilityAsync(request.ElectionId, chairmanUserId);

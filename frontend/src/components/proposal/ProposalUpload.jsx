@@ -117,10 +117,6 @@ export default function ProposalUpload({
           )}
         </div>
       </div>
-
-      {uploadError && (
-        <p className="text-sm font-medium text-red-600">{uploadError}</p>
-      )}
     </div>
   );
 }

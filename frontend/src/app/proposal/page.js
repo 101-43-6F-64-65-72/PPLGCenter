@@ -10,6 +10,7 @@ import useAuth from "@/hooks/useAuth";
 import { extracurricularService } from "@/services/extracurricularService";
 import { proposalService } from "@/services/proposalService";
 import uploadImageToCloudinary, { uploadPdfDocument } from "@/services/cloudinaryService";
+import toast from "react-hot-toast";
 
 export default function ProposalPage() {
   const { user, isAuthenticated, role } = useAuth();
@@ -416,8 +417,10 @@ export default function ProposalPage() {
         setUploadError("");
         const msg = isEditing
           ? "Proposal berhasil diperbarui!"
-          : "Proposal berhasil diajukan!";
+          : "Pengajuan Proposal Sukses! Proposal Anda telah tercatat dan menunggu review.";
         setSuccessMessage(msg);
+
+        toast.success(isEditing ? "Proposal berhasil diperbarui!" : "Pengajuan Proposal Sukses!");
 
         setFormData({
           organization: "",
