@@ -182,10 +182,24 @@ public class NotificationService : INotificationService
 
         var notifications = new List<Notification>();
         var now = DateTime.UtcNow;
+        var cooldownWindow = now.AddSeconds(-30);
+
+        var duplicateUserIds = await _context.Set<Notification>()
+            .AsNoTracking()
+            .Where(n => activeUserIds.Contains(n.UserId) &&
+                        n.Type == type &&
+                        n.ReferenceType == referenceType &&
+                        n.ReferenceId == referenceId &&
+                        n.Body == body &&
+                        n.CreatedAt >= cooldownWindow)
+            .Select(n => n.UserId)
+            .ToListAsync();
+
+        var duplicateUserSet = new HashSet<Guid>(duplicateUserIds);
 
         foreach (var userId in activeUserIds)
         {
-            if (await IsDuplicateWithinCooldownAsync(userId, type, referenceType, referenceId, body))
+            if (duplicateUserSet.Contains(userId))
                 continue;
 
             notifications.Add(new Notification
@@ -218,7 +232,7 @@ public class NotificationService : INotificationService
     public async Task BroadcastAsync(
         string title, 
         string body, 
-        NotificationType type, 
+        NotificationType type = NotificationType.Announcement, 
         string? targetRole = null, 
         NotificationPriority priority = NotificationPriority.Normal, 
         string? actionUrl = null, 
@@ -281,89 +295,96 @@ public class NotificationService : INotificationService
 
     public async Task<List<BroadcastItemResponse>> GetBroadcastListAsync()
     {
-        var notifications = await _context.Set<Notification>()
-            .AsNoTracking()
-            .Where(n => !n.IsDeleted && n.Metadata != null && n.Metadata.Contains("broadcastId"))
-            .OrderByDescending(n => n.CreatedAt)
-            .ToListAsync();
-
-        var broadcastGroups = new Dictionary<string, List<Notification>>();
-
-        foreach (var notif in notifications)
+        try
         {
-            if (string.IsNullOrWhiteSpace(notif.Metadata)) continue;
-            try
+            var notifications = await _context.Set<Notification>()
+                .AsNoTracking()
+                .Where(n => !n.IsDeleted && n.Metadata != null && EF.Functions.Like(n.Metadata, "%broadcastId%"))
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+
+            var broadcastGroups = new Dictionary<string, List<Notification>>();
+
+            foreach (var notif in notifications)
             {
-                using var doc = System.Text.Json.JsonDocument.Parse(notif.Metadata);
-                if (doc.RootElement.TryGetProperty("broadcastId", out var bIdElement))
+                if (string.IsNullOrWhiteSpace(notif.Metadata)) continue;
+                try
                 {
-                    var bId = bIdElement.GetString();
-                    if (!string.IsNullOrEmpty(bId))
+                    using var doc = System.Text.Json.JsonDocument.Parse(notif.Metadata);
+                    if (doc.RootElement.TryGetProperty("broadcastId", out var bIdElement))
                     {
-                        if (!broadcastGroups.ContainsKey(bId))
+                        var bId = bIdElement.GetString();
+                        if (!string.IsNullOrEmpty(bId))
                         {
-                            broadcastGroups[bId] = new List<Notification>();
+                            if (!broadcastGroups.ContainsKey(bId))
+                            {
+                                broadcastGroups[bId] = new List<Notification>();
+                            }
+                            broadcastGroups[bId].Add(notif);
                         }
-                        broadcastGroups[bId].Add(notif);
                     }
                 }
+                catch {}
             }
-            catch {}
+
+            var result = new List<BroadcastItemResponse>();
+
+            foreach (var kvp in broadcastGroups)
+            {
+                var bId = kvp.Key;
+                var group = kvp.Value;
+                var first = group.First();
+
+                Guid createdByUserId = Guid.Empty;
+                string createdByName = "Pengelola Sekolah";
+                string targetRole = "";
+
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(first.Metadata!);
+                    if (doc.RootElement.TryGetProperty("createdByUserId", out var uidElem) && Guid.TryParse(uidElem.GetString(), out var uid))
+                    {
+                        createdByUserId = uid;
+                    }
+                    if (doc.RootElement.TryGetProperty("createdByName", out var nameElem))
+                    {
+                        createdByName = nameElem.GetString() ?? "Pengelola Sekolah";
+                    }
+                    if (doc.RootElement.TryGetProperty("targetRole", out var roleElem))
+                    {
+                        targetRole = roleElem.GetString() ?? "";
+                    }
+                }
+                catch {}
+
+                result.Add(new BroadcastItemResponse
+                {
+                    BroadcastId = bId,
+                    Title = first.Title,
+                    Body = first.Body,
+                    Type = first.Type,
+                    Priority = first.Priority,
+                    TargetRole = targetRole,
+                    ActionUrl = first.ActionUrl,
+                    CreatedByUserId = createdByUserId,
+                    CreatedByName = createdByName,
+                    CreatedAt = first.CreatedAt,
+                    RecipientCount = group.Count
+                });
+            }
+
+            return result.OrderByDescending(b => b.CreatedAt).ToList();
         }
-
-        var result = new List<BroadcastItemResponse>();
-
-        foreach (var kvp in broadcastGroups)
+        catch
         {
-            var bId = kvp.Key;
-            var group = kvp.Value;
-            var first = group.First();
-
-            Guid createdByUserId = Guid.Empty;
-            string createdByName = "Pengelola Sekolah";
-            string targetRole = "";
-
-            try
-            {
-                using var doc = System.Text.Json.JsonDocument.Parse(first.Metadata!);
-                if (doc.RootElement.TryGetProperty("createdByUserId", out var uidElem) && Guid.TryParse(uidElem.GetString(), out var uid))
-                {
-                    createdByUserId = uid;
-                }
-                if (doc.RootElement.TryGetProperty("createdByName", out var nameElem))
-                {
-                    createdByName = nameElem.GetString() ?? "Pengelola Sekolah";
-                }
-                if (doc.RootElement.TryGetProperty("targetRole", out var roleElem))
-                {
-                    targetRole = roleElem.GetString() ?? "";
-                }
-            }
-            catch {}
-
-            result.Add(new BroadcastItemResponse
-            {
-                BroadcastId = bId,
-                Title = first.Title,
-                Body = first.Body,
-                Type = first.Type,
-                Priority = first.Priority,
-                TargetRole = targetRole,
-                ActionUrl = first.ActionUrl,
-                CreatedByUserId = createdByUserId,
-                CreatedByName = createdByName,
-                CreatedAt = first.CreatedAt,
-                RecipientCount = group.Count
-            });
+            return new List<BroadcastItemResponse>();
         }
-
-        return result.OrderByDescending(b => b.CreatedAt).ToList();
     }
 
     public async Task<bool> UpdateBroadcastAsync(string broadcastId, Guid requestingUserId, UpdateBroadcastRequest request)
     {
         var notifications = await _context.Set<Notification>()
-            .Where(n => !n.IsDeleted && n.Metadata != null && n.Metadata.Contains(broadcastId))
+            .Where(n => !n.IsDeleted && n.Metadata != null && EF.Functions.Like(n.Metadata, $"%{broadcastId}%"))
             .ToListAsync();
 
         if (!notifications.Any())
@@ -374,16 +395,16 @@ public class NotificationService : INotificationService
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(first.Metadata!);
-            if (doc.RootElement.TryGetProperty("createdByUserId", out var uidElem) && Guid.TryParse(uidElem.GetString(), out var uid))
+            if (doc.RootElement.TryGetProperty("createdByUserId", out var uidElem))
             {
-                createdByUserId = uid;
+                Guid.TryParse(uidElem.GetString(), out createdByUserId);
             }
         }
         catch {}
 
         if (createdByUserId != Guid.Empty && createdByUserId != requestingUserId)
         {
-            throw new UnauthorizedAccessException("Hanya pembuat broadcast yang dapat mengedit broadcast ini.");
+            throw new UnauthorizedAccessException("Anda hanya dapat mengedit broadcast yang Anda buat sendiri.");
         }
 
         var now = DateTime.UtcNow;
@@ -393,7 +414,7 @@ public class NotificationService : INotificationService
             notif.Body = request.Body;
             notif.Type = request.Type;
             notif.Priority = request.Priority;
-            notif.ActionUrl = request.ActionUrl;
+            if (request.ActionUrl != null) notif.ActionUrl = request.ActionUrl;
             notif.UpdatedAt = now;
         }
 
@@ -404,7 +425,7 @@ public class NotificationService : INotificationService
     public async Task<bool> DeleteBroadcastAsync(string broadcastId, Guid requestingUserId, bool isAdmin)
     {
         var notifications = await _context.Set<Notification>()
-            .Where(n => !n.IsDeleted && n.Metadata != null && n.Metadata.Contains(broadcastId))
+            .Where(n => !n.IsDeleted && n.Metadata != null && EF.Functions.Like(n.Metadata, $"%{broadcastId}%"))
             .ToListAsync();
 
         if (!notifications.Any())

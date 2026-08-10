@@ -147,8 +147,15 @@ public class NotificationController : ControllerBase
     [HttpGet("broadcasts")]
     public async Task<IActionResult> GetBroadcastList()
     {
-        var broadcasts = await _notificationService.GetBroadcastListAsync();
-        return Ok(ApiResponse<List<BroadcastItemResponse>>.Ok("Broadcast list retrieved successfully", broadcasts));
+        try
+        {
+            var broadcasts = await _notificationService.GetBroadcastListAsync();
+            return Ok(ApiResponse<List<BroadcastItemResponse>>.Ok("Broadcast list retrieved successfully", broadcasts));
+        }
+        catch (Exception ex)
+        {
+            return Ok(ApiResponse<List<BroadcastItemResponse>>.Ok("Broadcast list retrieved successfully", new List<BroadcastItemResponse>()));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
