@@ -98,15 +98,14 @@ function ProfileContent() {
       if (uploadedUrl) {
         setAvatarPreview(uploadedUrl);
         let roleNum = 2;
-        if (role === "Admin" || user?.role === "Admin") roleNum = 0;
-        else if (role === "Teacher" || user?.role === "Teacher") roleNum = 1;
-        else if (role === "OSIS" || user?.role === "OSIS") roleNum = 3;
+        if (role === "Admin" || user?.role === "Admin" || user?.role === 0) roleNum = 0;
+        else if (role === "Teacher" || user?.role === "Teacher" || user?.role === 1) roleNum = 1;
 
         const payload = {
           fullName: user?.fullName || fullName,
           email: user?.email || email,
-          phoneNumber: phone || null,
-          address: address || null,
+          phoneNumber: phone || user?.phoneNumber || null,
+          address: address || user?.address || null,
           photoUrl: uploadedUrl,
           role: roleNum,
         };
@@ -146,16 +145,14 @@ function ProfileContent() {
       }
 
       let roleNum = 2;
-      if (role === "Admin" || user?.role === "Admin") roleNum = 0;
-      else if (role === "Teacher" || user?.role === "Teacher") roleNum = 1;
-      else if (role === "OSIS" || user?.role === "OSIS") roleNum = 3;
+      if (role === "Admin" || user?.role === "Admin" || user?.role === 0) roleNum = 0;
+      else if (role === "Teacher" || user?.role === "Teacher" || user?.role === 1) roleNum = 1;
 
       const payload = {
         fullName,
         email,
         phoneNumber: phone || null,
         address: address || null,
-        bio: bio || null,
         photoUrl: avatarPreview || user?.photoUrl || null,
         role: roleNum,
       };
@@ -164,8 +161,6 @@ function ProfileContent() {
 
       if (res?.success || res?.data) {
         setStatusMessage({ type: "success", text: "Profil berhasil diperbarui!" });
-        setSavedName(fullName);
-        setSavedEmail(email);
         setIsEditingInfo(false);
         await fetchProfile();
       } else {
@@ -204,14 +199,16 @@ function ProfileContent() {
 
     try {
       let roleNum = 2;
-      if (role === "Admin" || user?.role === "Admin") roleNum = 0;
-      else if (role === "Teacher" || user?.role === "Teacher") roleNum = 1;
-      else if (role === "OSIS" || user?.role === "OSIS") roleNum = 3;
+      if (role === "Admin" || user?.role === "Admin" || user?.role === 0) roleNum = 0;
+      else if (role === "Teacher" || user?.role === "Teacher" || user?.role === 1) roleNum = 1;
 
       const payload = {
         fullName: user?.fullName || fullName,
         email: user?.email || email,
         password: newPassword,
+        phoneNumber: phone || user?.phoneNumber || null,
+        address: address || user?.address || null,
+        photoUrl: avatarPreview || user?.photoUrl || null,
         role: roleNum,
       };
 
@@ -358,8 +355,8 @@ function ProfileContent() {
                 type="button"
                 onClick={() => setActiveTab("info")}
                 className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "info"
-                    ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
               >
                 Informasi Profil
@@ -368,8 +365,8 @@ function ProfileContent() {
                 type="button"
                 onClick={() => setActiveTab("password")}
                 className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === "password"
-                    ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
               >
                 Ubah Password
@@ -392,10 +389,10 @@ function ProfileContent() {
           {statusMessage.text && (
             <div
               className={`mb-6 p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between transition-all ${statusMessage.type === "success"
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                  : statusMessage.type === "info"
-                    ? "bg-blue-50 text-blue-800 border-blue-200"
-                    : "bg-rose-50 text-rose-800 border-rose-200"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                : statusMessage.type === "info"
+                  ? "bg-blue-50 text-blue-800 border-blue-200"
+                  : "bg-rose-50 text-rose-800 border-rose-200"
                 }`}
             >
               <div className="flex items-center gap-2.5">
@@ -467,8 +464,8 @@ function ProfileContent() {
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Masukkan nama lengkap"
                       className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
-                          ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
-                          : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                        ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                        : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                         }`}
                     />
                   </div>
@@ -496,8 +493,8 @@ function ProfileContent() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Masukkan email atau NIS/NIP"
                       className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
-                          ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
-                          : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                        ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                        : "bg-white text-gray-900 border-gray-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                         }`}
                     />
                   </div>
