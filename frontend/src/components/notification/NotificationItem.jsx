@@ -116,9 +116,27 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
     </div>
   );
 
-  if (notification.actionUrl) {
+  const resolveActionUrl = (rawUrl, notif) => {
+    let url = rawUrl;
+    if (!url && notif?.referenceId && (notif?.type === 0 || notif?.referenceType === 0 || notif?.referenceType === "Announcement")) {
+      url = `/mading/${notif.referenceId}`;
+    }
+    if (!url) return null;
+
+    if (url.startsWith("/announcements/")) {
+      return url.replace("/announcements/", "/mading/");
+    }
+    if (url === "/announcements") {
+      return "/mading";
+    }
+    return url;
+  };
+
+  const targetUrl = resolveActionUrl(notification.actionUrl, notification);
+
+  if (targetUrl) {
     return (
-      <Link href={notification.actionUrl} className="block group">
+      <Link href={targetUrl} className="block group">
         {content}
       </Link>
     );

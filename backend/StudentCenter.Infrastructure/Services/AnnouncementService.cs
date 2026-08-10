@@ -194,7 +194,7 @@ public class AnnouncementService : IAnnouncementService
                 NotificationPriority.Normal,
                 announcement.Id.ToString(),
                 NotificationReferenceType.Announcement,
-                $"/announcements/{announcement.Id}",
+                $"/mading/{announcement.Id}",
                 "bullhorn",
                 "#3b82f6"
             );

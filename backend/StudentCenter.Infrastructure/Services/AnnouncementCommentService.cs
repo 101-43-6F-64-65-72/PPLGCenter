@@ -61,7 +61,8 @@ public class AnnouncementCommentService : IAnnouncementCommentService
                 NotificationType.AnnouncementComment,
                 NotificationPriority.Normal,
                 announcement.Id.ToString(),
-                NotificationReferenceType.Announcement
+                NotificationReferenceType.Announcement,
+                $"/mading/{announcement.Id}"
             );
         }
 
