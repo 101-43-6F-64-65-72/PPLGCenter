@@ -312,10 +312,10 @@ function PemilosContent() {
             </div>
 
             <div className="flex items-center gap-2">
-              {electionTimeState === "ONGOING" && isBackendOpen ? (
+              {!!(selectedElection?.cabinetStructureJson || selectedElection?.CabinetStructureJson || liveResults?.cabinetStructureJson || liveResults?.CabinetStructureJson) ? (
                 <button
                   disabled
-                  title="Pendaftaran ditutup karena pemilihan sedang berlangsung"
+                  title="Pendaftaran ditutup karena voting Pemilos telah resmi dimulai oleh Guru Pembina"
                   className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-200 text-slate-500 text-xs font-bold cursor-not-allowed border border-slate-300"
                 >
                   <Users className="w-4 h-4 text-slate-400" />
@@ -324,7 +324,7 @@ function PemilosContent() {
               ) : (
                 <Link
                   href="/pemilos/register"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm"
                 >
                   <Users className="w-4 h-4" />
                   <span>+ Daftar Kandidat</span>

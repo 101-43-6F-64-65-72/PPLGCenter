@@ -268,40 +268,6 @@ public class CandidatePairService : ICandidatePairService
         if (viceUser is null || viceUser.Role != UserRole.Student || !viceUser.IsActive)
             throw new InvalidOperationException("Calon Wakil tidak valid atau tidak ditemukan.");
 
-        // Check Vice is OSIS member
-        var osisEkskulIds = await _context.Extracurriculars
-            .AsNoTracking()
-            .Where(e => e.IsActive && (e.Name.ToLower().Contains("osis") || e.Category.ToLower().Contains("kepemimpinan")))
-            .Select(e => e.Id)
-            .ToListAsync();
-
-        bool isViceOsisMember = false;
-        if (osisEkskulIds.Any())
-        {
-            isViceOsisMember = await _context.ExtracurricularMembers
-                .AsNoTracking()
-                .AnyAsync(m => osisEkskulIds.Contains(m.ExtracurricularId)
-                    && m.StudentId == request.ViceUserId
-                    && (m.Status == "Active" || m.Status == "Approved"));
-        }
-
-        if (!isViceOsisMember)
-        {
-            // Also accept if they appear in OsisCabinetHistories or approved OsisApplications
-            bool inCabinet = await _context.OsisCabinetHistories
-                .AsNoTracking()
-                .AnyAsync(h => h.StudentId == request.ViceUserId);
-
-            bool inApprovedApp = await _context.OsisApplications
-                .AsNoTracking()
-                .AnyAsync(a => a.ApplicantStudentId == request.ViceUserId && a.Status == RecruitmentApplicationStatus.Approved);
-
-            isViceOsisMember = inCabinet || inApprovedApp;
-        }
-
-        if (!isViceOsisMember)
-            throw new InvalidOperationException("Calon Wakil harus merupakan anggota aktif OSIS.");
-
         // Check Vice not already registered in this election
         var viceAlreadyRegistered = await _context.CandidatePairs
             .AsNoTracking()
@@ -676,43 +642,7 @@ public class CandidatePairService : ICandidatePairService
 
     public async Task<List<UserResponse>> GetEligibleViceCandidatesAsync(string? search = null, Guid? electionId = null, Guid? currentUserId = null)
     {
-        // 1. Fetch OSIS Extracurricular IDs
-        var osisEkskulIds = await _context.Extracurriculars
-            .AsNoTracking()
-            .Where(e => e.IsActive && (e.Name.ToLower().Contains("osis") || e.Category.ToLower().Contains("kepemimpinan")))
-            .Select(e => e.Id)
-            .ToListAsync();
-
-        // 2. Fetch Student IDs who are registered OSIS members
-        List<Guid> osisMemberStudentIds = new();
-        if (osisEkskulIds.Any())
-        {
-            osisMemberStudentIds = await _context.ExtracurricularMembers
-                .AsNoTracking()
-                .Where(m => osisEkskulIds.Contains(m.ExtracurricularId) && (m.Status == "Active" || m.Status == "Approved"))
-                .Select(m => m.StudentId)
-                .Distinct()
-                .ToListAsync();
-        }
-
-        var osisCabinetStudentIds = await _context.OsisCabinetHistories
-            .AsNoTracking()
-            .Select(h => h.StudentId)
-            .ToListAsync();
-
-        var osisApprovedAppStudentIds = await _context.OsisApplications
-            .AsNoTracking()
-            .Where(a => a.Status == RecruitmentApplicationStatus.Approved)
-            .Select(a => a.ApplicantStudentId)
-            .ToListAsync();
-
-        var allOsisStudentIds = osisMemberStudentIds
-            .Concat(osisCabinetStudentIds)
-            .Concat(osisApprovedAppStudentIds)
-            .Distinct()
-            .ToList();
-
-        // 3. Fetch User IDs already registered as Chairman or Vice in CandidatePairs for this election
+        // 1. Fetch User IDs already registered as Chairman or Vice in CandidatePairs for this election
         List<Guid> registeredUserIds = new();
         if (electionId.HasValue)
         {
@@ -731,17 +661,11 @@ public class CandidatePairService : ICandidatePairService
             registeredUserIds = chairmanIds.Concat(viceIds).Distinct().ToList();
         }
 
-        // 4. Build Main Query for Student Users
+        // 2. Build Main Query for Active Student Users
         var query = _context.Users
             .AsNoTracking()
             .Include(u => u.Class)
             .Where(u => u.IsActive && u.Role == UserRole.Student);
-
-        // Filter: Must be OSIS member if OSIS records exist
-        if (allOsisStudentIds.Any())
-        {
-            query = query.Where(u => allOsisStudentIds.Contains(u.Id));
-        }
 
         // Filter: Exclude current user (cannot select self as Vice)
         if (currentUserId.HasValue)

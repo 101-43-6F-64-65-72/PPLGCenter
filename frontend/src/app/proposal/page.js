@@ -401,13 +401,23 @@ export default function ProposalPage() {
         res = await proposalService.createProposal(payload);
       }
 
-      if (res && res.success) {
-        setSuccessMessage(
-          isEditing
-            ? "Proposal berhasil diperbarui!"
-            : "Proposal berhasil diajukan!"
-        );
-        await fetchProposals();
+      // Robust check for successful response (supports unwrap variations)
+      const isSuccessful =
+        res &&
+        (res.success === true ||
+          res.id ||
+          res.Id ||
+          res.data?.id ||
+          res.data?.Id ||
+          res.statusCode === 200 ||
+          res.statusCode === 201);
+
+      if (isSuccessful) {
+        setUploadError("");
+        const msg = isEditing
+          ? "Proposal berhasil diperbarui!"
+          : "Proposal berhasil diajukan!";
+        setSuccessMessage(msg);
 
         setFormData({
           organization: "",
@@ -420,6 +430,12 @@ export default function ProposalPage() {
         setFormErrors({});
         setEditingProposalId(null);
         setIsEditing(false);
+
+        try {
+          await fetchProposals();
+        } catch (fetchErr) {
+          console.error("Failed to refresh proposals list:", fetchErr);
+        }
       } else {
         if (res?.statusCode === 401 || res?.statusCode === 403 || res?.message?.includes("Unauthorized")) {
           setUploadError("Sesi login telah berakhir atau akun Anda memerlukan hak akses OSIS. Silakan login kembali.");
