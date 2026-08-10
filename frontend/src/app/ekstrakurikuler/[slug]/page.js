@@ -339,7 +339,7 @@ export default function ExtracurricularDetailPage() {
                         </svg>
                       </div>
                       <span className="rounded-xl bg-white/80 px-4 py-2 text-xs font-bold text-gray-500 border border-gray-200 shadow-2xs backdrop-blur-xs relative z-10">
-                        📷 Foto belum tersedia
+                        Foto belum tersedia
                       </span>
                       <p className="mt-2 text-[11px] text-gray-400 max-w-[200px] relative z-10">
                         Foto resmi kegiatan {data.name} akan segera diunggah.
@@ -373,7 +373,7 @@ export default function ExtracurricularDetailPage() {
                   </h1>
 
                   {/* Deskripsi */}
-                  <p className="mt-4 text-base leading-relaxed text-gray-600 sm:text-lg">
+                  <p className="mt-4 text-base leading-relaxed text-gray-600 sm:text-lg text-justify">
                     {data.description}
                   </p>
 

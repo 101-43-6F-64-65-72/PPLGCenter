@@ -30,7 +30,7 @@ export default function Hero() {
             Mencetak Lulusan Unggul & Ready-to-Work
           </h1>
 
-          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-8 max-w-2xl font-normal">
+          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-8 max-w-2xl font-normal text-justify">
             Program pengembangan sekolah kejuruan terdepan untuk menghasilkan
             lulusan kompeten dan berkarakter, diselaraskan secara mendalam dengan
             kebutuhan dunia usaha, industri, dan kerja (DUDI).

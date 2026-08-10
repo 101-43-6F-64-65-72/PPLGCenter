@@ -29,7 +29,7 @@ export default function ExtracurricularSection() {
             Pengembangan Diri Lewat Ekstrakurikuler
           </h2>
 
-          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-6 lg:mb-8 max-w-xl font-normal">
+          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-6 lg:mb-8 max-w-xl font-normal text-justify">
             SMKN 2 Surakarta menyediakan wadah kegiatan ekstrakurikuler komprehensif
             mulai dari olahraga, seni budaya, teknologi, hingga organisasi kepemimpinan.
             Dirancang untuk membentuk karakter tangguh, mengasah minat bakat, serta

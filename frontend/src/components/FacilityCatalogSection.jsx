@@ -27,7 +27,7 @@ export default function FacilityCatalogSection() {
             Katalog & Peminjaman Fasilitas
           </h2>
 
-          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-6 lg:mb-8 max-w-xl font-normal">
+          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-6 lg:mb-8 max-w-xl font-normal text-justify">
             SMKN 2 Surakarta menyediakan sarana prasarana modern mulai dari laboratorium
             praktik kejuruan, aula serbaguna, hingga lapangan olahraga. Akses katalog
             fasilitas dan ajukan peminjaman secara digital dengan efisien.

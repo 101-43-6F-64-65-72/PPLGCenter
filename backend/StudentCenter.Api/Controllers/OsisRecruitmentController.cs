@@ -106,7 +106,7 @@ public class OsisRecruitmentController : ControllerBase
 
     [Authorize(Roles = "Admin,Teacher")]
     [HttpPost("cabinet-structure")]
-    public async Task<IActionResult> AddCabinetMember([FromQuery] Guid academicYearId, [FromQuery] Guid studentId, [FromQuery] string positionTitle, [FromQuery] string department, [FromQuery] string? photoUrl)
+    public async Task<IActionResult> AddCabinetMember([FromQuery] Guid? academicYearId, [FromQuery] Guid studentId, [FromQuery] string positionTitle, [FromQuery] string department, [FromQuery] string? photoUrl)
     {
         var result = await _recruitmentService.AddCabinetMemberAsync(academicYearId, studentId, positionTitle, department, photoUrl);
         return Ok(ApiResponse<OsisCabinetMemberResponse>.Ok("Anggota kabinet OSIS berhasil ditambahkan", result));

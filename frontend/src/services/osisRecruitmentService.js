@@ -40,7 +40,13 @@ export const osisRecruitmentService = {
   },
 
   addCabinetMember: async (data) => {
-    return await api.post("/api/osis/recruitment/cabinet-structure", null, { params: data });
+    const params = {};
+    if (data.academicYearId) params.academicYearId = data.academicYearId;
+    if (data.studentId) params.studentId = data.studentId;
+    if (data.positionTitle) params.positionTitle = data.positionTitle;
+    if (data.department) params.department = data.department;
+    if (data.photoUrl) params.photoUrl = data.photoUrl;
+    return await api.post("/api/osis/recruitment/cabinet-structure", null, { params });
   },
 
   deleteCabinetMember: async (id) => {

@@ -7,7 +7,7 @@ export default function NotificationDropdown({ notifications, unreadCount, onMar
   return (
     <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-gray-100 rounded-3xl shadow-2xl z-50 overflow-hidden font-sans animate-in fade-in duration-200">
       {/* Header */}
-      <div className="p-4 bg-gradient-to-r from-[#071225] via-[#0b1630] to-[#111b33] text-white flex items-center justify-between">
+      <div className="p-4 bg-[#2c1ee8] text-white flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="font-extrabold text-sm tracking-tight">Pusat Notifikasi</h3>
           {unreadCount > 0 && (

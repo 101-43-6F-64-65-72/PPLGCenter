@@ -112,7 +112,7 @@ export default function FacilityCard({
           </div>
 
           {description && (
-            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-1 font-normal">
+            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-1 font-normal text-justify">
               {description}
             </p>
           )}

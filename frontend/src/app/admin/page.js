@@ -77,9 +77,9 @@ function AdminPanelContent() {
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-900 text-white text-xs font-bold">
-                  <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Super Admin System</span>
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-[#2e099d] text-white text-xs font-bold">
+                  <ShieldAlert className="w-3.5 h-3.5 text-white" />
+                  <span>Admin System</span>
                 </span>
               </div>
             </div>

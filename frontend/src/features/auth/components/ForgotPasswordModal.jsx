@@ -37,7 +37,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
     setMessage("");
 
     if (!identifier.trim()) {
-      setError("NIS / NISN / NIP / Username / Email wajib diisi.");
+      setError("NIS / NISN / NIP wajib diisi!");
       return;
     }
 
@@ -45,7 +45,6 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
     try {
       const res = await apiClient.post("/api/auth/reset-password/request", {
         identifier: identifier.trim(),
-        fullName: fullName.trim() || null,
         reason: reason.trim() || null,
       });
 
@@ -148,19 +147,11 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-      <div className="w-full max-w-md bg-[#131b2e] border border-white/20 rounded-3xl p-6 sm:p-8 text-white shadow-2xl space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-[#2c1ee8] border border-white/20 rounded-3xl p-6 sm:p-8 text-white shadow-2xl space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center border-b border-white/10 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400">
-              <KeyRound className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Reset Password</h2>
-              <p className="text-xs text-white/60">Flow Approval Admin</p>
-            </div>
-          </div>
+          <h2 className="text-lg font-bold text-white">Reset Password</h2>
           <button
             onClick={handleResetModal}
             className="text-white/60 hover:text-white transition-colors p-1 rounded-xl hover:bg-white/10"
@@ -194,23 +185,11 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-bold text-white/80">Nama Lengkap (Opsional)</label>
-              <Input
-                type="text"
-                placeholder="Masukkan nama lengkap Anda"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                variant="dark"
-              />
-            </div>
-
-            <div className="space-y-1">
               <label className="block text-xs font-bold text-white/80">Alasan Lupa Password (Opsional)</label>
               <textarea
-                placeholder="Misal: Lupa kata sandi lama"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full bg-[#1b1b36] border border-white/20 rounded-2xl p-3 text-xs text-white outline-none focus:border-white transition"
+                className="w-full bg-[#ffffff] border border-white/20 rounded-2xl p-3 text-xm text-black outline-none focus:border-white transition"
                 rows={2}
               />
             </div>
@@ -231,7 +210,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
                 onClick={handleCheckStatus}
                 className="text-xs text-blue-300 hover:text-blue-200 underline font-semibold"
               >
-                Sudah Pernah Mengajukan? Cek Status Approval
+                Cek status persetujuan
               </button>
             </div>
           </form>
@@ -240,7 +219,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
         {/* STEP 2: PENDING APPROVAL */}
         {step === "pending" && (
           <div className="space-y-5 text-center py-2">
-            <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-400/30 flex items-center justify-center mx-auto text-amber-400 animate-pulse">
+            <div className="w-16 h-16 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center mx-auto text-white-300 animate-pulse">
               <Clock className="w-8 h-8" />
             </div>
             <div>
@@ -250,8 +229,8 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
               </p>
             </div>
 
-            <div className="bg-[#1b1b36] p-3.5 rounded-2xl border border-white/10 text-left space-y-1">
-              <p className="text-[11px] font-bold text-white/50 uppercase tracking-wide">Identitas Akun</p>
+            <div className="bg-[#2B2DEC] p-3.5 rounded-2xl border border-white/20 text-left space-y-1 flex item-center justify-between">
+              <p className="text-[11px] font-bold text-white/85 uppercase tracking-wide">Identitas Akun</p>
               <p className="font-mono text-xs text-blue-300 font-bold break-all">{identifier}</p>
             </div>
 
@@ -269,7 +248,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={() => setStep("request")}
-                className="text-xs text-white/60 hover:text-white underline block mx-auto"
+                className="text-xs text-white/60 hover:text-white underline block mx-auto cursor-pointer"
               >
                 ← Ajukan Ulang / Ganti Identitas
               </button>

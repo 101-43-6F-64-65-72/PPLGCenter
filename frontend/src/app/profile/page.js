@@ -244,7 +244,7 @@ function ProfileContent() {
       <Navbar />
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
         {/* Banner Card */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#2C1EE8] via-indigo-700 to-purple-800 p-6 sm:p-10 text-white shadow-xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#2C1EE8] via-indigo-700 to-[#2e099d] p-6 sm:p-10 text-white shadow-xl">
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="relative group shrink-0">

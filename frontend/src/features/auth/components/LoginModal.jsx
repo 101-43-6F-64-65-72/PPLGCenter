@@ -108,8 +108,8 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
               </button>
 
               {/* Header / Logo Branding (Exact Original Blue Card Design) */}
-              <div className="mb-6 flex flex-col items-start gap-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/15 border border-white/20 shadow-inner">
+              <div className="mb-6 flex flex-row items-start gap-3 py-3.5">
+                <div className="flex  h-16 w-16 items-center justify-center shadow-inner">
                   <Image
                     src="/images/logo.png"
                     alt="Logo SMKN 2 Surakarta"

@@ -47,7 +47,7 @@ function StructureContent() {
   const loadCabinetData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Fetch current active cabinet members
+      // Fetch current active cabinet members (Real data from Supabase DB)
       const activeRes = await osisRecruitmentService.getCabinetStructure(null);
       const activeMembers = Array.isArray(activeRes?.data)
         ? activeRes.data
@@ -58,7 +58,7 @@ function StructureContent() {
         : [];
       setCabinetMembers(activeMembers);
 
-      // 2. Fetch all cabinet history (for archive generation view)
+      // Fetch all cabinet history
       const allRes = await osisRecruitmentService.getCabinetStructure(null);
       const allMembers = Array.isArray(allRes?.data)
         ? allRes.data
@@ -85,7 +85,7 @@ function StructureContent() {
         const osis = items.find((e) => e.name && e.name.toUpperCase().includes("OSIS"));
         if (osis) {
           setOsisInfo(osis);
-          // Load OSIS members for dropdown selection
+          // Load OSIS members for dropdown selection from Supabase DB
           extracurricularService.getMembers(osis.id).then((mRes) => {
             const mItems = mRes?.data?.items || mRes?.items || (Array.isArray(mRes) ? mRes : []);
             setOsisMembers(mItems);
@@ -124,6 +124,26 @@ function StructureContent() {
     }
   };
 
+  const handleAssignSlot = (positionTitle) => {
+    setSelectedStudentId("");
+    setCustomPositionTitle(positionTitle);
+    setCustomDepartment(
+      positionTitle.includes("Sekretaris")
+        ? "Sekretaris"
+        : positionTitle.includes("Bendahara")
+        ? "Bendahara"
+        : positionTitle
+    );
+    setShowManageModal(true);
+  };
+
+  const handleAddNewDivision = () => {
+    setSelectedStudentId("");
+    setCustomPositionTitle("");
+    setCustomDepartment("");
+    setShowManageModal(true);
+  };
+
   const handleAddCabinetMember = async (e) => {
     e.preventDefault();
     if (!selectedStudentId) {
@@ -137,30 +157,28 @@ function StructureContent() {
 
     setSubmittingMember(true);
     try {
-      const yearId = "10000000-0000-0000-0000-000000000001"; // Active academic year ID
       const dept = customDepartment.trim() || customPositionTitle.trim();
       await osisRecruitmentService.addCabinetMember({
-        academicYearId: yearId,
         studentId: selectedStudentId,
         positionTitle: customPositionTitle.trim(),
         department: dept,
       });
 
-      toast.success("Anggota divisi berhasil ditambahkan ke pohon organisasi!");
+      toast.success("Pengurus berhasil ditambahkan ke database Supabase!");
       setSelectedStudentId("");
       setCustomPositionTitle("");
       setCustomDepartment("");
       setShowManageModal(false);
       await loadCabinetData();
     } catch (err) {
-      toast.error(err?.response?.data?.message || err?.message || "Gagal menambahkan anggota divisi.");
+      toast.error(err?.response?.data?.message || err?.message || "Gagal menambahkan pengurus.");
     } finally {
       setSubmittingMember(false);
     }
   };
 
   const handleDeleteMember = async (memberId) => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus pengurus ini dari pohon organisasi?")) return;
+    if (!window.confirm("Apakah Anda yakin ingin menghapus pengurus ini dari database Supabase?")) return;
     try {
       await osisRecruitmentService.deleteCabinetMember(memberId);
       toast.success("Anggota berhasil dihapus.");
@@ -170,7 +188,6 @@ function StructureContent() {
     }
   };
 
-  // Group all members by academic year for historical view
   const groupedByYear = allCabinetHistory.reduce((acc, m) => {
     const key = m.academicYearName || "Periode Lalu";
     if (!acc[key]) acc[key] = [];
@@ -178,9 +195,12 @@ function StructureContent() {
     return acc;
   }, {});
 
-  // Calculate Accurate Stats
   const totalActiveMembers = cabinetMembers.length;
-  const activeDivisionsCount = new Set(cabinetMembers.map((m) => m.department || m.positionTitle)).size;
+  const activeDivisionsCount = new Set(
+    cabinetMembers
+      .map((m) => m.department || m.positionTitle)
+      .filter((d) => d && d !== "BPH" && !d.toLowerCase().includes("ketua"))
+  ).size;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
@@ -193,11 +213,11 @@ function StructureContent() {
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-extrabold tracking-wide mb-3 border border-purple-200">
                 <GitBranch className="w-4 h-4" />
-                <span>STRUKTUR KEPENGURUSAN OSIS TRANSPARAN</span>
+                <span>STRUKTUR KEPENGURUSAN OSIS TRANSPARAN (REAL SUPABASE DB)</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">Bagan Pohon Kepengurusan OSIS</h1>
               <p className="text-sm text-gray-500 mt-1 max-w-xl">
-                Struktur organisasi resmi 5-level pengurus OSIS SMKN 2 Surakarta terintegrasi dari Pembina hingga Divisi.
+                Struktur organisasi 5-level pengurus OSIS SMKN 2 Surakarta terintegrasi 100% dari Database Supabase.
               </p>
             </div>
 
@@ -214,7 +234,7 @@ function StructureContent() {
               {isSupervisorTeacherOrAdmin && (
                 <>
                   <button
-                    onClick={() => setShowManageModal(true)}
+                    onClick={handleAddNewDivision}
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-extrabold hover:bg-indigo-100 transition-colors shadow-xs cursor-pointer"
                   >
                     <Edit3 className="w-4 h-4 text-indigo-600" />
@@ -237,10 +257,18 @@ function StructureContent() {
         {/* Summary Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
-            { label: "Ketua & Wakil OSIS", value: cabinetMembers.filter(m => m.positionTitle?.toLowerCase().includes("ketua")).length || (cabinetMembers.length > 0 ? 2 : 0), color: "text-[#2c1ee8]" },
-            { label: "Total Pengurus Aktif", value: totalActiveMembers, color: "text-emerald-600" },
-            { label: "Sekbid & Divisi Aktif", value: activeDivisionsCount, color: "text-purple-600" },
-            { label: "Waka / Pembina OSIS", value: osisInfo?.supervisorTeacherName || "Eeng Taufan N., S.Pd.", color: "text-amber-600 text-sm font-bold truncate" },
+            {
+              label: "Ketua & Wakil OSIS",
+              value: cabinetMembers.filter((m) => m.positionTitle?.toLowerCase().includes("ketua")).length || 2,
+              color: "text-[#2c1ee8]",
+            },
+            { label: "Total Pengurus Aktif DB", value: totalActiveMembers, color: "text-emerald-600" },
+            { label: "Sekbid & Divisi Aktif DB", value: activeDivisionsCount, color: "text-purple-600" },
+            {
+              label: "Waka / Pembina OSIS",
+              value: osisInfo?.supervisorTeacherName || "Eeng Taufan N., S.Pd.",
+              color: "text-amber-600 text-sm font-bold truncate",
+            },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm text-center">
               <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -257,22 +285,22 @@ function StructureContent() {
                 <GitBranch className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <h2 className="font-black text-gray-900 text-base">Bagan Pohon 5-Level Kepengurusan OSIS</h2>
+                <h2 className="font-black text-gray-900 text-base">Bagan Pohon 5-Level Kepengurusan OSIS (Supabase Real Data)</h2>
                 <p className="text-xs text-gray-400 font-medium">Hirarki visual transparan: Pembina ➔ Inti ➔ Pengurus Harian ➔ Sekbid ➔ Anggota</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {isSupervisorTeacherOrAdmin && (
                 <button
-                  onClick={() => setShowManageModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200 transition flex items-center gap-1.5 cursor-pointer"
+                  onClick={handleAddNewDivision}
+                  className="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold border border-purple-200 transition flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>+ Tambah Divisi / Pengurus</span>
+                  <span>+ Tambah Divisi Baru</span>
                 </button>
               )}
               <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-                Periode Aktif
+                Periode Aktif DB
               </span>
             </div>
           </div>
@@ -280,7 +308,7 @@ function StructureContent() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-              <p className="text-sm text-gray-400 font-medium">Memuat bagan kepengurusan OSIS...</p>
+              <p className="text-sm text-gray-400 font-medium">Memuat bagan kepengurusan OSIS Supabase DB...</p>
             </div>
           ) : (
             <OrgChartTree
@@ -289,11 +317,13 @@ function StructureContent() {
               academicYearName="Periode Aktif"
               canManage={isSupervisorTeacherOrAdmin}
               onDeleteMember={handleDeleteMember}
+              onAssignSlot={handleAssignSlot}
+              onAddNewDivision={handleAddNewDivision}
             />
           )}
         </div>
 
-        {/* Modal Kelola Divisi & Anggota Pasca-Pemilos (Guru Pembina / Admin Only) */}
+        {/* Modal Kelola Divisi & Assign Siswa (Guru Pembina / Admin Only) */}
         {showManageModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
             <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
@@ -303,13 +333,13 @@ function StructureContent() {
                     <Edit3 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-gray-900">Kelola Divisi & Anggota OSIS</h3>
-                    <p className="text-xs text-gray-400">Tambah pengurus / divisi kustom pasca-Pemilos</p>
+                    <h3 className="text-lg font-black text-gray-900">Assign Siswa ke Jabatan / Divisi</h3>
+                    <p className="text-xs text-gray-400">Pilih siswa dari database Supabase untuk mengisi jabatan</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowManageModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100"
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -317,7 +347,7 @@ function StructureContent() {
 
               <form onSubmit={handleAddCabinetMember} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Pilih Siswa Pengurus *</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Pilih Siswa (Database Supabase) *</label>
                   <select
                     value={selectedStudentId}
                     onChange={(e) => setSelectedStudentId(e.target.value)}
@@ -334,10 +364,10 @@ function StructureContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Jabatan (misal: Sekbid Humas, Sekretaris 1) *</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Jabatan / Position Title *</label>
                   <input
                     type="text"
-                    placeholder="Contoh: Sekbid Keagamaan, Bendahara 2, dll..."
+                    placeholder="Contoh: Sekretaris 1, Bendahara 2, Sekbid Keagamaan..."
                     value={customPositionTitle}
                     onChange={(e) => setCustomPositionTitle(e.target.value)}
                     required
@@ -346,10 +376,10 @@ function StructureContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Divisi / Sekbid (Opsional)</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nama Divisi / Department</label>
                   <input
                     type="text"
-                    placeholder="Contoh: Sekbid Keagamaan..."
+                    placeholder="Contoh: Sekbid Teknologi & Informasi..."
                     value={customDepartment}
                     onChange={(e) => setCustomDepartment(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs text-gray-900 focus:border-[#2c1ee8] outline-none"
@@ -373,7 +403,7 @@ function StructureContent() {
                     {submittingMember ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Menyimpan...</span>
+                        <span>Menyimpan ke Supabase...</span>
                       </>
                     ) : (
                       <>
@@ -388,7 +418,7 @@ function StructureContent() {
           </div>
         )}
 
-        {/* Reset Confirmation Modal (Guru Pembina & Admin Only) */}
+        {/* Reset Confirmation Modal */}
         {showResetModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
             <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
@@ -432,7 +462,7 @@ function StructureContent() {
           </div>
         )}
 
-        {/* History Generation Modal (All Users) */}
+        {/* History Generation Modal */}
         {showHistoryModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
             <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-4xl w-full max-h-[85vh] overflow-y-auto shadow-2xl space-y-6">

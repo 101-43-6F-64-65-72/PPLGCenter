@@ -49,7 +49,7 @@ export default function MadingSection() {
               Mading Digital Sekolah
             </h2>
 
-            <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed max-w-xl font-normal">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed max-w-xl font-normal text-justify">
               Pusat kearsipan berita, prestasi, pengumuman resmi, serta karya
               kreatif kreativitas siswa-siswi SMK Negeri 2 Surakarta. Dapatkan
               informasi terkini secara cepat, tepat, dan terintegrasi.
@@ -247,7 +247,7 @@ export default function MadingSection() {
                   </strong>
                 </span>
               </div>
-              <div className="text-gray-700 leading-relaxed text-sm whitespace-pre-line">
+              <div className="text-gray-700 leading-relaxed text-sm whitespace-pre-line text-justify">
                 {selectedArticle.content || selectedArticle.summary}
               </div>
             </div>

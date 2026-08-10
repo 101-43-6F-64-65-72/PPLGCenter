@@ -16,7 +16,7 @@ const quickLinks = [
 const contactInfo = [
   {
     icon: (
-      <svg className="w-5 h-5 flex-shrink-0 text-[#5a6fff]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
       </svg>
@@ -25,7 +25,7 @@ const contactInfo = [
   },
   {
     icon: (
-      <svg className="w-5 h-5 flex-shrink-0 text-[#5a6fff]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-1.514 2.007a14.28 14.28 0 0 1-5.918-5.918l2.007-1.514c.362-.272.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
       </svg>
     ),
@@ -33,7 +33,7 @@ const contactInfo = [
   },
   {
     icon: (
-      <svg className="w-5 h-5 flex-shrink-0 text-[#5a6fff]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25H4.5A2.25 2.25 0 0 1 2.25 17.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5H4.5a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
       </svg>
     ),
@@ -41,7 +41,7 @@ const contactInfo = [
   },
   {
     icon: (
-      <svg className="w-5 h-5 flex-shrink-0 text-[#5a6fff]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+      <svg className="w-5 h-5 flex-shrink-0 text-slate-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-.778.099-1.533.284-2.253" />
       </svg>
     ),
@@ -85,58 +85,51 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-slate-950 border-t border-slate-900 text-white">
-      {/* Premium Ambient Background Lights */}
-      <div className="absolute top-0 right-1/4 -z-10 h-80 w-80 rounded-full bg-[#2c1ee8]/10 blur-3xl opacity-60" />
-      <div className="absolute bottom-0 left-1/4 -z-10 h-80 w-80 rounded-full bg-[#5a6fff]/10 blur-3xl opacity-40" />
-
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-12 relative z-10">
+    <footer className="bg-slate-950 border-t border-slate-800 text-white">
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-12">
         {/* Main Grid: 4 columns */}
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-          
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+
           {/* Column 1: Brand Info */}
           <div className="flex flex-col space-y-4">
             <div className="flex items-center gap-3">
-              <div className="relative h-11 w-11 flex-shrink-0">
+              <div className="relative h-10 w-10 flex-shrink-0">
                 <Image
                   src="/images/logo.png"
                   alt="Logo SMKN 2 Surakarta"
-                  width={44}
-                  height={44}
-                  className="object-contain filter drop-shadow-[0_0_8px_rgba(44,30,232,0.35)]"
+                  width={40}
+                  height={40}
+                  className="object-contain"
                   priority
                 />
               </div>
               <div>
-                <span className="text-base font-bold tracking-tight text-white bg-gradient-to-r from-white via-slate-100 to-[#5a6fff] bg-clip-text text-transparent">
-                  STUDENT CENTER
+                <span className="text-base font-bold text-white">
+                  Student Center
                 </span>
-                <span className="block text-[10px] font-semibold text-slate-400 tracking-wider uppercase">
-                  SMKN 2 SURAKARTA
+                <span className="block text-xs text-slate-400">
+                  SMKN 2 Surakarta
                 </span>
               </div>
             </div>
             <p className="text-sm leading-relaxed text-slate-400 text-justify">
-              Portal informasi dan layanan digital terpadu untuk memudahkan siswa SMKN 2 Surakarta dalam mengakses mading, ekstrakurikuler, fasilitas sekolah, dan pengajuan kegiatan dalam satu platform modern.
+              Portal informasi dan layanan digital terpadu untuk memudahkan siswa SMKN 2 Surakarta dalam mengakses mading, ekstrakurikuler, fasilitas sekolah, dan pengajuan kegiatan dalam satu platform.
             </p>
           </div>
 
           {/* Column 2: Quick Links */}
           <div className="flex flex-col space-y-4">
-            <h4 className="text-base font-semibold text-white tracking-wide border-l-2 border-[#5a6fff] pl-3">
+            <h4 className="text-sm font-semibold text-white">
               Tautan Cepat
             </h4>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-2.5 text-sm">
               {quickLinks.map((item) => (
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className="group flex items-center gap-2 text-slate-400 hover:text-white transition-all duration-300"
+                    className="text-slate-400 hover:text-white transition-colors"
                   >
-                    <span className="h-1 w-1 rounded-full bg-[#2c1ee8] opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:scale-125 group-hover:shadow-[0_0_8px_#5a6fff]" />
-                    <span className="transition-all duration-300 group-hover:translate-x-1.5 group-hover:text-[#5a6fff] group-hover:[text-shadow:0_0_8px_rgba(90,111,255,0.4)]">
-                      {item.label}
-                    </span>
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -145,21 +138,19 @@ export default function Footer() {
 
           {/* Column 3: Contact Info */}
           <div className="flex flex-col space-y-4">
-            <h4 className="text-base font-semibold text-white tracking-wide border-l-2 border-[#5a6fff] pl-3">
+            <h4 className="text-sm font-semibold text-white">
               Kontak Kami
             </h4>
-            <ul className="space-y-4 text-sm">
+            <ul className="space-y-3 text-sm">
               {contactInfo.map((contact, index) => (
                 <li key={index} className="flex items-start gap-3">
-                  <span className="mt-0.5 rounded-lg bg-slate-900/80 p-1.5 border border-white/5 shadow-inner">
-                    {contact.icon}
-                  </span>
+                  {contact.icon}
                   {contact.href ? (
                     <a
                       href={contact.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-slate-400 hover:text-[#5a6fff] hover:underline transition-colors leading-relaxed"
+                      className="text-slate-400 hover:text-white transition-colors leading-relaxed"
                     >
                       {contact.text}
                     </a>
@@ -173,13 +164,13 @@ export default function Footer() {
 
           {/* Column 4: Follow Us / Social Media */}
           <div className="flex flex-col space-y-4">
-            <h4 className="text-base font-semibold text-white tracking-wide border-l-2 border-[#5a6fff] pl-3">
+            <h4 className="text-sm font-semibold text-white">
               Ikuti Kami
             </h4>
             <p className="text-sm text-slate-400">
               Dapatkan berita terbaru dan aktivitas sekolah melalui media sosial resmi kami.
             </p>
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex gap-3 pt-1">
               {socialLinks.map((social) => (
                 <a
                   key={social.name}
@@ -187,7 +178,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.name}
-                  className="group relative flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-slate-900/50 text-slate-400 shadow-sm transition-all duration-300 hover:border-[#5a6fff]/40 hover:bg-gradient-to-br hover:from-[#2c1ee8] hover:to-[#5a6fff] hover:text-white hover:shadow-[0_0_15px_rgba(90,111,255,0.4)]"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
                 >
                   {social.icon}
                 </a>
@@ -198,9 +189,8 @@ export default function Footer() {
         </div>
 
         {/* Divider & Copyright */}
-        <div className="mt-16 border-t border-slate-900 pt-8 relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-px bg-gradient-to-r from-transparent via-[#5a6fff]/40 to-transparent" />
-          <p className="text-center text-xs text-slate-500 font-medium">
+        <div className="mt-12 border-t border-slate-800 pt-6">
+          <p className="text-center text-xs text-slate-500">
             &copy; 2026 Student Center SMK Negeri 2 Surakarta. Semua Hak Cipta Dilindungi.
           </p>
         </div>
@@ -208,4 +198,3 @@ export default function Footer() {
     </footer>
   );
 }
-

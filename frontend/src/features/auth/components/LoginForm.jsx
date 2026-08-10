@@ -88,7 +88,7 @@ export const LoginForm = () => {
         <select
           value={loginType}
           onChange={(e) => setLoginType(e.target.value)}
-          className="w-full bg-[#1b1b36] border border-white/20 rounded-2xl py-3.5 px-4 text-sm font-semibold text-white outline-none focus:border-white focus:ring-1 focus:ring-white transition"
+          className="w-full bg-[#362AE0] border border-white/20 rounded-2xl py-3.5 px-4 text-sm font-semibold text-white outline-none focus:border-white focus:ring-1 focus:ring-white transition"
         >
           <option value="Student">Siswa</option>
           <option value="Teacher">Guru</option>
@@ -183,13 +183,13 @@ export const LoginForm = () => {
           className="!bg-white !text-[#2c1ee8] hover:!bg-slate-100 shadow-xl shadow-white/20 font-bold py-4 text-base rounded-2xl mt-4 flex items-center justify-center gap-2 cursor-pointer"
         >
           {isSubmitting ? (
-            <>
+            <div className="flex item-center">
               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#2c1ee8]" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
               <span>Memverifikasi Akun...</span>
-            </>
+            </div>
           ) : (
             `Masuk Sebagai ${loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin"}`
           )}

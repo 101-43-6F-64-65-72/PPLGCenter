@@ -53,14 +53,11 @@ export default function PasswordResetAdminTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#131b2e] border border-white/10 p-6 rounded-3xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 border border-slate-200 rounded-2xl shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400">
-            <KeyRound className="w-6 h-6" />
-          </div>
           <div>
-            <h2 className="text-lg font-bold text-white">Persetujuan Reset Password</h2>
-            <p className="text-xs text-white/60">Daftar permohonan lupa password yang menunggu verifikasi Admin</p>
+            <h2 className="text-lg font-bold text-black">Persetujuan Reset Password</h2>
+            <p className="text-xs text-black/60">Daftar permohonan lupa password yang menunggu verifikasi Admin</p>
           </div>
         </div>
 
@@ -69,9 +66,8 @@ export default function PasswordResetAdminTab() {
           variant="outline"
           size="sm"
           isLoading={loading}
-          className="!border-white/20 hover:!bg-white/10 text-white rounded-xl flex items-center gap-2"
+          className="!border-black/20 text-black rounded-xl flex items-center gap-2"
         >
-          <RefreshCw className="w-4 h-4" />
           <span>Muat Ulang</span>
         </Button>
       </div>
@@ -79,7 +75,7 @@ export default function PasswordResetAdminTab() {
       {error && <ErrorAlert title="Terjadi Kesalahan" message={error} onClose={() => setError("")} />}
 
       {successMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-sm font-semibold flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-black/10 text-emerald text-sm font-semibold flex items-center gap-2">
           <Check className="w-5 h-5 flex-shrink-0" />
           <span>{successMessage}</span>
         </div>
@@ -90,17 +86,16 @@ export default function PasswordResetAdminTab() {
           Memuat daftar permohonan reset password...
         </div>
       ) : requests.length === 0 ? (
-        <div className="text-center py-12 bg-[#131b2e]/50 border border-white/10 rounded-3xl text-white/50">
-          <ShieldAlert className="w-12 h-12 mx-auto mb-3 opacity-30 text-emerald-400" />
-          <p className="font-bold text-white text-sm">Tidak ada permohonan pending</p>
-          <p className="text-xs text-white/60 mt-1">Semua permohonan reset password telah diproses.</p>
+        <div className="text-center py-12 bg-white border border-white/10 rounded-3xl text-black">
+          <p className="font-bold text-black text-sm">Tidak ada permohonan pending</p>
+          <p className="text-xs text-black/40 mt-1">Semua permohonan reset password telah diproses.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {requests.map((req) => (
             <div
               key={req.id}
-              className="p-5 rounded-3xl bg-[#131b2e] border border-white/10 hover:border-white/20 transition space-y-4"
+              className="p-5 rounded-3xl bg-white border border-white/10 hover:border-white/20 transition space-y-4 shadow-md hover:shadow-xl"
             >
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
@@ -108,21 +103,21 @@ export default function PasswordResetAdminTab() {
                     <User className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-white text-sm">{req.userFullName}</h3>
-                    <p className="text-xs text-blue-300 font-mono">
-                      {req.userIdentifier} · <span className="text-white/60">{req.userRole}</span>
+                    <h3 className="font-bold text-[#200379] text-sm">{req.userFullName}</h3>
+                    <p className="text-xs text-[#05319f] font-mono">
+                      {req.userIdentifier} · <span className="text-[#05319f]/60">{req.userRole}</span>
                     </p>
                   </div>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-[10px] font-bold uppercase">
+                <span className="px-2.5 py-1 text-amber-800 text-[10px] font-bold uppercase">
                   {req.statusText}
                 </span>
               </div>
 
               {req.reason && (
-                <div className="bg-[#1b1b36] p-3 rounded-2xl border border-white/10 text-xs text-white/80">
-                  <span className="font-bold text-white/50 block text-[10px] uppercase">Alasan Siswa:</span>
+                <div className=" p-3 text-xs text-black">
+                  <span className="font-bold text-black block text-[10px] uppercase">Alasan:</span>
                   {req.reason}
                 </div>
               )}
@@ -130,10 +125,10 @@ export default function PasswordResetAdminTab() {
               <div className="space-y-1">
                 <input
                   type="text"
-                  placeholder="Catatan Admin (Opsional)"
+                  placeholder="Catatan (Opsional)"
                   value={notesInput[req.id] || ""}
                   onChange={(e) => setNotesInput({ ...notesInput, [req.id]: e.target.value })}
-                  className="w-full bg-[#1b1b36] border border-white/20 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-blue-400 transition"
+                  className="w-full bg-[#e4efff] border border-white/20 rounded-xl px-3 py-2 text-xs text-black outline-none focus:border-blue-400 transition"
                 />
               </div>
 
@@ -142,9 +137,8 @@ export default function PasswordResetAdminTab() {
                   onClick={() => handleReview(req.id, true)}
                   isLoading={processingId === req.id}
                   disabled={processingId === req.id}
-                  className="flex-1 !bg-emerald-600 hover:!bg-emerald-500 text-white font-bold py-2.5 text-xs rounded-xl flex items-center justify-center gap-1.5"
+                  className="flex-1 !bg-emerald-600 hover:!bg-emerald-500 text-white font-bold py-2.5 text-xs rounded-xl flex flex-row items-center justify-center gap-1.5"
                 >
-                  <Check className="w-4 h-4" />
                   <span>Setujui (Approve)</span>
                 </Button>
 
@@ -154,7 +148,6 @@ export default function PasswordResetAdminTab() {
                   disabled={processingId === req.id}
                   className="flex-1 !bg-rose-600/80 hover:!bg-rose-600 text-white font-bold py-2.5 text-xs rounded-xl flex items-center justify-center gap-1.5"
                 >
-                  <X className="w-4 h-4" />
                   <span>Tolak (Reject)</span>
                 </Button>
               </div>

@@ -49,7 +49,15 @@ export default function NotificationsPage() {
   const { user, role } = useAuth();
   
   // Authorization check for broadcast management (Admin or Teacher)
-  const isAuthorized = role === "Admin" || role === "Teacher" || user?.role === "Admin" || user?.role === "Teacher" || user?.role === 0 || user?.role === 1;
+  const isAuthorized =
+    role === "Admin" ||
+    role === "Teacher" ||
+    user?.role === "Admin" ||
+    user?.role === "Teacher" ||
+    user?.role === 0 ||
+    user?.role === 1 ||
+    String(user?.role || "").toLowerCase().includes("teacher") ||
+    String(user?.role || "").toLowerCase().includes("admin");
 
   const [activeTab, setActiveTab] = useState("my"); // "my" | "broadcasts"
 
@@ -88,12 +96,14 @@ export default function NotificationsPage() {
       if (filterRead !== "") params.isRead = filterRead === "read";
 
       const res = await notificationService.getNotifications(params);
-      const items = res?.data?.items || res?.items || (Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []);
+      const rawData = res?.data?.items || res?.items || (Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []);
+      const items = Array.isArray(rawData) ? rawData : [];
       const total = res?.data?.totalCount || res?.totalCount || items.length;
       setNotifications(items);
       setTotalPages(Math.ceil((total || 0) / 10) || 1);
     } catch (err) {
-      console.error("Failed to fetch notifications", err);
+      console.error("Failed to fetch notifications:", err?.message || err);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -105,10 +115,12 @@ export default function NotificationsPage() {
     setLoadingBroadcasts(true);
     try {
       const res = await notificationService.getBroadcasts();
-      const items = res?.data || (Array.isArray(res) ? res : []);
+      const rawItems = res?.data?.items || res?.data || (Array.isArray(res) ? res : []);
+      const items = Array.isArray(rawItems) ? rawItems : [];
       setBroadcasts(items);
     } catch (err) {
-      console.error("Failed to fetch broadcast list", err);
+      console.error("Failed to fetch broadcast list:", err?.message || err);
+      setBroadcasts([]);
     } finally {
       setLoadingBroadcasts(false);
     }
@@ -131,7 +143,7 @@ export default function NotificationsPage() {
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
       );
     } catch (err) {
-      console.error("Failed to mark as read", err);
+      console.error("Failed to mark as read:", err?.message || err);
     }
   };
 
@@ -140,7 +152,7 @@ export default function NotificationsPage() {
       await notificationService.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
-      console.error("Failed to mark all as read", err);
+      console.error("Failed to mark all as read:", err?.message || err);
     }
   };
 
@@ -149,7 +161,7 @@ export default function NotificationsPage() {
       await notificationService.deleteNotification(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
-      console.error("Failed to delete notification", err);
+      console.error("Failed to delete notification:", err?.message || err);
     }
   };
 
@@ -192,37 +204,43 @@ export default function NotificationsPage() {
     setSubmittingBroadcast(true);
     setActionError("");
 
+    const payload = {
+      title: broadcastForm.title.trim(),
+      body: broadcastForm.body.trim(),
+      type: Number(broadcastForm.type) || 8,
+      priority: Number(broadcastForm.priority) ?? 1,
+      targetRole: broadcastForm.targetRole ? broadcastForm.targetRole : null,
+      actionUrl: broadcastForm.actionUrl ? broadcastForm.actionUrl.trim() : null,
+    };
+
     try {
       if (editingBroadcast) {
         // Edit mode
-        const res = await notificationService.updateBroadcast(editingBroadcast.broadcastId, {
-          title: broadcastForm.title,
-          body: broadcastForm.body,
-          type: broadcastForm.type,
-          priority: broadcastForm.priority,
-          actionUrl: broadcastForm.actionUrl,
-        });
+        const res = await notificationService.updateBroadcast(editingBroadcast.broadcastId, payload);
+        const isSuccess = res?.statusCode === 200 || res?.status === 200 || res?.success || res?.message?.toLowerCase()?.includes("success") || res?.message?.toLowerCase()?.includes("berhasil");
 
-        if (res?.success || res?.message?.includes("success")) {
+        if (isSuccess) {
           setBroadcastModalOpen(false);
-          fetchBroadcasts();
+          await fetchBroadcasts();
         } else {
           setActionError(res?.message || "Gagal memperbarui broadcast.");
         }
       } else {
         // Create mode
-        const res = await notificationService.broadcast(broadcastForm);
-        if (res?.success || res?.message?.includes("success")) {
+        const res = await notificationService.broadcast(payload);
+        const isSuccess = res?.statusCode === 200 || res?.status === 200 || res?.success || res?.message?.toLowerCase()?.includes("success") || res?.message?.toLowerCase()?.includes("berhasil");
+
+        if (isSuccess) {
           setBroadcastModalOpen(false);
-          fetchBroadcasts();
-          fetchNotifications();
+          await fetchBroadcasts();
+          await fetchNotifications();
         } else {
           setActionError(res?.message || "Gagal mengirim broadcast.");
         }
       }
     } catch (err) {
-      console.error("Broadcast operation failed", err);
-      setActionError(err?.response?.data?.message || err?.message || "Terjadi kesalahan.");
+      console.error("Broadcast operation failed:", err?.message || err);
+      setActionError(err?.message || err?.response?.data?.message || "Terjadi kesalahan saat mengirim broadcast.");
     } finally {
       setSubmittingBroadcast(false);
     }
@@ -243,10 +261,10 @@ export default function NotificationsPage() {
 
     try {
       await notificationService.deleteBroadcast(b.broadcastId);
-      fetchBroadcasts();
+      await fetchBroadcasts();
     } catch (err) {
-      console.error("Failed to delete broadcast", err);
-      alert(err?.response?.data?.message || "Gagal menghapus broadcast.");
+      console.error("Failed to delete broadcast:", err?.message || err);
+      alert(err?.message || err?.response?.data?.message || "Gagal menghapus broadcast.");
     }
   };
 
@@ -261,7 +279,7 @@ export default function NotificationsPage() {
             icon={Bell}
             title="Pusat Notifikasi"
             description="Kelola dan pantau seluruh notifikasi dan pengumuman aktivitas Anda."
-            badge={<Badge variant="info">Pemberitahuan System</Badge>}
+            badge={<Badge variant="info">Pemberitahuan Sistem</Badge>}
             actions={
               <>
                 {activeTab === "my" && (

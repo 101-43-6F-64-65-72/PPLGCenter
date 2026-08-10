@@ -252,21 +252,46 @@ public class OsisRecruitmentService : IOsisRecruitmentService
             StudentName = h.Student?.FullName ?? "Pengurus",
             PositionTitle = h.PositionTitle,
             Department = h.Department,
-            PhotoUrl = h.PhotoUrl,
+            PhotoUrl = h.PhotoUrl ?? h.Student?.PhotoUrl,
             IsActive = h.IsActive
         }).ToList();
     }
 
-    public async Task<OsisCabinetMemberResponse> AddCabinetMemberAsync(Guid academicYearId, Guid studentId, string positionTitle, string department, string? photoUrl)
+    public async Task<OsisCabinetMemberResponse> AddCabinetMemberAsync(Guid? academicYearId, Guid studentId, string positionTitle, string department, string? photoUrl)
     {
+        AcademicYear? year = null;
+        if (academicYearId.HasValue && academicYearId.Value != Guid.Empty)
+        {
+            year = await _context.AcademicYears.FindAsync(academicYearId.Value);
+        }
+
+        if (year is null)
+        {
+            year = await _context.AcademicYears.FirstOrDefaultAsync(y => y.IsActive) 
+                   ?? await _context.AcademicYears.FirstOrDefaultAsync();
+        }
+
+        if (year is null)
+        {
+            throw new InvalidOperationException("Tahun Ajaran aktif tidak ditemukan di database Supabase.");
+        }
+
+        var student = await _context.Users.FindAsync(studentId);
+        if (student is null)
+        {
+            throw new InvalidOperationException("Siswa yang dipilih tidak ditemukan di database Supabase.");
+        }
+
+        var finalPhotoUrl = photoUrl ?? student.PhotoUrl;
+
         var entry = new OsisCabinetHistory
         {
             Id = Guid.NewGuid(),
-            AcademicYearId = academicYearId,
+            AcademicYearId = year.Id,
             StudentId = studentId,
             PositionTitle = positionTitle.Trim(),
             Department = department.Trim(),
-            PhotoUrl = photoUrl,
+            PhotoUrl = finalPhotoUrl,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -274,19 +299,16 @@ public class OsisRecruitmentService : IOsisRecruitmentService
         _context.OsisCabinetHistories.Add(entry);
         await _context.SaveChangesAsync();
 
-        var student = await _context.Users.FindAsync(studentId);
-        var year = await _context.AcademicYears.FindAsync(academicYearId);
-
         return new OsisCabinetMemberResponse
         {
             Id = entry.Id,
-            AcademicYearId = academicYearId,
-            AcademicYearName = year?.Name ?? "Tahun Ajaran",
+            AcademicYearId = year.Id,
+            AcademicYearName = year.Name ?? "Tahun Ajaran",
             StudentId = studentId,
-            StudentName = student?.FullName ?? "Pengurus",
+            StudentName = student.FullName ?? "Pengurus",
             PositionTitle = entry.PositionTitle,
             Department = entry.Department,
-            PhotoUrl = entry.PhotoUrl,
+            PhotoUrl = finalPhotoUrl,
             IsActive = entry.IsActive
         };
     }

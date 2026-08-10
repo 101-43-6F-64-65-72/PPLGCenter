@@ -307,7 +307,7 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   </h2>
 
                   {facility.description && (
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-4 font-normal">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-4 font-normal text-justify">
                       {facility.description}
                     </p>
                   )}

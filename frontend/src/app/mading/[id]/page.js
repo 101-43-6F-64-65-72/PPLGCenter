@@ -314,7 +314,7 @@ export default function AnnouncementDetailPage() {
                   {/* 3. Article Content */}
                   <RichContentViewer
                     content={announcement.content || announcement.summary || "Belum ada konten teks mading."}
-                    className="mt-6 mb-4"
+                    className="mt-6 mb-4 text-justify"
                   />
                   {isEdited && (
                     <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-block mt-2">
