@@ -80,6 +80,19 @@ public class CandidatePairResponse
     public DateTime CreatedAt { get; set; }
 }
 
+public class PemilosVoterAuditResponse
+{
+    public Guid VoterUserId { get; set; }
+    public string StudentName { get; set; } = string.Empty;
+    public string? Nis { get; set; }
+    public string? ClassName { get; set; }
+    public DateTime VotedAt { get; set; }
+
+    // Confidential: Only populated for Admin & OSIS Teacher Advisor
+    public int? VotedCandidateNumber { get; set; }
+    public string? VotedCandidateTitle { get; set; }
+}
+
 public class PemilosLiveResultResponse
 {
     public Guid ElectionId { get; set; }
@@ -93,4 +106,5 @@ public class PemilosLiveResultResponse
 
     public CandidatePairResponse? WinnerPair { get; set; }
     public List<CandidatePairResponse> Rankings { get; set; } = new();
+    public List<PemilosVoterAuditResponse> RecentVoters { get; set; } = new();
 }

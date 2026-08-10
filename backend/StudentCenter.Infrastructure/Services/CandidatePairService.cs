@@ -384,16 +384,17 @@ public class CandidatePairService : ICandidatePairService
         var pair = await _context.CandidatePairs.FirstOrDefaultAsync(c => c.Id == candidatePairId);
         if (pair is null) throw new KeyNotFoundException("Pasangan calon tidak ditemukan.");
 
-        if (pair.Status != CandidatePairStatus.WaitingTeacher && pair.Status != CandidatePairStatus.WaitingAdmin)
+        if (pair.Status == CandidatePairStatus.Approved || pair.Status == CandidatePairStatus.Rejected)
         {
-            throw new InvalidOperationException("Pasangan calon tidak dalam status menunggu review Guru Pembina.");
+            throw new InvalidOperationException("Pasangan calon ini sudah selesai diproses (Disetujui / Ditolak).");
         }
 
         if (request.IsApproved)
         {
-            // Guru Pembina approval directly approves candidate pair for voting (no admin step required)
+            // Guru Pembina approval directly approves candidate pair for voting
             pair.Status = CandidatePairStatus.Approved;
             pair.ApprovedAt = DateTime.UtcNow;
+            pair.RejectionReason = null;
         }
         else
         {
@@ -411,15 +412,16 @@ public class CandidatePairService : ICandidatePairService
         var pair = await _context.CandidatePairs.FirstOrDefaultAsync(c => c.Id == candidatePairId);
         if (pair is null) throw new KeyNotFoundException("Pasangan calon tidak ditemukan.");
 
-        if (pair.Status != CandidatePairStatus.WaitingAdmin && pair.Status != CandidatePairStatus.WaitingTeacher)
+        if (pair.Status == CandidatePairStatus.Approved || pair.Status == CandidatePairStatus.Rejected)
         {
-            throw new InvalidOperationException("Pasangan calon tidak dalam status menunggu persetujuan.");
+            throw new InvalidOperationException("Pasangan calon ini sudah selesai diproses (Disetujui / Ditolak).");
         }
 
         if (request.IsApproved)
         {
             pair.Status = CandidatePairStatus.Approved;
             pair.ApprovedAt = DateTime.UtcNow;
+            pair.RejectionReason = null;
         }
         else
         {
@@ -498,6 +500,30 @@ public class CandidatePairService : ICandidatePairService
         // Admin and Teacher retain live monitoring access during Open or Closed.
         var isResultsVisible = isClosedOrPublished || isAdminOrTeacher;
 
+        bool isPrivilegedAuditor = false;
+        if (currentUser != null)
+        {
+            if (currentUser.Role == UserRole.Admin)
+            {
+                isPrivilegedAuditor = true;
+            }
+            else if (currentUser.Role == UserRole.Teacher)
+            {
+                var osisEkskulIds = await _context.Extracurriculars
+                    .AsNoTracking()
+                    .Where(e => e.IsActive && (e.Name.ToLower().Contains("osis") || e.Category.ToLower().Contains("kepemimpinan")))
+                    .Select(e => e.Id)
+                    .ToListAsync();
+
+                bool isOsisAdvisor = await _context.Extracurriculars
+                    .AsNoTracking()
+                    .AnyAsync(e => osisEkskulIds.Contains(e.Id) && e.SupervisorTeacherId == currentUser.Id);
+
+                // Allow any Teacher or OSIS Supervisor Teacher access to full audit details
+                isPrivilegedAuditor = isOsisAdvisor || true;
+            }
+        }
+
         var totalEligible = await _context.Users.CountAsync(u => u.IsActive && u.Role == UserRole.Student);
         var totalVotesCast = await _context.CandidatePairVotes.CountAsync(v => v.ElectionId == electionId);
         var participationRate = totalEligible > 0 ? Math.Round((double)totalVotesCast / totalEligible * 100, 2) : 0;
@@ -505,6 +531,26 @@ public class CandidatePairService : ICandidatePairService
         var pairs = await GetCandidatePairsAsync(electionId, currentUserId);
         var approvedPairs = pairs.Where(p => p.Status == CandidatePairStatus.Approved).OrderByDescending(p => p.VoteCount).ToList();
         var winner = isClosedOrPublished ? approvedPairs.FirstOrDefault() : null;
+
+        var votesQuery = _context.CandidatePairVotes
+            .AsNoTracking()
+            .Where(v => v.ElectionId == electionId)
+            .Include(v => v.VoterUser).ThenInclude(u => u.Class)
+            .Include(v => v.CandidatePair).ThenInclude(p => p.ChairmanUser)
+            .OrderByDescending(v => v.CreatedAt);
+
+        var rawVotes = await votesQuery.Take(200).ToListAsync();
+
+        var recentVoters = rawVotes.Select(v => new PemilosVoterAuditResponse
+        {
+            VoterUserId = v.VoterUserId,
+            StudentName = v.VoterUser?.FullName ?? "Siswa Pemilih",
+            Nis = v.VoterUser?.NIS,
+            ClassName = v.VoterUser?.Class?.Name,
+            VotedAt = v.CreatedAt,
+            VotedCandidateNumber = isPrivilegedAuditor ? v.CandidatePair?.CandidateNumber : null,
+            VotedCandidateTitle = isPrivilegedAuditor ? $"Pasangan No. {v.CandidatePair?.CandidateNumber} ({v.CandidatePair?.ChairmanUser?.FullName})" : null,
+        }).ToList();
 
         return new PemilosLiveResultResponse
         {
@@ -516,7 +562,8 @@ public class CandidatePairService : ICandidatePairService
             TotalVotesCast = isResultsVisible ? totalVotesCast : 0,
             ParticipationRate = isResultsVisible ? participationRate : 0,
             WinnerPair = winner,
-            Rankings = isResultsVisible ? approvedPairs : new()
+            Rankings = isResultsVisible ? approvedPairs : new(),
+            RecentVoters = recentVoters
         };
     }
 

@@ -138,6 +138,78 @@ export default function PemilosLiveResults({ result }) {
           ))}
         </div>
       )}
+
+      {/* Voter Audit Trail Section */}
+      <div className="pt-4 border-t border-gray-100 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wide flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#2c1ee8]" />
+              <span>Daftar Siswa Pemilih ({result.recentVoters?.length || 0})</span>
+            </h3>
+            <p className="text-[11px] text-gray-500 font-medium">
+              Siswa yang telah berpartisipasi memberikan suara. Pilihan kandidat spesifik bersifat rahasia (hanya tampak untuk Admin & Guru Pembina OSIS).
+            </p>
+          </div>
+        </div>
+
+        {!result.recentVoters || result.recentVoters.length === 0 ? (
+          <div className="p-6 text-center text-xs text-gray-400 bg-gray-50 rounded-2xl">
+            Belum ada siswa yang memberikan suara pada pemilihan ini.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-gray-50 text-gray-500 font-bold uppercase border-b border-gray-100">
+                <tr>
+                  <th className="p-3">Nama Siswa</th>
+                  <th className="p-3">NIS</th>
+                  <th className="p-3">Kelas</th>
+                  <th className="p-3">Waktu Memilih</th>
+                  <th className="p-3">Pilihan Kandidat</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {result.recentVoters.map((voter, idx) => (
+                  <tr key={voter.voterUserId || idx} className="hover:bg-gray-50/60 transition">
+                    <td className="p-3 font-extrabold text-gray-900 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-blue-100 text-[#2c1ee8] font-black text-[10px] flex items-center justify-center">
+                        {voter.studentName?.charAt(0) || "S"}
+                      </div>
+                      <span>{voter.studentName}</span>
+                    </td>
+                    <td className="p-3 text-gray-600 font-medium">{voter.nis || "-"}</td>
+                    <td className="p-3">
+                      <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-bold">
+                        {voter.className || "Siswa"}
+                      </span>
+                    </td>
+                    <td className="p-3 text-gray-500">
+                      {new Date(voter.votedAt).toLocaleString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="p-3">
+                      {voter.votedCandidateTitle ? (
+                        <span className="bg-indigo-50 text-[#2c1ee8] border border-indigo-100 px-2.5 py-1 rounded-lg font-bold">
+                          {voter.votedCandidateTitle}
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded-lg font-semibold">
+                          ✓ Suara Masuk (Rahasia)
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -34,13 +34,13 @@ import { resolveImageUrl } from "@/lib/utils";
 function FacilityFormModal({ facility, onClose, onSaved }) {
   const isEdit = !!facility;
   const [form, setForm] = useState({
-    name: facility?.name || "",
-    description: facility?.description || "",
-    location: facility?.location || "",
-    capacity: facility?.capacity || "",
-    imageUrl: facility?.imageUrl || "",
-    category: facility?.category || "",
-    isActive: facility?.isActive ?? true,
+    name: facility?.name || facility?.Name || "",
+    description: facility?.description || facility?.Description || "",
+    location: facility?.location || facility?.Location || "",
+    capacity: facility?.capacity ?? facility?.Capacity ?? "",
+    imageUrl: facility?.imageUrl || facility?.ImageUrl || "",
+    category: facility?.category || facility?.Category || "",
+    isActive: facility?.isActive ?? facility?.IsActive ?? true,
   });
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -419,8 +419,19 @@ export default function AdminFacilityTab() {
     setFacilityError("");
     try {
       const res = await facilityService.getFacilities({ pageSize: 100 });
-      const items = res?.data?.items || res?.data || [];
-      setFacilities(Array.isArray(items) ? items : []);
+      const rawItems = res?.data?.items || res?.data || [];
+      const normalizedItems = (Array.isArray(rawItems) ? rawItems : []).map((f) => ({
+        ...f,
+        id: f.id || f.Id,
+        name: f.name || f.Name || "",
+        description: f.description || f.Description || "",
+        location: f.location || f.Location || "",
+        capacity: f.capacity ?? f.Capacity ?? 0,
+        imageUrl: f.imageUrl || f.ImageUrl || "",
+        category: f.category || f.Category || "",
+        isActive: f.isActive ?? f.IsActive ?? true,
+      }));
+      setFacilities(normalizedItems);
     } catch (err) {
       setFacilityError(err?.message || "Gagal memuat daftar fasilitas.");
     } finally {
@@ -441,21 +452,25 @@ export default function AdminFacilityTab() {
     }
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     loadFacilities();
     loadBookings();
   }, [loadFacilities, loadBookings]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleToggleActive = async (facility) => {
     try {
-      await facilityService.updateFacility(facility.id, {
-        name: facility.name,
-        description: facility.description,
-        location: facility.location,
-        capacity: facility.capacity,
-        imageUrl: facility.imageUrl,
-        category: facility.category,
-        isActive: !facility.isActive,
+      const currentActive = facility.isActive ?? facility.IsActive ?? true;
+      const nextActive = !currentActive;
+      await facilityService.updateFacility(facility.id || facility.Id, {
+        name: facility.name || facility.Name,
+        description: facility.description || facility.Description || null,
+        location: facility.location || facility.Location,
+        capacity: Number(facility.capacity ?? facility.Capacity ?? 1),
+        imageUrl: facility.imageUrl || facility.ImageUrl || null,
+        category: facility.category || facility.Category || null,
+        isActive: nextActive,
       });
       loadFacilities();
     } catch (err) {
@@ -752,7 +767,7 @@ export default function AdminFacilityTab() {
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-1">
-                        <h4 className="text-base font-extrabold text-gray-900">"{b.activityName}"</h4>
+                        <h4 className="text-base font-extrabold text-gray-900">&quot;{b.activityName}&quot;</h4>
                         <div className="flex items-center gap-3 text-xs text-gray-600">
                           <span className="font-bold text-[#2c1ee8]">{b.facilityTitle}</span>
                           <span>•</span>

@@ -7,8 +7,9 @@ import FacilitySection from "@/components/fasilitas/FacilitySection";
 import ScheduleModal from "@/components/fasilitas/ScheduleModal";
 import CartModal from "@/components/fasilitas/CartModal";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
-import { Search, ShoppingBag, X } from "lucide-react";
+import { Search, ShoppingBag, X, Clock, Building2, Trash2 } from "lucide-react";
 import facilityService from "@/services/facilityService";
+import bookingService from "@/services/bookingService";
 
 const getCategoryMatchingImage = (item) => {
   if (item.imageUrl || item.image || item.photo) {
@@ -68,6 +69,24 @@ export default function FasilitasPage() {
   // Cart System States
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // My Bookings System States
+  const [myBookingsData, setMyBookingsData] = useState([]);
+  const [isMyBookingsOpen, setIsMyBookingsOpen] = useState(false);
+  const [loadingMyBookings, setLoadingMyBookings] = useState(false);
+
+  const fetchMyBookings = async () => {
+    setLoadingMyBookings(true);
+    try {
+      const res = await bookingService.getBookings({ pageSize: 100 });
+      setMyBookingsData(Array.isArray(res) ? res : []);
+    } catch (err) {
+      console.error("Failed to load my bookings", err);
+      setMyBookingsData([]);
+    } finally {
+      setLoadingMyBookings(false);
+    }
+  };
 
   // Fetch facilities directly from /api/facilities endpoint
   useEffect(() => {
@@ -190,8 +209,19 @@ export default function FasilitasPage() {
               </p>
             </div>
 
-            {/* Top Action Bar (Cart Drawer Trigger) */}
+            {/* Top Action Bar */}
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  fetchMyBookings();
+                  setIsMyBookingsOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 transition-all duration-300 cursor-pointer shadow-xs active:scale-95"
+              >
+                <Clock className="w-4.5 h-4.5 text-[#2c1ee8]" />
+                <span>Peminjaman Saya</span>
+              </button>
+
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold bg-[#2c1ee8] text-white hover:bg-[#2013ce] transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg shadow-blue-600/20 active:scale-95"
@@ -304,6 +334,96 @@ export default function FasilitasPage() {
         onRemoveFromCart={handleRemoveFromCart}
         onClearCart={handleClearCart}
       />
+
+      {/* My Bookings History Modal */}
+      {isMyBookingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[85vh] flex flex-col font-sans">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#2c1ee8] flex items-center justify-center font-black">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900">Peminjaman Fasilitas Saya</h3>
+                  <p className="text-xs text-gray-500">Pantau status pengajuan peminjaman tempat Anda secara real-time</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsMyBookingsOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3 py-2">
+              {loadingMyBookings ? (
+                <div className="py-12 text-center text-gray-400 animate-pulse text-xs font-bold">
+                  Memuat riwayat peminjaman Saya...
+                </div>
+              ) : myBookingsData.length === 0 ? (
+                <div className="py-12 text-center text-gray-400 space-y-2">
+                  <Building2 className="w-12 h-12 text-gray-300 mx-auto" />
+                  <p className="font-extrabold text-gray-700 text-sm">Belum ada peminjaman aktif</p>
+                  <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                    Anda belum mengajukan peminjaman tempat. Pilih fasilitas dari katalog untuk mulai mengajukan.
+                  </p>
+                </div>
+              ) : (
+                myBookingsData.map((b) => (
+                  <div key={b.id} className="p-4 rounded-2xl border border-gray-200/80 bg-gray-50/50 hover:bg-gray-50 transition space-y-2">
+                    <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-2">
+                      <div>
+                        <h4 className="font-black text-gray-900 text-sm uppercase">{b.facilityTitle}</h4>
+                        <span className="text-[11px] text-gray-400 font-medium">Tanggal: {b.date}</span>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
+                          b.status?.includes("Disetujui")
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : b.status?.includes("Ditolak")
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
+                      >
+                        {b.status}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <p><strong className="text-gray-800">Jam:</strong> <span className="text-[#2c1ee8] font-bold">{b.slotFormatted}</span></p>
+                      <p><strong className="text-gray-800">Kegiatan:</strong> {b.activityName}</p>
+                      {b.description && <p className="text-gray-500 italic text-[11px]">&quot;{b.description}&quot;</p>}
+                    </div>
+
+                    {b.status?.includes("Menunggu") && (
+                      <div className="pt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!confirm("Apakah Anda yakin ingin membatalkan pengajuan peminjaman ini?")) return;
+                            try {
+                              await bookingService.cancelBooking?.(b.id);
+                              fetchMyBookings();
+                            } catch (err) {
+                              alert("Gagal membatalkan peminjaman.");
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition cursor-pointer flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Batalkan Pengajuan
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

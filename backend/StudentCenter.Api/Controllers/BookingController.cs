@@ -29,6 +29,13 @@ public class BookingController : ControllerBase
         [FromQuery] Guid? userId = null,
         [FromQuery] BookingStatus? status = null)
     {
+        var currentUserId = _currentUserService.UserId;
+        var userRole = _currentUserService.Role;
+        if (userRole == "Student" && !userId.HasValue && currentUserId.HasValue)
+        {
+            userId = currentUserId.Value;
+        }
+
         var result = await _bookingService.GetBookingsAsync(page, pageSize, facilityId, userId, status);
         return Ok(ApiResponse<PagedResult<BookingResponse>>.Ok("Bookings retrieved successfully", result));
     }

@@ -38,11 +38,13 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Sync selectedEkskul if props change
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (supervisedExtracurriculars.length > 0 && !selectedEkskul) {
       setSelectedEkskul(supervisedExtracurriculars[0]);
     }
   }, [supervisedExtracurriculars, selectedEkskul]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Load members of selected ekskul
   const loadMembers = useCallback(async () => {
@@ -77,20 +79,30 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
 
       if (electionsList.length > 0 && electionsList[0]?.id) {
         const activeId = electionsList[0].id;
-        const res = await candidatePairService.getPairs(activeId);
-        const items = res?.data?.items || res?.data || (Array.isArray(res) ? res : []);
+        const [pairsRes, resultsRes] = await Promise.all([
+          candidatePairService.getPairs(activeId),
+          candidatePairService.getLiveResults(activeId).catch(() => null),
+        ]);
+        const items = pairsRes?.data?.items || pairsRes?.data || (Array.isArray(pairsRes) ? pairsRes : []);
         setCandidatePairs(items);
+
+        const rawResults = resultsRes?.data ?? resultsRes;
+        const resultsObj = rawResults?.data ?? rawResults ?? null;
+        setPemilosLiveResults(resultsObj);
       } else {
         setCandidatePairs([]);
+        setPemilosLiveResults(null);
       }
     } catch (err) {
       console.error("Gagal memuat kandidat Pemilos:", err);
       setCandidatePairs([]);
+      setPemilosLiveResults(null);
     } finally {
       setLoadingCandidates(false);
     }
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (selectedEkskul) {
       setDescription(selectedEkskul.description || "");
@@ -102,6 +114,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
       }
     }
   }, [selectedEkskul, loadMembers, loadPemilosCandidates]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleUpdateMemberStatus = async (memberId, status) => {
     if (!selectedEkskul?.id) return;
@@ -432,6 +445,78 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
             </p>
           </div>
 
+          {/* Summary Perolehan Suara Pemilos (Khusus Pembina OSIS) */}
+          {pemilosLiveResults && (
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <h4 className="font-extrabold text-gray-900 text-base flex items-center gap-2">
+                  <Vote className="w-5 h-5 text-indigo-600" />
+                  <span>Summary Real-Time Perolehan Suara Pemilos</span>
+                </h4>
+                <span className="text-xs font-extrabold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                  {pemilosLiveResults.totalVotesCast || 0} Suara Masuk ({pemilosLiveResults.participationRate || 0}%)
+                </span>
+              </div>
+
+              {/* Grid Summary Per Kandidat */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(pemilosLiveResults.rankings || []).map((pair, idx) => (
+                  <div key={pair.id || idx} className="p-4 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/40 to-blue-50/20 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-lg">
+                        Pasangan #{pair.candidateNumber}
+                      </span>
+                      <span className="text-sm font-black text-gray-900">
+                        {pair.voteCount} Suara ({pair.votePercentage}%)
+                      </span>
+                    </div>
+                    <p className="font-extrabold text-gray-900 text-sm truncate">
+                      {pair.chairmanName} {pair.viceName ? `& ${pair.viceName}` : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tabel Detail Audit Siswa Pemilih (Nama, Kelas, dan Pilihan Kandidat) */}
+              <div className="pt-3 border-t border-gray-100 space-y-2">
+                <h5 className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  <span>Audit Pemilih (Detail Pilihan Kandidat Siswa)</span>
+                </h5>
+                {!pemilosLiveResults.recentVoters || pemilosLiveResults.recentVoters.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">Belum ada siswa yang memilih.</p>
+                ) : (
+                  <div className="max-h-60 overflow-y-auto rounded-2xl border border-gray-100 bg-gray-50/50">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-gray-100 text-gray-600 font-bold uppercase sticky top-0">
+                        <tr>
+                          <th className="p-2.5">Siswa</th>
+                          <th className="p-2.5">Kelas</th>
+                          <th className="p-2.5">Waktu</th>
+                          <th className="p-2.5">Kandidat Pilihan (Akses Pembina)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {pemilosLiveResults.recentVoters.map((v, i) => (
+                          <tr key={v.voterUserId || i} className="hover:bg-white transition">
+                            <td className="p-2.5 font-bold text-gray-900">{v.studentName}</td>
+                            <td className="p-2.5 text-gray-600 font-medium">{v.className || "-"}</td>
+                            <td className="p-2.5 text-gray-500">
+                              {new Date(v.votedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                            </td>
+                            <td className="p-2.5 font-extrabold text-indigo-700">
+                              {v.votedCandidateTitle || `Pasangan No. ${v.votedCandidateNumber}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-gray-900 text-base">
@@ -517,7 +602,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
                     <div className="text-xs text-gray-600 space-y-1">
                       <span className="font-bold text-gray-800 block">Visi:</span>
                       <p className="p-2.5 bg-gray-50 rounded-xl border border-gray-100 italic leading-relaxed">
-                        "{pair.vision || "Belum mengisi visi"}"
+                        &quot;{pair.vision || "Belum mengisi visi"}&quot;
                       </p>
                     </div>
 
