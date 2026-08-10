@@ -50,6 +50,27 @@ export const notificationService = {
     const res = await apiClient.post(API_ROUTES.NOTIFICATIONS.BROADCAST, data);
     return res;
   },
+
+  async getBroadcasts() {
+    const token = getStoredToken();
+    if (!token) return { success: false, message: "Token tidak ditemukan.", data: [] };
+    const res = await apiClient.get("/api/notifications/broadcasts");
+    return res;
+  },
+
+  async updateBroadcast(broadcastId, data) {
+    const token = getStoredToken();
+    if (!token) return { success: false, message: "Token tidak ditemukan." };
+    const res = await apiClient.put(`/api/notifications/broadcast/${broadcastId}`, data);
+    return res;
+  },
+
+  async deleteBroadcast(broadcastId) {
+    const token = getStoredToken();
+    if (!token) return { success: false, message: "Token tidak ditemukan." };
+    const res = await apiClient.delete(`/api/notifications/broadcast/${broadcastId}`);
+    return res;
+  },
 };
 
 export default notificationService;

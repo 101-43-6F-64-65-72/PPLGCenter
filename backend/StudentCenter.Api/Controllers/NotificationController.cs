@@ -13,11 +13,16 @@ public class NotificationController : ControllerBase
 {
     private readonly INotificationService _notificationService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserService _userService;
 
-    public NotificationController(INotificationService notificationService, ICurrentUserService currentUserService)
+    public NotificationController(
+        INotificationService notificationService, 
+        ICurrentUserService currentUserService,
+        IUserService userService)
     {
         _notificationService = notificationService;
         _currentUserService = currentUserService;
+        _userService = userService;
     }
 
     [Authorize]
@@ -100,14 +105,23 @@ public class NotificationController : ControllerBase
         return Ok(ApiResponse<object>.Ok("Notification deleted successfully"));
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Teacher")]
     [HttpPost("broadcast")]
     public async Task<IActionResult> BroadcastNotification([FromBody] BroadcastNotificationRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Body))
             return BadRequest(ApiResponse<object>.Fail("Title and Body are required."));
 
-        await _notificationService.BroadcastAsync(
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var user = await _userService.GetUserByIdAsync(userId.Value);
+        var senderName = user?.FullName ?? "Pengelola Sekolah";
+
+        await _notificationService.BroadcastWithSenderAsync(
+            userId.Value,
+            senderName,
             request.Title,
             request.Body,
             request.Type,
@@ -120,5 +134,62 @@ public class NotificationController : ControllerBase
         );
 
         return Ok(ApiResponse<object>.Ok("Broadcast notification sent successfully."));
+    }
+
+    [Authorize(Roles = "Admin,Teacher")]
+    [HttpGet("broadcasts")]
+    public async Task<IActionResult> GetBroadcastList()
+    {
+        var broadcasts = await _notificationService.GetBroadcastListAsync();
+        return Ok(ApiResponse<List<BroadcastItemResponse>>.Ok("Broadcast list retrieved successfully", broadcasts));
+    }
+
+    [Authorize(Roles = "Admin,Teacher")]
+    [HttpPut("broadcast/{broadcastId}")]
+    public async Task<IActionResult> UpdateBroadcast(string broadcastId, [FromBody] UpdateBroadcastRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Body))
+            return BadRequest(ApiResponse<object>.Fail("Title and Body are required."));
+
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        try
+        {
+            var success = await _notificationService.UpdateBroadcastAsync(broadcastId, userId.Value, request);
+            if (!success)
+                return NotFound(ApiResponse<object>.Fail("Broadcast not found."));
+
+            return Ok(ApiResponse<object>.Ok("Broadcast updated successfully."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    [Authorize(Roles = "Admin,Teacher")]
+    [HttpDelete("broadcast/{broadcastId}")]
+    public async Task<IActionResult> DeleteBroadcast(string broadcastId)
+    {
+        var userId = _currentUserService.UserId;
+        if (userId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+
+        var isAdmin = User.IsInRole("Admin");
+
+        try
+        {
+            var success = await _notificationService.DeleteBroadcastAsync(broadcastId, userId.Value, isAdmin);
+            if (!success)
+                return NotFound(ApiResponse<object>.Fail("Broadcast not found."));
+
+            return Ok(ApiResponse<object>.Ok("Broadcast deleted successfully."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }

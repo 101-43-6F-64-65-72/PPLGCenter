@@ -226,6 +226,22 @@ public class NotificationService : INotificationService
         string? color = null, 
         string? metadata = null)
     {
+        await BroadcastWithSenderAsync(Guid.Empty, "Pengelola Sekolah", title, body, type, targetRole, priority, actionUrl, icon, color, metadata);
+    }
+
+    public async Task BroadcastWithSenderAsync(
+        Guid senderUserId,
+        string senderName,
+        string title, 
+        string body, 
+        NotificationType type, 
+        string? targetRole = null, 
+        NotificationPriority priority = NotificationPriority.Normal, 
+        string? actionUrl = null, 
+        string? icon = null, 
+        string? color = null, 
+        string? metadata = null)
+    {
         var query = _context.Users.AsNoTracking().Where(u => u.IsActive);
 
         if (!string.IsNullOrWhiteSpace(targetRole))
@@ -235,7 +251,179 @@ public class NotificationService : INotificationService
         }
 
         var targetUserIds = await query.Select(u => u.Id).ToListAsync();
-        await NotifyUsersAsync(targetUserIds, title, body, type, priority, null, NotificationReferenceType.None, actionUrl, icon, color, metadata);
+        if (!targetUserIds.Any())
+            return;
+
+        var broadcastId = Guid.NewGuid().ToString();
+        var metadataObj = new
+        {
+            broadcastId = broadcastId,
+            createdByUserId = senderUserId.ToString(),
+            createdByName = senderName,
+            targetRole = targetRole ?? ""
+        };
+
+        var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadataObj);
+        await NotifyUsersAsync(targetUserIds, title, body, type, priority, null, NotificationReferenceType.None, actionUrl, icon, color, metadataJson);
+    }
+
+    public async Task<List<BroadcastItemResponse>> GetBroadcastListAsync()
+    {
+        var notifications = await _context.Set<Notification>()
+            .AsNoTracking()
+            .Where(n => !n.IsDeleted && n.Metadata != null && n.Metadata.Contains("broadcastId"))
+            .OrderByDescending(n => n.CreatedAt)
+            .ToListAsync();
+
+        var broadcastGroups = new Dictionary<string, List<Notification>>();
+
+        foreach (var notif in notifications)
+        {
+            if (string.IsNullOrWhiteSpace(notif.Metadata)) continue;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(notif.Metadata);
+                if (doc.RootElement.TryGetProperty("broadcastId", out var bIdElement))
+                {
+                    var bId = bIdElement.GetString();
+                    if (!string.IsNullOrEmpty(bId))
+                    {
+                        if (!broadcastGroups.ContainsKey(bId))
+                        {
+                            broadcastGroups[bId] = new List<Notification>();
+                        }
+                        broadcastGroups[bId].Add(notif);
+                    }
+                }
+            }
+            catch {}
+        }
+
+        var result = new List<BroadcastItemResponse>();
+
+        foreach (var kvp in broadcastGroups)
+        {
+            var bId = kvp.Key;
+            var group = kvp.Value;
+            var first = group.First();
+
+            Guid createdByUserId = Guid.Empty;
+            string createdByName = "Pengelola Sekolah";
+            string targetRole = "";
+
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(first.Metadata!);
+                if (doc.RootElement.TryGetProperty("createdByUserId", out var uidElem) && Guid.TryParse(uidElem.GetString(), out var uid))
+                {
+                    createdByUserId = uid;
+                }
+                if (doc.RootElement.TryGetProperty("createdByName", out var nameElem))
+                {
+                    createdByName = nameElem.GetString() ?? "Pengelola Sekolah";
+                }
+                if (doc.RootElement.TryGetProperty("targetRole", out var roleElem))
+                {
+                    targetRole = roleElem.GetString() ?? "";
+                }
+            }
+            catch {}
+
+            result.Add(new BroadcastItemResponse
+            {
+                BroadcastId = bId,
+                Title = first.Title,
+                Body = first.Body,
+                Type = first.Type,
+                Priority = first.Priority,
+                TargetRole = targetRole,
+                ActionUrl = first.ActionUrl,
+                CreatedByUserId = createdByUserId,
+                CreatedByName = createdByName,
+                CreatedAt = first.CreatedAt,
+                RecipientCount = group.Count
+            });
+        }
+
+        return result.OrderByDescending(b => b.CreatedAt).ToList();
+    }
+
+    public async Task<bool> UpdateBroadcastAsync(string broadcastId, Guid requestingUserId, UpdateBroadcastRequest request)
+    {
+        var notifications = await _context.Set<Notification>()
+            .Where(n => !n.IsDeleted && n.Metadata != null && n.Metadata.Contains(broadcastId))
+            .ToListAsync();
+
+        if (!notifications.Any())
+            return false;
+
+        var first = notifications.First();
+        Guid createdByUserId = Guid.Empty;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(first.Metadata!);
+            if (doc.RootElement.TryGetProperty("createdByUserId", out var uidElem) && Guid.TryParse(uidElem.GetString(), out var uid))
+            {
+                createdByUserId = uid;
+            }
+        }
+        catch {}
+
+        if (createdByUserId != Guid.Empty && createdByUserId != requestingUserId)
+        {
+            throw new UnauthorizedAccessException("Hanya pembuat broadcast yang dapat mengedit broadcast ini.");
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var notif in notifications)
+        {
+            notif.Title = request.Title;
+            notif.Body = request.Body;
+            notif.Type = request.Type;
+            notif.Priority = request.Priority;
+            notif.ActionUrl = request.ActionUrl;
+            notif.UpdatedAt = now;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteBroadcastAsync(string broadcastId, Guid requestingUserId, bool isAdmin)
+    {
+        var notifications = await _context.Set<Notification>()
+            .Where(n => !n.IsDeleted && n.Metadata != null && n.Metadata.Contains(broadcastId))
+            .ToListAsync();
+
+        if (!notifications.Any())
+            return false;
+
+        var first = notifications.First();
+        Guid createdByUserId = Guid.Empty;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(first.Metadata!);
+            if (doc.RootElement.TryGetProperty("createdByUserId", out var uidElem) && Guid.TryParse(uidElem.GetString(), out var uid))
+            {
+                createdByUserId = uid;
+            }
+        }
+        catch {}
+
+        if (!isAdmin && createdByUserId != Guid.Empty && createdByUserId != requestingUserId)
+        {
+            throw new UnauthorizedAccessException("Anda tidak memiliki izin untuk menghapus broadcast ini.");
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var notif in notifications)
+        {
+            notif.IsDeleted = true;
+            notif.UpdatedAt = now;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     public async Task<PagedResult<NotificationResponse>> GetMyNotificationsAsync(Guid userId, int page, int pageSize)

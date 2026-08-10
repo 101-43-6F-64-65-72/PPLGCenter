@@ -216,7 +216,8 @@ public class ProposalService : IProposalService
                     NotificationType.ProposalSubmitted,
                     NotificationPriority.Normal,
                     proposal.Id.ToString(),
-                    NotificationReferenceType.Proposal
+                    NotificationReferenceType.Proposal,
+                    actionUrl: $"/proposal?id={proposal.Id}"
                 );
             }
         }
@@ -368,33 +369,39 @@ public class ProposalService : IProposalService
         {
             await _notificationService.NotifyUserAsync(
                 proposal.SubmittedByUserId,
-                "Proposal Approved",
-                $"Your proposal \"{proposal.Title}\" has been approved.",
-                NotificationType.Proposal,
+                "Proposal Disetujui",
+                $"Proposal Anda \"{proposal.Title}\" telah disetujui.",
+                NotificationType.ProposalApproved,
+                NotificationPriority.Normal,
                 proposal.Id.ToString(),
-                "Proposal"
+                NotificationReferenceType.Proposal,
+                actionUrl: $"/proposal?id={proposal.Id}"
             );
         }
         else if (request.Status == ProposalStatus.Rejected)
         {
             await _notificationService.NotifyUserAsync(
                 proposal.SubmittedByUserId,
-                "Proposal Rejected",
-                $"Your proposal \"{proposal.Title}\" has been rejected. Reason: {request.RejectionReason}",
-                NotificationType.Proposal,
+                "Proposal Ditolak",
+                $"Proposal Anda \"{proposal.Title}\" telah ditolak. Alasan: {request.RejectionReason}",
+                NotificationType.ProposalRejected,
+                NotificationPriority.Normal,
                 proposal.Id.ToString(),
-                "Proposal"
+                NotificationReferenceType.Proposal,
+                actionUrl: $"/proposal?id={proposal.Id}"
             );
         }
         else if (request.Status == ProposalStatus.RevisionRequired)
         {
             await _notificationService.NotifyUserAsync(
                 proposal.SubmittedByUserId,
-                "Proposal Revision Requested",
-                $"Your proposal \"{proposal.Title}\" requires revision.",
+                "Proposal Memerlukan Revisi",
+                $"Proposal Anda \"{proposal.Title}\" memerlukan revisi.",
                 NotificationType.ProposalRevisionRequested,
+                NotificationPriority.Normal,
                 proposal.Id.ToString(),
-                "Proposal"
+                NotificationReferenceType.Proposal,
+                actionUrl: $"/proposal?id={proposal.Id}"
             );
         }
 

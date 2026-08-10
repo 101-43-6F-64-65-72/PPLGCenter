@@ -395,8 +395,23 @@ public class ExtracurricularService : IExtracurricularService
             NotificationType.ExtracurricularRegistrationApproved,
             NotificationPriority.Normal,
             extracurricular.Id.ToString(),
-            NotificationReferenceType.Extracurricular
+            NotificationReferenceType.Extracurricular,
+            actionUrl: $"/ekstrakurikuler/{extracurricular.Id}"
         );
+
+        if (extracurricular.SupervisorTeacherId.HasValue && extracurricular.SupervisorTeacherId.Value != extracurricular.ManagedByUserId)
+        {
+            await _notificationService.NotifyUserAsync(
+                extracurricular.SupervisorTeacherId.Value,
+                "Pengajuan Pendaftaran Ekskul",
+                $"{student.FullName} mengajukan pendaftaran ke {extracurricular.Name}. Membutuhkan persetujuan Anda.",
+                NotificationType.ExtracurricularRegistrationApproved,
+                NotificationPriority.Normal,
+                extracurricular.Id.ToString(),
+                NotificationReferenceType.Extracurricular,
+                actionUrl: $"/ekstrakurikuler/{extracurricular.Id}"
+            );
+        }
 
         return new ExtracurricularMemberResponse
         {
@@ -503,11 +518,12 @@ public class ExtracurricularService : IExtracurricularService
             await _notificationService.NotifyUserAsync(
                 member.StudentId,
                 "Pendaftaran Ekskul Diterima",
-                $"Pendaftaran Anda untuk {member.Extracurricular.Name} telah disetujui.",
+                $"Selamat! Pendaftaran Anda untuk {member.Extracurricular.Name} telah disetujui.",
                 NotificationType.ExtracurricularRegistrationApproved,
                 NotificationPriority.High,
                 extracurricularId.ToString(),
-                NotificationReferenceType.Extracurricular
+                NotificationReferenceType.Extracurricular,
+                actionUrl: $"/ekstrakurikuler/{extracurricularId}"
             );
         }
         else if (status == "Removed")
@@ -519,7 +535,8 @@ public class ExtracurricularService : IExtracurricularService
                 NotificationType.ExtracurricularRegistrationRejected,
                 NotificationPriority.Normal,
                 extracurricularId.ToString(),
-                NotificationReferenceType.Extracurricular
+                NotificationReferenceType.Extracurricular,
+                actionUrl: $"/ekstrakurikuler/{extracurricularId}"
             );
         }
 

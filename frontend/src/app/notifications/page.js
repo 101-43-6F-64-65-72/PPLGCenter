@@ -6,62 +6,59 @@ import Footer from "@/components/Footer";
 import PageHeader from "@/components/ui/PageHeader";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import Select from "@/components/ui/Select";
-import Modal from "@/components/ui/Modal";
-import Input from "@/components/ui/Input";
-import { Bell, Send, CheckCheck, X } from "lucide-react";
+import { 
+  Bell, 
+  Send, 
+  CheckCheck, 
+  X, 
+  Inbox, 
+  Megaphone, 
+  Edit3, 
+  Trash2, 
+  Users, 
+  Radio 
+} from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import NotificationItem from "@/components/notification/NotificationItem";
 import AuthGuard from "@/components/layout/AuthGuard";
 import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
+import useAuth from "@/hooks/useAuth";
 
 export default function NotificationsPage() {
+  const { user, role } = useAuth();
+  
+  // Authorization check for broadcast management (Admin or Teacher)
+  const isAuthorized = role === "Admin" || role === "Teacher" || user?.role === "Admin" || user?.role === "Teacher" || user?.role === 0 || user?.role === 1;
+
+  const [activeTab, setActiveTab] = useState("my"); // "my" | "broadcasts"
+
+  // User Notifications state
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filterType, setFilterType] = useState("");
   const [filterRead, setFilterRead] = useState("");
+
+  // Broadcast List state
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [loadingBroadcasts, setLoadingBroadcasts] = useState(false);
+
+  // Broadcast Form Modal state
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
+  const [editingBroadcast, setEditingBroadcast] = useState(null); // null if creating, broadcast obj if editing
   const [broadcastForm, setBroadcastForm] = useState({
     title: "",
     body: "",
-    type: 8, // General
-    priority: 1, // Normal
+    type: 8,
+    priority: 1,
     targetRole: "",
     actionUrl: "",
   });
   const [submittingBroadcast, setSubmittingBroadcast] = useState(false);
+  const [actionError, setActionError] = useState("");
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadNotifications = async () => {
-      setLoading(true);
-      try {
-        const params = { page, pageSize: 10 };
-        if (filterType !== "") params.type = filterType;
-        if (filterRead !== "") params.isRead = filterRead === "read";
-
-        const res = await notificationService.getNotifications(params);
-        if (isMounted) {
-          const items = res?.data?.items || res?.items || (Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []);
-          const total = res?.data?.totalCount || res?.totalCount || items.length;
-          setNotifications(items);
-          setTotalPages(Math.ceil((total || 0) / 10) || 1);
-        }
-      } catch (err) {
-        console.error("Failed to fetch notifications", err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    loadNotifications();
-    return () => {
-      isMounted = false;
-    };
-  }, [page, filterType, filterRead]);
-
+  // Fetch My Notifications
   const fetchNotifications = async () => {
     setLoading(true);
     try {
@@ -80,6 +77,29 @@ export default function NotificationsPage() {
       setLoading(false);
     }
   };
+
+  // Fetch Broadcast List (for authorized roles)
+  const fetchBroadcasts = async () => {
+    if (!isAuthorized) return;
+    setLoadingBroadcasts(true);
+    try {
+      const res = await notificationService.getBroadcasts();
+      const items = res?.data || (Array.isArray(res) ? res : []);
+      setBroadcasts(items);
+    } catch (err) {
+      console.error("Failed to fetch broadcast list", err);
+    } finally {
+      setLoadingBroadcasts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "my") {
+      fetchNotifications();
+    } else if (activeTab === "broadcasts" && isAuthorized) {
+      fetchBroadcasts();
+    }
+  }, [page, filterType, filterRead, activeTab, isAuthorized]);
 
   const handleMarkRead = async (id) => {
     try {
@@ -110,18 +130,100 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleSendBroadcast = async (e) => {
+  const openCreateModal = () => {
+    setEditingBroadcast(null);
+    setBroadcastForm({
+      title: "",
+      body: "",
+      type: 8,
+      priority: 1,
+      targetRole: "",
+      actionUrl: "",
+    });
+    setActionError("");
+    setBroadcastModalOpen(true);
+  };
+
+  const openEditModal = (b) => {
+    const isCreator = user?.id && b?.createdByUserId && user.id.toLowerCase() === b.createdByUserId.toLowerCase();
+    if (!isCreator) {
+      alert(`Hanya pembuat broadcast (${b.createdByName || "pembuat asal"}) yang dapat mengedit broadcast ini.`);
+      return;
+    }
+
+    setEditingBroadcast(b);
+    setBroadcastForm({
+      title: b.title || "",
+      body: b.body || "",
+      type: b.type ?? 8,
+      priority: b.priority ?? 1,
+      targetRole: b.targetRole || "",
+      actionUrl: b.actionUrl || "",
+    });
+    setActionError("");
+    setBroadcastModalOpen(true);
+  };
+
+  const handleSaveBroadcast = async (e) => {
     e.preventDefault();
     setSubmittingBroadcast(true);
+    setActionError("");
+
     try {
-      await notificationService.broadcast(broadcastForm);
-      setBroadcastModalOpen(false);
-      setBroadcastForm({ title: "", body: "", type: 8, priority: 1, targetRole: "", actionUrl: "" });
-      fetchNotifications();
+      if (editingBroadcast) {
+        // Edit mode
+        const res = await notificationService.updateBroadcast(editingBroadcast.broadcastId, {
+          title: broadcastForm.title,
+          body: broadcastForm.body,
+          type: broadcastForm.type,
+          priority: broadcastForm.priority,
+          actionUrl: broadcastForm.actionUrl,
+        });
+
+        if (res?.success || res?.message?.includes("success")) {
+          setBroadcastModalOpen(false);
+          fetchBroadcasts();
+        } else {
+          setActionError(res?.message || "Gagal memperbarui broadcast.");
+        }
+      } else {
+        // Create mode
+        const res = await notificationService.broadcast(broadcastForm);
+        if (res?.success || res?.message?.includes("success")) {
+          setBroadcastModalOpen(false);
+          fetchBroadcasts();
+          fetchNotifications();
+        } else {
+          setActionError(res?.message || "Gagal mengirim broadcast.");
+        }
+      }
     } catch (err) {
-      console.error("Broadcast failed", err);
+      console.error("Broadcast operation failed", err);
+      setActionError(err?.response?.data?.message || err?.message || "Terjadi kesalahan.");
     } finally {
       setSubmittingBroadcast(false);
+    }
+  };
+
+  const handleDeleteBroadcast = async (b) => {
+    const isCreator = user?.id && b?.createdByUserId && user.id.toLowerCase() === b.createdByUserId.toLowerCase();
+    const isAdmin = role === "Admin" || user?.role === "Admin" || user?.role === 0;
+
+    if (!isCreator && !isAdmin) {
+      alert("Anda tidak memiliki izin untuk menghapus broadcast ini.");
+      return;
+    }
+
+    if (!confirm(`Apakah Anda yakin ingin menghapus broadcast "${b.title}"?`)) {
+      return;
+    }
+
+    try {
+      await notificationService.deleteBroadcast(b.broadcastId);
+      fetchBroadcasts();
+    } catch (err) {
+      console.error("Failed to delete broadcast", err);
+      alert(err?.response?.data?.message || "Gagal menghapus broadcast.");
     }
   };
 
@@ -139,118 +241,282 @@ export default function NotificationsPage() {
             badge={<Badge variant="info">Pemberitahuan System</Badge>}
             actions={
               <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleMarkAllRead}
-                  leftIcon={<CheckCheck className="w-4 h-4 text-emerald-600" />}
-                >
-                  Tandai Semua Dibaca
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => setBroadcastModalOpen(true)}
-                  leftIcon={<Send className="w-4 h-4" />}
-                >
-                  Kirim Broadcast
-                </Button>
+                {activeTab === "my" && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleMarkAllRead}
+                    leftIcon={<CheckCheck className="w-4 h-4 text-emerald-600" />}
+                  >
+                    Tandai Semua Dibaca
+                  </Button>
+                )}
+                {isAuthorized && (
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={openCreateModal}
+                    leftIcon={<Send className="w-4 h-4" />}
+                  >
+                    Kirim Broadcast Baru
+                  </Button>
+                )}
               </>
             }
           />
 
-          {/* Filters Bar */}
-          <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
-            <span className="text-xs text-gray-500 font-bold">Filter:</span>
-            <select
-              value={filterType}
-              onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-              className="bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-800 rounded-xl px-3 py-2 outline-none focus:border-[#2c1ee8]"
-            >
-              <option value="">Semua Tipe</option>
-              <option value="0">Pengumuman</option>
-              <option value="1">Tugas</option>
-              <option value="2">Nilai Tugas</option>
-              <option value="3">Presensi Dibuka</option>
-              <option value="4">Presensi Ditutup</option>
-              <option value="5">Materi Pembelajaran</option>
-              <option value="6">Agenda Akademik</option>
-              <option value="7">Sistem</option>
-              <option value="8">Umum</option>
-            </select>
-
-            <select
-              value={filterRead}
-              onChange={(e) => { setFilterRead(e.target.value); setPage(1); }}
-              className="bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-800 rounded-xl px-3 py-2 outline-none focus:border-[#2c1ee8]"
-            >
-              <option value="">Semua Status</option>
-              <option value="unread">Belum Dibaca</option>
-              <option value="read">Sudah Dibaca</option>
-            </select>
-          </div>
-
-          {/* Notification List */}
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-xs gap-3">
-              <TwinOrbitSpinner size="lg" color="primary" />
-              <p className="text-xs font-bold text-gray-500 animate-pulse">Memuat notifikasi Anda...</p>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center text-gray-400 space-y-2 shadow-xs">
-              <span className="text-4xl block mb-1">📭</span>
-              <h3 className="text-base font-extrabold text-gray-900">Tidak ada notifikasi</h3>
-              <p className="text-xs text-gray-500 font-medium max-w-sm mx-auto">
-                Anda telah membaca seluruh notifikasi atau belum ada pemberitahuan baru yang cocok dengan filter.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {notifications.map((n) => (
-                <NotificationItem
-                  key={n.id}
-                  notification={n}
-                  onMarkRead={handleMarkRead}
-                  onDelete={handleDelete}
-                />
-              ))}
+          {/* Role-based Navigation Sub-Tabs */}
+          {isAuthorized && (
+            <div className="flex items-center gap-2 border-b border-gray-200 pb-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("my")}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === "my"
+                    ? "bg-[#2c1ee8] text-white shadow-md"
+                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                <Bell className="w-4 h-4" />
+                <span>Notifikasi Saya</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("broadcasts")}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                  activeTab === "broadcasts"
+                    ? "bg-[#2c1ee8] text-white shadow-md"
+                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                <Megaphone className="w-4 h-4" />
+                <span>Kelola Broadcast ({broadcasts.length})</span>
+              </button>
             </div>
           )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white border border-gray-100 p-4 rounded-2xl shadow-xs">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
-              >
-                ← Halaman Sebelumnya
-              </button>
-              <span className="text-xs font-extrabold text-gray-700">
-                Halaman {page} dari {totalPages}
-              </span>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
-              >
-                Halaman Selanjutnya →
-              </button>
+          {/* TAB 1: Notifikasi Saya */}
+          {activeTab === "my" && (
+            <>
+              {/* Filters Bar */}
+              <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+                <span className="text-xs text-gray-500 font-bold">Filter:</span>
+                <select
+                  value={filterType}
+                  onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+                  className="bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-800 rounded-xl px-3 py-2 outline-none focus:border-[#2c1ee8]"
+                >
+                  <option value="">Semua Tipe</option>
+                  <option value="0">Pengumuman</option>
+                  <option value="1">Tugas</option>
+                  <option value="2">Nilai Tugas</option>
+                  <option value="3">Presensi Dibuka</option>
+                  <option value="4">Presensi Ditutup</option>
+                  <option value="5">Materi Pembelajaran</option>
+                  <option value="6">Agenda Akademik</option>
+                  <option value="7">Sistem</option>
+                  <option value="8">Umum</option>
+                </select>
+
+                <select
+                  value={filterRead}
+                  onChange={(e) => { setFilterRead(e.target.value); setPage(1); }}
+                  className="bg-gray-50 border border-gray-200 text-xs font-semibold text-gray-800 rounded-xl px-3 py-2 outline-none focus:border-[#2c1ee8]"
+                >
+                  <option value="">Semua Status</option>
+                  <option value="unread">Belum Dibaca</option>
+                  <option value="read">Sudah Dibaca</option>
+                </select>
+              </div>
+
+              {/* Notification List */}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-xs gap-3">
+                  <TwinOrbitSpinner size="lg" color="primary" />
+                  <p className="text-xs font-bold text-gray-500 animate-pulse">Memuat notifikasi Anda...</p>
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center text-gray-400 space-y-2 shadow-xs">
+                  <Inbox className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <h3 className="text-base font-extrabold text-gray-900">Tidak ada notifikasi</h3>
+                  <p className="text-xs text-gray-500 font-medium max-w-sm mx-auto">
+                    Anda telah membaca seluruh notifikasi atau belum ada pemberitahuan baru yang cocok dengan filter.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((n) => (
+                    <NotificationItem
+                      key={n.id}
+                      notification={n}
+                      onMarkRead={handleMarkRead}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-white border border-gray-100 p-4 rounded-2xl shadow-xs">
+                  <button
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
+                  >
+                    ← Halaman Sebelumnya
+                  </button>
+                  <span className="text-xs font-extrabold text-gray-700">
+                    Halaman {page} dari {totalPages}
+                  </span>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    className="px-4 py-2 text-xs font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl transition cursor-pointer"
+                  >
+                    Halaman Selanjutnya →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* TAB 2: Kelola Broadcast (Khusus Admin & Guru) */}
+          {activeTab === "broadcasts" && isAuthorized && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between bg-indigo-50 border border-indigo-100 p-4 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-[#2c1ee8] text-white rounded-xl shadow-xs">
+                    <Radio className="w-5 h-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-extrabold text-indigo-950">
+                      Daftar Broadcast Terkirim
+                    </h3>
+                    <p className="text-[11px] text-indigo-700 font-medium">
+                      Edit broadcast hanya dapat dilakukan oleh pembuatnya. Admin & Guru dapat mengelola pesan broadcast sekolah.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={openCreateModal}
+                  leftIcon={<Send className="w-3.5 h-3.5" />}
+                >
+                  Kirim Broadcast
+                </Button>
+              </div>
+
+              {loadingBroadcasts ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-xs gap-3">
+                  <TwinOrbitSpinner size="lg" color="primary" />
+                  <p className="text-xs font-bold text-gray-500 animate-pulse">Memuat daftar broadcast...</p>
+                </div>
+              ) : broadcasts.length === 0 ? (
+                <div className="bg-white border border-gray-100 rounded-3xl p-12 text-center text-gray-400 space-y-2 shadow-xs">
+                  <Megaphone className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                  <h3 className="text-base font-extrabold text-gray-900">Belum Ada Broadcast</h3>
+                  <p className="text-xs text-gray-500 font-medium max-w-sm mx-auto">
+                    Belum ada pengumuman broadcast yang dikirim ke pengguna. Klik tombol di atas untuk membuat broadcast baru.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {broadcasts.map((b) => {
+                    const isCreator = user?.id && b?.createdByUserId && user.id.toLowerCase() === b.createdByUserId.toLowerCase();
+                    const isAdmin = role === "Admin" || user?.role === "Admin" || user?.role === 0;
+
+                    return (
+                      <div
+                        key={b.broadcastId}
+                        className="p-4 sm:p-5 rounded-2xl bg-white border border-gray-100 shadow-xs space-y-3 hover:border-gray-200 transition-all"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-black text-gray-900 flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-indigo-600" />
+                              {b.createdByName || "Pembuat Sesi"}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-semibold">•</span>
+                            <span className="text-[11px] text-gray-500 font-medium">
+                              {new Date(b.createdAt).toLocaleString("id-ID", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-full">
+                              {b.recipientCount} Penerima
+                            </span>
+                            {b.targetRole && (
+                              <span className="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 font-bold px-2 py-0.5 rounded-full">
+                                Target: {b.targetRole}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Edit Button */}
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(b)}
+                              disabled={!isCreator}
+                              title={isCreator ? "Edit broadcast ini" : `Hanya pembuat (${b.createdByName}) yang dapat mengedit`}
+                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                isCreator
+                                  ? "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+                                  : "bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60"
+                              }`}
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+
+                            {/* Delete Button */}
+                            {(isCreator || isAdmin) && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBroadcast(b)}
+                                title="Hapus broadcast ini"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Hapus</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm sm:text-base font-black text-gray-900 mb-1">
+                            {b.title}
+                          </h4>
+                          <p className="text-xs text-gray-600 font-medium leading-relaxed whitespace-pre-wrap">
+                            {b.body}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </main>
 
         <Footer />
 
-        {/* Broadcast Modal */}
+        {/* Broadcast Modal (Create & Edit) */}
         {broadcastModalOpen && (
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
             <div className="bg-white border border-gray-100 rounded-3xl p-6 w-full max-w-lg shadow-2xl space-y-4 font-sans">
               <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                 <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
-                  <span className="text-xl">📢</span>
-                  <span>Kirim Broadcast Notifikasi (Admin)</span>
+                  <Megaphone className="w-5 h-5 text-[#2c1ee8]" />
+                  <span>{editingBroadcast ? "Edit Broadcast Notifikasi" : "Kirim Broadcast Notifikasi"}</span>
                 </h3>
                 <button
                   onClick={() => setBroadcastModalOpen(false)}
@@ -260,7 +526,13 @@ export default function NotificationsPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleSendBroadcast} className="space-y-4">
+              {actionError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold">
+                  {actionError}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveBroadcast} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Judul Notifikasi *</label>
                   <input
@@ -289,9 +561,10 @@ export default function NotificationsPage() {
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Target Pengguna</label>
                     <select
+                      disabled={!!editingBroadcast}
                       value={broadcastForm.targetRole}
                       onChange={(e) => setBroadcastForm({ ...broadcastForm, targetRole: e.target.value })}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2.5 text-xs text-gray-900 font-bold focus:outline-none focus:border-[#2c1ee8]"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2.5 text-xs text-gray-900 font-bold focus:outline-none focus:border-[#2c1ee8] disabled:opacity-60 cursor-pointer"
                     >
                       <option value="">Semua User (Global)</option>
                       <option value="Student">Siswa (Student)</option>
@@ -305,7 +578,7 @@ export default function NotificationsPage() {
                     <select
                       value={broadcastForm.priority}
                       onChange={(e) => setBroadcastForm({ ...broadcastForm, priority: parseInt(e.target.value) })}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2.5 text-xs text-gray-900 font-bold focus:outline-none focus:border-[#2c1ee8]"
+                      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-3 py-2.5 text-xs text-gray-900 font-bold focus:outline-none focus:border-[#2c1ee8] cursor-pointer"
                     >
                       <option value={0}>Rendah (Low)</option>
                       <option value={1}>Normal</option>
@@ -342,12 +615,12 @@ export default function NotificationsPage() {
                     {submittingBroadcast ? (
                       <>
                         <TwinOrbitSpinner size="xs" color="white" />
-                        <span>Mengirim...</span>
+                        <span>Menyimpan...</span>
                       </>
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        <span>Kirim Broadcast</span>
+                        <span>{editingBroadcast ? "Simpan Perubahan" : "Kirim Broadcast"}</span>
                       </>
                     )}
                   </button>

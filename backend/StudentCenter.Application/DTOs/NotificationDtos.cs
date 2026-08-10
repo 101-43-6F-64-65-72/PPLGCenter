@@ -31,3 +31,28 @@ public class BroadcastNotificationRequest
     public string? Color { get; set; }
     public string? Metadata { get; set; }
 }
+
+public class BroadcastItemResponse
+{
+    public string BroadcastId { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public NotificationType Type { get; set; }
+    public NotificationPriority Priority { get; set; }
+    public string? TargetRole { get; set; }
+    public string? ActionUrl { get; set; }
+    public Guid CreatedByUserId { get; set; }
+    public string CreatedByName { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public int RecipientCount { get; set; }
+}
+
+public class UpdateBroadcastRequest
+{
+    public string Title { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public NotificationType Type { get; set; } = NotificationType.General;
+    public NotificationPriority Priority { get; set; } = NotificationPriority.Normal;
+    public string? ActionUrl { get; set; }
+}
+

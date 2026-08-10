@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import NotificationItem from "./NotificationItem";
-import { CheckCheck } from "lucide-react";
+import { CheckCheck, BellOff } from "lucide-react";
 
 export default function NotificationDropdown({ notifications, unreadCount, onMarkAllRead, onMarkRead, onClose }) {
   return (
@@ -31,7 +31,7 @@ export default function NotificationDropdown({ notifications, unreadCount, onMar
       <div className="max-h-96 overflow-y-auto p-3 space-y-2 bg-slate-50/50">
         {notifications.length === 0 ? (
           <div className="py-10 text-center text-gray-400 text-xs space-y-1">
-            <span className="text-3xl block mb-1">🔔</span>
+            <BellOff className="w-8 h-8 text-gray-300 mx-auto mb-1" />
             <p className="font-bold text-gray-700">Belum ada notifikasi baru</p>
             <p className="text-[11px] text-gray-400">Pemberitahuan aktivitas Anda akan muncul di sini.</p>
           </div>
