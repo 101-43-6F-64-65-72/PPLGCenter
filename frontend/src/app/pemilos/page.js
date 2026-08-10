@@ -16,7 +16,7 @@ import useAuth from "@/hooks/useAuth";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import {
   Vote, BarChart3, Sparkles, RefreshCw,
-  AlertCircle, Loader2, Users, Clock, Calendar, CheckCircle2
+  AlertCircle, Loader2, Users, Clock, Calendar, CheckCircle2, Trophy, GitBranch
 } from "lucide-react";
 import toast from "react-hot-toast";
 
