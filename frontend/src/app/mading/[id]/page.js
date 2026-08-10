@@ -17,6 +17,9 @@ import AnnouncementCommentSection from "@/features/announcement/components/Annou
 import { ArrowLeft, FileText, Download, User, Shield, Pin } from "@/components/common/Icons";
 import { Edit3, X, Save } from "lucide-react";
 import { resolveImageUrl, formatDate } from "@/lib/utils";
+import RichTextEditor from "@/components/ui/RichTextEditor";
+import RichContentViewer from "@/components/ui/RichContentViewer";
+import { stripHtml } from "@/lib/sanitizer";
 
 export default function AnnouncementDetailPage() {
   const routeParams = useParams();
@@ -139,7 +142,9 @@ export default function AnnouncementDetailPage() {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (isSavingEdit || isUploadingEditCover) return;
-    if (!editForm.title.trim() || !editForm.content.trim()) return;
+    // Validate: strip HTML for plain text check, original HTML goes to API
+    const contentText = stripHtml(editForm.content);
+    if (!editForm.title.trim() || !contentText.trim()) return;
 
     setIsSavingEdit(true);
     try {
@@ -151,7 +156,7 @@ export default function AnnouncementDetailPage() {
       await announcementService.updateAnnouncement(announcement.id, {
         title: editForm.title.trim(),
         category: editForm.category,
-        content: editForm.content.trim(),
+        content: editForm.content,
         isPinned: !!announcement.isPinned,
         coverImageUrl: validCoverUrl,
       });
@@ -307,20 +312,15 @@ export default function AnnouncementDetailPage() {
                   </div>
 
                   {/* 3. Article Content */}
-                  <div className="space-y-6 text-gray-900 text-base sm:text-lg leading-relaxed sm:leading-loose text-left font-sans font-normal">
-                    {announcement.content ? (
-                      announcement.content.split("\n\n").map((paragraph, idx) => (
-                        <p key={idx}>{paragraph}</p>
-                      ))
-                    ) : (
-                      <p>{announcement.summary || "Belum ada konten teks mading."}</p>
-                    )}
-                    {isEdited && (
-                      <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-block mt-2">
-                        Di edit
-                      </span>
-                    )}
-                  </div>
+                  <RichContentViewer
+                    content={announcement.content || announcement.summary || "Belum ada konten teks mading."}
+                    className="mt-6 mb-4"
+                  />
+                  {isEdited && (
+                    <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-block mt-2">
+                      Di edit
+                    </span>
+                  )}
 
                   {/* File Attachments (if available) */}
                   {announcement.attachments && announcement.attachments.length > 0 && (
@@ -414,7 +414,7 @@ export default function AnnouncementDetailPage() {
                                   {item.title}
                                 </h3>
                                 <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-normal">
-                                  {item.summary || item.content}
+                                  {stripHtml(item.summary || item.content)}
                                 </p>
                               </div>
                             </div>
@@ -483,7 +483,7 @@ export default function AnnouncementDetailPage() {
                                   {item.title}
                                 </h3>
                                 <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-normal">
-                                  {item.summary || item.content}
+                                  {stripHtml(item.summary || item.content)}
                                 </p>
                               </div>
                             </div>
@@ -578,17 +578,14 @@ export default function AnnouncementDetailPage() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Isi / Konten Mading *</label>
-                <textarea
-                  required
-                  rows={5}
-                  value={editForm.content}
-                  onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                  className="w-full p-4 rounded-2xl border border-gray-200 text-xs font-medium focus:outline-none focus:border-[#2c1ee8] leading-relaxed"
-                  placeholder="Tuliskan isi pengumuman mading secara rinci..."
-                />
-              </div>
+              <RichTextEditor
+                label="Isi / Konten Mading"
+                required
+                value={editForm.content}
+                onChange={(val) => setEditForm({ ...editForm, content: val })}
+                placeholder="Tuliskan isi pengumuman mading secara rinci..."
+                helperText="Format konten mading dengan teks tebal, daftar, atau judul agar lebih mudah dibaca."
+              />
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
                 <button

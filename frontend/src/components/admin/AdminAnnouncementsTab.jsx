@@ -12,6 +12,7 @@ import announcementService from "@/services/announcementService";
 import uploadImageToCloudinary from "@/services/cloudinaryService";
 import ImageCropUploader from "@/components/common/ImageCropUploader";
 import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 
 export default function AdminAnnouncementsTab() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -255,19 +256,13 @@ export default function AdminAnnouncementsTab() {
                 <p className="text-xs text-indigo-600 font-semibold animate-pulse">Mengunggah gambar...</p>
               )}
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Isi Pengumuman Lengkap:
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder="Tuliskan pengumuman lengkap untuk seluruh siswa..."
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white text-xs sm:text-sm focus:outline-none focus:border-[#2c1ee8]"
-                />
-              </div>
+              <RichTextEditor
+                label="Isi Pengumuman Lengkap"
+                required
+                value={formData.content}
+                onChange={(val) => setFormData({ ...formData, content: val })}
+                placeholder="Tuliskan pengumuman lengkap untuk seluruh siswa..."
+              />
 
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button

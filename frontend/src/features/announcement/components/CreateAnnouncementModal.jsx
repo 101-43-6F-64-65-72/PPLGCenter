@@ -7,6 +7,7 @@ import announcementService from "@/services/announcementService";
 import uploadImageToCloudinary from "@/services/cloudinaryService";
 import ImageCropUploader from "@/components/common/ImageCropUploader";
 import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 import { ROLE_LABELS } from "@/constants/userRoles";
 
 export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) {
@@ -49,6 +50,11 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting || isUploading) return;
+    if (!content || content.replace(/<[^>]*>/g, "").trim() === "") {
+      setErrorMsg("Isi konten mading tidak boleh kosong.");
+      setIsSubmitting(false);
+      return;
+    }
     setIsSubmitting(true);
     setErrorMsg("");
 
@@ -60,19 +66,18 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
       year: "numeric",
     });
 
-    let finalContent = content.trim();
+    let finalContent = content;
 
-    // Manipulate content with verification footer metadata based on role workflow
+    // Append verification footer as HTML block
     if (isStudent) {
-      finalContent += `\n\n---\n📌 INFORMASI VERIFIKASI & PUBLIKASI MADING:\n- Diajukan Oleh: ${authorName} (Siswa SMKN 2 Surakarta)\n- Diverifikasi & Disetujui Oleh: ${selectedVerifier}\n- Tanggal Konfirmasi: ${currentDate}\n- Status: Terverifikasi Resmi & Layak Terbit di Mading Digital.`;
+      finalContent += `<hr/><div style="font-size:0.8em;color:#6b7280;margin-top:8px"><strong>📌 INFORMASI VERIFIKASI &amp; PUBLIKASI MADING</strong><br/>Diajukan Oleh: ${authorName} (Siswa SMKN 2 Surakarta)<br/>Diverifikasi &amp; Disetujui Oleh: ${selectedVerifier}<br/>Tanggal Konfirmasi: ${currentDate}<br/>Status: Terverifikasi Resmi &amp; Layak Terbit di Mading Digital.</div>`;
     } else {
-      finalContent += `\n\n---\n📌 INFORMASI VERIFIKASI & PUBLIKASI MADING:\n- Diterbitkan & Diverifikasi Langsung Oleh: ${authorName} (${roleTitle})\n- Tanggal Publikasi: ${currentDate}\n- Status: Publikasi Resmi Terverifikasi Terbit.`;
+      finalContent += `<hr/><div style="font-size:0.8em;color:#6b7280;margin-top:8px"><strong>📌 INFORMASI VERIFIKASI &amp; PUBLIKASI MADING</strong><br/>Diterbitkan &amp; Diverifikasi Langsung Oleh: ${authorName} (${roleTitle})<br/>Tanggal Publikasi: ${currentDate}<br/>Status: Publikasi Resmi Terverifikasi Terbit.</div>`;
     }
 
     const payload = {
       title,
       category,
-      summary,
       content: finalContent,
       imageUrl: imageUrl || "/images/kegiatan/basket.jpg",
       coverImageUrl: imageUrl || "/images/kegiatan/basket.jpg",
@@ -225,19 +230,13 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
             </p>
           )}
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1">
-              Isi Konten Mading Lengkap *
-            </label>
-            <textarea
-              required
-              rows={5}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Tuliskan berita atau pengumuman mading secara lengkap di sini..."
-              className="w-full rounded-xl border border-gray-200 p-3.5 text-sm text-gray-900 focus:border-[#2c1ee8] focus:ring-2 focus:ring-blue-100 outline-none"
-            />
-          </div>
+          <RichTextEditor
+            label="Isi Konten Mading Lengkap"
+            required
+            value={content}
+            onChange={(val) => setContent(val)}
+            placeholder="Tuliskan berita atau pengumuman mading secara lengkap di sini..."
+          />
 
           {/* Footer Actions */}
           <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-3">

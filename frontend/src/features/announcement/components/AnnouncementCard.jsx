@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { ArrowRight, Pin } from "@/components/common/Icons";
 import { resolveImageUrl, formatDate } from "@/lib/utils";
+import { stripHtml } from "@/lib/sanitizer";
 
 export const AnnouncementCard = ({ announcement, onClick }) => {
   const {
@@ -89,7 +90,7 @@ export const AnnouncementCard = ({ announcement, onClick }) => {
           </h3>
 
           <p className="text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-3 font-normal">
-            {summary}
+            {stripHtml(summary)}
           </p>
         </div>
       </div>

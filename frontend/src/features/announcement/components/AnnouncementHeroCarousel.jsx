@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Star, ChevronLeft, ChevronRight, Play, Info } from "@/components/common/Icons";
 import { resolveImageUrl } from "@/lib/utils";
+import { stripHtml } from "@/lib/sanitizer";
 
 let motionImport = null;
 let animatePresenceImport = null;
@@ -213,7 +214,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
               </div>
 
               <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-medium line-clamp-3">
-                {slide.summary || slide.content}
+                {stripHtml(slide.summary || slide.content)}
               </p>
 
               <div className="flex flex-wrap items-center gap-3">

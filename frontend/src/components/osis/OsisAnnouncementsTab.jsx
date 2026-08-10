@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Newspaper, Plus, Search, CheckCircle2, Clock, Trash2, Eye, Share2, Sparkles } from "lucide-react";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 
 import announcementService from "@/services/announcementService";
 
@@ -154,18 +155,12 @@ export default function OsisAnnouncementsTab() {
                 />
               </div>
 
-              <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider text-[11px] mb-1">
-                  Isi Konten Pengumuman
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Tuliskan pesan atau pengumuman lengkap untuk seluruh siswa..."
-                  value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white text-xs sm:text-sm focus:outline-none focus:border-[#2c1ee8] resize-none"
-                />
-              </div>
+              <RichTextEditor
+                label="Isi Konten Pengumuman"
+                value={newContent}
+                onChange={(val) => setNewContent(val)}
+                placeholder="Tuliskan pesan atau pengumuman lengkap untuk seluruh siswa..."
+              />
 
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
