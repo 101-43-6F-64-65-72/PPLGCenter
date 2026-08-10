@@ -13,11 +13,13 @@ public class BookingController : ControllerBase
 {
     private readonly IBookingService _bookingService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFacilityService _facilityService;
 
-    public BookingController(IBookingService bookingService, ICurrentUserService currentUserService)
+    public BookingController(IBookingService bookingService, ICurrentUserService currentUserService, IFacilityService facilityService)
     {
         _bookingService = bookingService;
         _currentUserService = currentUserService;
+        _facilityService = facilityService;
     }
 
     [Authorize]
@@ -74,6 +76,22 @@ public class BookingController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
+        var userRole = _currentUserService.Role ?? string.Empty;
+
+        // For teachers: verify they are the ManagerTeacher of the booking's facility
+        if (userRole == "Teacher")
+        {
+            var booking = await _bookingService.GetBookingByIdAsync(id);
+            if (booking is null)
+                return NotFound(ApiResponse<object>.Fail("Booking not found."));
+
+            var managedFacilities = await _facilityService.GetManagedFacilitiesAsync(userId.Value);
+            var isFacilityManager = managedFacilities.Any(f => f.Id == booking.FacilityId);
+
+            if (!isFacilityManager)
+                return Forbid();
+        }
+
         var result = await _bookingService.UpdateStatusAsync(id, request, userId.Value);
 
         if (result is null)
@@ -81,6 +99,7 @@ public class BookingController : ControllerBase
 
         return Ok(ApiResponse<BookingResponse>.Ok("Booking status updated successfully", result));
     }
+
 
     [Authorize]
     [HttpDelete("{id:guid}")]

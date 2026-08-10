@@ -12,6 +12,7 @@ public class Election
     public DateTime EndDate { get; set; }
 
     public ElectionStatus Status { get; set; } = ElectionStatus.Draft;
+    public string? CabinetStructureJson { get; set; }
 
     public Guid CreatedByUserId { get; set; }
     public User CreatedByUser { get; set; } = null!;

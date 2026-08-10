@@ -19,5 +19,6 @@ public interface IElectionService
 
     Task<bool> VoteAsync(Guid electionId, VoteRequest request, Guid voterUserId);
     Task<ElectionResultResponse?> GetResultAsync(Guid electionId);
-    Task<ParticipationResponse?> GetParticipationAsync(Guid electionId);
+    Task<bool> StartPemilosAsync(Guid electionId, StartPemilosRequest request, Guid userId, string userRole);
+    Task<bool> StopPemilosAsync(Guid electionId, Guid userId, string userRole);
 }

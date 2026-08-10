@@ -19,6 +19,28 @@ public class FacilityService : IFacilityService
         _logger = logger;
     }
 
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    private static FacilityResponse MapFacility(Facility f) => new()
+    {
+        Id = f.Id,
+        Name = f.Name,
+        Description = f.Description,
+        Location = f.Location,
+        Capacity = f.Capacity,
+        ImageUrl = FileUrlHelper.ResolveUrl(f.ImageUrl),
+        Category = f.Category,
+        IsActive = f.IsActive,
+        ManagerTeacherId = f.ManagerTeacherId,
+        ManagerTeacherName = f.ManagerTeacher != null
+            ? (f.ManagerTeacher.FullName ?? f.ManagerTeacher.Username)
+            : null,
+        CreatedAt = f.CreatedAt,
+        UpdatedAt = f.UpdatedAt
+    };
+
+    // ─── Get All ──────────────────────────────────────────────────────────────
+
     public async Task<PagedResult<FacilityResponse>> GetFacilitiesAsync(int page, int pageSize, bool? isActive)
     {
         if (page < 1) page = 1;
@@ -26,13 +48,12 @@ public class FacilityService : IFacilityService
         if (pageSize > 100) pageSize = 100;
 
         var query = _context.Set<Facility>()
+            .Include(f => f.ManagerTeacher)
             .AsNoTracking()
             .AsQueryable();
 
         if (isActive.HasValue)
-        {
             query = query.Where(f => f.IsActive == isActive.Value);
-        }
 
         var totalCount = await query.CountAsync();
 
@@ -40,50 +61,30 @@ public class FacilityService : IFacilityService
             .OrderBy(f => f.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(f => new FacilityResponse
-            {
-                Id = f.Id,
-                Name = f.Name,
-                Description = f.Description,
-                Location = f.Location,
-                Capacity = f.Capacity,
-                ImageUrl = FileUrlHelper.ResolveUrl(f.ImageUrl),
-                Category = f.Category,
-                IsActive = f.IsActive,
-                CreatedAt = f.CreatedAt,
-                UpdatedAt = f.UpdatedAt
-            })
             .ToListAsync();
 
         return new PagedResult<FacilityResponse>
         {
-            Items = items,
+            Items = items.Select(MapFacility).ToList(),
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount
         };
     }
 
+    // ─── Get By Id ────────────────────────────────────────────────────────────
+
     public async Task<FacilityResponse?> GetFacilityByIdAsync(Guid id)
     {
-        return await _context.Set<Facility>()
+        var f = await _context.Set<Facility>()
+            .Include(f => f.ManagerTeacher)
             .AsNoTracking()
-            .Where(f => f.Id == id)
-            .Select(f => new FacilityResponse
-            {
-                Id = f.Id,
-                Name = f.Name,
-                Description = f.Description,
-                Location = f.Location,
-                Capacity = f.Capacity,
-                ImageUrl = FileUrlHelper.ResolveUrl(f.ImageUrl),
-                Category = f.Category,
-                IsActive = f.IsActive,
-                CreatedAt = f.CreatedAt,
-                UpdatedAt = f.UpdatedAt
-            })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(f => f.Id == id);
+
+        return f is null ? null : MapFacility(f);
     }
+
+    // ─── Create ───────────────────────────────────────────────────────────────
 
     public async Task<FacilityResponse> CreateFacilityAsync(CreateFacilityRequest request)
     {
@@ -97,6 +98,7 @@ public class FacilityService : IFacilityService
             ImageUrl = request.ImageUrl,
             Category = request.Category,
             IsActive = request.IsActive,
+            ManagerTeacherId = request.ManagerTeacherId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -104,20 +106,16 @@ public class FacilityService : IFacilityService
         _context.Set<Facility>().Add(facility);
         await _context.SaveChangesAsync();
 
-        return new FacilityResponse
-        {
-            Id = facility.Id,
-            Name = facility.Name,
-            Description = facility.Description,
-            Location = facility.Location,
-            Capacity = facility.Capacity,
-            ImageUrl = facility.ImageUrl,
-            Category = facility.Category,
-            IsActive = facility.IsActive,
-            CreatedAt = facility.CreatedAt,
-            UpdatedAt = facility.UpdatedAt
-        };
+        // Reload with navigation property
+        var created = await _context.Set<Facility>()
+            .Include(f => f.ManagerTeacher)
+            .AsNoTracking()
+            .FirstAsync(f => f.Id == facility.Id);
+
+        return MapFacility(created);
     }
+
+    // ─── Update ───────────────────────────────────────────────────────────────
 
     public async Task<FacilityResponse?> UpdateFacilityAsync(Guid id, UpdateFacilityRequest request)
     {
@@ -134,24 +132,21 @@ public class FacilityService : IFacilityService
         facility.ImageUrl = request.ImageUrl;
         facility.Category = request.Category;
         facility.IsActive = request.IsActive;
+        facility.ManagerTeacherId = request.ManagerTeacherId;
         facility.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
-        return new FacilityResponse
-        {
-            Id = facility.Id,
-            Name = facility.Name,
-            Description = facility.Description,
-            Location = facility.Location,
-            Capacity = facility.Capacity,
-            ImageUrl = facility.ImageUrl,
-            Category = facility.Category,
-            IsActive = facility.IsActive,
-            CreatedAt = facility.CreatedAt,
-            UpdatedAt = facility.UpdatedAt
-        };
+        // Reload with navigation property
+        var updated = await _context.Set<Facility>()
+            .Include(f => f.ManagerTeacher)
+            .AsNoTracking()
+            .FirstAsync(f => f.Id == id);
+
+        return MapFacility(updated);
     }
+
+    // ─── Delete ───────────────────────────────────────────────────────────────
 
     public async Task<bool> DeleteFacilityAsync(Guid id)
     {
@@ -163,7 +158,78 @@ public class FacilityService : IFacilityService
 
         _context.Set<Facility>().Remove(facility);
         await _context.SaveChangesAsync();
-
         return true;
+    }
+
+    // ─── Get Managed Facilities (for teacher) ─────────────────────────────────
+
+    public async Task<List<FacilityResponse>> GetManagedFacilitiesAsync(Guid teacherId)
+    {
+        var facilities = await _context.Set<Facility>()
+            .Include(f => f.ManagerTeacher)
+            .AsNoTracking()
+            .Where(f => f.ManagerTeacherId == teacherId && !f.IsDeleted)
+            .OrderBy(f => f.Name)
+            .ToListAsync();
+
+        return facilities.Select(MapFacility).ToList();
+    }
+
+    // ─── Get Managed Bookings (for teacher) ───────────────────────────────────
+
+    public async Task<PagedResult<BookingResponse>> GetManagedBookingsAsync(Guid teacherId, int page, int pageSize)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+        if (pageSize > 200) pageSize = 200;
+
+        // Get facility IDs managed by this teacher
+        var managedFacilityIds = await _context.Set<Facility>()
+            .AsNoTracking()
+            .Where(f => f.ManagerTeacherId == teacherId && !f.IsDeleted)
+            .Select(f => f.Id)
+            .ToListAsync();
+
+        var query = _context.Set<FacilityBooking>()
+            .Include(b => b.Facility)
+            .Include(b => b.BookedByUser)
+            .Include(b => b.ApprovedOrRejectedByUser)
+            .AsNoTracking()
+            .Where(b => managedFacilityIds.Contains(b.FacilityId));
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(b => b.StartTime)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(b => new BookingResponse
+            {
+                Id = b.Id,
+                FacilityId = b.FacilityId,
+                FacilityName = b.Facility.Name,
+                BookedByUserId = b.BookedByUserId,
+                BookedByUserName = b.BookedByUser.FullName ?? b.BookedByUser.Username,
+                Purpose = b.Purpose,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                Status = b.Status,
+                RejectionReason = b.RejectionReason,
+                ApprovedOrRejectedByUserId = b.ApprovedOrRejectedByUserId,
+                ApprovedOrRejectedByUserName = b.ApprovedOrRejectedByUser != null
+                    ? (b.ApprovedOrRejectedByUser.FullName ?? b.ApprovedOrRejectedByUser.Username)
+                    : null,
+                CreatedAt = b.CreatedAt,
+                UpdatedAt = b.UpdatedAt
+            })
+            .ToListAsync();
+
+        return new PagedResult<BookingResponse>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 }

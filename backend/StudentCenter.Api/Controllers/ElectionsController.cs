@@ -159,12 +159,27 @@ public class ElectionsController : ControllerBase
         return Ok(ApiResponse<ElectionResultResponse>.Ok("Hasil pemilu berhasil diambil", result));
     }
 
-    [Authorize]
-    [HttpGet("{id:guid}/participation")]
-    public async Task<IActionResult> GetParticipation(Guid id)
+    [Authorize(Roles = "Teacher,Admin")]
+    [HttpPost("{id:guid}/start-pemilos")]
+    public async Task<IActionResult> StartPemilos(Guid id, [FromBody] StartPemilosRequest request)
     {
-        var result = await _electionService.GetParticipationAsync(id);
-        if (result is null) return NotFound(ApiResponse<object>.Fail("Pemilu tidak ditemukan."));
-        return Ok(ApiResponse<ParticipationResponse>.Ok("Tingkat partisipasi pemilu berhasil diambil", result));
+        var userId = _currentUserService.UserId;
+        var role = _currentUserService.Role ?? string.Empty;
+        if (!userId.HasValue) return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak ditemukan."));
+
+        await _electionService.StartPemilosAsync(id, request, userId.Value, role);
+        return Ok(ApiResponse<object>.Ok("Sesi Pemilos resmi dimulai! Pemungutan suara dapat dilaksanakan."));
+    }
+
+    [Authorize(Roles = "Teacher,Admin")]
+    [HttpPost("{id:guid}/stop-pemilos")]
+    public async Task<IActionResult> StopPemilos(Guid id)
+    {
+        var userId = _currentUserService.UserId;
+        var role = _currentUserService.Role ?? string.Empty;
+        if (!userId.HasValue) return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak ditemukan."));
+
+        await _electionService.StopPemilosAsync(id, userId.Value, role);
+        return Ok(ApiResponse<object>.Ok("Sesi Pemilos telah dihentikan. Pemungutan suara ditutup."));
     }
 }

@@ -10,6 +10,8 @@ public class FacilityResponse
     public string? ImageUrl { get; set; }
     public string? Category { get; set; }
     public bool IsActive { get; set; }
+    public Guid? ManagerTeacherId { get; set; }
+    public string? ManagerTeacherName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

@@ -11,10 +11,12 @@ namespace StudentCenter.Api.Controllers;
 public class FacilitiesController : ControllerBase
 {
     private readonly IFacilityService _facilityService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public FacilitiesController(IFacilityService facilityService)
+    public FacilitiesController(IFacilityService facilityService, ICurrentUserService currentUserService)
     {
         _facilityService = facilityService;
+        _currentUserService = currentUserService;
     }
 
     [AllowAnonymous]
@@ -38,6 +40,40 @@ public class FacilitiesController : ControllerBase
             return NotFound(ApiResponse<object>.Fail("Facility not found."));
 
         return Ok(ApiResponse<FacilityResponse>.Ok("Facility retrieved successfully", result));
+    }
+
+    /// <summary>
+    /// Returns facilities managed by the current logged-in teacher.
+    /// Used by the frontend to conditionally show the facility monitoring tab.
+    /// </summary>
+    [Authorize(Roles = "Teacher,Admin")]
+    [HttpGet("my-managed")]
+    public async Task<IActionResult> GetMyManagedFacilities()
+    {
+        var teacherId = _currentUserService.UserId;
+        if (teacherId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found."));
+
+        var result = await _facilityService.GetManagedFacilitiesAsync(teacherId.Value);
+        return Ok(ApiResponse<List<FacilityResponse>>.Ok("Managed facilities retrieved successfully", result));
+    }
+
+    /// <summary>
+    /// Returns all bookings for facilities managed by the current teacher.
+    /// Replaces the global booking list so teachers only see their own facilities.
+    /// </summary>
+    [Authorize(Roles = "Teacher,Admin")]
+    [HttpGet("managed-bookings")]
+    public async Task<IActionResult> GetManagedBookings(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 100)
+    {
+        var teacherId = _currentUserService.UserId;
+        if (teacherId is null)
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found."));
+
+        var result = await _facilityService.GetManagedBookingsAsync(teacherId.Value, page, pageSize);
+        return Ok(ApiResponse<PagedResult<BookingResponse>>.Ok("Managed bookings retrieved successfully", result));
     }
 
     [Authorize(Roles = "Admin")]

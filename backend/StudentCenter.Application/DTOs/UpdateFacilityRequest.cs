@@ -26,4 +26,5 @@ public class UpdateFacilityRequest
     public string? Category { get; set; }
 
     public bool IsActive { get; set; }
+    public Guid? ManagerTeacherId { get; set; }
 }

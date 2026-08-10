@@ -76,6 +76,17 @@ public class ElectionCandidateResponse
     public double VotePercentage { get; set; }
 }
 
+public class StartPemilosRequest
+{
+    [Required]
+    public DateTime StartDate { get; set; }
+
+    [Required]
+    public DateTime EndDate { get; set; }
+
+    public string? CabinetStructureJson { get; set; }
+}
+
 public class ElectionResponse
 {
     public Guid Id { get; set; }
@@ -87,6 +98,7 @@ public class ElectionResponse
     public string StatusText => Status.ToString();
     public bool HasVoted { get; set; }
     public Guid? VotedCandidateId { get; set; }
+    public string? CabinetStructureJson { get; set; }
     public Guid CreatedByUserId { get; set; }
     public string CreatedByUserName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }

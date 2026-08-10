@@ -39,6 +39,19 @@ export const facilityService = {
   updateBookingStatus: async (id, status, note) => {
     return await bookingService.updateBookingStatus(id, status, note);
   },
+
+  getMyManagedFacilities: async () => {
+    const res = await api.get("/facilities/my-managed");
+    const data = res?.data ?? res;
+    return { data: Array.isArray(data) ? data : [] };
+  },
+
+  getManagedBookings: async (params = {}) => {
+    const res = await api.get("/facilities/managed-bookings", { params });
+    const pagedResult = res?.data ?? res;
+    const items = pagedResult?.items ?? (Array.isArray(pagedResult) ? pagedResult : []);
+    return items;
+  },
 };
 
 export default facilityService;

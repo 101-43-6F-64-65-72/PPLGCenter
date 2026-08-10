@@ -45,6 +45,14 @@ export const candidatePairService = {
     return await api.get(`/api/candidate-pairs/election/${electionId}/live-results`);
   },
 
+  startPemilos: async (electionId, data) => {
+    return await api.post(`/api/elections/${electionId}/start-pemilos`, data);
+  },
+
+  stopPemilos: async (electionId) => {
+    return await api.post(`/api/elections/${electionId}/stop-pemilos`);
+  },
+
   /**
    * Search eligible Vice Chairman candidates (Students) by Name / NIS
    */

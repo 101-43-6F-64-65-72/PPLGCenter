@@ -5,7 +5,7 @@ import {
   Award, Users, FileCheck, CheckSquare, ShieldCheck,
   Search, Check, X, Settings, UserCheck, RefreshCw, Vote,
   ExternalLink, Mail, Phone, GraduationCap, MapPin, Hash,
-  ChevronRight, AlertCircle, ToggleLeft, ToggleRight
+  ChevronRight, AlertCircle, ToggleLeft, ToggleRight, Plus
 } from "lucide-react";
 import { extracurricularService } from "@/services/extracurricularService";
 import candidatePairService from "@/services/candidatePairService";
@@ -25,11 +25,21 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [searchMember, setSearchMember] = useState("");
 
-  // Pemilos candidates state (for OSIS)
+  // Pemilos candidates & execution state (for OSIS)
   const [candidatePairs, setCandidatePairs] = useState([]);
   const [pemilosLiveResults, setPemilosLiveResults] = useState(null);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [reviewNotes, setReviewNotes] = useState({});
+  const [activeElectionId, setActiveElectionId] = useState(null);
+  const [pemilosStartDate, setPemilosStartDate] = useState("");
+  const [pemilosEndDate, setPemilosEndDate] = useState("");
+  const [secretary1, setSecretary1] = useState("");
+  const [secretary2, setSecretary2] = useState("");
+  const [treasurer1, setTreasurer1] = useState("");
+  const [treasurer2, setTreasurer2] = useState("");
+  const [customDivisions, setCustomDivisions] = useState([]);
+  const [isStartingPemilos, setIsStartingPemilos] = useState(false);
+  const [isStoppingPemilos, setIsStoppingPemilos] = useState(false);
 
   // Settings state
   const [description, setDescription] = useState(selectedEkskul?.description || "");
@@ -80,6 +90,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
 
       if (electionsList.length > 0 && electionsList[0]?.id) {
         const activeId = electionsList[0].id;
+        setActiveElectionId(activeId);
         const [pairsRes, resultsRes] = await Promise.all([
           candidatePairService.getPairs(activeId),
           candidatePairService.getLiveResults(activeId).catch(() => null),
@@ -90,6 +101,34 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
         const rawResults = resultsRes?.data ?? resultsRes;
         const resultsObj = rawResults?.data ?? rawResults ?? null;
         setPemilosLiveResults(resultsObj);
+
+        // Pre-fill dates if available
+        const currentElection = electionsList[0];
+        if (currentElection.startDate) {
+          try {
+            setPemilosStartDate(new Date(currentElection.startDate).toISOString().slice(0, 16));
+          } catch {}
+        }
+        if (currentElection.endDate) {
+          try {
+            setPemilosEndDate(new Date(currentElection.endDate).toISOString().slice(0, 16));
+          } catch {}
+        }
+
+        // Parse cabinet structure json if exists
+        const cabJson = currentElection.cabinetStructureJson || resultsObj?.cabinetStructureJson;
+        if (cabJson) {
+          try {
+            const cabObj = typeof cabJson === "string" ? JSON.parse(cabJson) : cabJson;
+            if (cabObj.secretary1) setSecretary1(cabObj.secretary1);
+            if (cabObj.secretary2) setSecretary2(cabObj.secretary2);
+            if (cabObj.treasurer1) setTreasurer1(cabObj.treasurer1);
+            if (cabObj.treasurer2) setTreasurer2(cabObj.treasurer2);
+            if (Array.isArray(cabObj.customDivisions)) {
+              setCustomDivisions(cabObj.customDivisions.map((d, i) => ({ id: i + 1, name: d.divisionName, studentId: d.studentName })));
+            }
+          } catch {}
+        }
       } else {
         setCandidatePairs([]);
         setPemilosLiveResults(null);
@@ -141,6 +180,84 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
     } catch (err) {
       toast.error(err?.response?.data?.message || "Gagal memproses verifikasi kandidat.");
     }
+  };
+
+  const handleStartPemilos = async () => {
+    if (!activeElectionId) return;
+    if (!pemilosStartDate || !pemilosEndDate) {
+      toast.error("Silakan isi Tanggal Mulai dan Tanggal Selesai Pemilos terlebih dahulu.");
+      return;
+    }
+    const approvedCount = candidatePairs.filter((p) => p.statusText === "Approved" || p.status === 5).length;
+    if (approvedCount < 2) {
+      toast.error("Pemilos membutuhkan minimal 2 pasangan kandidat yang disetujui untuk dapat dimulai.");
+      return;
+    }
+
+    setIsStartingPemilos(true);
+    try {
+      const getStudentLabel = (val) => {
+        if (!val) return "";
+        const m = members.find((mem) => String(mem.studentId || mem.id) === String(val));
+        return m ? `${m.studentName || m.name || val} (${m.className || ""})` : val;
+      };
+
+      const cabinetStructure = {
+        secretary1: getStudentLabel(secretary1),
+        secretary2: getStudentLabel(secretary2),
+        treasurer1: getStudentLabel(treasurer1),
+        treasurer2: getStudentLabel(treasurer2),
+        customDivisions: customDivisions
+          .filter((d) => d.name.trim())
+          .map((d) => ({
+            divisionName: d.name.trim(),
+            studentName: getStudentLabel(d.studentId),
+          })),
+      };
+
+      await candidatePairService.startPemilos(activeElectionId, {
+        startDate: new Date(pemilosStartDate).toISOString(),
+        endDate: new Date(pemilosEndDate).toISOString(),
+        cabinetStructureJson: JSON.stringify(cabinetStructure),
+      });
+
+      toast.success("Pemilos resmi dimulai! Pemungutan suara telah dibuka.");
+      loadPemilosCandidates();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Gagal memulai Pemilos.");
+    } finally {
+      setIsStartingPemilos(false);
+    }
+  };
+
+  const handleStopPemilos = async () => {
+    if (!activeElectionId) return;
+    if (!window.confirm("Apakah Anda yakin ingin menghentikan sesi Pemilos ini? Voting akan ditutup.")) return;
+
+    setIsStoppingPemilos(true);
+    try {
+      await candidatePairService.stopPemilos(activeElectionId);
+      toast.success("Sesi Pemilos telah dihentikan.");
+      loadPemilosCandidates();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || "Gagal menghentikan Pemilos.");
+    } finally {
+      setIsStoppingPemilos(false);
+    }
+  };
+
+  const handleAddCustomDivision = () => {
+    setCustomDivisions((prev) => [...prev, { id: Date.now(), name: "", studentId: "" }]);
+  };
+
+  const handleRemoveCustomDivision = (id) => {
+    setCustomDivisions((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleCustomDivisionChange = (id, field, value) => {
+    setCustomDivisions((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
   };
 
   const handleCroppedImage = async (dataUrl, metadata) => {
@@ -518,6 +635,206 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
             </div>
           )}
 
+          {/* Kontrol Pelaksanaan & Pengurus OSIS */}
+          <div className="bg-white rounded-lg border border-slate-200 p-5 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div>
+                <h4 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-[#2c1ee8]" />
+                  <span>Pengaturan Pelaksanaan Pemilos & Struktur Pengurus OSIS</span>
+                </h4>
+                <p className="text-xs text-slate-500">Tentukan jadwal voting, pengurus OSIS pendukung, dan jalankan pemungutan suara.</p>
+              </div>
+
+              {pemilosLiveResults?.status === 1 || pemilosLiveResults?.status === "Open" ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Pemilos Sedang Berlangsung (OPEN)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold">
+                  Sesi Belum Dijalankan
+                </span>
+              )}
+            </div>
+
+            {/* Form Tanggal & Waktu */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Tanggal & Waktu Mulai Pemilos *</label>
+                <input
+                  type="datetime-local"
+                  value={pemilosStartDate}
+                  onChange={(e) => setPemilosStartDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-[#2c1ee8]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Tanggal & Waktu Selesai Pemilos *</label>
+                <input
+                  type="datetime-local"
+                  value={pemilosEndDate}
+                  onChange={(e) => setPemilosEndDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-[#2c1ee8]"
+                />
+              </div>
+            </div>
+
+            {/* Form Jabatan Pengurus OSIS Pendukung */}
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Penentuan Jabatan Pengurus OSIS Pendukung</h5>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Sekretaris 1 */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Sekretaris 1</label>
+                  <select
+                    value={secretary1}
+                    onChange={(e) => setSecretary1(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-900 bg-white"
+                  >
+                    <option value="">-- Pilih Siswa Sekretaris 1 --</option>
+                    {members.map((m) => (
+                      <option key={m.id || m.studentId} value={m.studentId || m.id}>
+                        {m.studentName || m.name} ({m.className || "Siswa"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sekretaris 2 */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Sekretaris 2</label>
+                  <select
+                    value={secretary2}
+                    onChange={(e) => setSecretary2(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-900 bg-white"
+                  >
+                    <option value="">-- Pilih Siswa Sekretaris 2 --</option>
+                    {members.map((m) => (
+                      <option key={m.id || m.studentId} value={m.studentId || m.id}>
+                        {m.studentName || m.name} ({m.className || "Siswa"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Bendahara 1 */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Bendahara 1</label>
+                  <select
+                    value={treasurer1}
+                    onChange={(e) => setTreasurer1(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-900 bg-white"
+                  >
+                    <option value="">-- Pilih Siswa Bendahara 1 --</option>
+                    {members.map((m) => (
+                      <option key={m.id || m.studentId} value={m.studentId || m.id}>
+                        {m.studentName || m.name} ({m.className || "Siswa"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Bendahara 2 */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Bendahara 2</label>
+                  <select
+                    value={treasurer2}
+                    onChange={(e) => setTreasurer2(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-slate-200 text-xs text-slate-900 bg-white"
+                  >
+                    <option value="">-- Pilih Siswa Bendahara 2 --</option>
+                    {members.map((m) => (
+                      <option key={m.id || m.studentId} value={m.studentId || m.id}>
+                        {m.studentName || m.name} ({m.className || "Siswa"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Dynamic Divisi Tambahan */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700 uppercase">Divisi Tambahan (Opsional)</span>
+                  <button
+                    type="button"
+                    onClick={handleAddCustomDivision}
+                    className="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Tambah Divisi</span>
+                  </button>
+                </div>
+
+                {customDivisions.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 bg-slate-50 p-2 rounded-md border border-slate-200">
+                    <input
+                      type="text"
+                      placeholder="Nama Divisi (misal: Divisi Humas)..."
+                      value={item.name}
+                      onChange={(e) => handleCustomDivisionChange(item.id, "name", e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-md border border-slate-200 text-xs bg-white"
+                    />
+                    <select
+                      value={item.studentId}
+                      onChange={(e) => handleCustomDivisionChange(item.id, "studentId", e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-md border border-slate-200 text-xs bg-white"
+                    >
+                      <option value="">-- Pilih Anggota Divisi --</option>
+                      {members.map((m) => (
+                        <option key={m.id || m.studentId} value={m.studentId || m.id}>
+                          {m.studentName || m.name} ({m.className || "Siswa"})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCustomDivision(item.id)}
+                      className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-md transition"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Execution Buttons: Start & Stop Pemilos */}
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-slate-500 font-medium">
+                {candidatePairs.filter((p) => p.statusText === "Approved" || p.status === 5).length < 2 ? (
+                  <span className="text-amber-600 font-bold">⚠️ Butuh minimal 2 paslon disetujui (Approved) untuk dapat memulai Pemilos.</span>
+                ) : (
+                  <span className="text-emerald-600 font-bold">✓ Kuota minimal paslon terpenuhi. Pemilos siap dimulai.</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {pemilosLiveResults?.status === 1 || pemilosLiveResults?.status === "Open" ? (
+                  <button
+                    onClick={handleStopPemilos}
+                    disabled={isStoppingPemilos}
+                    className="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isStoppingPemilos ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+                    <span>⛔ Stop / Akhiri Pemilos</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleStartPemilos}
+                    disabled={isStartingPemilos || candidatePairs.filter((p) => p.statusText === "Approved" || p.status === 5).length < 2}
+                    className="px-5 py-2.5 rounded-md bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {isStartingPemilos ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Vote className="w-4 h-4" />}
+                    <span>🚀 Mulai Pemilos</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-gray-900 text-base">
@@ -607,34 +924,52 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
                       </p>
                     </div>
 
-                    {/* Catatan Review Pembina */}
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Catatan Review Pembina (Opsional)..."
-                        value={reviewNotes[pair.id] || ""}
-                        onChange={(e) => setReviewNotes({ ...reviewNotes, [pair.id]: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#2c1ee8]"
-                      />
-                    </div>
+                    {/* Status / Review Actions */}
+                    {pair.statusText === "Approved" || pair.status === 5 ? (
+                      <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          <span>Disetujui Pembina (Resmi Terdaftar)</span>
+                        </span>
+                        <span className="text-[10px] font-mono bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded">Paslon #{pair.candidateNumber}</span>
+                      </div>
+                    ) : pair.statusText === "Rejected" || pair.status === 3 ? (
+                      <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-1.5">
+                        <X className="w-4 h-4 text-rose-600" />
+                        <span>Ditolak Pembina {pair.rejectionReason ? `(${pair.rejectionReason})` : ""}</span>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Catatan Review Pembina */}
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Catatan Review Pembina (Opsional)..."
+                            value={reviewNotes[pair.id] || ""}
+                            onChange={(e) => setReviewNotes({ ...reviewNotes, [pair.id]: e.target.value })}
+                            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-[#2c1ee8]"
+                          />
+                        </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        onClick={() => handleTeacherReviewPair(pair.id, true)}
-                        className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <Check className="w-4 h-4" />
-                        Setujui (Approve)
-                      </button>
-                      <button
-                        onClick={() => handleTeacherReviewPair(pair.id, false)}
-                        className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <X className="w-4 h-4" />
-                        Tolak (Reject)
-                      </button>
-                    </div>
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => handleTeacherReviewPair(pair.id, true)}
+                            className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <Check className="w-4 h-4" />
+                            Setujui (Approve)
+                          </button>
+                          <button
+                            onClick={() => handleTeacherReviewPair(pair.id, false)}
+                            className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition cursor-pointer flex items-center justify-center gap-1.5"
+                          >
+                            <X className="w-4 h-4" />
+                            Tolak (Reject)
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
               </div>

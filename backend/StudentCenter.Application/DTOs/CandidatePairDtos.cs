@@ -101,6 +101,7 @@ public class PemilosLiveResultResponse
     public bool IsResultsVisible { get; set; }
     public bool UserHasVoted { get; set; }
     public bool HasVoted { get; set; }
+    public string? CabinetStructureJson { get; set; }
 
     public int TotalEligibleVoters { get; set; }
     public int TotalVotesCast { get; set; }

@@ -41,10 +41,26 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
     imageUrl: facility?.imageUrl || facility?.ImageUrl || "",
     category: facility?.category || facility?.Category || "",
     isActive: facility?.isActive ?? facility?.IsActive ?? true,
+    managerTeacherId: facility?.managerTeacherId || facility?.ManagerTeacherId || "",
   });
+  const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    // Fetch teachers list for manager selection
+    const fetchTeachers = async () => {
+      try {
+        const res = await apiClient.get("/users", { params: { role: "Teacher", pageSize: 200 } });
+        const list = res?.data?.items || res?.items || (Array.isArray(res?.data) ? res.data : []);
+        setTeachers(list);
+      } catch (err) {
+        console.error("Failed to load teachers for facility manager dropdown:", err);
+      }
+    };
+    fetchTeachers();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -68,6 +84,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
         imageUrl: form.imageUrl.trim() || null,
         category: form.category.trim() || null,
         isActive: form.isActive,
+        managerTeacherId: form.managerTeacherId || null,
       };
 
       if (isEdit) {
@@ -180,6 +197,32 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Guru Pengurus Fasilitas */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              Guru Pengurus / Penanggung Jawab
+            </label>
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <select
+                name="managerTeacherId"
+                value={form.managerTeacherId}
+                onChange={handleChange}
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all appearance-none cursor-pointer"
+              >
+                <option value="">-- Tanpa Guru Pengurus (Hanya Admin) --</option>
+                {teachers.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.fullName || t.name || t.username} ({t.nip || "NIP -"})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Guru yang dipilih akan memiliki tab khusus untuk menyetujui / menolak peminjaman fasilitas ini.
+            </p>
           </div>
 
           {/* Deskripsi */}

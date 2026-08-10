@@ -13,6 +13,7 @@ import GuruProposalTab from "@/components/guru/GuruProposalTab";
 import GuruFacilityTab from "@/components/guru/GuruFacilityTab";
 import GuruSupervisedTab from "@/components/guru/GuruSupervisedTab";
 import TeacherGradebookTab from "@/components/teacher/TeacherGradebookTab";
+import facilityService from "@/services/facilityService";
 import {
   LayoutDashboard,
   FileText,
@@ -35,20 +36,25 @@ function GuruPanelContent() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview"); // 'overview' | 'gradebook' | 'supervised' | 'proposals' | 'facilities'
   const [supervisedExtracurriculars, setSupervisedExtracurriculars] = useState([]);
+  const [managedFacilities, setManagedFacilities] = useState([]);
   const [teacherDash, setTeacherDash] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch live supervised extracurriculars directly from PostgreSQL source of truth
+  const isAdmin = user?.role === USER_ROLES.ADMIN || user?.role === "Admin";
+
+  // Fetch live supervised extracurriculars & managed facilities
   const loadTeacherData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [supRes, dashRes] = await Promise.all([
+      const [supRes, dashRes, facRes] = await Promise.all([
         extracurricularService.getSupervisedByMe().catch(() => ({ data: [] })),
         dashboardService.getTeacherDashboard().catch(() => ({ data: null })),
+        facilityService.getMyManagedFacilities().catch(() => ({ data: [] })),
       ]);
 
       const liveSupervised = supRes?.data || dashRes?.data?.advisingExtracurriculars || [];
       setSupervisedExtracurriculars(liveSupervised);
+      setManagedFacilities(facRes?.data || []);
       if (dashRes?.data) setTeacherDash(dashRes.data);
     } catch (err) {
       console.error("Failed to load teacher panel data:", err);
@@ -67,7 +73,9 @@ function GuruPanelContent() {
     };
   }, [loadTeacherData]);
 
-  // Construct dynamic tabs list: Tab 'Ekskul Binaan' appears ONLY if teacher supervises at least 1 unit
+  // Construct dynamic tabs list:
+  // - Tab 'Ekskul Binaan' appears ONLY if teacher supervises at least 1 unit
+  // - Tab 'Persetujuan Fasilitas' appears ONLY if teacher manages at least 1 facility OR is Admin
   const tabs = [
     { id: "overview", label: "Overview Guru", icon: LayoutDashboard },
     { id: "gradebook", label: "Buku Nilai (Gradebook)", icon: Award },
@@ -77,10 +85,11 @@ function GuruPanelContent() {
     tabs.push({ id: "supervised", label: "Ekskul Binaan", icon: Award });
   }
 
-  tabs.push(
-    { id: "proposals", label: "Persetujuan Proposal", icon: FileText },
-    { id: "facilities", label: "Persetujuan Fasilitas", icon: Building2 }
-  );
+  tabs.push({ id: "proposals", label: "Persetujuan Proposal", icon: FileText });
+
+  if (managedFacilities.length > 0 || isAdmin) {
+    tabs.push({ id: "facilities", label: "Persetujuan Fasilitas", icon: Building2 });
+  }
 
   const displayName = user?.fullName || user?.name || "Guru & Pembina";
 
@@ -116,6 +125,15 @@ function GuruPanelContent() {
                 >
                   <Award className="w-3.5 h-3.5 text-emerald-600" />
                   Pembina {ekskul.name}
+                </span>
+              ))}
+              {managedFacilities.map((fac) => (
+                <span
+                  key={fac.id}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                  Pengurus {fac.name}
                 </span>
               ))}
             </div>
@@ -154,14 +172,16 @@ function GuruPanelContent() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Proposal Quick Section */}
-              <div className="lg:col-span-7">
+              <div className={managedFacilities.length > 0 || isAdmin ? "lg:col-span-7" : "lg:col-span-12"}>
                 <GuruProposalTab />
               </div>
 
-              {/* Facility Quick Section */}
-              <div className="lg:col-span-5">
-                <GuruFacilityTab />
-              </div>
+              {/* Facility Quick Section (Only if manages facility or Admin) */}
+              {(managedFacilities.length > 0 || isAdmin) && (
+                <div className="lg:col-span-5">
+                  <GuruFacilityTab managedFacilities={managedFacilities} />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -174,7 +194,9 @@ function GuruPanelContent() {
           />
         )}
         {activeTab === "proposals" && <GuruProposalTab />}
-        {activeTab === "facilities" && <GuruFacilityTab />}
+        {(activeTab === "facilities" && (managedFacilities.length > 0 || isAdmin)) && (
+          <GuruFacilityTab managedFacilities={managedFacilities} />
+        )}
       </main>
       <Footer />
     </div>

@@ -382,6 +382,39 @@ public class ElectionService : IElectionService
         };
     }
 
+    public async Task<bool> StartPemilosAsync(Guid electionId, StartPemilosRequest request, Guid userId, string userRole)
+    {
+        var election = await _context.Elections.FirstOrDefaultAsync(e => e.Id == electionId && e.DeletedAt == null);
+        if (election is null) throw new KeyNotFoundException("Sesi Pemilos tidak ditemukan.");
+
+        var approvedPairsCount = await _context.CandidatePairs.CountAsync(c => c.ElectionId == electionId && c.Status == CandidatePairStatus.Approved);
+        if (approvedPairsCount < 2)
+        {
+            throw new InvalidOperationException("Pemilos belum dapat dimulai karena pasangan calon disetujui kurang dari 2 pasang (minimal 2 pasang kandidat disetujui).");
+        }
+
+        election.StartDate = request.StartDate;
+        election.EndDate = request.EndDate;
+        election.CabinetStructureJson = request.CabinetStructureJson;
+        election.Status = ElectionStatus.Open;
+        election.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> StopPemilosAsync(Guid electionId, Guid userId, string userRole)
+    {
+        var election = await _context.Elections.FirstOrDefaultAsync(e => e.Id == electionId && e.DeletedAt == null);
+        if (election is null) throw new KeyNotFoundException("Sesi Pemilos tidak ditemukan.");
+
+        election.Status = ElectionStatus.Closed;
+        election.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     private static ElectionResponse MapToResponse(Election e, Guid? currentUserId)
     {
         var totalVotes = e.Votes?.Count ?? 0;
@@ -397,6 +430,7 @@ public class ElectionService : IElectionService
             Status = e.Status,
             HasVoted = userVote != null,
             VotedCandidateId = userVote?.CandidateId,
+            CabinetStructureJson = e.CabinetStructureJson,
             CreatedByUserId = e.CreatedByUserId,
             CreatedByUserName = e.CreatedByUser?.FullName ?? "Admin",
             CreatedAt = e.CreatedAt,

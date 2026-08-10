@@ -312,13 +312,24 @@ function PemilosContent() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link
-                href="/pemilos/register"
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors"
-              >
-                <Users className="w-4 h-4" />
-                <span>+ Daftar Kandidat</span>
-              </Link>
+              {electionTimeState === "ONGOING" && isBackendOpen ? (
+                <button
+                  disabled
+                  title="Pendaftaran ditutup karena pemilihan sedang berlangsung"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-200 text-slate-500 text-xs font-bold cursor-not-allowed border border-slate-300"
+                >
+                  <Users className="w-4 h-4 text-slate-400" />
+                  <span>+ Daftar Kandidat (Ditutup)</span>
+                </button>
+              ) : (
+                <Link
+                  href="/pemilos/register"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>+ Daftar Kandidat</span>
+                </Link>
+              )}
               <button
                 onClick={loadPairsAndResults}
                 disabled={loadingPairs}
@@ -508,6 +519,71 @@ function PemilosContent() {
                     ))}
                   </div>
                 )}
+
+                {/* Section Struktur Kabinet OSIS Pendukung */}
+                {(() => {
+                  const raw = selectedElection?.cabinetStructureJson || liveResults?.cabinetStructureJson;
+                  if (!raw) return null;
+                  let cab = null;
+                  try {
+                    cab = typeof raw === "string" ? JSON.parse(raw) : raw;
+                  } catch {}
+                  if (!cab) return null;
+
+                  return (
+                    <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
+                      <div className="border-b border-slate-100 pb-4">
+                        <span className="text-xs font-mono font-bold text-[#2c1ee8] uppercase tracking-widest block mb-1">
+                          KABINET & JABATAN PENGURUS OSIS
+                        </span>
+                        <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                          Struktur Pengurus OSIS Pendukung
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Daftar siswa yang mengemban amanah posisi pengurus OSIS selain Ketua dan Wakil Ketua.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {cab.secretary1 && (
+                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Sekretaris 1</span>
+                            <p className="font-bold text-slate-900 text-sm">{cab.secretary1}</p>
+                          </div>
+                        )}
+
+                        {cab.secretary2 && (
+                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Sekretaris 2</span>
+                            <p className="font-bold text-slate-900 text-sm">{cab.secretary2}</p>
+                          </div>
+                        )}
+
+                        {cab.treasurer1 && (
+                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Bendahara 1</span>
+                            <p className="font-bold text-slate-900 text-sm">{cab.treasurer1}</p>
+                          </div>
+                        )}
+
+                        {cab.treasurer2 && (
+                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Bendahara 2</span>
+                            <p className="font-bold text-slate-900 text-sm">{cab.treasurer2}</p>
+                          </div>
+                        )}
+
+                        {Array.isArray(cab.customDivisions) &&
+                          cab.customDivisions.map((div, idx) => (
+                            <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                              <span className="text-[10px] font-bold text-[#2c1ee8] uppercase block">{div.divisionName || "Divisi"}</span>
+                              <p className="font-bold text-slate-900 text-sm">{div.studentName || "-"}</p>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Pending Verification Pairs */}
                 {pairs.filter((p) => p.statusText !== "Approved" && p.status !== 5).length > 0 && (

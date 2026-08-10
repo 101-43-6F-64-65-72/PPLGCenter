@@ -568,6 +568,7 @@ public class CandidatePairService : ICandidatePairService
             IsResultsVisible = isResultsVisible,
             UserHasVoted = userHasVoted,
             HasVoted = userHasVoted,
+            CabinetStructureJson = election.CabinetStructureJson,
             TotalEligibleVoters = totalEligible,
             TotalVotesCast = isResultsVisible ? totalVotesCast : 0,
             ParticipationRate = isResultsVisible ? participationRate : 0,
