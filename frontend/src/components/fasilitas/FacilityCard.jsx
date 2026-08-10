@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Users, Calendar, ArrowRight } from "lucide-react";
+import { MapPin, Users, ArrowRight, UserCheck } from "lucide-react";
 
 const getCategoryMatchingImage = (title, location, currentSrc) => {
   if (currentSrc && currentSrc !== "/images/tempat/lapangansmkn2ska.jpg") {
@@ -33,17 +33,17 @@ export default function FacilityCard({
   isActive = true,
   time = "07.00 s.d 17.00 WIB",
   imageSrc = "/images/tempat/lapangansmkn2ska.jpg",
+  managerTeacherName = "",
   onActionClick,
 }) {
   const isAvailable = isActive && (status || "").toLowerCase() === "tersedia";
-  // Clean up title text if it starts with [SEED]
   const displayTitle = (title || "").replace(/^\[SEED\]\s*/i, "").trim();
   const resolvedImageSrc = getCategoryMatchingImage(displayTitle, location, imageSrc);
   const [imgSrc, setImgSrc] = useState(resolvedImageSrc);
 
   const handleCardClick = () => {
     if (!isAvailable) return;
-    onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, isActive, time, imageSrc: imgSrc });
+    onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, isActive, time, imageSrc: imgSrc, managerTeacherName });
   };
 
   return (
@@ -68,7 +68,6 @@ export default function FacilityCard({
               setImgSrc(getCategoryMatchingImage(displayTitle, location, null));
             }}
           />
-          {/* Gradient dark overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
 
           {/* Badges Top Bar */}
@@ -105,6 +104,12 @@ export default function FacilityCard({
           }`} title={displayTitle}>
             {displayTitle}
           </h3>
+
+          {/* Manager Teacher Badge */}
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold">
+            <UserCheck className="w-3.5 h-3.5 text-[#2c1ee8]" />
+            <span>Pengurus: {managerTeacherName ? managerTeacherName : "Tim Sarpras Sekolah"}</span>
+          </div>
 
           {description && (
             <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-1 font-normal">

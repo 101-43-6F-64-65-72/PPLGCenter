@@ -411,6 +411,104 @@ public class ElectionService : IElectionService
         election.Status = ElectionStatus.Closed;
         election.UpdatedAt = DateTime.UtcNow;
 
+        // Determine winning CandidatePair
+        var pairs = await _context.CandidatePairs
+            .Include(c => c.ChairmanUser)
+            .Include(c => c.ViceUser)
+            .Include(c => c.Votes)
+            .Where(c => c.ElectionId == electionId && c.Status != CandidatePairStatus.Rejected)
+            .ToListAsync();
+
+        var winningPair = pairs
+            .OrderByDescending(p => p.Votes.Count)
+            .FirstOrDefault();
+
+        if (winningPair != null && winningPair.ChairmanUserId != Guid.Empty)
+        {
+            var activeYear = await _context.AcademicYears.FirstOrDefaultAsync(a => a.IsActive)
+                ?? await _context.AcademicYears.OrderByDescending(a => a.StartDate).FirstOrDefaultAsync();
+
+            if (activeYear != null)
+            {
+                // Deactivate previous active cabinet members
+                var previousMembers = await _context.OsisCabinetHistories
+                    .Where(h => h.AcademicYearId == activeYear.Id && h.IsActive)
+                    .ToListAsync();
+                foreach (var prev in previousMembers)
+                {
+                    prev.IsActive = false;
+                }
+
+                // Add Chairman
+                _context.OsisCabinetHistories.Add(new OsisCabinetHistory
+                {
+                    Id = Guid.NewGuid(),
+                    AcademicYearId = activeYear.Id,
+                    StudentId = winningPair.ChairmanUserId,
+                    PositionTitle = "Ketua OSIS",
+                    Department = "BPH",
+                    PhotoUrl = winningPair.PhotoUrl ?? winningPair.ChairmanUser?.PhotoUrl,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+
+                // Add Vice Chairman
+                if (winningPair.ViceUserId.HasValue)
+                {
+                    _context.OsisCabinetHistories.Add(new OsisCabinetHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        AcademicYearId = activeYear.Id,
+                        StudentId = winningPair.ViceUserId.Value,
+                        PositionTitle = "Wakil Ketua OSIS",
+                        Department = "BPH",
+                        PhotoUrl = winningPair.VicePhotoUrl ?? winningPair.ViceUser?.PhotoUrl,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ResetAndStartNewPemilosAsync(Guid electionId, Guid userId, string userRole)
+    {
+        var election = await _context.Elections.FirstOrDefaultAsync(e => e.Id == electionId && e.DeletedAt == null);
+        if (election is null) throw new KeyNotFoundException("Sesi Pemilos tidak ditemukan.");
+
+        if (userRole != "Teacher" && userRole != "Admin")
+            throw new UnauthorizedAccessException("Hanya Guru Pembina OSIS atau Admin yang dapat mereset dan memulai periode Pemilos baru.");
+
+        // 1. Archive current active OSIS cabinet members
+        var activeMembers = await _context.OsisCabinetHistories
+            .Where(h => h.IsActive)
+            .ToListAsync();
+        foreach (var member in activeMembers)
+        {
+            member.IsActive = false;
+        }
+
+        // 2. Clear candidate pairs and votes for this election
+        var votes = await _context.CandidatePairVotes
+            .Where(v => v.ElectionId == electionId)
+            .ToListAsync();
+        _context.CandidatePairVotes.RemoveRange(votes);
+
+        var pairs = await _context.CandidatePairs
+            .Where(c => c.ElectionId == electionId)
+            .ToListAsync();
+        _context.CandidatePairs.RemoveRange(pairs);
+
+        // 3. Reset Election status to Open (fresh registration state)
+        election.Status = ElectionStatus.Open;
+        election.CabinetStructureJson = null;
+        election.StartDate = DateTime.UtcNow;
+        election.EndDate = DateTime.UtcNow.AddDays(7);
+        election.UpdatedAt = DateTime.UtcNow;
+
         await _context.SaveChangesAsync();
         return true;
     }

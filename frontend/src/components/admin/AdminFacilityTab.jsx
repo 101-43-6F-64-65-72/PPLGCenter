@@ -515,6 +515,7 @@ export default function AdminFacilityTab() {
         imageUrl: facility.imageUrl || facility.ImageUrl || null,
         category: facility.category || facility.Category || null,
         isActive: nextActive,
+        managerTeacherId: facility.managerTeacherId || facility.ManagerTeacherId || null,
       });
       loadFacilities();
     } catch (err) {

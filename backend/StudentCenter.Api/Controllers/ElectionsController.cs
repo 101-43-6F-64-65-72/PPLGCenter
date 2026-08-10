@@ -180,6 +180,18 @@ public class ElectionsController : ControllerBase
         if (!userId.HasValue) return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak ditemukan."));
 
         await _electionService.StopPemilosAsync(id, userId.Value, role);
-        return Ok(ApiResponse<object>.Ok("Sesi Pemilos telah dihentikan. Pemungutan suara ditutup."));
+        return Ok(ApiResponse<object>.Ok("Sesi Pemilos telah dihentikan. Hasil pemenang telah ditetapkan ke Struktur OSIS."));
+    }
+
+    [Authorize(Roles = "Teacher,Admin")]
+    [HttpPost("{id:guid}/reset-pemilos")]
+    public async Task<IActionResult> ResetPemilos(Guid id)
+    {
+        var userId = _currentUserService.UserId;
+        var role = _currentUserService.Role ?? string.Empty;
+        if (!userId.HasValue) return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak ditemukan."));
+
+        await _electionService.ResetAndStartNewPemilosAsync(id, userId.Value, role);
+        return Ok(ApiResponse<object>.Ok("Pemilos telah direset untuk periode baru dan kepengurusan OSIS sebelumnya telah diarsipkan!"));
     }
 }

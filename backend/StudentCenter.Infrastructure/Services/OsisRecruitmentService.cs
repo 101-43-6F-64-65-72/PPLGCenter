@@ -238,11 +238,7 @@ public class OsisRecruitmentService : IOsisRecruitmentService
         }
         else
         {
-            var activeYear = await _context.AcademicYears.FirstOrDefaultAsync(y => y.IsActive);
-            if (activeYear is not null)
-            {
-                query = query.Where(h => h.AcademicYearId == activeYear.Id);
-            }
+            query = query.Where(h => h.IsActive);
         }
 
         var list = await query.OrderBy(h => h.Department).ThenBy(h => h.PositionTitle).ToListAsync();

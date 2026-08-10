@@ -21,4 +21,5 @@ public interface IElectionService
     Task<ElectionResultResponse?> GetResultAsync(Guid electionId);
     Task<bool> StartPemilosAsync(Guid electionId, StartPemilosRequest request, Guid userId, string userRole);
     Task<bool> StopPemilosAsync(Guid electionId, Guid userId, string userRole);
+    Task<bool> ResetAndStartNewPemilosAsync(Guid electionId, Guid userId, string userRole);
 }

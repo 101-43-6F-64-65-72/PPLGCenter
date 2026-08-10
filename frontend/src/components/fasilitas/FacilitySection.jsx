@@ -53,8 +53,10 @@ export default function FacilitySection({
                 category={item.category}
                 description={item.description}
                 status={item.status}
+                isActive={item.isActive}
                 time={item.time}
                 imageSrc={item.imageSrc}
+                managerTeacherName={item.managerTeacherName}
                 onActionClick={() => onItemAction && onItemAction(item)}
               />
             ))}

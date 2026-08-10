@@ -142,6 +142,7 @@ export default function FasilitasPage() {
               status: isFacilityActive ? "tersedia" : "tidak tersedia",
               time: isFacilityActive ? "07.00 s.d 17.00 WIB" : "Tutup / Nonaktif",
               imageSrc: getCategoryMatchingImage(item),
+              managerTeacherName: item.managerTeacherName || item.ManagerTeacherName || "",
             };
           });
           setPlacesData(mapped);

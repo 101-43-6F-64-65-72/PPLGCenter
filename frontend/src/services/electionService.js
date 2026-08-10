@@ -53,6 +53,18 @@ export const electionService = {
   getParticipation: async (id) => {
     return await api.get(API_ROUTES.ELECTIONS.PARTICIPATION(id));
   },
+
+  startPemilos: async (id, data = {}) => {
+    return await api.post(`/api/elections/${id}/start-pemilos`, data);
+  },
+
+  stopPemilos: async (id) => {
+    return await api.post(`/api/elections/${id}/stop-pemilos`);
+  },
+
+  resetPemilos: async (id) => {
+    return await api.post(`/api/elections/${id}/reset-pemilos`);
+  },
 };
 
 export default electionService;
