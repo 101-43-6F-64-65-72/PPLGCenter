@@ -443,18 +443,13 @@ export default function ProposalPage() {
 
         <main className="mx-auto flex w-full max-w-5xl flex-col px-4 py-24 sm:px-6 lg:px-8 lg:py-28 space-y-8">
           {/* Header Banner */}
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center rounded-full border border-[#C7D2FE] bg-[#EEF2FF] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2C1EE8]">
-              {isReviewerRole ? "Peninjauan Proposal" : "Pengajuan Proposal"}
-            </div>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          <div className="border-b border-slate-200 pb-4">
+            <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
+              PROPOSAL KEGIATAN SISWA SMKN 2 SURAKARTA
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
               {isReviewerRole ? "Verifikasi & Review Proposal Kegiatan" : "Pengajuan Proposal Digital"}
             </h1>
-            <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">
-              {isReviewerRole
-                ? "Daftar proposal kegiatan ekstrakurikuler & OSIS yang diajukan oleh siswa untuk ditinjau dan disetujui."
-                : "Ajukan proposal kegiatan ekstrakurikuler & OSIS secara digital. Proposal ini akan diverifikasi oleh Pembina/Guru dan Admin Sekolah."}
-            </p>
           </div>
 
           {isReviewerRole ? (
@@ -464,16 +459,13 @@ export default function ProposalPage() {
             /* Student View: Form Pengajuan Proposal + Proposal Saya */
             <>
               {/* SECTION 1: Form Pengajuan Proposal (Full Width Hero Card) */}
-              <section className="rounded-[32px] border border-gray-100 bg-[#FAFBFF] p-6 shadow-sm sm:p-8 lg:p-10">
-                <div className="mb-6 border-b border-gray-100 pb-4">
-                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">Form Pengajuan Proposal</h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Isi detail kegiatan dan lampirkan dokumen proposal PDF Anda.
-                  </p>
+              <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 shadow-xs">
+                <div className="mb-5 border-b border-slate-100 pb-3">
+                  <h2 className="text-lg font-bold text-slate-900">Form Pengajuan Proposal</h2>
                 </div>
 
                 {successMessage && (
-                  <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 font-semibold">
+                  <div className="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700 font-semibold">
                     {successMessage}
                   </div>
                 )}
@@ -502,16 +494,13 @@ export default function ProposalPage() {
               </section>
 
               {/* SECTION 2: Proposal Saya (Full Width Horizontal List Below Form) */}
-              <section className="rounded-[32px] border border-gray-100 bg-white p-6 shadow-sm sm:p-8 lg:p-10">
-                <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+              <section className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 shadow-xs">
+                <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
-                    <h2 className="text-xl sm:text-2xl font-black text-gray-900">Proposal Saya</h2>
-                    <p className="mt-1 text-sm text-gray-500">
-                      Daftar dan riwayat pemantauan status proposal yang telah Anda ajukan.
-                    </p>
+                    <h2 className="text-lg font-bold text-slate-900">Proposal Saya</h2>
                   </div>
-                  <div className="text-xs font-bold text-gray-400 bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100 w-fit self-start sm:self-auto">
-                    Total Proposal: <span className="text-gray-900 font-black">{proposals.length}</span>
+                  <div className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-md border border-slate-200 w-fit">
+                    Total: <span className="text-slate-900 font-bold">{proposals.length}</span>
                   </div>
                 </div>
 

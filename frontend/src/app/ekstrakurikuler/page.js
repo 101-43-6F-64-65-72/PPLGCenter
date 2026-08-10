@@ -141,43 +141,34 @@ export default function EkstrakurikulerPage() {
 
       <main className="flex-1 mx-auto flex w-full max-w-7xl flex-col px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         {/* Header Hero Section */}
-        <section className="overflow-hidden rounded-3xl border border-blue-100 bg-linear-to-br from-[#f7f8ff] via-white to-[#eef2ff] p-6 sm:p-8 lg:p-10 shadow-sm relative">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-[#2c1ee8]/5 blur-3xl pointer-events-none" />
-
-          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] items-center relative z-10">
+        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs relative">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 flex-wrap mb-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#c7d2fe] bg-white/90 px-3.5 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#2c1ee8] shadow-2xs backdrop-blur-xs">
-                  <span className="h-2 w-2 rounded-full bg-[#2c1ee8] animate-pulse" />
-                  Student Center
-                </div>
-
+              <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest">
+                  EKSTRAKURIKULER SMKN 2 SURAKARTA
+                </span>
                 {canCreate && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#2c1ee8] border border-blue-200 text-xs font-extrabold">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-50 text-[#2c1ee8] border border-blue-200 text-xs font-bold">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Akses Pembuat (Guru/Admin)</span>
+                    <span>Akses Pembuat</span>
                   </span>
                 )}
               </div>
 
-              <h1 className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
-                EKSTRAKURIKULER
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+                Katalog Ekstrakurikuler
               </h1>
 
-              <p className="mt-3 text-sm leading-relaxed text-gray-600 sm:text-base max-w-2xl">
-                Wadah pengembangan minat, bakat, dan potensi diri siswa SMKN 2 Surakarta. 
-                Pilih kegiatan yang sesuai dengan passion Anda dan bergabunglah bersama komunitas sekolah!
-              </p>
-
               {/* Filter Tabs Dynamic */}
-              <div className="mt-6 flex flex-wrap items-center gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setActiveCategory("semua")}
-                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                  className={`rounded-md px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
                     activeCategory === "semua"
-                      ? "bg-[#2c1ee8] text-white shadow-md shadow-[#2c1ee8]/20"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-[#2c1ee8]/40 hover:text-[#2c1ee8]"
+                      ? "bg-[#2c1ee8] text-white"
+                      : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
                   }`}
                 >
                   Semua ({totalExtracurriculars})
@@ -187,10 +178,10 @@ export default function EkstrakurikulerPage() {
                     key={cat.id}
                     type="button"
                     onClick={() => setActiveCategory(cat.id)}
-                    className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                    className={`rounded-md px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
                       activeCategory === cat.id
-                        ? "bg-[#2c1ee8] text-white shadow-md shadow-[#2c1ee8]/20"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-[#2c1ee8]/40 hover:text-[#2c1ee8]"
+                        ? "bg-[#2c1ee8] text-white"
+                        : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
                     }`}
                   >
                     {cat.title} ({cat.items.length})
@@ -199,53 +190,18 @@ export default function EkstrakurikulerPage() {
               </div>
             </div>
 
-            {/* Banner Quick Stats Card */}
-            <div className="rounded-2xl border border-gray-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#eef2ff] text-[#2c1ee8] border border-[#c7d2fe]">
-                  <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-base font-bold text-gray-900">Daftar Ekstrakurikuler</p>
-                  <p className="text-xs text-gray-500">Pilih ekstrakurikuler dan lihat detail lengkap</p>
-                </div>
-              </div>
-
-              {/* Search Bar */}
-              <div className="mt-4 relative">
-                <input
-                  type="text"
-                  placeholder="Cari ekstrakurikuler..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-slate-50/80 px-3.5 py-2 pl-9 text-xs text-gray-900 placeholder-gray-400 focus:border-[#2c1ee8] focus:bg-white focus:outline-hidden transition-all"
-                />
-                <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-2.5 text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-xl border border-blue-100 bg-[#f8faff] p-2.5">
-                  <div className="text-lg font-black text-[#2c1ee8]">{totalExtracurriculars}</div>
-                  <div className="text-[11px] font-medium text-gray-500">Total Ekskul</div>
-                </div>
-                <div className="rounded-xl border border-blue-100 bg-[#f8faff] p-2.5">
-                  <div className="text-lg font-black text-[#2c1ee8]">{categories.length}</div>
-                  <div className="text-[11px] font-medium text-gray-500">Kategori</div>
-                </div>
-              </div>
+            {/* Quick Search */}
+            <div className="relative max-w-xs w-full">
+              <input
+                type="text"
+                placeholder="Cari ekstrakurikuler..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-md border border-slate-200 bg-slate-50 px-3.5 py-2 pl-9 text-xs text-slate-900 placeholder-slate-400 focus:border-[#2c1ee8] focus:bg-white focus:outline-hidden transition-all"
+              />
+              <svg className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
           </div>
         </section>
@@ -323,10 +279,10 @@ export default function EkstrakurikulerPage() {
                     {category.items.map((item) => (
                       <div
                         key={item.id}
-                        className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-2 hover:border-[#2c1ee8]/50 hover:shadow-2xl hover:shadow-[#2c1ee8]/15"
+                        className="group flex flex-col justify-between overflow-hidden rounded-lg border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-[#2c1ee8]"
                       >
                         <div>
-                          <div className="relative mb-4.5 aspect-16/10 w-full overflow-hidden rounded-xl border border-blue-100/70 bg-linear-to-br from-slate-100 via-blue-50/60 to-indigo-100/50 p-4 flex flex-col justify-between group-hover:scale-[1.02] transition-transform duration-300">
+                          <div className="relative mb-3 aspect-16/10 w-full overflow-hidden rounded-md border border-slate-200 bg-slate-100 p-3 flex flex-col justify-between">
                             {item.imageUrl ? (
                               <img
                                 src={resolveImageUrl(item.imageUrl)}
@@ -336,13 +292,13 @@ export default function EkstrakurikulerPage() {
                             ) : (
                               <>
                                 <div className="flex items-center justify-between">
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-200/80 bg-white/95 px-3 py-1 text-xs font-bold text-[#2c1ee8] shadow-2xs backdrop-blur-xs">
+                                  <span className="inline-flex items-center rounded-md border border-blue-200 bg-white px-2 py-0.5 text-[11px] font-bold text-[#2c1ee8]">
                                     {item.category}
                                   </span>
                                 </div>
 
-                                <div className="flex items-center justify-center py-2.5">
-                                  <div className="rounded-xl bg-white/85 px-4 py-2 text-center text-xs sm:text-sm font-semibold text-gray-600 backdrop-blur-xs border border-white/80 shadow-2xs">
+                                <div className="flex items-center justify-center py-2">
+                                  <div className="rounded-md bg-white/90 px-3 py-1 text-center text-xs font-medium text-slate-500 border border-slate-200">
                                     📷 Foto belum tersedia
                                   </div>
                                 </div>
@@ -350,33 +306,33 @@ export default function EkstrakurikulerPage() {
                             )}
                           </div>
 
-                          <h3 className="text-xl font-extrabold text-gray-900 group-hover:text-[#2c1ee8] transition-colors truncate">
+                          <h3 className="text-base font-bold text-slate-900 group-hover:text-[#2c1ee8] transition-colors truncate">
                             {item.name}
                           </h3>
 
-                          <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/90 p-4 text-sm space-y-2.5">
-                            <div className="flex items-center justify-between text-gray-500">
-                              <span className="font-medium text-gray-500">Kategori</span>
-                              <span className="font-semibold text-gray-800 truncate max-w-[140px] text-right">
+                          <div className="mt-3 rounded-md border border-slate-100 bg-slate-50 p-3 text-xs space-y-1.5">
+                            <div className="flex items-center justify-between text-slate-500">
+                              <span>Kategori</span>
+                              <span className="font-semibold text-slate-800 truncate max-w-[130px] text-right">
                                 {item.category}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-gray-500 pt-2 border-t border-slate-200/60">
-                              <span className="font-medium text-gray-500">Kapasitas Member</span>
-                              <span className="font-extrabold text-[#2c1ee8] text-base">
+                            <div className="flex items-center justify-between text-slate-500 pt-1.5 border-t border-slate-200">
+                              <span>Anggota</span>
+                              <span className="font-bold text-[#2c1ee8]">
                                 {item.currentMembers || 0} / {item.maxMembers} Siswa
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="mt-5 pt-1">
+                        <div className="mt-4 pt-1">
                           <Link
                             href={`/ekstrakurikuler/${item.id}`}
-                            className="w-full rounded-xl bg-slate-100 py-3 px-4 text-sm font-bold text-[#2c1ee8] border border-blue-200 hover:bg-[#2c1ee8] hover:text-white hover:border-[#2c1ee8] transition-all duration-300 flex items-center justify-center gap-2 shadow-2xs cursor-pointer"
+                            className="w-full rounded-md bg-slate-100 py-2 px-3 text-xs font-bold text-[#2c1ee8] border border-slate-200 hover:bg-[#2c1ee8] hover:text-white transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <span>Lihat Detail</span>
-                            <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
                           </Link>

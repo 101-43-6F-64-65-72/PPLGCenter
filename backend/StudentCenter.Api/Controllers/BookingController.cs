@@ -27,11 +27,12 @@ public class BookingController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] Guid? facilityId = null,
         [FromQuery] Guid? userId = null,
-        [FromQuery] BookingStatus? status = null)
+        [FromQuery] BookingStatus? status = null,
+        [FromQuery] bool isPublic = false)
     {
         var currentUserId = _currentUserService.UserId;
         var userRole = _currentUserService.Role;
-        if (userRole == "Student" && !userId.HasValue && currentUserId.HasValue)
+        if (userRole == "Student" && !userId.HasValue && currentUserId.HasValue && !isPublic)
         {
             userId = currentUserId.Value;
         }

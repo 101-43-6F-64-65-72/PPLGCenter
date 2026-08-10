@@ -27,6 +27,7 @@ export default function GuruSupervisedTab({ supervisedExtracurriculars = [], tea
 
   // Pemilos candidates state (for OSIS)
   const [candidatePairs, setCandidatePairs] = useState([]);
+  const [pemilosLiveResults, setPemilosLiveResults] = useState(null);
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [reviewNotes, setReviewNotes] = useState({});
 

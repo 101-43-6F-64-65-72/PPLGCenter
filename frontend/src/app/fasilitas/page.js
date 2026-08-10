@@ -70,10 +70,15 @@ export default function FasilitasPage() {
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // My Bookings System States
+  // My Bookings System States (Private to User)
   const [myBookingsData, setMyBookingsData] = useState([]);
   const [isMyBookingsOpen, setIsMyBookingsOpen] = useState(false);
   const [loadingMyBookings, setLoadingMyBookings] = useState(false);
+
+  // All Public Borrowings System States (Transparency Schedule for All Students)
+  const [publicBookingsData, setPublicBookingsData] = useState([]);
+  const [isPublicBookingsOpen, setIsPublicBookingsOpen] = useState(false);
+  const [loadingPublicBookings, setLoadingPublicBookings] = useState(false);
 
   const fetchMyBookings = async () => {
     setLoadingMyBookings(true);
@@ -85,6 +90,19 @@ export default function FasilitasPage() {
       setMyBookingsData([]);
     } finally {
       setLoadingMyBookings(false);
+    }
+  };
+
+  const fetchPublicBookings = async () => {
+    setLoadingPublicBookings(true);
+    try {
+      const res = await bookingService.getPublicBookings({ pageSize: 100 });
+      setPublicBookingsData(Array.isArray(res) ? res : []);
+    } catch (err) {
+      console.error("Failed to load public bookings", err);
+      setPublicBookingsData([]);
+    } finally {
+      setLoadingPublicBookings(false);
     }
   };
 
@@ -198,41 +216,41 @@ export default function FasilitasPage() {
       {/* Main Page Container */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-24">
         {/* Page Banner Header */}
-        <div className="mb-8 space-y-5">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-950 tracking-tight leading-tight">
+              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                SARPRAS SMKN 2 SURAKARTA
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Katalog Fasilitas & Tempat
               </h1>
-              <p className="text-sm sm:text-base text-slate-600 max-w-2xl mt-2 font-normal">
-                Jelajahi sarana prasarana dan lokasi ruangan SMKN 2 Surakarta. Cek ketersediaan dan ajukan peminjaman secara digital dengan efisien.
-              </p>
             </div>
 
             {/* Top Action Bar */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Tombol 1: Peminjaman Saya (Private to Student) */}
               <button
                 onClick={() => {
                   fetchMyBookings();
                   setIsMyBookingsOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 transition-all duration-300 cursor-pointer shadow-xs active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-xs font-bold bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
               >
-                <Clock className="w-4.5 h-4.5 text-[#2c1ee8]" />
+                <Clock className="w-4 h-4 text-[#2c1ee8]" />
                 <span>Peminjaman Saya</span>
               </button>
 
+              {/* Tombol 2: Daftar Pinjaman Semua (Public Borrowing Transparency List) */}
               <button
-                onClick={() => setIsCartOpen(true)}
-                className="relative inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold bg-[#2c1ee8] text-white hover:bg-[#2013ce] transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg shadow-blue-600/20 active:scale-95"
+                onClick={() => {
+                  fetchPublicBookings();
+                  setIsPublicBookingsOpen(true);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2013ce] transition-all cursor-pointer"
               >
-                <ShoppingBag className="w-4.5 h-4.5" />
-                <span>Daftar Pinjaman ({cartItems.length})</span>
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-sm animate-pulse">
-                    {cartItems.length}
-                  </span>
-                )}
+                <Building2 className="w-4 h-4" />
+                <span>Daftar Pinjaman</span>
               </button>
             </div>
           </div>
@@ -419,6 +437,105 @@ export default function FasilitasPage() {
                     )}
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Public Borrowings Transparency Schedule Modal (Daftar Pinjaman Semua) */}
+      {isPublicBookingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-3xl rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 max-h-[85vh] flex flex-col font-sans">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#2c1ee8] flex items-center justify-center font-black">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900">Daftar Jadwal Peminjaman Fasilitas</h3>
+                  <p className="text-xs text-gray-500">Transparansi jadwal peminjaman tempat oleh seluruh organisasi & siswa</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPublicBookingsOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-3 py-1">
+              {loadingPublicBookings ? (
+                <div className="py-12 text-center text-gray-400 animate-pulse text-xs font-bold">
+                  Memuat daftar jadwal peminjaman...
+                </div>
+              ) : publicBookingsData.length === 0 ? (
+                <div className="py-12 text-center text-gray-400 space-y-2">
+                  <Building2 className="w-12 h-12 text-gray-300 mx-auto" />
+                  <p className="font-extrabold text-gray-700 text-sm">Belum Ada Peminjaman Terdaftar</p>
+                  <p className="text-xs text-gray-400 max-w-xs mx-auto">
+                    Saat ini belum ada jadwal peminjaman fasilitas yang tercatat di sistem.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-100">
+                      <tr>
+                        <th className="p-3.5">Fasilitas / Tempat</th>
+                        <th className="p-3.5">Tanggal & Waktu (Jam)</th>
+                        <th className="p-3.5">Organisasi Peminjam</th>
+                        <th className="p-3.5">Status Peminjaman</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 font-medium">
+                      {publicBookingsData.map((b) => (
+                        <tr key={b.id} className="hover:bg-slate-50/70 transition">
+                          {/* 1. Nama Fasilitas */}
+                          <td className="p-3.5 font-extrabold text-gray-900">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-[#2c1ee8] flex-shrink-0" />
+                              <span className="uppercase">{b.facilityTitle}</span>
+                            </div>
+                          </td>
+
+                          {/* 2. Tanggal / Waktu */}
+                          <td className="p-3.5 text-gray-700">
+                            <div className="space-y-0.5">
+                              <span className="block font-bold text-gray-900">{b.date}</span>
+                              <span className="inline-block bg-blue-50 text-[#2c1ee8] px-2 py-0.5 rounded font-extrabold text-[11px]">
+                                {b.slotFormatted}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* 3. Nama Organisasi */}
+                          <td className="p-3.5 font-bold text-gray-800">
+                            <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg">
+                              {b.organization}
+                            </span>
+                          </td>
+
+                          {/* 4. Status */}
+                          <td className="p-3.5">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold border ${
+                                b.status?.includes("Disetujui")
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : b.status?.includes("Ditolak")
+                                  ? "bg-rose-50 text-rose-700 border-rose-200"
+                                  : "bg-amber-50 text-amber-700 border-amber-200"
+                              }`}
+                            >
+                              {b.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>

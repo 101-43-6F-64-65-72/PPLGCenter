@@ -150,35 +150,34 @@ export default function MadingPage() {
       <section id="mading-catalog" className="w-full bg-white text-gray-900 py-16 sm:py-20 px-4 sm:px-8 lg:px-12">
         <div className="max-w-6xl mx-auto">
           {/* Header & Search Bar */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-gray-100 pb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-200 pb-4">
             <div>
-              <div className="inline-flex items-center gap-2 text-[#1d4ed8] font-bold text-xs uppercase tracking-wider mb-2">
-                <span className="w-2 h-2 rounded-full bg-[#1d4ed8] animate-pulse" />
-                <span>KATALOG MADING DIGITAL</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-[800] text-gray-900 tracking-tight uppercase leading-tight">
-                BERITA & PUBLIKASI SISWA
-              </h2>
+              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                PUBLIKASI MADING DIGITAL SMKN 2 SURAKARTA
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                Berita & Mading Sekolah
+              </h1>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-              <form onSubmit={handleSearchSubmit} className="w-full md:w-72 relative flex items-center">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+              <form onSubmit={handleSearchSubmit} className="w-full md:w-64 relative flex items-center">
                 <input
                   type="text"
                   placeholder="Cari pengumuman..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-full border border-gray-200 bg-gray-50 text-sm outline-none focus:border-[#1d4ed8] focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all shadow-xs"
+                  className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-xs outline-none focus:border-[#2c1ee8] focus:bg-white transition-all"
                 />
-                <Search className="w-4 h-4 text-gray-400 absolute left-3.5" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3" />
               </form>
 
               {canCreateMading && (
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="px-5 py-2.5 rounded-full bg-[#1d4ed8] hover:bg-blue-800 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-blue-500/20 transition-all transform hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
+                  className="px-4 py-2 rounded-md bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer"
                 >
-                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <Plus className="w-4 h-4" />
                   <span>Tambah Mading</span>
                 </button>
               )}
@@ -186,15 +185,15 @@ export default function MadingPage() {
           </div>
 
           {/* Sticky Category Filter Pills */}
-          <div className="sticky top-20 z-30 bg-white/90 backdrop-blur-md py-3 mb-8 transition-all border-b border-gray-100/60 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-xs py-2 mb-6 transition-all border-b border-slate-100 -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="flex flex-wrap items-center gap-2">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}
-                  className={`px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer ${activeCategory === cat
-                      ? "bg-[#1d4ed8] text-white shadow-md shadow-blue-500/20 scale-105"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200/60"
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${activeCategory === cat
+                      ? "bg-[#2c1ee8] text-white"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
                     }`}
                 >
                   {cat}

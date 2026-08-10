@@ -25,12 +25,23 @@ export const bookingService = {
         if (rawStatus === 1 || rawStatus === "Approved") statusText = "Disetujui Admin";
         else if (rawStatus === 2 || rawStatus === "Rejected") statusText = "Ditolak Admin";
 
+        let purposeText = item.purpose || item.Purpose || item.purposeText || "";
+        let parsedOrg = item.organizationName || item.OrganizationName || item.organization;
+
+        if (!parsedOrg && purposeText.startsWith("[")) {
+          const closingIdx = purposeText.indexOf("]");
+          if (closingIdx > 1) {
+            parsedOrg = purposeText.substring(1, closingIdx);
+          }
+        }
+        if (!parsedOrg) parsedOrg = "Organisasi Sekolah";
+
         return {
           id: item.id || item.Id,
           facilityId: item.facilityId || item.FacilityId,
           facilityTitle: item.facilityName || item.FacilityName || item.facilityTitle || "Fasilitas Sekolah",
           activityName: item.purpose || item.Purpose || item.activityName || "Kegiatan Sekolah",
-          organization: item.organizationName || item.OrganizationName || item.organization || "OSIS / Ekstrakurikuler",
+          organization: parsedOrg,
           date: item.startTime
             ? new Date(item.startTime).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
             : "Hari ini",
@@ -39,12 +50,19 @@ export const bookingService = {
             : "08:00 - 12:00",
           description: item.purpose || item.Description || item.description || "-",
           status: statusText,
-          verificator: item.approvedByUserName || "Admin Sarpras",
+          rawStatus: rawStatus,
+          startTime: item.startTime,
+          endTime: item.endTime,
         };
       });
-    } catch (error) {
+    } catch (err) {
+      console.error("Error fetching bookings:", err);
       return [];
     }
+  },
+
+  async getPublicBookings(params = {}) {
+    return this.getBookings({ ...params, isPublic: true });
   },
 
   /**

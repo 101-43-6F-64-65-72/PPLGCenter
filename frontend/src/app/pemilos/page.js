@@ -99,7 +99,13 @@ function PemilosContent() {
   }, [selectedElectionId]);
 
   useEffect(() => {
-    fetchElections();
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) fetchElections();
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [fetchElections]);
 
   const selectedElection = elections.find((e) => String(e.id) === String(selectedElectionId)) || elections[0] || null;
@@ -130,7 +136,7 @@ function PemilosContent() {
   // Countdown timer logic
   useEffect(() => {
     if (!selectedElection?.startDate || !selectedElection?.endDate) {
-      setTimeRemaining("");
+      queueMicrotask(() => setTimeRemaining(""));
       return;
     }
 
@@ -144,14 +150,16 @@ function PemilosContent() {
     } else if (currentTime <= end) {
       targetDate = end;
     } else {
-      setTimeRemaining("Pemilihan telah berakhir");
+      queueMicrotask(() => setTimeRemaining("Pemilihan telah berakhir"));
       return;
     }
 
     const diffMs = targetDate - currentTime;
     if (diffMs <= 0) {
-      setTimeRemaining("Memproses perubahan status...");
-      fetchElections();
+      queueMicrotask(() => {
+        setTimeRemaining("Memproses perubahan status...");
+        fetchElections();
+      });
       return;
     }
 
@@ -160,11 +168,8 @@ function PemilosContent() {
     const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
     const timeStr = `${hours}j ${minutes}m ${seconds}s`;
-    if (currentTime < start) {
-      setTimeRemaining(`Dimulai dalam ${timeStr}`);
-    } else {
-      setTimeRemaining(`Berakhir dalam ${timeStr}`);
-    }
+    const label = currentTime < start ? `Dimulai dalam ${timeStr}` : `Berakhir dalam ${timeStr}`;
+    queueMicrotask(() => setTimeRemaining(label));
   }, [now, selectedElection, fetchElections]);
 
   // Load pairs & live results for selected election
@@ -211,7 +216,13 @@ function PemilosContent() {
   }, [selectedElectionId, selectedElection]);
 
   useEffect(() => {
-    loadPairsAndResults();
+    let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) loadPairsAndResults();
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [loadPairsAndResults]);
 
   const handleVote = (pairId) => {
@@ -274,34 +285,29 @@ function PemilosContent() {
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-20">
         {/* Page Header */}
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#2c1ee8]/10 text-[#2c1ee8] text-xs font-extrabold tracking-wide mb-3 border border-[#2c1ee8]/20">
-            <Vote className="w-4 h-4" />
-            <span>PEMILIHAN KETUA OSIS — PEMILOS</span>
-          </div>
-
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="mb-6 border-b border-slate-200 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight">
-                E-Voting PEMILOS
+              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                E-VOTING PEMILIHAN KETUA & WAKIL KETUA OSIS
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                Pemilihan Ketua OSIS (PEMILOS)
               </h1>
-              <p className="text-sm sm:text-base text-gray-500 mt-1 max-w-xl">
-                Gunakan hak suara Anda secara digital, aman, dan transparan. Satu akun, satu suara.
-              </p>
             </div>
 
             <div className="flex items-center gap-2">
               <Link
                 href="/pemilos/register"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs sm:text-sm font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors"
               >
                 <Users className="w-4 h-4" />
-                <span>+ Daftar Kandidat Pemilos</span>
+                <span>+ Daftar Kandidat</span>
               </Link>
               <button
                 onClick={loadPairsAndResults}
                 disabled={loadingPairs}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-gray-200 bg-white text-xs sm:text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingPairs ? "animate-spin" : ""}`} />
                 <span>Refresh</span>
@@ -311,16 +317,16 @@ function PemilosContent() {
 
           {/* Multiple Elections Selector Pills (if more than 1 election exists) */}
           {elections.length > 1 && (
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-1">Pilih Sesi:</span>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Sesi:</span>
               {elections.map((el) => (
                 <button
                   key={el.id}
                   onClick={() => setSelectedElectionId(el.id)}
-                  className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all border cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
                     String(el.id) === String(selectedElectionId)
-                      ? "bg-[#2c1ee8] text-white border-[#2c1ee8] shadow-md shadow-blue-500/20"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      ? "bg-[#2c1ee8] text-white border-[#2c1ee8]"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                   }`}
                 >
                   {el.title}
@@ -330,7 +336,7 @@ function PemilosContent() {
           )}
 
           {/* Tab switcher */}
-          <div className="flex items-center gap-2 mt-6 border-b border-gray-200 pb-0">
+          <div className="flex items-center gap-2 mt-4 border-b border-slate-200 pb-0">
             {[
               { id: "ballot", label: "Bilik Suara", icon: Vote },
               { id: "results", label: "Hasil Suara Live", icon: BarChart3 },
@@ -338,10 +344,10 @@ function PemilosContent() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-t-2xl text-sm font-bold transition-all border-b-2 -mb-px cursor-pointer ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-t-md text-xs font-bold transition-all border-b-2 -mb-px cursor-pointer ${
                   activeTab === id
-                    ? "border-[#2c1ee8] text-[#2c1ee8] bg-white"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
+                    ? "border-[#2c1ee8] text-[#2c1ee8] bg-white font-extrabold"
+                    : "border-transparent text-slate-500 hover:text-slate-900"
                 }`}
               >
                 <Icon className="w-4 h-4" />
