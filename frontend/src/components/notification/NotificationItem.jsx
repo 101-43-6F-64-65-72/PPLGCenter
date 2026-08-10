@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { 
@@ -78,58 +80,58 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
     switch (priority) {
       case 3:
         return {
-          border: "border-l-4 border-l-rose-500",
+          border: "border-l-4 border-l-rose-600",
           badge: (
-            <span className="text-[10px] bg-rose-100 text-rose-700 border border-rose-200 font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+            <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
               <AlertTriangle className="w-3 h-3 text-rose-600" />
               Darurat
             </span>
           ),
-          unreadBg: "bg-rose-50/50 border-rose-200 hover:border-rose-300",
-          iconBg: "bg-rose-100 text-rose-600 border-rose-200",
+          unreadBg: "bg-rose-50/40 border-slate-200 hover:border-rose-300",
+          iconBg: "bg-rose-50 text-rose-600 border-rose-200",
           unreadDot: "bg-rose-600",
-          titleColor: "text-rose-700",
+          titleColor: "text-slate-900 font-bold",
         };
       case 2:
         return {
           border: "border-l-4 border-l-amber-500",
           badge: (
-            <span className="text-[10px] bg-amber-100 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+            <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
               <AlertCircle className="w-3 h-3 text-amber-600" />
               Penting
             </span>
           ),
-          unreadBg: "bg-amber-50/40 border-amber-200 hover:border-amber-300",
-          iconBg: "bg-amber-100 text-amber-700 border-amber-200",
+          unreadBg: "bg-amber-50/30 border-slate-200 hover:border-amber-300",
+          iconBg: "bg-amber-50 text-amber-700 border-amber-200",
           unreadDot: "bg-amber-500",
-          titleColor: "text-amber-900",
+          titleColor: "text-slate-900 font-bold",
         };
       case 0:
         return {
-          border: "border-l-4 border-l-slate-400",
+          border: "border-l-4 border-l-slate-300",
           badge: (
-            <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 font-medium px-2 py-0.5 rounded-full shrink-0">
+            <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 font-medium px-2 py-0.5 rounded-md shrink-0">
               Rendah
             </span>
           ),
-          unreadBg: "bg-slate-100/70 border-slate-200 hover:border-slate-300",
+          unreadBg: "bg-slate-50 border-slate-200 hover:border-slate-300",
           iconBg: "bg-slate-100 text-slate-600 border-slate-200",
           unreadDot: "bg-slate-400",
-          titleColor: "text-slate-800",
+          titleColor: "text-slate-900 font-bold",
         };
       case 1:
       default:
         return {
-          border: "border-l-4 border-l-indigo-500",
+          border: "border-l-4 border-l-slate-900",
           badge: (
-            <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold px-2 py-0.5 rounded-full shrink-0">
+            <span className="text-[10px] bg-slate-100 text-slate-700 border border-slate-200 font-bold px-2 py-0.5 rounded-md shrink-0">
               Normal
             </span>
           ),
-          unreadBg: "bg-blue-50/70 border-blue-200 hover:border-[#2c1ee8]/40",
-          iconBg: "bg-indigo-100 text-[#2c1ee8] border-indigo-200",
-          unreadDot: "bg-[#2c1ee8]",
-          titleColor: "text-[#2c1ee8]",
+          unreadBg: "bg-slate-50/90 border-slate-300 hover:border-slate-400",
+          iconBg: "bg-slate-100 text-slate-800 border-slate-200",
+          unreadDot: "bg-slate-900",
+          titleColor: "text-slate-900 font-bold",
         };
     }
   };
@@ -146,31 +148,31 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
   const content = (
     <div
       onClick={handleClick}
-      className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 cursor-pointer ${priorityConfig.border} ${
+      className={`p-3.5 rounded-lg border transition-all flex items-start gap-3 cursor-pointer ${priorityConfig.border} ${
         isRead
-          ? "bg-white border-gray-100 text-gray-700 opacity-85 hover:bg-gray-50 hover:opacity-100"
-          : `${priorityConfig.unreadBg} text-gray-900 shadow-xs`
+          ? "bg-white border-slate-200 text-slate-700 hover:border-slate-300 shadow-2xs"
+          : `${priorityConfig.unreadBg} text-slate-900 shadow-xs`
       }`}
     >
-      <div className={`shrink-0 w-9 h-9 rounded-xl border flex items-center justify-center shadow-xs transition-colors ${
-        isRead ? "bg-gray-100 text-gray-500 border-gray-200" : priorityConfig.iconBg
+      <div className={`shrink-0 w-9 h-9 rounded-md border flex items-center justify-center shadow-2xs transition-colors ${
+        isRead ? "bg-slate-50 text-slate-500 border-slate-200" : priorityConfig.iconBg
       }`}>
         {getIcon()}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <h4 className={`text-xs sm:text-sm font-black truncate ${!isRead ? priorityConfig.titleColor : "text-gray-900"}`}>
+        <div className="flex items-center justify-between gap-2 mb-0.5">
+          <h4 className={`text-xs sm:text-sm truncate ${!isRead ? priorityConfig.titleColor : "text-slate-900 font-bold"}`}>
             {stripHtml(notification.title)}
           </h4>
           <div className="flex items-center gap-1.5 shrink-0">
             {priorityConfig.badge}
-            {!isRead && <span className={`w-2 h-2 rounded-full animate-pulse ${priorityConfig.unreadDot}`} />}
+            {!isRead && <span className={`w-2 h-2 rounded-full ${priorityConfig.unreadDot}`} />}
           </div>
         </div>
-        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-medium">
+        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-medium">
           {stripHtml(notification.body || notification.message)}
         </p>
-        <span className="text-[10px] text-gray-400 font-semibold mt-1 block">{formattedTime}</span>
+        <span className="text-[10px] text-slate-400 font-medium mt-1 block">{formattedTime}</span>
       </div>
 
       <div className="flex flex-col gap-1 shrink-0">
@@ -182,7 +184,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
               onMarkRead(notification.id);
             }}
             title="Tandai Dibaca"
-            className="p-1 text-gray-400 hover:text-[#2c1ee8] hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
           </button>
@@ -195,7 +197,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
               onDelete(notification.id);
             }}
             title="Hapus Notifikasi"
-            className="p-1 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -211,53 +213,45 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
     const type = notif?.type;
     const refId = notif?.referenceId;
 
-    // Check Proposal
     const isProposal =
       refType === 8 ||
       refType === "Proposal" ||
-      type === 10 || // Proposal
-      type === 19 || // ProposalSubmitted
-      type === 20 || // ProposalApproved
-      type === 21 || // ProposalRejected
-      type === 22;   // ProposalRevisionRequested
+      type === 10 ||
+      type === 19 ||
+      type === 20 ||
+      type === 21 ||
+      type === 22;
 
-    // Check Extracurricular
     const isExtracurricular =
       refType === 15 ||
       refType === "Extracurricular" ||
-      type === 23 || // ExtracurricularRegistrationApproved
-      type === 24;   // ExtracurricularRegistrationRejected
+      type === 23 ||
+      type === 24;
 
-    // Check Announcement / Mading
     const isAnnouncement =
       refType === 1 ||
       refType === "Announcement" ||
-      type === 0 ||  // Announcement
-      type === 18;   // AnnouncementComment
+      type === 0 ||
+      type === 18;
 
-    // Check Election / Pemilos
     const isElection =
       refType === 17 ||
       refType === "Election" ||
       (typeof type === "number" && type >= 25 && type <= 28);
 
-    // Check Grade / Nilai
     const isGrade =
       refType === 10 ||
       refType === "StudentGrade" ||
-      type === 2 ||  // AssignmentGraded
-      type === 12 || // GradePublished
-      type === 13;   // GradeUpdated
+      type === 2 ||
+      type === 12 ||
+      type === 13;
 
-    // Check Facility / Booking
     const isFacility =
       refType === 7 ||
-      refType === 16 ||
       refType === "Facility" ||
       refType === "Booking" ||
-      type === 9;    // Booking
+      type === 9;
 
-    // Check Academic Event / Calendar
     const isCalendar =
       refType === 5 ||
       refType === "AcademicEvent" ||
@@ -283,7 +277,6 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
 
     if (!url) return null;
 
-    // Standardize URL paths
     if (url.startsWith("/announcements/")) {
       return url.replace("/announcements/", "/mading/");
     }
