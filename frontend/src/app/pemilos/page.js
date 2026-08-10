@@ -15,7 +15,7 @@ import electionService from "@/services/electionService";
 import useAuth from "@/hooks/useAuth";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import {
-  Vote, BarChart3, Sparkles, RefreshCw,
+  Vote, BarChart3, RefreshCw,
   AlertCircle, Loader2, Users, Clock, Calendar, CheckCircle2, Trophy, GitBranch
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -78,7 +78,6 @@ function PemilosContent() {
 
       setElections(validElections);
       if (validElections.length > 0 && !selectedElectionId) {
-        // Default to first open/ongoing election or latest
         const ongoing = validElections.find(
           (e) => (e.statusText === "Open" || e.status === 1) && new Date(e.startDate) <= new Date() && new Date(e.endDate) >= new Date()
         );
@@ -196,7 +195,6 @@ function PemilosContent() {
       const resultsObj = rawResults?.data ?? rawResults ?? null;
       setLiveResults(resultsObj);
 
-      // Check HasVoted from backend live results or selected election
       const userHasVoted = !!(
         resultsObj?.userHasVoted ||
         resultsObj?.UserHasVoted ||
@@ -272,7 +270,7 @@ function PemilosContent() {
     }
   };
 
-  // Approved candidate pairs for ballot (status Approved = 5 or legacy WaitingAdmin = 4)
+  // Approved candidate pairs for ballot
   const approvedPairs = pairs.filter(
     (p) => p.statusText === "Approved" || p.status === 5 || p.statusText === "WaitingAdmin" || p.status === 4
   );
@@ -295,118 +293,118 @@ function PemilosContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans">
       <Navbar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-20">
-          {/* Page Header */}
-          <div className="mb-6 border-b border-slate-200 pb-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
-                  E-VOTING PEMILIHAN KETUA & WAKIL KETUA OSIS
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                  Pemilihan Ketua OSIS (PEMILOS)
-                </h1>
-              </div>
+        {/* Page Header (Clean Enterprise Aesthetic) */}
+        <div className="mb-6 border-b border-slate-200 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                E-VOTING KETUA & WAKIL KETUA OSIS
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Pemilihan Ketua OSIS (PEMILOS)
+              </h1>
+            </div>
 
-              {/* Strict 3-State Header Action Button */}
-              {(() => {
-                const electionStatus = selectedElection?.status ?? liveResults?.status;
-                const hasCabStructure = !!(selectedElection?.cabinetStructureJson || selectedElection?.CabinetStructureJson || liveResults?.cabinetStructureJson || liveResults?.CabinetStructureJson);
-                const isClosed = electionStatus === 2 || electionStatus === "Closed" || selectedElection?.statusText === "Closed";
-                const isOngoing = !isClosed && (electionStatus === 1 || electionStatus === "Open" || selectedElection?.statusText === "Open") && hasCabStructure;
-                const pemilosState = isClosed ? "CLOSED" : isOngoing ? "ONGOING" : "SETUP";
+            {/* Header Action Buttons */}
+            {(() => {
+              const electionStatus = selectedElection?.status ?? liveResults?.status;
+              const hasCabStructure = !!(selectedElection?.cabinetStructureJson || selectedElection?.CabinetStructureJson || liveResults?.cabinetStructureJson || liveResults?.CabinetStructureJson);
+              const isClosed = electionStatus === 2 || electionStatus === "Closed" || selectedElection?.statusText === "Closed";
+              const isOngoing = !isClosed && (electionStatus === 1 || electionStatus === "Open" || selectedElection?.statusText === "Open") && hasCabStructure;
+              const pemilosState = isClosed ? "CLOSED" : isOngoing ? "ONGOING" : "SETUP";
 
-                return (
-                  <div className="flex items-center gap-2">
-                    {pemilosState === "SETUP" ? (
-                      <Link
-                        href="/pemilos/register"
-                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
-                      >
-                        <Users className="w-4 h-4" />
-                        <span>+ Daftar Kandidat</span>
-                      </Link>
-                    ) : (
-                      <button
-                        disabled
-                        title={pemilosState === "ONGOING" ? "Pendaftaran ditutup karena voting sedang berlangsung" : "Pemilos telah berakhir"}
-                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-200 text-slate-500 text-xs font-bold cursor-not-allowed border border-slate-300"
-                      >
-                        <Users className="w-4 h-4 text-slate-400" />
-                        <span>+ Daftar Kandidat (Ditutup)</span>
-                      </button>
-                    )}
-
-                    <button
-                      onClick={loadPairsAndResults}
-                      disabled={loadingPairs}
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
+              return (
+                <div className="flex items-center gap-2">
+                  {pemilosState === "SETUP" ? (
+                    <Link
+                      href="/pemilos/register"
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors shadow-xs cursor-pointer"
                     >
-                      <RefreshCw className={`w-4 h-4 ${loadingPairs ? "animate-spin" : ""}`} />
-                      <span>Refresh</span>
+                      <Users className="w-4 h-4" />
+                      <span>+ Daftar Kandidat</span>
+                    </Link>
+                  ) : (
+                    <button
+                      disabled
+                      title={pemilosState === "ONGOING" ? "Pendaftaran ditutup karena voting sedang berlangsung" : "Pemilos telah berakhir"}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-100 text-slate-400 text-xs font-bold cursor-not-allowed border border-slate-200"
+                    >
+                      <Users className="w-4 h-4 text-slate-400" />
+                      <span>+ Daftar Kandidat (Ditutup)</span>
                     </button>
-                  </div>
-                );
-              })()}
-            </div>
+                  )}
+
+                  <button
+                    onClick={loadPairsAndResults}
+                    disabled={loadingPairs}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingPairs ? "animate-spin" : ""}`} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              );
+            })()}
           </div>
+        </div>
 
-          {/* Multiple Elections Selector Pills (if more than 1 election exists) */}
-          {elections.length > 1 && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Sesi:</span>
-              {elections.map((el) => (
-                <button
-                  key={el.id}
-                  onClick={() => setSelectedElectionId(el.id)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
-                    String(el.id) === String(selectedElectionId)
-                      ? "bg-[#2c1ee8] text-white border-[#2c1ee8]"
-                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  {el.title}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Tab switcher */}
-          <div className="flex items-center gap-2 mt-4 border-b border-slate-200 pb-0">
-            {[
-              { id: "ballot", label: "Bilik Suara", icon: Vote },
-              { id: "results", label: "Hasil Suara Live", icon: BarChart3 },
-            ].map(({ id, label, icon: Icon }) => (
+        {/* Sesi Election Selector Pills */}
+        {elections.length > 1 && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Sesi:</span>
+            {elections.map((el) => (
               <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-t-md text-xs font-bold transition-all border-b-2 -mb-px cursor-pointer ${
-                  activeTab === id
-                    ? "border-[#2c1ee8] text-[#2c1ee8] bg-white font-extrabold"
-                    : "border-transparent text-slate-500 hover:text-slate-900"
+                key={el.id}
+                onClick={() => setSelectedElectionId(el.id)}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all border cursor-pointer ${
+                  String(el.id) === String(selectedElectionId)
+                    ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {label}
+                {el.title}
               </button>
             ))}
           </div>
+        )}
+
+        {/* Tab switcher */}
+        <div className="flex items-center gap-2 mb-6 border-b border-slate-200 pb-0">
+          {[
+            { id: "ballot", label: "Bilik Suara", icon: Vote },
+            { id: "results", label: "Hasil Suara Live", icon: BarChart3 },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-t-md text-xs font-bold transition-all border-b-2 -mb-px cursor-pointer ${
+                activeTab === id
+                  ? "border-slate-900 text-slate-900 bg-white font-extrabold"
+                  : "border-transparent text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
 
         {isUnauthorized ? (
           <LoginRequiredFallback featureName="Pemilos (E-Voting Ketua OSIS)" />
         ) : loadingElections ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
-            <p className="text-sm text-gray-500 font-medium">Memuat sesi pemilihan OSIS...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-slate-700" />
+            <p className="text-xs text-slate-500 font-medium">Memuat sesi pemilihan OSIS...</p>
           </div>
         ) : elections.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
-            <Vote className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-bold text-gray-700">Belum Ada Sesi Pemilihan</h3>
-            <p className="text-sm text-gray-400 mt-1 max-w-md mx-auto">
+          <div className="text-center py-20 bg-white rounded-lg border border-slate-200 p-8 shadow-xs space-y-3">
+            <Vote className="w-12 h-12 mx-auto text-slate-300 mb-2" />
+            <h3 className="text-base font-bold text-slate-800">Belum Ada Sesi Pemilihan</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
               Saat ini belum ada jadwal pemilihan ketua OSIS yang terdaftar.
             </p>
           </div>
@@ -414,11 +412,11 @@ function PemilosContent() {
           <>
             {/* Voted Banner */}
             {hasVoted && (
-              <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center gap-3 shadow-xs">
+              <div className="mb-6 p-4 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center gap-3 shadow-2xs">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                 <div>
-                  <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Suara Anda telah tercatat!</h4>
-                  <p className="text-xs text-emerald-700 font-medium">Terima kasih telah berpartisipasi dalam pemilihan kepengurusan OSIS tahun ini.</p>
+                  <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Suara Anda Telah Tercatat</h4>
+                  <p className="text-xs text-emerald-700 font-medium">Terima kasih telah berpartisipasi dalam e-voting pemilihan Ketua OSIS tahun ini.</p>
                 </div>
               </div>
             )}
@@ -428,9 +426,9 @@ function PemilosContent() {
               <>
                 {/* Election Status Banner */}
                 {selectedElection && (
-                  <div className="mb-8 p-6 sm:p-8 rounded-3xl bg-white border border-gray-100 shadow-sm relative overflow-hidden">
+                  <div className="mb-6 p-5 sm:p-6 rounded-lg bg-white border border-slate-200 shadow-xs relative overflow-hidden">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                      <div className="space-y-3 flex-1">
+                      <div className="space-y-2 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           {(() => {
                             const eStat = selectedElection?.status ?? liveResults?.status;
@@ -442,44 +440,39 @@ function PemilosContent() {
                               ? "Pemilihan Telah Berakhir"
                               : isOngoingState
                               ? "Pemilihan Sedang Berlangsung"
-                              : "Belum Dimulai (Pendaftaran Kandidat)";
+                              : "Pendaftaran Kandidat";
 
                             const badgeStyle = isClosedState
-                              ? "bg-purple-50 text-grey-700 border-purple-200"
+                              ? "bg-slate-100 text-slate-700 border-slate-200 font-bold"
                               : isOngoingState
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-amber-50 text-amber-700 border-amber-200";
-
-                            const statusLabel = isClosedState ? "Closed" : isOngoingState ? "Open" : "Draft (Setup)";
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
+                              : "bg-amber-50 text-amber-700 border-amber-200 font-bold";
 
                             return (
-                              <>
-                            
-                                <span className="text-xs font-medium text-gray-400">
-                                  (Status: {statusLabel})
-                                </span>
-                              </>
+                              <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md border ${badgeStyle}`}>
+                                {badgeText}
+                              </span>
                             );
                           })()}
                         </div>
 
-                        <h2 className="text-lg font-grey text-gray-900 mt-2">
+                        <h2 className="text-lg font-bold text-slate-900 mt-1">
                           {selectedElection.title}
                         </h2>
                         {selectedElection.description && (
-                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 line-clamp-2">
+                          <p className="text-xs sm:text-sm text-slate-500 line-clamp-2">
                             {selectedElection.description}
                           </p>
                         )}
                       </div>
 
                       {/* Live Countdown & Period Info */}
-                      <div className="bg-gray-50 rounded-2xl p-3.5 border border-gray-100 flex flex-col items-start sm:items-end flex-shrink-0">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-gray-700 mb-1">
-                          <Clock className="w-4 h-4 text-[#2c1ee8]" />
+                      <div className="bg-slate-50 rounded-md p-3 border border-slate-200 flex flex-col items-start sm:items-end flex-shrink-0">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 mb-1">
+                          <Clock className="w-4 h-4 text-slate-700" />
                           <span>{timeRemaining || "Jadwal Pemilihan"}</span>
                         </div>
-                        <div className="text-[11px] text-gray-500 flex items-center gap-1 font-medium">
+                        <div className="text-[11px] text-slate-500 flex items-center gap-1 font-medium">
                           <Calendar className="w-3.5 h-3.5" />
                           <span>
                             {formatDate(selectedElection.startDate)} – {formatDate(selectedElection.endDate)}
@@ -513,21 +506,22 @@ function PemilosContent() {
 
                   if (pemilosState === "CLOSED") {
                     return (
-                      <div className="bg-white rounded-3xl border border-purple-100 p-8 sm:p-10 shadow-sm text-center space-y-5">
-                   
+                      <div className="bg-white rounded-lg border border-slate-200 p-8 sm:p-10 shadow-xs text-center space-y-4">
+                        <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto border border-slate-200">
+                          <Trophy className="w-6 h-6 text-amber-500" />
+                        </div>
                         <div className="space-y-1">
-                      
-                          <h3 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight pt-1">
+                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
                             Pemilos Berakhir & Pemenang Ditetapkan!
                           </h3>
-                    
+                          <p className="text-xs text-slate-500">Hasil suara resmi telah disahkan dan kepengurusan OSIS baru dapat diakses.</p>
                         </div>
                         <div className="pt-2">
                           <Link
                             href="/osis/structure"
-                            className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-[#2c1ee8] text-white font-extrabold text-xs sm:text-sm hover:bg-blue-700 transition-all shadow-md active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
                           >
-                      
+                            <GitBranch className="w-4 h-4" />
                             <span>Lihat Struktur OSIS Baru</span>
                           </Link>
                         </div>
@@ -538,7 +532,7 @@ function PemilosContent() {
                   if (pemilosState === "SETUP") {
                     return (
                       <div className="space-y-6">
-                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-xs">
+                        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-xs">
                           <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
                           <div>
                             <h4 className="font-bold text-amber-900 uppercase tracking-wider">Bilik Suara Belum Dibuka</h4>
@@ -549,10 +543,10 @@ function PemilosContent() {
                         </div>
 
                         {approvedPairs.length === 0 ? (
-                          <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 p-8">
-                            <Users className="w-16 h-16 mx-auto text-gray-200 mb-4" />
-                            <h3 className="text-base font-bold text-gray-500">Belum Ada Pasangan Resmi</h3>
-                            <p className="text-sm text-gray-400 mt-1">Siswa dapat mendaftar paslon melalui tombol &quot;+ Daftar Kandidat&quot; di kanan atas.</p>
+                          <div className="text-center py-16 bg-white rounded-lg border border-slate-200 p-8 space-y-2">
+                            <Users className="w-12 h-12 mx-auto text-slate-300 mb-2" />
+                            <h3 className="text-base font-bold text-slate-700">Belum Ada Pasangan Resmi</h3>
+                            <p className="text-xs text-slate-500">Siswa dapat mendaftar paslon melalui tombol &quot;+ Daftar Kandidat&quot; di kanan atas.</p>
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
@@ -594,14 +588,16 @@ function PemilosContent() {
 
                       {loadingPairs ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-3">
-                          <Loader2 className="w-8 h-8 animate-spin text-[#2c1ee8]" />
-                          <p className="text-sm text-gray-500 font-medium">Memuat daftar pasangan calon...</p>
+                          <Loader2 className="w-8 h-8 animate-spin text-slate-700" />
+                          <p className="text-xs text-slate-500 font-medium">Memuat daftar pasangan calon...</p>
                         </div>
                       ) : approvedPairs.length === 0 ? (
-                        <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 p-8">
-                          <Users className="w-16 h-16 mx-auto text-gray-200 mb-4" />
-                          <h3 className="text-base font-bold text-gray-500">Belum Ada Pasangan Resmi</h3>
-                          <p className="text-sm text-gray-400 mt-1">Pasangan calon yang telah disetujui akan muncul di sini.</p>
+                        <div className="text-center py-20 bg-white rounded-lg border border-slate-200 p-8 shadow-xs">
+                          <Users className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                          <h3 className="text-base font-bold text-slate-800">Belum Ada Pasangan Calon</h3>
+                          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                            Belum ada pasangan calon yang terdaftar atau disetujui untuk sesi pemilihan ini.
+                          </p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
@@ -611,13 +607,13 @@ function PemilosContent() {
                               pair={pair}
                               rank={i + 1}
                               isWinner={false}
-                              showVoteCount={liveResults?.isResultsVisible}
-                              hasVoted={hasVoted}
-                              isElectionOpen={true}
-                              electionTimeState="ONGOING"
-                              isMinCandidatesMet={isMinCandidatesMet}
+                              showVoteCount={false}
                               onVote={handleVote}
                               onViewDetail={(p) => setDetailPair(p)}
+                              hasVoted={hasVoted}
+                              isElectionOpen={isElectionOpen}
+                              electionTimeState={electionTimeState}
+                              isMinCandidatesMet={isMinCandidatesMet}
                             />
                           ))}
                         </div>
@@ -625,110 +621,20 @@ function PemilosContent() {
                     </div>
                   );
                 })()}
-
-                {/* Section Struktur Kabinet OSIS Pendukung */}
-                {(() => {
-                  const raw = selectedElection?.cabinetStructureJson || liveResults?.cabinetStructureJson;
-                  if (!raw) return null;
-                  let cab = null;
-                  try {
-                    cab = typeof raw === "string" ? JSON.parse(raw) : raw;
-                  } catch {}
-                  if (!cab) return null;
-
-                  return (
-                    <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-6">
-                      <div className="border-b border-slate-100 pb-4">
-                        <span className="text-xs font-mono font-bold text-[#2c1ee8] uppercase tracking-widest block mb-1">
-                          KABINET & JABATAN PENGURUS OSIS
-                        </span>
-                        <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                          Struktur Pengurus OSIS Pendukung
-                        </h3>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Daftar siswa yang mengemban amanah posisi pengurus OSIS selain Ketua dan Wakil Ketua.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {cab.secretary1 && (
-                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Sekretaris 1</span>
-                            <p className="font-bold text-slate-900 text-sm">{cab.secretary1}</p>
-                          </div>
-                        )}
-
-                        {cab.secretary2 && (
-                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Sekretaris 2</span>
-                            <p className="font-bold text-slate-900 text-sm">{cab.secretary2}</p>
-                          </div>
-                        )}
-
-                        {cab.treasurer1 && (
-                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Bendahara 1</span>
-                            <p className="font-bold text-slate-900 text-sm">{cab.treasurer1}</p>
-                          </div>
-                        )}
-
-                        {cab.treasurer2 && (
-                          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Bendahara 2</span>
-                            <p className="font-bold text-slate-900 text-sm">{cab.treasurer2}</p>
-                          </div>
-                        )}
-
-                        {Array.isArray(cab.customDivisions) &&
-                          cab.customDivisions.map((div, idx) => (
-                            <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                              <span className="text-[10px] font-bold text-[#2c1ee8] uppercase block">{div.divisionName || "Divisi"}</span>
-                              <p className="font-bold text-slate-900 text-sm">{div.studentName || "-"}</p>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Pending Verification Pairs */}
-                {pairs.filter((p) => p.statusText !== "Approved" && p.status !== 5).length > 0 && (
-                  <div className="mt-10">
-                    <div className="flex items-center gap-2 mb-4">
-                      <AlertCircle className="w-4 h-4 text-amber-500" />
-                      <h3 className="text-sm font-black text-gray-600 uppercase tracking-wide">
-                        Dalam Proses Verifikasi
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {pairs
-                        .filter((p) => p.statusText !== "Approved" && p.status !== 5)
-                        .map((pair) => (
-                          <CandidatePairCard
-                            key={pair.id}
-                            pair={pair}
-                            showVoteCount={false}
-                            onViewDetail={(p) => setDetailPair(p)}
-                          />
-                        ))}
-                    </div>
-                  </div>
-                )}
               </>
             )}
 
-            {/* Results Tab */}
+            {/* Results Tab (Live Results & Winner View) */}
             {activeTab === "results" && (
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-                {loadingPairs ? (
-                  <div className="flex items-center justify-center py-16 gap-3">
-                    <Loader2 className="w-6 h-6 animate-spin text-[#2c1ee8]" />
-                    <p className="text-sm text-gray-500">Memuat hasil suara...</p>
-                  </div>
-                ) : (
-                  <PemilosLiveResults result={liveResults} />
-                )}
-              </div>
+              <PemilosLiveResults
+                electionId={selectedElectionId}
+                liveData={liveResults}
+                result={liveResults}
+                pairs={pairs}
+                isElectionOpen={isElectionOpen}
+                electionTimeState={electionTimeState}
+                onRefresh={loadPairsAndResults}
+              />
             )}
           </>
         )}
@@ -736,7 +642,7 @@ function PemilosContent() {
 
       <Footer />
 
-      {/* Candidate Pair Detail Modal */}
+      {/* Detail Modal */}
       {detailPair && (
         <CandidatePairDetailModal
           pair={detailPair}
@@ -749,13 +655,13 @@ function PemilosContent() {
         />
       )}
 
-      {/* Vote Confirmation Modal */}
+      {/* Confirm Vote Modal */}
       {votingPair && (
         <VoteModal
           pair={votingPair}
           onClose={() => setVotingPair(null)}
           onConfirm={handleConfirmVote}
-          isLoading={isVoting}
+          isVoting={isVoting}
         />
       )}
     </div>

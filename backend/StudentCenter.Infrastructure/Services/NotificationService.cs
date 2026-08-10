@@ -246,8 +246,20 @@ public class NotificationService : INotificationService
 
         if (!string.IsNullOrWhiteSpace(targetRole))
         {
-            var roleNameUpper = targetRole.Trim().ToUpper();
-            query = query.Where(u => u.Role.ToString().ToUpper() == roleNameUpper);
+            if (Enum.TryParse<UserRole>(targetRole.Trim(), true, out var parsedRole))
+            {
+                query = query.Where(u => u.Role == parsedRole);
+            }
+            else
+            {
+                var roleNameUpper = targetRole.Trim().ToUpper();
+                if (roleNameUpper == "SISWA" || roleNameUpper == "STUDENT")
+                    query = query.Where(u => u.Role == UserRole.Student);
+                else if (roleNameUpper == "GURU" || roleNameUpper == "TEACHER")
+                    query = query.Where(u => u.Role == UserRole.Teacher);
+                else if (roleNameUpper == "ADMIN")
+                    query = query.Where(u => u.Role == UserRole.Admin);
+            }
         }
 
         var targetUserIds = await query.Select(u => u.Id).ToListAsync();

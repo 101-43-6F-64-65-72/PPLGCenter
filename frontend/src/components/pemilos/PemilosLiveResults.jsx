@@ -1,228 +1,333 @@
 "use client";
 
 import React from "react";
-import { Crown, TrendingUp, Users, Activity, Trophy, BarChart3 } from "lucide-react";
+import { Crown, TrendingUp, Users, Activity, Trophy, BarChart3, CheckCircle2, ShieldCheck } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils";
 
-const PALETTE = [
-  "from-[#2c1ee8] to-blue-500",
-  "from-emerald-500 to-teal-500",
-  "from-purple-500 to-violet-500",
-  "from-orange-500 to-amber-500",
-  "from-pink-500 to-rose-500",
-];
+export default function PemilosLiveResults({
+  liveData,
+  result,
+  electionId,
+  pairs = [],
+  isElectionOpen = false,
+  electionTimeState,
+  onRefresh,
+}) {
+  const data = liveData || result || {};
 
-const BAR_COLORS = [
-  "bg-gradient-to-r from-[#2c1ee8] to-blue-500",
-  "bg-gradient-to-r from-emerald-500 to-teal-500",
-  "bg-gradient-to-r from-purple-500 to-violet-500",
-  "bg-gradient-to-r from-orange-500 to-amber-500",
-  "bg-gradient-to-r from-pink-500 to-rose-500",
-];
+  // Extract rankings & winner pair cleanly
+  const rawRankings =
+    data?.rankings ||
+    data?.Rankings ||
+    (Array.isArray(pairs) && pairs.length > 0
+      ? [...pairs].sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0))
+      : []);
 
-export default function PemilosLiveResults({ result }) {
-  if (!result) return null;
+  const totalVotesCast =
+    data?.totalVotesCast ??
+    data?.TotalVotesCast ??
+    pairs.reduce((acc, p) => acc + (p.voteCount || 0), 0);
 
-  const { rankings = [], totalVotesCast, totalEligibleVoters, participationRate, winnerPair, isResultsVisible, electionTitle, status } = result;
+  const totalEligibleVoters = data?.totalEligibleVoters ?? data?.TotalEligibleVoters ?? 1250;
+  const participationRate =
+    data?.participationRate ??
+    data?.ParticipationRate ??
+    (totalEligibleVoters > 0 ? Math.round((totalVotesCast / totalEligibleVoters) * 100) : 0);
 
-  const statusLabel = {
-    Draft: "Belum Dibuka",
-    Open: "Sedang Berlangsung",
-    Closed: "Telah Ditutup",
-    PublishedResult: "Hasil Resmi",
-  }[status] ?? status;
+  const winnerPair = data?.winnerPair || data?.WinnerPair || (rawRankings.length > 0 ? rawRankings[0] : null);
+
+  const isOngoing = isElectionOpen || data?.status === "Open" || data?.status === 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Header Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <StatCard
           label="Total Suara Masuk"
-          value={totalVotesCast?.toLocaleString("id-ID")}
+          value={totalVotesCast?.toLocaleString("id-ID") || "0"}
           sub={`dari ${totalEligibleVoters?.toLocaleString("id-ID")} pemilih sah`}
-          icon={<Users className="w-5 h-5" />}
-          color="bg-blue-50 text-[#2c1ee8] border-blue-100"
+          icon={<Users className="w-4 h-4 text-slate-700" />}
         />
         <StatCard
           label="Tingkat Partisipasi"
           value={`${participationRate}%`}
           sub="dari total pemilih sah"
-          icon={<Activity className="w-5 h-5" />}
-          color="bg-emerald-50 text-emerald-600 border-emerald-100"
+          icon={<Activity className="w-4 h-4 text-slate-700" />}
         />
         <StatCard
-          label="Status Pemilihan"
-          value={statusLabel}
-          sub={electionTitle}
-          icon={<BarChart3 className="w-5 h-5" />}
-          color="bg-purple-50 text-purple-600 border-purple-100"
+          label="Status Sesi"
+          value={isOngoing ? "Live Voting (Aktif)" : "Hasil Resmi Pengesahan"}
+          sub={isOngoing ? "Perolehan suara diperbarui live" : "Hasil pemenang Pemilos"}
+          icon={<BarChart3 className="w-4 h-4 text-slate-700" />}
           className="col-span-2 sm:col-span-1"
         />
       </div>
 
-      {/* Winner Highlight */}
-      {winnerPair && (
-        <div className="relative rounded-3xl bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border border-amber-200 p-6 overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-200/30 to-transparent rounded-full -translate-y-8 translate-x-8" />
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-400 flex items-center justify-center shadow-lg flex-shrink-0">
-              <Trophy className="w-7 h-7 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <Crown className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">Unggul Sementara</span>
-              </div>
-              <h3 className="font-black text-gray-900 text-lg leading-tight">
-                {winnerPair.chairmanName}
-                {winnerPair.viceName && (
-                  <span className="text-gray-400 font-normal text-base"> & {winnerPair.viceName}</span>
-                )}
-              </h3>
-              <p className="text-sm text-amber-700 font-bold mt-1">
-                {winnerPair.voteCount} suara · {winnerPair.votePercentage}%
-              </p>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <div className="text-4xl font-black text-[#2c1ee8]">#{winnerPair.candidateNumber}</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Results visible / hidden */}
-      {!isResultsVisible ? (
-        <div className="text-center py-12 text-gray-400">
-          <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold text-sm">Hasil akan ditampilkan setelah pemilihan selesai</p>
-        </div>
-      ) : rankings.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">
-          <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="font-semibold text-sm">Belum ada pasangan yang disetujui</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <h3 className="text-sm font-black text-gray-700 uppercase tracking-wide flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Perolehan Suara Real-Time
-          </h3>
-          {rankings.map((pair, i) => (
-            <div
-              key={pair.id}
-              className={`p-4 rounded-2xl border transition-all ${
-                i === 0 ? "border-amber-200 bg-amber-50/50" : "border-gray-100 bg-white"
-              }`}
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${PALETTE[i % PALETTE.length]} flex items-center justify-center text-white font-black text-sm flex-shrink-0`}>
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-900 text-sm truncate">
-                    Pasangan {pair.candidateNumber}: {pair.chairmanName}
-                    {pair.viceName && <span className="text-gray-400 font-normal"> & {pair.viceName}</span>}
-                  </p>
+      {/* ═════════════════════════════════════════════════════════════════════
+          KONDISI A: PEMILOS SEDANG BERLANGSUNG (LIVE SUARA REAL-TIME)
+      ═════════════════════════════════════════════════════════════════════ */}
+      {isOngoing ? (
+        <div className="space-y-6">
+          {/* Winner Highlight / Unggul Sementara */}
+          {winnerPair && (
+            <div className="rounded-lg bg-white border border-slate-200 p-5 shadow-xs relative overflow-hidden">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-12 h-12 rounded-md bg-slate-900 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                    <Trophy className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Crown className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                        Unggul Sementara
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-slate-900 text-base truncate leading-tight">
+                      {winnerPair.chairmanName}
+                      {winnerPair.viceName && (
+                        <span className="text-slate-500 font-normal text-sm"> & {winnerPair.viceName}</span>
+                      )}
+                    </h3>
+                    <p className="text-xs text-slate-600 font-medium mt-0.5">
+                      {winnerPair.voteCount ?? 0} suara ({winnerPair.votePercentage ?? 0}%)
+                    </p>
+                  </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="font-black text-sm text-gray-900">{pair.voteCount}</p>
-                  <p className="text-xs text-gray-400">{pair.votePercentage}%</p>
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 border border-slate-200 px-3 py-1 rounded-md bg-slate-50">
+                    Paslon #{winnerPair.candidateNumber || 1}
+                  </span>
                 </div>
               </div>
-              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all duration-1000 ${BAR_COLORS[i % BAR_COLORS.length]}`}
-                  style={{ width: `${Math.max(pair.votePercentage, 1)}%` }}
-                />
+            </div>
+          )}
+
+          {/* Live Progress Bar Section */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-slate-700" />
+              <span>Perolehan Suara Live Real-Time</span>
+            </h3>
+
+            {rawRankings.length === 0 ? (
+              <div className="text-center py-10 bg-white rounded-lg border border-slate-200 p-6 space-y-1">
+                <Users className="w-8 h-8 mx-auto text-slate-300 mb-1" />
+                <p className="font-bold text-xs text-slate-700">Belum Ada Suara Masuk</p>
+                <p className="text-[11px] text-slate-400">Suara akan tampil di sini secara otomatis saat siswa memilih.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {rawRankings.map((pair, i) => (
+                  <div key={pair.id || i} className="p-4 rounded-lg border border-slate-200 bg-white shadow-xs space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-6 h-6 rounded-md bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center border border-slate-200 shrink-0">
+                          #{pair.candidateNumber || i + 1}
+                        </span>
+                        <p className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                          {pair.chairmanName}
+                          {pair.viceName && <span className="text-slate-500 font-normal"> & {pair.viceName}</span>}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-xs text-slate-900">{pair.voteCount ?? 0} Suara</p>
+                        <p className="text-[11px] text-slate-500 font-medium">{pair.votePercentage ?? 0}%</p>
+                      </div>
+                    </div>
+
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+                      <div
+                        className="h-full bg-slate-900 rounded-full transition-all duration-700"
+                        style={{ width: `${Math.max(pair.votePercentage || 0, 1)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Voter Audit Trail Table */}
+          {Array.isArray(data?.recentVoters) && data.recentVoters.length > 0 && (
+            <div className="pt-4 border-t border-slate-200 space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Users className="w-4 h-4 text-slate-700" />
+                <span>Pemilih Terverifikasi ({data.recentVoters.length})</span>
+              </h3>
+              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
+                <table className="w-full text-left text-xs">
+                  <tbody className="divide-y divide-slate-100">
+                    {data.recentVoters.map((voter, idx) => (
+                      <tr key={voter.voterUserId || idx} className="hover:bg-slate-50/60 transition">
+                        <td className="p-3 font-bold text-slate-900 flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px] flex items-center justify-center border border-slate-200 shrink-0">
+                            {voter.studentName?.charAt(0) || "S"}
+                          </div>
+                          <span>{voter.studentName}</span>
+                        </td>
+                        <td className="p-3 text-slate-600 font-medium">{voter.className || "Siswa"}</td>
+                        <td className="p-3 text-slate-500">
+                          {new Date(voter.votedAt || Date.now()).toLocaleString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="p-3">
+                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-bold text-[11px]">
+                            ✓ Suara Masuk
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          ))}
+          )}
+        </div>
+      ) : (
+        /* ═════════════════════════════════════════════════════════════════════
+            KONDISI B: PEMILOS BELUM DIMULAI / SUDAH SELESAI (PEMENANG PEMILOS UI)
+        ═════════════════════════════════════════════════════════════════════ */
+        <div className="space-y-6">
+          {/* Winner Hero Card (Tampilan Pemenang Pemilos) */}
+          <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-xs space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-md bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">Pemenang Resmi Pemilos OSIS</h3>
+                  <p className="text-xs text-slate-500 font-medium">Hasil pengesahan akhir perolehan suara pemilihan</p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-md flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Disahkan</span>
+              </span>
+            </div>
+
+            {winnerPair ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                {/* Winner Profile Photo */}
+                <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <div className="w-20 h-20 rounded-md bg-slate-200 border border-slate-300 overflow-hidden shrink-0 flex items-center justify-center text-slate-700 font-black text-2xl">
+                    {winnerPair.photoUrl ? (
+                      <img
+                        src={resolveImageUrl(winnerPair.photoUrl)}
+                        alt={winnerPair.chairmanName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      winnerPair.chairmanName?.[0] || "U"
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900 text-white mb-1">
+                      Ketua & Wakil Terpilih
+                    </span>
+                    <h4 className="font-bold text-slate-900 text-base sm:text-lg truncate leading-tight">
+                      {winnerPair.chairmanName}
+                    </h4>
+                    {winnerPair.viceName && (
+                      <p className="text-xs font-bold text-slate-600 truncate mt-0.5">
+                        Wakil: {winnerPair.viceName}
+                      </p>
+                    )}
+                    <p className="text-xs text-slate-500 font-medium truncate mt-1">
+                      {winnerPair.chairmanClass || "SMKN 2 Surakarta"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Vote Stats Result Box */}
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                    <span className="text-xs font-medium text-slate-600">Perolehan Suara Terpilih</span>
+                    <span className="text-sm font-black text-slate-900">
+                      {winnerPair.voteCount ?? totalVotesCast} Suara
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                    <span className="text-xs font-medium text-slate-600">Persentase Kemenangan</span>
+                    <span className="text-sm font-black text-slate-900">
+                      {winnerPair.votePercentage ?? (totalVotesCast > 0 ? 100 : 0)}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600">Total Pemilih Sah Berpartisipasi</span>
+                    <span className="text-xs font-bold text-slate-800">
+                      {totalVotesCast} Pemilih ({participationRate}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400 space-y-1">
+                <ShieldCheck className="w-8 h-8 mx-auto text-slate-300 mb-1" />
+                <p className="font-bold text-xs text-slate-700">Hasil Pemilos Periode Aktif</p>
+                <p className="text-[11px] text-slate-400">Data hasil pemenang akan otomatis terupdate setelah voting berjalan.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Rekapitulasi Perolehan Suara Semua Kandidat */}
+          {rawRankings.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-slate-700" />
+                <span>Rekapitulasi Suara Pemilos</span>
+              </h3>
+
+              <div className="space-y-2.5">
+                {rawRankings.map((pair, idx) => (
+                  <div key={pair.id || idx} className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-6 h-6 rounded-md bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                          #{pair.candidateNumber || idx + 1}
+                        </span>
+                        <p className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                          {pair.chairmanName}
+                          {pair.viceName && <span className="text-slate-500 font-normal"> & {pair.viceName}</span>}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-xs text-slate-900">{pair.voteCount ?? 0} Suara</p>
+                        <p className="text-[11px] text-slate-500 font-medium">{pair.votePercentage ?? 0}%</p>
+                      </div>
+                    </div>
+
+                    <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-slate-900 rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(pair.votePercentage || 0, 2)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Voter Audit Trail Section */}
-      <div className="pt-4 border-t border-gray-100 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wide flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#2c1ee8]" />
-              <span>Daftar Siswa Pemilih ({result.recentVoters?.length || 0})</span>
-            </h3>
-            <p className="text-[11px] text-gray-500 font-medium">
-              Siswa yang telah berpartisipasi memberikan suara. Pilihan kandidat spesifik bersifat rahasia (hanya tampak untuk Admin & Guru Pembina OSIS).
-            </p>
-          </div>
-        </div>
-
-        {!result.recentVoters || result.recentVoters.length === 0 ? (
-          <div className="p-6 text-center text-xs text-gray-400 bg-gray-50 rounded-2xl">
-            Belum ada siswa yang memberikan suara pada pemilihan ini.
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-500 font-bold uppercase border-b border-gray-100">
-                <tr>
-                  <th className="p-3">Nama Siswa</th>
-                  <th className="p-3">NIS</th>
-                  <th className="p-3">Kelas</th>
-                  <th className="p-3">Waktu Memilih</th>
-                  <th className="p-3">Pilihan Kandidat</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {result.recentVoters.map((voter, idx) => (
-                  <tr key={voter.voterUserId || idx} className="hover:bg-gray-50/60 transition">
-                    <td className="p-3 font-extrabold text-gray-900 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 text-[#2c1ee8] font-black text-[10px] flex items-center justify-center">
-                        {voter.studentName?.charAt(0) || "S"}
-                      </div>
-                      <span>{voter.studentName}</span>
-                    </td>
-                    <td className="p-3 text-gray-600 font-medium">{voter.nis || "-"}</td>
-                    <td className="p-3">
-                      <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md font-bold">
-                        {voter.className || "Siswa"}
-                      </span>
-                    </td>
-                    <td className="p-3 text-gray-500">
-                      {new Date(voter.votedAt).toLocaleString("id-ID", {
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-                    <td className="p-3">
-                      {voter.votedCandidateTitle ? (
-                        <span className="bg-indigo-50 text-[#2c1ee8] border border-indigo-100 px-2.5 py-1 rounded-lg font-bold">
-                          {voter.votedCandidateTitle}
-                        </span>
-                      ) : (
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded-lg font-semibold">
-                          ✓ Suara Masuk (Rahasia)
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
 
-function StatCard({ label, value, sub, icon, color, className = "" }) {
+function StatCard({ label, value, sub, icon, className = "" }) {
   return (
-    <div className={`p-4 rounded-2xl border ${color} ${className}`}>
-      <div className="flex items-center gap-2 mb-2">
+    <div className={`p-4 rounded-lg bg-white border border-slate-200 shadow-xs ${className}`}>
+      <div className="flex items-center gap-2 mb-1.5">
         {icon}
-        <span className="text-xs font-bold uppercase tracking-wide opacity-70">{label}</span>
+        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
       </div>
-      <p className="text-xl font-black">{value}</p>
-      {sub && <p className="text-xs opacity-60 mt-0.5 truncate">{sub}</p>}
+      <p className="text-lg sm:text-xl font-bold text-slate-900">{value}</p>
+      {sub && <p className="text-[11px] text-slate-500 font-medium mt-0.5 truncate">{sub}</p>}
     </div>
   );
 }

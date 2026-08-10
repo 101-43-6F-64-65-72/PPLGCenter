@@ -116,24 +116,31 @@ public class NotificationController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var user = await _userService.GetUserByIdAsync(userId.Value);
-        var senderName = user?.FullName ?? "Pengelola Sekolah";
+        try
+        {
+            var user = await _userService.GetUserByIdAsync(userId.Value);
+            var senderName = user?.FullName ?? "Pengelola Sekolah";
 
-        await _notificationService.BroadcastWithSenderAsync(
-            userId.Value,
-            senderName,
-            request.Title,
-            request.Body,
-            request.Type,
-            request.TargetRole,
-            request.Priority,
-            request.ActionUrl,
-            request.Icon,
-            request.Color,
-            request.Metadata
-        );
+            await _notificationService.BroadcastWithSenderAsync(
+                userId.Value,
+                senderName,
+                request.Title,
+                request.Body,
+                request.Type,
+                request.TargetRole,
+                request.Priority,
+                request.ActionUrl,
+                request.Icon,
+                request.Color,
+                request.Metadata
+            );
 
-        return Ok(ApiResponse<object>.Ok("Broadcast notification sent successfully."));
+            return Ok(ApiResponse<object>.Ok("Broadcast notification sent successfully."));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse<object>.Fail($"Gagal menyiarkan broadcast: {ex.Message}"));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
