@@ -7,6 +7,9 @@ import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import useAuth from "@/hooks/useAuth";
 import announcementService from "@/services/announcementService";
+import uploadImageToCloudinary from "@/services/cloudinaryService";
+import ImageCropUploader from "@/components/common/ImageCropUploader";
+import TwinOrbitSpinner from "@/components/ui/TwinOrbitSpinner";
 import { useAnnouncement } from "@/features/announcement/hooks/useAnnouncement";
 import { useAnnouncements } from "@/features/announcement/hooks/useAnnouncements";
 import AnnouncementDetailSkeleton from "@/features/announcement/components/AnnouncementDetailSkeleton";
@@ -29,6 +32,8 @@ export default function AnnouncementDetailPage() {
     category: "Informasi Sekolah",
     content: "",
   });
+  const [editCoverImageUrl, setEditCoverImageUrl] = useState("");
+  const [isUploadingEditCover, setIsUploadingEditCover] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const { data, isLoading, refetch } = useAnnouncement(id);
@@ -106,27 +111,51 @@ export default function AnnouncementDetailPage() {
      (user.fullName && announcement?.createdByUserName && user.fullName === announcement.createdByUserName))
   );
 
+  const handleEditCroppedImage = async (dataUrl, metadata) => {
+    setIsUploadingEditCover(true);
+    try {
+      const file = metadata?.croppedFile || (await fetch(dataUrl).then((r) => r.blob()).then((blob) => new File([blob], "mading-cover.jpg", { type: "image/jpeg" })));
+      const uploadedUrl = await uploadImageToCloudinary(file);
+      if (uploadedUrl && uploadedUrl.startsWith("https://")) {
+        setEditCoverImageUrl(uploadedUrl);
+      }
+    } catch {
+      // keep current image URL on upload error
+    } finally {
+      setIsUploadingEditCover(false);
+    }
+  };
+
   const handleOpenEdit = () => {
     setEditForm({
       title: announcement.title || "",
       category: announcement.category || "Informasi Sekolah",
       content: announcement.content || announcement.summary || "",
     });
+    setEditCoverImageUrl(announcement.coverImageUrl || announcement.imageUrl || "");
     setIsEditOpen(true);
   };
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
+    if (isSavingEdit || isUploadingEditCover) return;
     if (!editForm.title.trim() || !editForm.content.trim()) return;
+
     setIsSavingEdit(true);
     try {
+      const validCoverUrl =
+        editCoverImageUrl && editCoverImageUrl.startsWith("https://")
+          ? editCoverImageUrl
+          : (announcement.coverImageUrl || announcement.imageUrl || undefined);
+
       await announcementService.updateAnnouncement(announcement.id, {
         title: editForm.title.trim(),
         category: editForm.category,
         content: editForm.content.trim(),
         isPinned: !!announcement.isPinned,
-        coverImageUrl: announcement.coverImageUrl || announcement.imageUrl || undefined,
+        coverImageUrl: validCoverUrl,
       });
+
       setIsEditOpen(false);
       refetch && refetch();
       window.location.reload();
@@ -534,11 +563,26 @@ export default function AnnouncementDetailPage() {
                 </select>
               </div>
 
+              {/* Cover Image Crop & Upload */}
+              <div>
+                <ImageCropUploader
+                  label="Ganti Gambar Sampul Mading (Cover Image)"
+                  initialImageUrl={editCoverImageUrl || announcement.coverImageUrl || announcement.imageUrl}
+                  onCropped={handleEditCroppedImage}
+                />
+                {isUploadingEditCover && (
+                  <div className="mt-2 p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-xs font-extrabold text-[#2c1ee8] flex items-center gap-2">
+                    <TwinOrbitSpinner size="xs" color="primary" />
+                    <span>Mengunggah gambar sampul baru...</span>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1">Isi / Konten Mading *</label>
                 <textarea
                   required
-                  rows={6}
+                  rows={5}
                   value={editForm.content}
                   onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
                   className="w-full p-4 rounded-2xl border border-gray-200 text-xs font-medium focus:outline-none focus:border-[#2c1ee8] leading-relaxed"
@@ -556,11 +600,20 @@ export default function AnnouncementDetailPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSavingEdit}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition cursor-pointer disabled:opacity-50 shadow-md"
+                  disabled={isSavingEdit || isUploadingEditCover}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{isSavingEdit ? "Menyimpan..." : "Simpan Perubahan"}</span>
+                  {isSavingEdit || isUploadingEditCover ? (
+                    <>
+                      <TwinOrbitSpinner size="xs" color="white" />
+                      <span>{isUploadingEditCover ? "Mengunggah Gambar..." : "Menyimpan Perubahan..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Simpan Perubahan</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
