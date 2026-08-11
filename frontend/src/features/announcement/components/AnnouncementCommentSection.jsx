@@ -17,14 +17,20 @@ import {
   X
 } from "lucide-react";
 
-// Clean, essential list of reactions
+// Strictly specified list of 12 emojis
 const EMOJI_LIST = [
-  { type: "like", emoji: "👍", label: "Suka" },
+  { type: "sob", emoji: "😭", label: "Sedih" },
+  { type: "joy", emoji: "😂", label: "Tertawa" },
+  { type: "hushed", emoji: "😯", label: "Kaget" },
   { type: "heart", emoji: "❤️", label: "Cinta" },
+  { type: "broken_heart", emoji: "💔", label: "Patah Hati" },
   { type: "fire", emoji: "🔥", label: "Semangat" },
-  { type: "clap", emoji: "👏", label: "Apresiasi" },
-  { type: "idea", emoji: "💡", label: "Inspiratif" },
-  { type: "tada", emoji: "🎉", label: "Selamat" },
+  { type: "giggle", emoji: "🤭", label: "Malu" },
+  { type: "sleepy", emoji: "😴", label: "Tidur" },
+  { type: "frown", emoji: "☹️", label: "Cemberut" },
+  { type: "skull", emoji: "💀", label: "Tengkorak" },
+  { type: "pleading", emoji: "🥹", label: "Terharu" },
+  { type: "pleading_face", emoji: "🥺", label: "Polos" }
 ];
 
 export default function AnnouncementCommentSection({ announcementId, isCommentsLockedInitial = false }) {
