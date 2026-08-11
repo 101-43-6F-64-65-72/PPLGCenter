@@ -70,9 +70,9 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
 
     // Append verification footer as HTML block
     if (isStudent) {
-      finalContent += `<hr/><div style="font-size:0.8em;color:#6b7280;margin-top:8px"><strong>📌 INFORMASI VERIFIKASI &amp; PUBLIKASI MADING</strong><br/>Diajukan Oleh: ${authorName} (Siswa SMKN 2 Surakarta)<br/>Diverifikasi &amp; Disetujui Oleh: ${selectedVerifier}<br/>Tanggal Konfirmasi: ${currentDate}<br/>Status: Terverifikasi Resmi &amp; Layak Terbit di Mading Digital.</div>`;
+      finalContent += `<hr/><div style="font-size:0.8em;color:#6b7280;margin-top:8px"><strong>INFORMASI VERIFIKASI &amp; PUBLIKASI MADING</strong><br/>Diajukan Oleh: ${authorName} (Siswa SMKN 2 Surakarta)<br/>Diverifikasi &amp; Disetujui Oleh: ${selectedVerifier}<br/>Tanggal Konfirmasi: ${currentDate}<br/>Status: Terverifikasi Resmi &amp; Layak Terbit di Mading Digital.</div>`;
     } else {
-      finalContent += `<hr/><div style="font-size:0.8em;color:#6b7280;margin-top:8px"><strong>📌 INFORMASI VERIFIKASI &amp; PUBLIKASI MADING</strong><br/>Diterbitkan &amp; Diverifikasi Langsung Oleh: ${authorName} (${roleTitle})<br/>Tanggal Publikasi: ${currentDate}<br/>Status: Publikasi Resmi Terverifikasi Terbit.</div>`;
+      finalContent += `<hr/><div style="font-size:0.8em;color:#6b7280;margin-top:8px"><strong>INFORMASI VERIFIKASI &amp; PUBLIKASI MADING</strong><br/>Diterbitkan &amp; Diverifikasi Langsung Oleh: ${authorName} (${roleTitle})<br/>Tanggal Publikasi: ${currentDate}<br/>Status: Publikasi Resmi Terverifikasi Terbit.</div>`;
     }
 
     const payload = {

@@ -147,16 +147,16 @@ export default function MadingPage() {
       </section>
 
       {/* Main Catalog Section */}
-      <section id="mading-catalog" className="w-full bg-white text-gray-900 py-16 sm:py-20 px-4 sm:px-8 lg:px-12">
+      <section id="mading-catalog" className="w-full bg-white text-slate-900 py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           {/* Header & Search Bar */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-200 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b border-slate-200/80 pb-5">
             <div>
-              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
-                PUBLIKASI MADING DIGITAL SMKN 2 SURAKARTA
+              <span className="text-xs font-bold text-[#2c1ee8] uppercase tracking-wider block mb-1">
+                Publikasi Mading Digital
               </span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-                Berita & Mading Sekolah
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Berita & Pengumuman Sekolah
               </h1>
             </div>
 
@@ -167,7 +167,7 @@ export default function MadingPage() {
                   placeholder="Cari pengumuman..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 bg-slate-50 text-xs outline-none focus:border-[#2c1ee8] focus:bg-white transition-all"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:border-[#2c1ee8] focus:bg-white transition-all"
                 />
                 <Search className="w-4 h-4 text-slate-400 absolute left-3" />
               </form>
@@ -175,7 +175,7 @@ export default function MadingPage() {
               {canCreateMading && (
                 <button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="px-4 py-2 rounded-md bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-2xs"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Tambah Mading</span>
@@ -185,16 +185,17 @@ export default function MadingPage() {
           </div>
 
           {/* Sticky Category Filter Pills */}
-          <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-xs py-2 mb-6 transition-all border-b border-slate-100 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="sticky top-18 z-30 bg-white/95 backdrop-blur-md py-2.5 mb-6 transition-all border-b border-slate-100 -mx-4 px-4 sm:mx-0 sm:px-0">
             <div className="flex flex-wrap items-center gap-2">
               {categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${activeCategory === cat
-                      ? "bg-[#2c1ee8] text-white"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-                    }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    activeCategory === cat
+                      ? "bg-[#2c1ee8] text-white shadow-2xs"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80"
+                  }`}
                 >
                   {cat}
                 </button>
@@ -215,7 +216,7 @@ export default function MadingPage() {
                   <div className="mt-4 flex justify-center">
                     <button
                       onClick={() => refetch()}
-                      className="px-6 py-2.5 bg-[#1d4ed8] text-white rounded-full text-sm font-semibold hover:bg-blue-800 transition-colors"
+                      className="px-5 py-2.5 bg-[#2c1ee8] text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors"
                     >
                       Coba Lagi
                     </button>
@@ -229,7 +230,7 @@ export default function MadingPage() {
 
           {!isLoading && !isError && announcements.length === 0 && (
             <EmptyState
-              title="Ups... Data Tidak Ditemukan"
+              title="Data Tidak Ditemukan"
               description={`Maaf, tidak ada pengumuman yang sesuai dengan filter "${activeCategory}" ${debouncedSearch ? `dan pencarian "${debouncedSearch}"` : ""}.`}
               onReset={() => {
                 setActiveCategory("Semua");
@@ -242,7 +243,7 @@ export default function MadingPage() {
 
           {/* Motion Layout Animations for Search, Filter, and Pagination */}
           {!isLoading && !isError && announcements.length > 0 && (
-            <MotionDiv layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <MotionDiv layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresenceComponent mode="popLayout">
                 {announcements.map((item) => (
                   <MotionDiv
@@ -268,8 +269,8 @@ export default function MadingPage() {
           )}
 
           {!isLoading && !isError && meta.totalPages > 1 && (
-            <div className="mt-12 flex items-center justify-between border-t border-gray-100 pt-6">
-              <span className="text-xs text-gray-500 font-medium">
+            <div className="mt-12 flex items-center justify-between border-t border-slate-100 pt-6">
+              <span className="text-xs text-slate-500 font-medium">
                 Halaman {currentPage} dari {meta.totalPages} ({meta.totalItems} Total Pengumuman)
               </span>
 
@@ -277,7 +278,7 @@ export default function MadingPage() {
                 <button
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  className="p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  className="p-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                   aria-label="Halaman Sebelumnya"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -289,10 +290,11 @@ export default function MadingPage() {
                     <button
                       key={pNum}
                       onClick={() => setCurrentPage(pNum)}
-                      className={`w-9 h-9 rounded-xl text-xs font-bold transition-all cursor-pointer ${currentPage === pNum
-                          ? "bg-[#1d4ed8] text-white shadow-sm"
-                          : "border border-gray-200 text-gray-700 hover:bg-gray-100"
-                        }`}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        currentPage === pNum
+                          ? "bg-[#2c1ee8] text-white shadow-2xs"
+                          : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                      }`}
                     >
                       {pNum}
                     </button>
@@ -302,7 +304,7 @@ export default function MadingPage() {
                 <button
                   disabled={currentPage >= meta.totalPages}
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, meta.totalPages))}
-                  className="p-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                  className="p-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                   aria-label="Halaman Selanjutnya"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -317,12 +319,14 @@ export default function MadingPage() {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 z-50 p-3.5 rounded-full bg-[#1d4ed8] hover:bg-blue-800 text-white shadow-2xl shadow-blue-600/40 border border-white/20 transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer"
+          className="fixed bottom-8 right-8 z-50 p-3 rounded-full bg-[#2c1ee8] hover:bg-blue-700 text-white shadow-lg border border-white/20 transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
           aria-label="Kembali ke atas"
         >
           <svg className="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
           </svg>
+        </button>
+      )}
         </button>
       )}
 

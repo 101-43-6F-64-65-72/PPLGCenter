@@ -205,11 +205,11 @@ export default function AnnouncementDetailPage() {
     .slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
       {/* Top Reading Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-100 z-50">
+      <div className="fixed top-0 left-0 right-0 h-0.5 bg-slate-100 z-50">
         <div
-          className="h-full bg-[#1d4ed8] transition-all duration-150 ease-out"
+          className="h-full bg-[#2c1ee8] transition-all duration-150 ease-out"
           style={{ width: `${readingProgress}%` }}
         />
       </div>
@@ -220,7 +220,7 @@ export default function AnnouncementDetailPage() {
         {/* Back Link */}
         <Link
           href="/mading"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-[#1d4ed8] transition-colors mb-6 group cursor-pointer"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#2c1ee8] transition-colors mb-6 group cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
           <span>Kembali ke Mading Digital</span>
@@ -230,35 +230,35 @@ export default function AnnouncementDetailPage() {
           <AnnouncementDetailSkeleton />
         ) : (
           <>
-            {/* 2-Column Responsive Layout (Article Left, Facebook-style Comments Sidebar Right) */}
+            {/* 2-Column Responsive Layout (Article Left, Comments Sidebar Right) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
-              {/* LEFT COLUMN: Article Content & Related News (lg:col-span-7) */}
+              {/* LEFT COLUMN: Article Content & Related News */}
               <div className="lg:col-span-7 space-y-12">
                 <article className="w-full">
                   {/* 1. Article Title */}
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[900] text-gray-900 tracking-tight leading-tight mb-4 font-sans">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4 font-sans">
                     {announcement.title}
                   </h1>
 
-                  {/* Author & Category Sub-bar (Under Title) */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-gray-500 font-medium mb-6 pb-4 border-b border-gray-100">
+                  {/* Author & Category Sub-bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-slate-500 font-medium mb-6 pb-4 border-b border-slate-100">
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-blue-100 text-[#1d4ed8] font-bold flex items-center justify-center text-xs shadow-xs border border-blue-200/50">
+                        <div className="w-7 h-7 rounded-full bg-blue-50 text-[#2c1ee8] font-bold flex items-center justify-center text-xs border border-blue-100">
                           <User className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-gray-900 font-semibold">
+                        <span className="text-slate-900 font-semibold">
                           Oleh: {authorName}
                         </span>
                       </div>
-                      <span className="text-gray-300">•</span>
-                      <span className="bg-blue-50 text-[#1d4ed8] font-semibold text-xs px-3 py-0.5 rounded-full border border-blue-100">
+                      <span className="text-slate-300">•</span>
+                      <span className="bg-blue-50 text-[#2c1ee8] font-semibold text-xs px-3 py-0.5 rounded-full border border-blue-100">
                         {announcement.category || "Pengumuman"}
                       </span>
                       {isEdited && (
                         <>
-                          <span className="text-gray-300">•</span>
+                          <span className="text-slate-300">•</span>
                           <span className="bg-amber-50 text-amber-800 font-extrabold text-xs px-2.5 py-0.5 rounded-full border border-amber-200">
                             Di edit
                           </span>
@@ -266,7 +266,7 @@ export default function AnnouncementDetailPage() {
                       )}
                       {announcement.isPinned && (
                         <>
-                          <span className="text-gray-300">•</span>
+                          <span className="text-slate-300">•</span>
                           <span className="bg-amber-50 text-amber-800 font-extrabold text-xs px-3 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
                             <Pin className="w-3 h-3 text-amber-600 fill-current" />
                             Disematkan
@@ -279,7 +279,7 @@ export default function AnnouncementDetailPage() {
                       {isAuthorOrAdmin && (
                         <button
                           onClick={handleOpenEdit}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#2c1ee8] text-white hover:bg-[#2218a3] rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#2c1ee8] text-white hover:bg-blue-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-2xs"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Edit Mading</span>
@@ -289,7 +289,7 @@ export default function AnnouncementDetailPage() {
                       {/* Share Link Action */}
                       <button
                         onClick={handleCopyLink}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-[#1d4ed8] rounded-full border border-gray-200/80 text-xs font-semibold transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-[#2c1ee8] rounded-lg border border-slate-200/80 text-xs font-semibold transition-all cursor-pointer"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -300,7 +300,7 @@ export default function AnnouncementDetailPage() {
                   </div>
 
                   {/* 2. Hero Image */}
-                  <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] rounded-[24px] sm:rounded-[32px] overflow-hidden shadow-md mb-8 border border-gray-100 bg-gray-100">
+                  <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] rounded-2xl overflow-hidden shadow-xs mb-8 border border-slate-200 bg-slate-100">
                     <Image
                       src={coverImage}
                       alt={announcement.title}
@@ -311,10 +311,10 @@ export default function AnnouncementDetailPage() {
                     />
                   </div>
 
-                  {/* 3. Article Content */}
+                  {/* 3. Article Content (Left Aligned for clean reading flow) */}
                   <RichContentViewer
                     content={announcement.content || announcement.summary || "Belum ada konten teks mading."}
-                    className="mt-6 mb-4 text-justify"
+                    className="mt-6 mb-4 text-left"
                   />
                   {isEdited && (
                     <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-block mt-2">
@@ -322,11 +322,11 @@ export default function AnnouncementDetailPage() {
                     </span>
                   )}
 
-                  {/* File Attachments (if available) */}
+                  {/* File Attachments */}
                   {announcement.attachments && announcement.attachments.length > 0 && (
-                    <div className="mt-10 pt-6 border-t border-gray-100">
-                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-[#1d4ed8]" /> Lampiran Berkas
+                    <div className="mt-10 pt-6 border-t border-slate-100">
+                      <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-[#2c1ee8]" /> Lampiran Berkas
                       </h3>
                       <div className="space-y-2">
                         {announcement.attachments.map((file, idx) => (
@@ -335,21 +335,21 @@ export default function AnnouncementDetailPage() {
                             href={file.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center justify-between p-3.5 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm group"
+                            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm group"
                           >
-                            <div className="flex items-center gap-2.5 text-gray-800 font-medium">
-                              <FileText className="w-4 h-4 text-gray-500 group-hover:text-[#1d4ed8]" />
+                            <div className="flex items-center gap-2.5 text-slate-800 font-medium">
+                              <FileText className="w-4 h-4 text-slate-500 group-hover:text-[#2c1ee8]" />
                               <span>{file.name}</span>
                             </div>
-                            <Download className="w-4 h-4 text-gray-400 group-hover:text-[#1d4ed8]" />
+                            <Download className="w-4 h-4 text-slate-400 group-hover:text-[#2c1ee8]" />
                           </a>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* 4. Publish Date & Edit status */}
-                  <div className="mt-10 pt-4 border-t border-gray-100 flex items-center justify-between text-xs sm:text-sm font-medium text-gray-500">
+                  {/* 4. Publish Date */}
+                  <div className="mt-10 pt-4 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm font-medium text-slate-500">
                     {isEdited ? (
                       <span className="text-amber-700 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
                         Di edit • {formatDate(announcement.updatedAt)}
@@ -362,28 +362,27 @@ export default function AnnouncementDetailPage() {
                 </article>
 
                 {/* 5. Mading Terbaru & Mading Terpopuler Sections */}
-                <div className="space-y-12 pt-8 border-t border-gray-200/80">
+                <div className="space-y-12 pt-8 border-t border-slate-100">
                   
                   {/* A. Mading Terbaru Section */}
                   {latestArticles.length > 0 && (
                     <section>
                       <div className="flex items-center justify-between gap-4 mb-6">
                         <div>
-                          <div className="inline-flex items-center gap-2 text-[#1d4ed8] font-bold text-xs uppercase tracking-wider mb-1.5">
-                            <span className="w-2 h-2 rounded-full bg-[#1d4ed8] animate-pulse" />
-                            <span>MADING TERBARU</span>
-                          </div>
-                          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+                          <span className="text-xs font-bold text-[#2c1ee8] uppercase tracking-wider block mb-1">
+                            Mading Terbaru
+                          </span>
+                          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                             Pengumuman Terbaru Sekolah
                           </h2>
                         </div>
 
                         <Link
                           href="/mading"
-                          className="text-xs font-bold text-[#1d4ed8] hover:text-blue-800 transition-colors flex items-center gap-1 group shrink-0"
+                          className="text-xs font-bold text-[#2c1ee8] hover:text-blue-700 transition-colors flex items-center gap-1 group shrink-0"
                         >
                           <span>Lihat Semua</span>
-                          <span className="transform group-hover:translate-x-1 transition-transform">→</span>
+                          <ArrowLeft className="w-3.5 h-3.5 rotate-180 transform group-hover:translate-x-1 transition-transform" />
                         </Link>
                       </div>
 
@@ -393,10 +392,10 @@ export default function AnnouncementDetailPage() {
                           <Link
                             key={item.id}
                             href={`/mading/${item.id}`}
-                            className="bg-white border border-gray-100 hover:border-blue-300 rounded-[22px] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 transform hover:-translate-y-1.5 group flex flex-col justify-between"
+                            className="bg-white border border-slate-200/90 hover:border-slate-300 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 group flex flex-col justify-between"
                           >
                             <div>
-                              <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100">
+                              <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
                                 <Image
                                   src={getCoverImage(item)}
                                   alt={item.title}
@@ -404,27 +403,28 @@ export default function AnnouncementDetailPage() {
                                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                                   unoptimized
                                 />
-                                <span className="absolute top-3 left-3 bg-[#1d4ed8] text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md">
+                                <span className="absolute top-3 left-3 bg-[#2c1ee8] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
                                   {item.category || "Pengumuman"}
                                 </span>
                               </div>
 
                               <div className="p-5">
-                                <h3 className="text-base font-bold text-gray-900 leading-snug mb-2 group-hover:text-[#1d4ed8] transition-colors line-clamp-2">
+                                <h3 className="text-base font-bold text-slate-900 leading-snug mb-2 group-hover:text-[#2c1ee8] transition-colors line-clamp-2">
                                   {item.title}
                                 </h3>
-                                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-normal">
+                                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">
                                   {stripHtml(item.summary || item.content)}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="p-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-2">
-                              <span className="text-[11px] text-gray-400 font-medium">
+                            <div className="p-5 pt-0 flex items-center justify-between border-t border-slate-100 mt-2 pt-3">
+                              <span className="text-xs text-slate-500 font-medium">
                                 {item.author || item.createdBy || "Redaksi"}
                               </span>
-                              <span className="text-xs font-bold text-[#1d4ed8] group-hover:translate-x-0.5 transition-transform">
-                                Baca Artikel →
+                              <span className="text-xs font-bold text-[#2c1ee8] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                                <span>Baca Artikel</span>
+                                <ArrowLeft className="w-3.5 h-3.5 rotate-180" />
                               </span>
                             </div>
                           </Link>
@@ -438,11 +438,10 @@ export default function AnnouncementDetailPage() {
                     <section>
                       <div className="flex items-center justify-between gap-4 mb-6">
                         <div>
-                          <div className="inline-flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider mb-1.5">
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                            <span>MADING TERPOPULER</span>
-                          </div>
-                          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
+                          <span className="text-xs font-bold text-amber-600 uppercase tracking-wider block mb-1">
+                            Mading Terpopuler
+                          </span>
+                          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                             Artikel Banyak Dibaca
                           </h2>
                         </div>
@@ -452,7 +451,7 @@ export default function AnnouncementDetailPage() {
                           className="text-xs font-bold text-amber-600 hover:text-amber-800 transition-colors flex items-center gap-1 group shrink-0"
                         >
                           <span>Lihat Semua</span>
-                          <span className="transform group-hover:translate-x-1 transition-transform">→</span>
+                          <ArrowLeft className="w-3.5 h-3.5 rotate-180 transform group-hover:translate-x-1 transition-transform" />
                         </Link>
                       </div>
 
@@ -462,10 +461,10 @@ export default function AnnouncementDetailPage() {
                           <Link
                             key={item.id}
                             href={`/mading/${item.id}`}
-                            className="bg-white border border-amber-100/80 hover:border-amber-300 rounded-[22px] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 transform hover:-translate-y-1.5 group flex flex-col justify-between"
+                            className="bg-white border border-amber-200/80 hover:border-amber-300 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 group flex flex-col justify-between"
                           >
                             <div>
-                              <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100">
+                              <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-100">
                                 <Image
                                   src={getCoverImage(item)}
                                   alt={item.title}
@@ -473,27 +472,28 @@ export default function AnnouncementDetailPage() {
                                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                                   unoptimized
                                 />
-                                <span className="absolute top-3 left-3 bg-amber-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md">
+                                <span className="absolute top-3 left-3 bg-amber-600 text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
                                   {item.category || "Populer"}
                                 </span>
                               </div>
 
                               <div className="p-5">
-                                <h3 className="text-base font-bold text-gray-900 leading-snug mb-2 group-hover:text-amber-600 transition-colors line-clamp-2">
+                                <h3 className="text-base font-bold text-slate-900 leading-snug mb-2 group-hover:text-amber-600 transition-colors line-clamp-2">
                                   {item.title}
                                 </h3>
-                                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-normal">
+                                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed font-normal">
                                   {stripHtml(item.summary || item.content)}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="p-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-2">
-                              <span className="text-[11px] text-gray-400 font-medium">
+                            <div className="p-5 pt-0 flex items-center justify-between border-t border-slate-100 mt-2 pt-3">
+                              <span className="text-xs text-slate-500 font-medium">
                                 {item.author || item.createdBy || "Redaksi"}
                               </span>
-                              <span className="text-xs font-bold text-amber-600 group-hover:translate-x-0.5 transition-transform">
-                                Baca Artikel →
+                              <span className="text-xs font-bold text-amber-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                                <span>Baca Artikel</span>
+                                <ArrowLeft className="w-3.5 h-3.5 rotate-180" />
                               </span>
                             </div>
                           </Link>
