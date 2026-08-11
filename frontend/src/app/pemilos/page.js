@@ -519,7 +519,7 @@ function PemilosContent() {
                         <div className="pt-2">
                           <Link
                             href="/osis/structure"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#05319f] text-white font-bold text-xs hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
                           >
                             <GitBranch className="w-4 h-4" />
                             <span>Lihat Struktur OSIS Baru</span>
