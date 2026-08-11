@@ -10,7 +10,6 @@ import { extracurricularService } from "@/services/extracurricularService";
 export function useUserOrganizations() {
   const { user, isAuthenticated } = useAuth();
   const [userOrganizations, setUserOrganizations] = useState([]);
-  const [allOrganizations, setAllOrganizations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -21,17 +20,6 @@ export function useUserOrganizations() {
     setError("");
 
     try {
-      // 1. Fetch all registered school extracurriculars
-      const allRes = await extracurricularService.getExtracurriculars({ pageSize: 100 });
-      const rawAll = allRes?.data ?? allRes;
-      const allItems = Array.isArray(rawAll)
-        ? rawAll
-        : Array.isArray(rawAll?.items)
-        ? rawAll.items
-        : [];
-      setAllOrganizations(allItems);
-
-      // 2. Fetch user specific memberships if authenticated
       if (isAuthenticated && userId) {
         const myRes = await extracurricularService.getUserMemberships(userId);
         const rawMy = myRes?.data ?? myRes;
@@ -45,7 +33,7 @@ export function useUserOrganizations() {
         setUserOrganizations([]);
       }
     } catch (err) {
-      setError("Terjadi kesalahan saat memuat data ekstrakurikuler.");
+      setError("Terjadi kesalahan saat memuat data keanggotaan ekstrakurikuler.");
     } finally {
       setIsLoading(false);
     }
@@ -61,49 +49,8 @@ export function useUserOrganizations() {
     };
   }, [fetchOrganizations]);
 
-  // Combine user joined orgs + all registered school orgs, fallback to default list
-  const defaultList = [
-    { id: "osis", name: "OSIS (Organisasi Siswa Intra Sekolah)" },
-    { id: "pramuka", name: "Pramuka" },
-    { id: "paskibra", name: "Paskibra" },
-    { id: "pmr", name: "PMR (Palang Merah Remaja)" },
-  ];
-
-  const combinedList = [];
-  const nameSet = new Set();
-
-  // Add user specific orgs first
-  userOrganizations.forEach((item) => {
-    const name = typeof item === "string" ? item : (item.name || item.Name || item.title || item.Title);
-    if (name && !nameSet.has(name.toLowerCase())) {
-      nameSet.add(name.toLowerCase());
-      combinedList.push(typeof item === "object" ? item : { id: name, name });
-    }
-  });
-
-  // Add all school orgs
-  allOrganizations.forEach((item) => {
-    const name = typeof item === "string" ? item : (item.name || item.Name || item.title || item.Title);
-    if (name && !nameSet.has(name.toLowerCase())) {
-      nameSet.add(name.toLowerCase());
-      combinedList.push(typeof item === "object" ? item : { id: name, name });
-    }
-  });
-
-  // Fallback defaults if still empty
-  if (combinedList.length === 0) {
-    defaultList.forEach((item) => {
-      if (!nameSet.has(item.name.toLowerCase())) {
-        nameSet.add(item.name.toLowerCase());
-        combinedList.push(item);
-      }
-    });
-  }
-
   return {
-    organizations: combinedList,
     userOrganizations,
-    allOrganizations,
     isLoading,
     error,
     refetch: fetchOrganizations,

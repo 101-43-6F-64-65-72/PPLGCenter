@@ -17,9 +17,26 @@ export default function OrganizationSelect({
   required = true,
   className = "",
 }) {
-  const { organizations, userOrganizations, isLoading, error: fetchError, refetch } = useUserOrganizations();
+  const { userOrganizations, isLoading, error: fetchError, refetch } = useUserOrganizations();
 
   const isOtherSelected = value === OTHER_OPTION_VALUE;
+
+  // Extract unique extracurricular names joined by the user
+  const myExtras = React.useMemo(() => {
+    if (!Array.isArray(userOrganizations)) return [];
+    const nameSet = new Set();
+    const result = [];
+
+    userOrganizations.forEach((item) => {
+      const name = typeof item === "string" ? item : (item.name || item.Name || item.title || item.Title || item.extracurricularName || item.ExtracurricularName);
+      if (name && !nameSet.has(name.toLowerCase())) {
+        nameSet.add(name.toLowerCase());
+        result.push(name);
+      }
+    });
+
+    return result;
+  }, [userOrganizations]);
 
   return (
     <div className={`space-y-2.5 ${className}`}>
@@ -42,41 +59,22 @@ export default function OrganizationSelect({
         >
           <option value="" disabled hidden>
             {isLoading
-              ? "-- Memuat keanggotaan organisasi Anda... --"
-              : "-- Pilih Organisasi / Ekstrakurikuler Anda --"}
+              ? "-- Memuat keanggotaan ekstrakurikuler Anda... --"
+              : "-- Pilih Ekstrakurikuler Anda --"}
           </option>
 
           {/* Render user joined extracurriculars if available */}
-          {userOrganizations && userOrganizations.length > 0 && (
-            <optgroup label="Ekstrakurikuler Anda">
-              {userOrganizations.map((item) => {
-                const name = typeof item === "string" ? item : (item.name || item.Name || item.title || item.Title);
-                const key = typeof item === "object" ? (item.id || item.Id || name) : item;
-                return (
-                  <option key={`my-${key}`} value={name}>
-                    {name}
-                  </option>
-                );
-              })}
+          {myExtras.length > 0 && (
+            <optgroup label="Ekstrakurikuler yang Anda Ikuti">
+              {myExtras.map((name) => (
+                <option key={`my-${name}`} value={name}>
+                  {name}
+                </option>
+              ))}
             </optgroup>
           )}
 
-          {/* Render all registered school extracurriculars & organizations */}
-          {organizations && organizations.length > 0 && (
-            <optgroup label="Daftar Ekstrakurikuler & Organisasi Sekolah">
-              {organizations.map((item) => {
-                const name = typeof item === "string" ? item : (item.name || item.Name || item.title || item.Title);
-                const key = typeof item === "object" ? (item.id || item.Id || name) : item;
-                return (
-                  <option key={`all-${key}`} value={name}>
-                    {name}
-                  </option>
-                );
-              })}
-            </optgroup>
-          )}
-
-          {/* Always append "Lainnya (Ketik Manual)" as the LAST option */}
+          {/* Always append "Lainnya (Ketik Manual)" option */}
           <option value={OTHER_OPTION_VALUE}>{OTHER_OPTION_VALUE}</option>
         </select>
 

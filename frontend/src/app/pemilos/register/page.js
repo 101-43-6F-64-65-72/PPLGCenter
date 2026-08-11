@@ -12,6 +12,7 @@ import {
   AlertCircle, Send, Search, Eye, X, UserCheck, ShieldCheck, FileText
 } from "lucide-react";
 import toast from "react-hot-toast";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 
 export default function PemilosRegisterPage() {
   return (
@@ -179,15 +180,17 @@ function RegisterContent() {
       toast.error("Anda tidak dapat memilih diri sendiri sebagai Calon Wakil.");
       return;
     }
-    if (!pairForm.vision.trim()) {
+    const stripHtml = (html) => (html || "").replace(/<[^>]*>?/gm, "").trim();
+
+    if (!stripHtml(pairForm.vision)) {
       toast.error("Visi pasangan wajib diisi.");
       return;
     }
-    if (!pairForm.mission.trim()) {
+    if (!stripHtml(pairForm.mission)) {
       toast.error("Misi pasangan wajib diisi.");
       return;
     }
-    if (!pairForm.programs.trim()) {
+    if (!stripHtml(pairForm.programs)) {
       toast.error("Program kerja unggulan wajib diisi.");
       return;
     }
@@ -461,51 +464,45 @@ function RegisterContent() {
             </div>
 
             {/* Section 2: Visi, Misi, Program Kerja */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h2 className="text-sm font-black text-gray-800 uppercase tracking-wide mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
                 <FileText className="w-4 h-4 text-[#2c1ee8]" />
                 <span>2. Visi, Misi & Program Kerja Pasangan</span>
               </h2>
 
               <div>
-                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">
-                  Visi Pasangan <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={3}
+                <RichTextEditor
+                  label="Visi Pasangan"
+                  helperText="Tuliskan visi utama kepemimpinan Pasangan Anda dengan jelas dan inspiratif."
                   value={pairForm.vision}
-                  onChange={(e) => setPairForm({ ...pairForm, vision: e.target.value })}
+                  onChange={(val) => setPairForm((prev) => ({ ...prev, vision: val }))}
                   placeholder="Tuliskan visi utama kepemimpinan Pasangan Anda..."
-                  className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none font-normal"
+                  required
+                  minHeight="140px"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">
-                  Misi Pasangan <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={4}
+                <RichTextEditor
+                  label="Misi Pasangan"
+                  helperText="Tuliskan poin-poin misi kerja Pasangan Anda dengan format rapi (bullet / numbering)."
                   value={pairForm.mission}
-                  onChange={(e) => setPairForm({ ...pairForm, mission: e.target.value })}
+                  onChange={(val) => setPairForm((prev) => ({ ...prev, mission: val }))}
                   placeholder="Tuliskan poin-poin misi kerja Pasangan Anda..."
-                  className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none font-normal"
+                  required
+                  minHeight="160px"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-extrabold uppercase tracking-wider text-gray-700 block mb-1">
-                  Program Kerja Unggulan <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={4}
+                <RichTextEditor
+                  label="Program Kerja Unggulan"
+                  helperText="Rincian program kerja prioritas OSIS yang akan direalisasikan selama masa jabatan."
                   value={pairForm.programs}
-                  onChange={(e) => setPairForm({ ...pairForm, programs: e.target.value })}
+                  onChange={(val) => setPairForm((prev) => ({ ...prev, programs: val }))}
                   placeholder="Rincian program kerja prioritas OSIS..."
-                  className="w-full border border-gray-200 bg-gray-50 focus:bg-white rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/30 resize-none font-normal"
+                  required
+                  minHeight="180px"
                 />
               </div>
             </div>
@@ -517,9 +514,10 @@ function RegisterContent() {
                 disabled={submitting}
                 onClick={() => {
                   if (!selectedVice) return toast.error("Pilih Calon Wakil Ketua terlebih dahulu.");
-                  if (!pairForm.vision.trim()) return toast.error("Visi pasangan wajib diisi.");
-                  if (!pairForm.mission.trim()) return toast.error("Misi pasangan wajib diisi.");
-                  if (!pairForm.programs.trim()) return toast.error("Program kerja unggulan wajib diisi.");
+                  const stripHtml = (html) => (html || "").replace(/<[^>]*>?/gm, "").trim();
+                  if (!stripHtml(pairForm.vision)) return toast.error("Visi pasangan wajib diisi.");
+                  if (!stripHtml(pairForm.mission)) return toast.error("Misi pasangan wajib diisi.");
+                  if (!stripHtml(pairForm.programs)) return toast.error("Program kerja unggulan wajib diisi.");
                   setShowPreview(true);
                 }}
                 className="px-6 py-3 border border-gray-300 rounded-2xl text-xs sm:text-sm font-extrabold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition cursor-pointer flex items-center gap-2"

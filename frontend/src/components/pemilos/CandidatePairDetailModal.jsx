@@ -125,7 +125,14 @@ export default function CandidatePairDetailModal({
                 <span>Visi Utama</span>
               </div>
               <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-700 leading-relaxed font-normal">
-                {pair.vision}
+                {/<[a-z][\s\S]*>/i.test(pair.vision) ? (
+                  <div
+                    className="prose prose-sm max-w-none text-gray-700 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2"
+                    dangerouslySetInnerHTML={{ __html: pair.vision }}
+                  />
+                ) : (
+                  <span className="whitespace-pre-line">{pair.vision}</span>
+                )}
               </div>
             </div>
           )}
@@ -137,8 +144,15 @@ export default function CandidatePairDetailModal({
                 <Award className="w-4 h-4" />
                 <span>Misi Kerja</span>
               </div>
-              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-700 leading-relaxed font-normal whitespace-pre-line">
-                {pair.mission}
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-700 leading-relaxed font-normal">
+                {/<[a-z][\s\S]*>/i.test(pair.mission) ? (
+                  <div
+                    className="prose prose-sm max-w-none text-gray-700 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2"
+                    dangerouslySetInnerHTML={{ __html: pair.mission }}
+                  />
+                ) : (
+                  <span className="whitespace-pre-line">{pair.mission}</span>
+                )}
               </div>
             </div>
           )}
@@ -150,8 +164,15 @@ export default function CandidatePairDetailModal({
                 <ListCheck className="w-4 h-4" />
                 <span>Program Kerja Unggulan</span>
               </div>
-              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-700 leading-relaxed font-normal whitespace-pre-line">
-                {pair.programs}
+              <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-700 leading-relaxed font-normal">
+                {/<[a-z][\s\S]*>/i.test(pair.programs) ? (
+                  <div
+                    className="prose prose-sm max-w-none text-gray-700 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2"
+                    dangerouslySetInnerHTML={{ __html: pair.programs }}
+                  />
+                ) : (
+                  <span className="whitespace-pre-line">{pair.programs}</span>
+                )}
               </div>
             </div>
           )}
