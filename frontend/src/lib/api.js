@@ -152,12 +152,12 @@ if (Axios) {
 function formatApiError(error) {
   const defaultErrorResponse = {
     success: false,
-    statusCode: 500,
-    message: "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.",
+    statusCode: error?.response?.status || 500,
+    message: error?.message || "Gagal terhubung ke server. Silakan periksa koneksi internet Anda.",
     errors: [],
   };
 
-  if (!error.response) {
+  if (!error || !error.response) {
     return Promise.reject(defaultErrorResponse);
   }
 

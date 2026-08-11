@@ -411,7 +411,10 @@ export default function ProposalPage() {
           res.data?.id ||
           res.data?.Id ||
           res.statusCode === 200 ||
-          res.statusCode === 201);
+          res.statusCode === 201 ||
+          res.status === 200 ||
+          res.status === 201 ||
+          (res.data && typeof res.data === "object" && res.success !== false));
 
       if (isSuccessful) {
         setUploadError("");
@@ -434,10 +437,8 @@ export default function ProposalPage() {
         setEditingProposalId(null);
         setIsEditing(false);
 
-        // Safely refresh list without polluting uploadError on success
-        setTimeout(() => {
-          fetchProposals().catch((fErr) => console.error("Non-blocking refresh error:", fErr));
-        }, 100);
+        // Immediately refresh list without polluting uploadError on success
+        fetchProposals().catch((fErr) => console.error("Non-blocking refresh error:", fErr));
       } else {
         if (res?.statusCode === 401 || res?.statusCode === 403 || res?.message?.includes("Unauthorized")) {
           setUploadError("Sesi login telah berakhir atau akun Anda memerlukan hak akses. Silakan login kembali.");
@@ -446,7 +447,41 @@ export default function ProposalPage() {
         }
       }
     } catch (err) {
-      setUploadError(err?.message || "Gagal memproses proposal.");
+      // Defensive fallback check: Verify if proposal was actually saved despite network response issue
+      let saved = false;
+      try {
+        const currentUserId = user?.id || user?.Id;
+        if (currentUserId) {
+          const freshRes = await proposalService.getProposals({ userId: currentUserId });
+          const items = Array.isArray(freshRes?.data) ? freshRes.data : (freshRes?.data?.items || freshRes?.data?.data || []);
+          const targetTitle = formData.title.trim();
+          if (items.some((p) => (p.title || p.Title || "").includes(targetTitle))) {
+            saved = true;
+          }
+        }
+      } catch (checkErr) {
+        console.error("Defensive proposal verification error:", checkErr);
+      }
+
+      if (saved) {
+        setUploadError("");
+        setSuccessMessage("Pengajuan Proposal Sukses! Proposal Anda telah tercatat dan menunggu review.");
+        toast.success("Pengajuan Proposal Sukses!");
+        setFormData({
+          organization: "",
+          selectedOrganization: "",
+          customOrganization: "",
+          title: "",
+          description: "",
+        });
+        setSelectedFiles([]);
+        setFormErrors({});
+        setEditingProposalId(null);
+        setIsEditing(false);
+        fetchProposals().catch(() => {});
+      } else {
+        setUploadError(err?.message || "Gagal memproses proposal.");
+      }
     } finally {
       setIsSubmitting(false);
     }
