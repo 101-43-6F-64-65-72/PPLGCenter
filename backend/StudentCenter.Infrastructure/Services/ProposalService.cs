@@ -207,10 +207,10 @@ public class ProposalService : IProposalService
                 .Select(u => u.Id)
                 .ToListAsync();
 
-            foreach (var recipientId in adminAndTeacherIds)
+            if (adminAndTeacherIds.Any())
             {
-                await _notificationService.NotifyUserAsync(
-                    recipientId,
+                await _notificationService.NotifyUsersAsync(
+                    adminAndTeacherIds,
                     "Proposal Baru Diajukan",
                     $"{user.FullName} mengajukan proposal baru '{proposal.Title}'.",
                     NotificationType.ProposalSubmitted,
@@ -226,7 +226,18 @@ public class ProposalService : IProposalService
             Console.WriteLine($"[Proposal Notification Error] {ex.Message}");
         }
 
-        var signedUrl = await _fileStorageService.CreateSignedUrlAsync(proposal.FileUrl);
+        string signedUrl = proposal.FileUrl;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(proposal.FileUrl))
+            {
+                signedUrl = await _fileStorageService.CreateSignedUrlAsync(proposal.FileUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Proposal SignedUrl Error] {ex.Message}");
+        }
 
         return new ProposalResponse
         {

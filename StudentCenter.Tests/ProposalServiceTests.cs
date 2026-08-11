@@ -435,4 +435,34 @@ public class ProposalServiceTests
         result.Items.Should().HaveCount(1);
         result.Items.First().Status.Should().Be(ProposalStatus.Approved);
     }
+
+    [Fact]
+    public async Task CreateProposalAsync_FileStorageServiceThrows_SavesToDatabaseAndReturnsProposal()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User { Id = userId, FullName = "Resilient Student", Email = "resilient@test.com", Role = UserRole.Student };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        _mockFileStorageService
+            .Setup(x => x.CreateSignedUrlAsync(It.IsAny<string>(), null, default))
+            .ThrowsAsync(new Exception("Supabase Storage unreachable"));
+
+        var request = new CreateProposalRequest
+        {
+            Title = "Resilient Proposal",
+            Description = "Testing post-save resilience",
+            FileUrl = "proposals/test.pdf"
+        };
+
+        var result = await _service.CreateProposalAsync(request, userId);
+
+        result.Should().NotBeNull();
+        result.Title.Should().Be(request.Title);
+
+        // Verify entity was saved in DbContext
+        var savedInDb = await _context.Proposals.FirstOrDefaultAsync(p => p.Title == request.Title);
+        savedInDb.Should().NotBeNull();
+        savedInDb!.SubmittedByUserId.Should().Be(userId);
+    }
 }
