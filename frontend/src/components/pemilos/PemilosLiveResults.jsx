@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-import { Crown, TrendingUp, Users, Activity, Trophy, BarChart3, CheckCircle2, ShieldCheck } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Crown, TrendingUp, Users, Activity, Trophy, BarChart3, CheckCircle2, ShieldCheck, FileText, Eye } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils";
+import CandidatePairDetailModal from "@/components/pemilos/CandidatePairDetailModal";
 
 export default function PemilosLiveResults({
   liveData,
@@ -13,6 +14,7 @@ export default function PemilosLiveResults({
   electionTimeState,
   onRefresh,
 }) {
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
   const data = liveData || result || {};
 
   // Extract rankings & winner pair cleanly
@@ -36,7 +38,28 @@ export default function PemilosLiveResults({
 
   const winnerPair = data?.winnerPair || data?.WinnerPair || (rawRankings.length > 0 ? rawRankings[0] : null);
 
+  const fullWinnerPair = useMemo(() => {
+    if (!winnerPair) return null;
+    const found = pairs.find(
+      (p) =>
+        String(p.id) === String(winnerPair.id || winnerPair.candidatePairId) ||
+        String(p.candidatePairId) === String(winnerPair.id || winnerPair.candidatePairId)
+    );
+    return found || winnerPair;
+  }, [winnerPair, pairs]);
+
   const isOngoing = isElectionOpen || data?.status === "Open" || data?.status === 1;
+
+  const StatCard = ({ label, value, sub, icon, className }) => (
+    <div className={`bg-white border border-slate-200 p-4 rounded-lg shadow-xs ${className}`}>
+      <div className="flex items-center gap-2 mb-2">
+        {icon}
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
+      </div>
+      <div className="text-xl font-black text-slate-900">{value}</div>
+      <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
+    </div>
+  );
 
   return (
     <div className="space-y-6 font-sans">
@@ -51,17 +74,10 @@ export default function PemilosLiveResults({
         <StatCard
           label="Tingkat Partisipasi"
           value={`${participationRate}%`}
-          sub="dari total pemilih sah"
+          sub="Siswa & Guru berpartisipasi"
           icon={<Activity className="w-4 h-4 text-slate-700" />}
         />
         <StatCard
-          label="Status Sesi"
-          value={isOngoing ? "Live Voting (Aktif)" : "Hasil Resmi Pengesahan"}
-          sub={isOngoing ? "Perolehan suara diperbarui live" : "Hasil pemenang Pemilos"}
-          icon={<BarChart3 className="w-4 h-4 text-slate-700" />}
-          className="col-span-2 sm:col-span-1"
-        />
-      </div>
 
       {/* ═════════════════════════════════════════════════════════════════════
           KONDISI A: PEMILOS SEDANG BERLANGSUNG (LIVE SUARA REAL-TIME)
@@ -266,7 +282,77 @@ export default function PemilosLiveResults({
                   </div>
                 </div>
               </div>
-            ) : (
+
+              {/* Visi, Misi & Program Kerja Pemenang Terpilih */}
+              {(fullWinnerPair?.vision || fullWinnerPair?.mission || fullWinnerPair?.programs) && (
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-[#2c1ee8]" />
+                      <span>Visi, Misi & Program Kerja Pasangan Terpilih</span>
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowWinnerModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Lihat Detail Lengkap</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    {fullWinnerPair.vision && (
+                      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                        <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
+                          Visi Utama
+                        </span>
+                        {/<[a-z][\s\S]*>/i.test(fullWinnerPair.vision) ? (
+                          <div
+                            className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
+                            dangerouslySetInnerHTML={{ __html: fullWinnerPair.vision }}
+                          />
+                        ) : (
+                          <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.vision}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {fullWinnerPair.mission && (
+                      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                        <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
+                          Misi Kerja
+                        </span>
+                        {/<[a-z][\s\S]*>/i.test(fullWinnerPair.mission) ? (
+                          <div
+                            className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
+                            dangerouslySetInnerHTML={{ __html: fullWinnerPair.mission }}
+                          />
+                        ) : (
+                          <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.mission}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {fullWinnerPair.programs && (
+                      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                        <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
+                          Program Kerja Prioritas
+                        </span>
+                        {/<[a-z][\s\S]*>/i.test(fullWinnerPair.programs) ? (
+                          <div
+                            className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
+                            dangerouslySetInnerHTML={{ __html: fullWinnerPair.programs }}
+                          />
+                        ) : (
+                          <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.programs}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div> : (
               <div className="text-center py-8 text-slate-400 space-y-1">
                 <ShieldCheck className="w-8 h-8 mx-auto text-slate-300 mb-1" />
                 <p className="font-bold text-xs text-slate-700">Hasil Pemilos Periode Aktif</p>

@@ -506,25 +506,38 @@ function PemilosContent() {
 
                   if (pemilosState === "CLOSED") {
                     return (
-                      <div className="bg-white rounded-lg border border-slate-200 p-8 sm:p-10 shadow-xs text-center space-y-4">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto border border-slate-200">
-                          <Trophy className="w-6 h-6 text-amber-500" />
+                      <div className="space-y-6">
+                        <div className="bg-white rounded-lg border border-slate-200 p-8 sm:p-10 shadow-xs text-center space-y-4">
+                          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+                            <Trophy className="w-6 h-6 text-amber-500" />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                              Pemilos Berakhir & Pemenang Ditetapkan!
+                            </h3>
+                            <p className="text-xs text-slate-500">Hasil suara resmi telah disahkan dan kepengurusan OSIS baru dapat diakses.</p>
+                          </div>
+                          <div className="pt-2 flex justify-center gap-3">
+                            <Link
+                              href="/osis/structure"
+                              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#05319f] text-white font-bold text-xs hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
+                            >
+                              <GitBranch className="w-4 h-4" />
+                              <span>Lihat Bagan Struktur OSIS</span>
+                            </Link>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                            Pemilos Berakhir & Pemenang Ditetapkan!
-                          </h3>
-                          <p className="text-xs text-slate-500">Hasil suara resmi telah disahkan dan kepengurusan OSIS baru dapat diakses.</p>
-                        </div>
-                        <div className="pt-2">
-                          <Link
-                            href="/osis/structure"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#05319f] text-white font-bold text-xs hover:bg-slate-800 transition-all shadow-xs cursor-pointer"
-                          >
-                            <GitBranch className="w-4 h-4" />
-                            <span>Lihat Struktur OSIS Baru</span>
-                          </Link>
-                        </div>
+
+                        {/* Winner Profile & Visi Misi Display */}
+                        <PemilosLiveResults
+                          electionId={selectedElectionId}
+                          liveData={liveResults}
+                          result={liveResults}
+                          pairs={pairs}
+                          isElectionOpen={false}
+                          electionTimeState="AFTER"
+                          onRefresh={loadPairsAndResults}
+                        />
                       </div>
                     );
                   }
