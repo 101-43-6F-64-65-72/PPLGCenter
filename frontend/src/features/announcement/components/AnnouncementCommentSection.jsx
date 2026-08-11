@@ -244,29 +244,29 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
   };
 
   return (
-    <div className="bg-white border border-gray-200/80 rounded-3xl shadow-sm overflow-visible flex flex-col font-sans relative">
+    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-visible flex flex-col font-sans relative">
       
       {/* ── HEADER & REACTION BAR ── */}
-      <div className="p-4 border-b border-gray-100 bg-gray-50/50 rounded-t-3xl">
+      <div className="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
         
         {/* Top Summary Bar: ONLY display if totalReactionsCount > 0 or admin controls */}
         {(totalReactionsCount > 0 || isTeacherOrAdmin) && (
-          <div className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-600 mb-3 pb-2 border-b border-gray-100">
+          <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-600 mb-3 pb-2 border-b border-slate-100">
             {totalReactionsCount > 0 ? (
               <div className="flex items-center gap-1.5">
                 <span className="flex -space-x-1 items-center">
                   {activeReactionsSummary.map((item) => (
-                    <span key={item.type} className="text-base transform hover:scale-125 transition-transform">
+                    <span key={item.type} className="text-base transform hover:scale-110 transition-transform">
                       {item.emoji}
                     </span>
                   ))}
                 </span>
-                <span className="text-gray-800 font-bold ml-1">
+                <span className="text-slate-800 font-bold ml-1">
                   {totalReactionsCount} Reaksi
                 </span>
               </div>
             ) : (
-              <span className="text-gray-400 font-normal">Belum ada reaksi</span>
+              <span className="text-slate-400 font-normal">Belum ada reaksi</span>
             )}
 
             {/* Lock / Unlock Toggle for Admin / Teachers */}
@@ -276,7 +276,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                 className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                   isCommentsLocked
                     ? "bg-amber-50 text-amber-700 border-amber-200"
-                    : "bg-white text-gray-500 border-gray-200 hover:text-gray-800"
+                    : "bg-white text-slate-500 border-slate-200 hover:text-slate-800"
                 }`}
                 title={isCommentsLocked ? "Buka Komentar" : "Kunci Komentar"}
               >
@@ -298,14 +298,14 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
               {/* Invisible Hover Bridge Padding to prevent hover loss when moving cursor */}
               <div className="hidden md:block absolute -top-5 left-0 right-0 h-5 bg-transparent z-40" />
 
-              {/* PC / Desktop Hover Floating Popup (Neat 6x2 Grid centered inside sidebar) */}
-              <div className="hidden md:grid grid-cols-6 gap-2.5 absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-white/95 backdrop-blur-md p-3 rounded-3xl shadow-2xl border border-gray-200/90 z-50 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-200 w-max max-w-[300px]">
+              {/* PC / Desktop Hover Floating Popup */}
+              <div className="hidden md:grid grid-cols-6 gap-2 absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl shadow-xl border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 w-max max-w-[280px]">
                 {EMOJI_LIST.map((item) => (
                   <button
                     key={item.type}
                     type="button"
                     onClick={() => handleReactionClick(item.type)}
-                    className="text-2xl sm:text-3xl hover:scale-135 hover:-translate-y-1.5 transition-all duration-200 ease-out cursor-pointer transform origin-bottom hover:animate-bounce shrink-0 p-1 flex items-center justify-center rounded-xl hover:bg-blue-50/50"
+                    className="text-2xl hover:scale-125 hover:-translate-y-1 transition-all duration-150 ease-out cursor-pointer p-1 flex items-center justify-center rounded-lg hover:bg-blue-50/60"
                     title={item.label}
                   >
                     {item.emoji}
@@ -313,18 +313,18 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                 ))}
               </div>
 
-              {/* Mobile Click Sheet Modal (Different Alur for Touch Devices) */}
-              <div className="md:hidden fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-xs flex items-end justify-center p-4 animate-in fade-in duration-150">
+              {/* Mobile Click Sheet Modal */}
+              <div className="md:hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-end justify-center p-4 animate-in fade-in duration-150">
                 <div
-                  className="bg-white rounded-3xl w-full p-4 border border-gray-100 shadow-2xl space-y-3 animate-in slide-in-from-bottom-6 duration-200"
+                  className="bg-white rounded-2xl w-full p-4 border border-slate-200 shadow-2xl space-y-3 animate-in slide-in-from-bottom-6 duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                    <span className="text-xs font-black text-gray-800 uppercase tracking-wider">Pilih Reaksi</span>
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Pilih Reaksi</span>
                     <button
                       type="button"
                       onClick={() => setShowReactionPopup(false)}
-                      className="p-1 text-gray-400 hover:text-gray-600 rounded-full"
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -335,10 +335,10 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                         key={item.type}
                         type="button"
                         onClick={() => handleReactionClick(item.type)}
-                        className="text-3xl active:scale-125 transition-transform p-1.5 rounded-2xl hover:bg-gray-100 flex flex-col items-center gap-1"
+                        className="text-2xl active:scale-110 transition-transform p-1.5 rounded-xl hover:bg-slate-100 flex flex-col items-center gap-1"
                       >
                         <span>{item.emoji}</span>
-                        <span className="text-[9px] font-bold text-gray-500 truncate max-w-full">{item.label}</span>
+                        <span className="text-[9px] font-semibold text-slate-500 truncate max-w-full">{item.label}</span>
                       </button>
                     ))}
                   </div>
@@ -350,16 +350,16 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
           {/* Main Trigger Button */}
           <button
             onClick={handleTriggerClick}
-            className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-2xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
               userReaction
-                ? "bg-blue-50 text-blue-600 border-blue-200 shadow-xs"
-                : "bg-white hover:bg-gray-100 text-gray-700 border-gray-200"
+                ? "bg-blue-50 text-[#2c1ee8] border-blue-200 shadow-2xs"
+                : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
             }`}
           >
             {currentUserEmojiObj ? (
-              <span className="text-xl leading-none">{currentUserEmojiObj.emoji}</span>
+              <span className="text-lg leading-none">{currentUserEmojiObj.emoji}</span>
             ) : (
-              <ThumbsUp className="w-4 h-4 text-blue-600" />
+              <ThumbsUp className="w-4 h-4 text-[#2c1ee8]" />
             )}
             <span>{currentUserEmojiObj ? currentUserEmojiObj.label : "Beri Reaksi"}</span>
           </button>

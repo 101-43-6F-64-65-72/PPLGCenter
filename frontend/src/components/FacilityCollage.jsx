@@ -94,8 +94,8 @@ export default function FacilityCollage() {
   }, []);
 
   return (
-    <div className="relative w-full max-w-[540px] mx-auto select-none">
-      <div className="grid grid-cols-2 gap-3.5 sm:gap-4.5">
+    <div className="relative w-full max-w-[500px] mx-auto select-none">
+      <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
         {facilities.map((image, index) => (
           <motion.div
             key={image.id || index}
@@ -103,26 +103,26 @@ export default function FacilityCollage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{
-              duration: 0.5,
-              delay: index * 0.1,
-              ease: [0.21, 0.47, 0.32, 0.98],
+              duration: 0.4,
+              delay: index * 0.08,
+              ease: "easeOut",
             }}
-            className="group relative aspect-square overflow-hidden rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/60 bg-slate-100 hover:shadow-md transition-all duration-300 cursor-pointer"
+            className="group relative aspect-square overflow-hidden rounded-2xl shadow-xs border border-slate-200 bg-slate-100 hover:shadow-md transition-all duration-300 cursor-pointer"
           >
             <Image
               src={image.src}
               alt={image.alt}
               fill
-              sizes="(max-width: 768px) 45vw, 260px"
+              sizes="(max-width: 768px) 45vw, 250px"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               unoptimized
             />
             {/* Dark gradient bottom overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/10 to-transparent transition-opacity group-hover:from-slate-950/90" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
 
             {/* Pill Label */}
-            <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 z-10 pr-2">
-              <span className="inline-block bg-white/90 backdrop-blur-md text-slate-900 text-[11px] sm:text-xs font-bold px-2.5 py-1 rounded-full shadow-xs border border-white/40 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300 max-w-[170px] truncate">
+            <div className="absolute bottom-3 left-3 z-10 pr-2">
+              <span className="inline-block bg-white/95 text-slate-900 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-2xs border border-slate-200/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-[#2c1ee8] transition-colors duration-200 max-w-[150px] truncate">
                 {image.label}
               </span>
             </div>
@@ -132,6 +132,7 @@ export default function FacilityCollage() {
     </div>
   );
 }
+
 
 
 

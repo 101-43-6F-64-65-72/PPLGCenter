@@ -93,9 +93,24 @@ export default function AnnouncementDetailPage() {
     return "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&auto=format&fit=crop&q=80";
   };
 
+  // Category badge styling — selaras dengan Kalender
+  const getCategoryBadgeStyle = (category) => {
+    if (!category) return "bg-gray-100 text-gray-700 border-gray-200";
+    const cat = category.trim().toLowerCase();
+    if (cat.includes("libur")) return "bg-red-50 text-red-700 border-red-200";
+    if (cat.includes("ujian")) return "bg-amber-50 text-amber-700 border-amber-200";
+    if (cat.includes("osis")) return "bg-blue-50 text-blue-700 border-blue-200";
+    if (cat.includes("ekstra")) return "bg-purple-50 text-purple-700 border-purple-200";
+    if (cat.includes("akademik")) return "bg-green-50 text-green-700 border-green-200";
+    return "bg-gray-100 text-gray-700 border-gray-200";
+  };
+
+
+
   const formattedDate = formatDate(announcement.createdAt);
   const coverImage = getCoverImage(announcement);
   const authorName = announcement.author || announcement.createdBy || announcement.authorName || "Redaksi Sekolah";
+
 
   const isEdited = Boolean(
     announcement?.isEdited ||
@@ -205,128 +220,129 @@ export default function AnnouncementDetailPage() {
     .slice(0, 2);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans antialiased relative">
       {/* Top Reading Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-100 z-50">
+      <div className="fixed top-0 left-0 right-0 h-0.5 bg-gray-200 z-50">
         <div
-          className="h-full bg-[#1d4ed8] transition-all duration-150 ease-out"
+          className="h-full bg-blue-600 transition-all duration-150 ease-out"
           style={{ width: `${readingProgress}%` }}
         />
       </div>
 
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-28">
-        {/* Back Link */}
-        <Link
-          href="/mading"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-[#1d4ed8] transition-colors mb-6 group cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
-          <span>Kembali ke Mading Digital</span>
-        </Link>
+      <main className="pt-28 pb-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* Breadcrumb / Back Link */}
+        <div className="mb-6 pb-4 border-b border-gray-200">
+          <Link
+            href="/mading"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-blue-600 transition-colors group cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+            Kembali ke Mading Digital
+          </Link>
+        </div>
 
         {isLoading ? (
           <AnnouncementDetailSkeleton />
         ) : (
-          <>
-            {/* 2-Column Responsive Layout (Article Left, Facebook-style Comments Sidebar Right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              
-              {/* LEFT COLUMN: Article Content & Related News (lg:col-span-7) */}
-              <div className="lg:col-span-7 space-y-12">
-                <article className="w-full">
-                  {/* 1. Article Title */}
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-[900] text-gray-900 tracking-tight leading-tight mb-4 font-sans">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            {/* LEFT COLUMN: Article */}
+            <div className="lg:col-span-7 space-y-8">
+              <article className="bg-white border border-gray-200 rounded-md overflow-hidden">
+
+                {/* Cover Image */}
+                <div className="relative w-full aspect-[16/7] overflow-hidden bg-gray-100">
+                  <Image
+                    src={coverImage}
+                    alt={announcement.title}
+                    fill
+                    className="object-cover"
+                    priority
+                    unoptimized
+                  />
+                  {/* Category badge overlay */}
+                  <div className="absolute top-4 left-4">
+                    <span className={`inline-flex items-center px-3 py-1.5 rounded text-sm font-bold border ${getCategoryBadgeStyle(announcement.category)}`}>
+                      {announcement.category || "Pengumuman"}
+                    </span>
+                  </div>
+                  {announcement.isPinned && (
+                    <div className="absolute top-4 right-4">
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-sm font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        <Pin className="w-4 h-4" />
+                        Disematkan
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Article Content */}
+                <div className="p-6 sm:p-8">
+                  {/* Title */}
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight leading-snug mb-5">
                     {announcement.title}
                   </h1>
 
-                  {/* Author & Category Sub-bar (Under Title) */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm text-gray-500 font-medium mb-6 pb-4 border-b border-gray-100">
-                    <div className="flex flex-wrap items-center gap-3">
+                  {/* Meta bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-gray-200">
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 font-medium">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-blue-100 text-[#1d4ed8] font-bold flex items-center justify-center text-xs shadow-xs border border-blue-200/50">
-                          <User className="w-3.5 h-3.5" />
+                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                          <User className="w-4 h-4 text-gray-600" />
                         </div>
-                        <span className="text-gray-900 font-semibold">
-                          Oleh: {authorName}
-                        </span>
+                        <span className="font-semibold text-gray-800">{authorName}</span>
                       </div>
-                      <span className="text-gray-300">•</span>
-                      <span className="bg-blue-50 text-[#1d4ed8] font-semibold text-xs px-3 py-0.5 rounded-full border border-blue-100">
-                        {announcement.category || "Pengumuman"}
-                      </span>
+                      <span className="text-gray-300">·</span>
+                      <span>{formattedDate}</span>
+                      <span className="text-gray-300">·</span>
+                      <span>{estimatedReadTime} mnt baca</span>
                       {isEdited && (
                         <>
-                          <span className="text-gray-300">•</span>
-                          <span className="bg-amber-50 text-amber-800 font-extrabold text-xs px-2.5 py-0.5 rounded-full border border-amber-200">
-                            Di edit
-                          </span>
-                        </>
-                      )}
-                      {announcement.isPinned && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span className="bg-amber-50 text-amber-800 font-extrabold text-xs px-3 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
-                            <Pin className="w-3 h-3 text-amber-600 fill-current" />
-                            Disematkan
+                          <span className="text-gray-300">·</span>
+                          <span className="bg-amber-50 text-amber-800 font-semibold px-2.5 py-0.5 rounded border border-amber-200 text-xs">
+                            Diedit
                           </span>
                         </>
                       )}
                     </div>
 
+                    {/* Actions */}
                     <div className="flex items-center gap-2">
                       {isAuthorOrAdmin && (
                         <button
                           onClick={handleOpenEdit}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#2c1ee8] text-white hover:bg-[#2218a3] rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Edit Mading</span>
+                          <Edit3 className="w-4 h-4" />
+                          Edit
                         </button>
                       )}
-
-                      {/* Share Link Action */}
                       <button
                         onClick={handleCopyLink}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-[#1d4ed8] rounded-full border border-gray-200/80 text-xs font-semibold transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                       >
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                         </svg>
-                        <span>{copied ? "Link Tersalin!" : "Bagikan Berita"}</span>
+                        {copied ? "Tersalin!" : "Bagikan"}
                       </button>
                     </div>
                   </div>
 
-                  {/* 2. Hero Image */}
-                  <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] rounded-[24px] sm:rounded-[32px] overflow-hidden shadow-md mb-8 border border-gray-100 bg-gray-100">
-                    <Image
-                      src={coverImage}
-                      alt={announcement.title}
-                      fill
-                      className="object-cover"
-                      priority
-                      unoptimized
-                    />
-                  </div>
-
-                  {/* 3. Article Content */}
+                  {/* Article Body */}
                   <RichContentViewer
                     content={announcement.content || announcement.summary || "Belum ada konten teks mading."}
-                    className="mt-6 mb-4 text-justify"
+                    className="text-gray-700 leading-relaxed"
                   />
-                  {isEdited && (
-                    <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-block mt-2">
-                      Di edit
-                    </span>
-                  )}
 
-                  {/* File Attachments (if available) */}
+                  {/* File Attachments */}
                   {announcement.attachments && announcement.attachments.length > 0 && (
-                    <div className="mt-10 pt-6 border-t border-gray-100">
-                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-[#1d4ed8]" /> Lampiran Berkas
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <FileText className="w-3.5 h-3.5" /> Lampiran
                       </h3>
                       <div className="space-y-2">
                         {announcement.attachments.map((file, idx) => (
@@ -335,201 +351,139 @@ export default function AnnouncementDetailPage() {
                             href={file.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center justify-between p-3.5 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition-all text-sm group"
+                            className="flex items-center justify-between p-3 rounded-md border border-gray-200 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 transition-colors text-sm group"
                           >
-                            <div className="flex items-center gap-2.5 text-gray-800 font-medium">
-                              <FileText className="w-4 h-4 text-gray-500 group-hover:text-[#1d4ed8]" />
+                            <div className="flex items-center gap-2 text-gray-700 font-medium">
+                              <FileText className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
                               <span>{file.name}</span>
                             </div>
-                            <Download className="w-4 h-4 text-gray-400 group-hover:text-[#1d4ed8]" />
+                            <Download className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
                           </a>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* 4. Publish Date & Edit status */}
-                  <div className="mt-10 pt-4 border-t border-gray-100 flex items-center justify-between text-xs sm:text-sm font-medium text-gray-500">
+                  {/* Footer date */}
+                  <div className="mt-8 pt-4 border-t border-gray-200 flex items-center justify-between text-xs text-gray-400">
                     {isEdited ? (
-                      <span className="text-amber-700 font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-                        Di edit • {formatDate(announcement.updatedAt)}
+                      <span className="text-amber-600 font-medium">
+                        Diedit pada {formatDate(announcement.updatedAt)}
                       </span>
                     ) : (
                       <span />
                     )}
-                    <span>{formattedDate}</span>
+                    <span>Dipublikasi: {formattedDate}</span>
                   </div>
-                </article>
+                </div>
+              </article>
 
-                {/* 5. Mading Terbaru & Mading Terpopuler Sections */}
-                <div className="space-y-12 pt-8 border-t border-gray-200/80">
-                  
-                  {/* A. Mading Terbaru Section */}
+              {/* Related Articles Section */}
+              {(latestArticles.length > 0 || popularArticles.length > 0) && (
+                <section className="space-y-6">
                   {latestArticles.length > 0 && (
-                    <section>
-                      <div className="flex items-center justify-between gap-4 mb-6">
-                        <div>
-                          <div className="inline-flex items-center gap-2 text-[#1d4ed8] font-bold text-xs uppercase tracking-wider mb-1.5">
-                            <span className="w-2 h-2 rounded-full bg-[#1d4ed8] animate-pulse" />
-                            <span>MADING TERBARU</span>
-                          </div>
-                          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                            Pengumuman Terbaru Sekolah
-                          </h2>
-                        </div>
-
-                        <Link
-                          href="/mading"
-                          className="text-xs font-bold text-[#1d4ed8] hover:text-blue-800 transition-colors flex items-center gap-1 group shrink-0"
-                        >
-                          <span>Lihat Semua</span>
-                          <span className="transform group-hover:translate-x-1 transition-transform">→</span>
+                    <div className="bg-white border border-gray-200 rounded-md p-5">
+                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                        <h2 className="text-sm font-semibold text-gray-800">Mading Terbaru</h2>
+                        <Link href="/mading" className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                          Lihat Semua →
                         </Link>
                       </div>
-
-                      {/* Latest Cards Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {latestArticles.map((item) => (
                           <Link
                             key={item.id}
                             href={`/mading/${item.id}`}
-                            className="bg-white border border-gray-100 hover:border-blue-300 rounded-[22px] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 transform hover:-translate-y-1.5 group flex flex-col justify-between"
+                            className="group flex gap-3 p-3 rounded-md border border-gray-200 hover:border-blue-300 transition-colors"
                           >
-                            <div>
-                              <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100">
-                                <Image
-                                  src={getCoverImage(item)}
-                                  alt={item.title}
-                                  fill
-                                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                  unoptimized
-                                />
-                                <span className="absolute top-3 left-3 bg-[#1d4ed8] text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md">
-                                  {item.category || "Pengumuman"}
-                                </span>
-                              </div>
-
-                              <div className="p-5">
-                                <h3 className="text-base font-bold text-gray-900 leading-snug mb-2 group-hover:text-[#1d4ed8] transition-colors line-clamp-2">
-                                  {item.title}
-                                </h3>
-                                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-normal">
-                                  {stripHtml(item.summary || item.content)}
-                                </p>
-                              </div>
+                            <div className="relative w-16 h-16 shrink-0 rounded overflow-hidden bg-gray-100">
+                              <Image
+                                src={getCoverImage(item)}
+                                alt={item.title}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
                             </div>
-
-                            <div className="p-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-2">
-                              <span className="text-[11px] text-gray-400 font-medium">
-                                {item.author || item.createdBy || "Redaksi"}
+                            <div className="flex-1 min-w-0">
+                              <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded border mb-1 ${getCategoryBadgeStyle(item.category)}`}>
+                                {item.category || "Pengumuman"}
                               </span>
-                              <span className="text-xs font-bold text-[#1d4ed8] group-hover:translate-x-0.5 transition-transform">
-                                Baca Artikel →
-                              </span>
+                              <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                {item.title}
+                              </h3>
                             </div>
                           </Link>
                         ))}
                       </div>
-                    </section>
+                    </div>
                   )}
 
-                  {/* B. Mading Terpopuler Section */}
                   {popularArticles.length > 0 && (
-                    <section>
-                      <div className="flex items-center justify-between gap-4 mb-6">
-                        <div>
-                          <div className="inline-flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider mb-1.5">
-                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                            <span>MADING TERPOPULER</span>
-                          </div>
-                          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                            Artikel Banyak Dibaca
-                          </h2>
-                        </div>
-
-                        <Link
-                          href="/mading"
-                          className="text-xs font-bold text-amber-600 hover:text-amber-800 transition-colors flex items-center gap-1 group shrink-0"
-                        >
-                          <span>Lihat Semua</span>
-                          <span className="transform group-hover:translate-x-1 transition-transform">→</span>
+                    <div className="bg-white border border-gray-200 rounded-md p-5">
+                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+                        <h2 className="text-sm font-semibold text-gray-800">Banyak Dibaca</h2>
+                        <Link href="/mading" className="text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors">
+                          Lihat Semua →
                         </Link>
                       </div>
-
-                      {/* Popular Cards Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {popularArticles.map((item) => (
                           <Link
                             key={item.id}
                             href={`/mading/${item.id}`}
-                            className="bg-white border border-amber-100/80 hover:border-amber-300 rounded-[22px] overflow-hidden shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 transform hover:-translate-y-1.5 group flex flex-col justify-between"
+                            className="group flex gap-3 p-3 rounded-md border border-gray-200 hover:border-blue-300 transition-colors"
                           >
-                            <div>
-                              <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100">
-                                <Image
-                                  src={getCoverImage(item)}
-                                  alt={item.title}
-                                  fill
-                                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                  unoptimized
-                                />
-                                <span className="absolute top-3 left-3 bg-amber-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md">
-                                  {item.category || "Populer"}
-                                </span>
-                              </div>
-
-                              <div className="p-5">
-                                <h3 className="text-base font-bold text-gray-900 leading-snug mb-2 group-hover:text-amber-600 transition-colors line-clamp-2">
-                                  {item.title}
-                                </h3>
-                                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed font-normal">
-                                  {stripHtml(item.summary || item.content)}
-                                </p>
-                              </div>
+                            <div className="relative w-16 h-16 shrink-0 rounded overflow-hidden bg-gray-100">
+                              <Image
+                                src={getCoverImage(item)}
+                                alt={item.title}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
                             </div>
-
-                            <div className="p-5 pt-0 flex items-center justify-between border-t border-gray-50 mt-2">
-                              <span className="text-[11px] text-gray-400 font-medium">
-                                {item.author || item.createdBy || "Redaksi"}
+                            <div className="flex-1 min-w-0">
+                              <span className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded border mb-1 ${getCategoryBadgeStyle(item.category)}`}>
+                                {item.category || "Pengumuman"}
                               </span>
-                              <span className="text-xs font-bold text-amber-600 group-hover:translate-x-0.5 transition-transform">
-                                Baca Artikel →
-                              </span>
+                              <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                {item.title}
+                              </h3>
                             </div>
                           </Link>
                         ))}
                       </div>
-                    </section>
+                    </div>
                   )}
-
-                </div>
-              </div>
-
-              {/* RIGHT COLUMN: Facebook-style Sticky Comments Sidebar (lg:col-span-5) */}
-              <div className="lg:col-span-5 lg:sticky lg:top-28 w-full">
-                <AnnouncementCommentSection
-                  announcementId={announcement.id}
-                  isCommentsLockedInitial={!!announcement.isCommentsLocked}
-                />
-              </div>
-
+                </section>
+              )}
             </div>
-          </>
+
+            {/* RIGHT COLUMN: Sticky Comments Sidebar */}
+            <div className="lg:col-span-5 lg:sticky lg:top-28 w-full">
+              <AnnouncementCommentSection
+                announcementId={announcement.id}
+                isCommentsLockedInitial={!!announcement.isCommentsLocked}
+              />
+            </div>
+
+          </div>
         )}
       </main>
 
       {/* Edit Mading Modal */}
       {isEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-[#2c1ee8]" />
-                <span>Edit Pengumuman Mading</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white w-full max-w-xl rounded-md p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-lg border border-gray-200">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-blue-600" />
+                Edit Pengumuman
               </h3>
               <button
                 onClick={() => setIsEditOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full cursor-pointer transition-colors"
+                className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -537,43 +491,43 @@ export default function AnnouncementDetailPage() {
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Judul Pengumuman *</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Judul Pengumuman *</label>
                 <input
                   type="text"
                   required
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#2c1ee8]"
+                  className="w-full px-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600"
                   placeholder="Judul mading..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Kategori Mading *</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Kategori *</label>
                 <select
                   value={editForm.category}
                   onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-2xl border border-gray-200 text-xs font-semibold focus:outline-none focus:border-[#2c1ee8] bg-white"
+                  className="w-full px-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-600 focus:border-blue-600 bg-white"
                 >
                   <option value="Informasi Sekolah">Informasi Sekolah</option>
                   <option value="Kegiatan Siswa">Kegiatan Siswa</option>
-                  <option value="Prestasi & Lomba">Prestasi & Lomba</option>
-                  <option value="Akademik & Ujian">Akademik & Ujian</option>
-                  <option value="Fasilitas & Layanan">Fasilitas & Layanan</option>
+                  <option value="Prestasi & Lomba">Prestasi &amp; Lomba</option>
+                  <option value="Akademik & Ujian">Akademik &amp; Ujian</option>
+                  <option value="Fasilitas & Layanan">Fasilitas &amp; Layanan</option>
                 </select>
               </div>
 
               {/* Cover Image Crop & Upload */}
               <div>
                 <ImageCropUploader
-                  label="Ganti Gambar Sampul Mading (Cover Image)"
+                  label="Ganti Gambar Sampul (Cover)"
                   initialImageUrl={editCoverImageUrl || announcement.coverImageUrl || announcement.imageUrl}
                   onCropped={handleEditCroppedImage}
                 />
                 {isUploadingEditCover && (
-                  <div className="mt-2 p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-xs font-extrabold text-[#2c1ee8] flex items-center gap-2">
+                  <div className="mt-2 p-2.5 rounded-md bg-blue-50 border border-blue-200 text-xs font-medium text-blue-700 flex items-center gap-2">
                     <TwinOrbitSpinner size="xs" color="primary" />
-                    <span>Mengunggah gambar sampul baru...</span>
+                    <span>Mengunggah gambar sampul...</span>
                   </div>
                 )}
               </div>
@@ -587,27 +541,27 @@ export default function AnnouncementDetailPage() {
                 helperText="Format konten mading dengan teks tebal, daftar, atau judul agar lebih mudah dibaca."
               />
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
-                  className="px-5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                  className="px-4 py-2 rounded-md border border-gray-300 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingEdit || isUploadingEditCover}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSavingEdit || isUploadingEditCover ? (
                     <>
                       <TwinOrbitSpinner size="xs" color="white" />
-                      <span>{isUploadingEditCover ? "Mengunggah Gambar..." : "Menyimpan Perubahan..."}</span>
+                      <span>{isUploadingEditCover ? "Mengunggah..." : "Menyimpan..."}</span>
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4" />
+                      <Save className="w-3.5 h-3.5" />
                       <span>Simpan Perubahan</span>
                     </>
                   )}

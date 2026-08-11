@@ -11,7 +11,7 @@ export default function PrimaryButton({
     <>
       <span>{text}</span>
       <svg
-        className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5] transition-transform duration-300 group-hover:translate-x-1.5"
+        className="w-4 h-4 stroke-[2.5] transition-transform duration-200 group-hover:translate-x-1"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -27,7 +27,7 @@ export default function PrimaryButton({
   );
 
   const baseClasses =
-    "group inline-flex items-center justify-center gap-2.5 sm:gap-3 bg-[#2c1ee8] hover:bg-[#2013ce] text-white font-semibold text-base sm:text-lg lg:text-xl px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl shadow-sm hover:shadow-md hover:shadow-blue-600/25 transition-all duration-300 cursor-pointer active:scale-95";
+    "group inline-flex items-center justify-center gap-2.5 bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm sm:text-base px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.98]";
 
   const combinedClasses = `${baseClasses} ${className}`.trim();
 
@@ -50,4 +50,5 @@ export default function PrimaryButton({
     </button>
   );
 }
+
 

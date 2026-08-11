@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, ChevronLeft, ChevronRight, Play, Info } from "@/components/common/Icons";
+import { ThumbsUp, MessageSquare } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils";
 import { stripHtml } from "@/lib/sanitizer";
 
@@ -115,12 +116,12 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
 
         <div className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 items-center px-6 sm:px-12 lg:px-20 h-full pt-20 lg:pt-24">
           <div className="lg:col-span-8 flex flex-col items-start text-left my-auto py-6">
-            <div className="inline-flex items-center gap-2 bg-blue-600/90 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold px-4 py-1.5 rounded-full mb-4 shadow-lg border border-blue-400/30 uppercase">
-              <span>★ MADING DIGITAL SMK NEGERI 2 SURAKARTA</span>
+            <div className="inline-flex items-center gap-2 bg-blue-600/90 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold px-3.5 py-1 rounded-full mb-4 shadow-sm border border-blue-400/30 uppercase tracking-wider">
+              <span>Mading Digital SMKN 2 Surakarta</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-[800] text-white tracking-tight uppercase leading-tight mb-4 drop-shadow-xl">
-              PORTAL INFORMASI & PUBLIKASI SISWA
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-4 drop-shadow-xl">
+              Portal Informasi & Publikasi Siswa
             </h1>
 
             <p className="text-sm sm:text-base lg:text-lg text-blue-100/90 leading-relaxed max-w-xl mb-8 font-normal drop-shadow">
@@ -129,7 +130,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
 
             <button
               onClick={scrollToCatalog}
-              className="inline-flex items-center justify-center gap-2.5 bg-white text-[#071329] hover:bg-blue-50 font-bold text-sm sm:text-base px-8 py-3.5 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2.5 bg-white text-[#071329] hover:bg-blue-50 font-bold text-sm sm:text-base px-6 py-3 rounded-xl shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
             >
               <span>Jelajahi Katalog Berita</span>
             </button>
@@ -183,11 +184,11 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
-              <div className="inline-flex items-center gap-1.5 bg-blue-600/95 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold px-3.5 py-1 rounded-full mb-3 shadow-md tracking-wider">
-                <span>★ UNGGULAN TERBARU</span>
+              <div className="inline-flex items-center gap-1.5 bg-blue-600/95 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold px-3 py-1 rounded-full mb-3 shadow-sm tracking-wider uppercase">
+                <span>Unggulan Terbaru</span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-[800] text-white tracking-wide uppercase leading-tight mb-3 drop-shadow-lg">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-extrabold text-white tracking-tight leading-tight mb-3 drop-shadow-lg">
                 {slide.title}
               </h1>
 
@@ -200,27 +201,27 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
 
                 {(slide.reactionCount || slide.ReactionCount || slide.reactionsCount || 0) > 0 && (
                   <span className="inline-flex items-center gap-1 bg-white/10 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
-                    <span>👍</span>
+                    <ThumbsUp className="w-3 h-3 text-blue-200" />
                     <span>{slide.reactionCount ?? slide.ReactionCount ?? slide.reactionsCount}</span>
                   </span>
                 )}
 
                 {(slide.commentCount || slide.CommentCount || slide.commentsCount || 0) > 0 && (
                   <span className="inline-flex items-center gap-1 bg-white/10 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
-                    <span>💬</span>
+                    <MessageSquare className="w-3 h-3 text-blue-200" />
                     <span>{slide.commentCount ?? slide.CommentCount ?? slide.commentsCount}</span>
                   </span>
                 )}
               </div>
 
-              <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-medium line-clamp-3">
+              <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-normal line-clamp-3 text-justify">
                 {stripHtml(slide.summary || slide.content)}
               </p>
 
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href={`/mading/${slide.id}`}
-                  className="inline-flex items-center justify-center gap-2 bg-white text-[#071329] hover:bg-blue-50 font-bold text-xs sm:text-sm px-5 py-2.5 rounded-full shadow-2xl transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 bg-white text-[#071329] hover:bg-blue-50 font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>Baca Selengkapnya</span>
@@ -228,7 +229,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
 
                 <button
                   onClick={scrollToCatalog}
-                  className="inline-flex items-center justify-center gap-2 bg-black/40 hover:bg-black/60 text-white font-semibold text-xs sm:text-sm px-4.5 py-2.5 rounded-full backdrop-blur-md border border-white/30 transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 bg-black/40 hover:bg-black/60 text-white font-semibold text-xs sm:text-sm px-4.5 py-2.5 rounded-xl backdrop-blur-md border border-white/30 transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer"
                 >
                   <Info className="w-4 h-4" />
                   <span>Jelajahi Katalog</span>
@@ -238,6 +239,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
           </AnimatePresenceComponent>
         </div>
       </div>
+
 
       {slides.length > 1 && (
         <>
