@@ -434,14 +434,13 @@ export default function ProposalPage() {
         setEditingProposalId(null);
         setIsEditing(false);
 
-        try {
-          await fetchProposals();
-        } catch (fetchErr) {
-          console.error("Failed to refresh proposals list:", fetchErr);
-        }
+        // Safely refresh list without polluting uploadError on success
+        setTimeout(() => {
+          fetchProposals().catch((fErr) => console.error("Non-blocking refresh error:", fErr));
+        }, 100);
       } else {
         if (res?.statusCode === 401 || res?.statusCode === 403 || res?.message?.includes("Unauthorized")) {
-          setUploadError("Sesi login telah berakhir atau akun Anda memerlukan hak akses OSIS. Silakan login kembali.");
+          setUploadError("Sesi login telah berakhir atau akun Anda memerlukan hak akses. Silakan login kembali.");
         } else {
           setUploadError(res?.message || "Gagal menyimpan proposal. Silakan coba lagi.");
         }
