@@ -56,7 +56,8 @@ export default function MadingSection() {
 
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl text-left font-normal">
               Pusat kearsipan berita, prestasi, pengumuman resmi, serta karya
-              kreatif siswa-siswi SMK Negeri 2 Surakarta. Dapatkan informasi terkini secara cepat, tepat, dan terintegrasi.
+              kreatif siswa-siswi SMK Negeri 2 Surakarta. Dapatkan informasi
+              terkini secara cepat, tepat, dan terintegrasi.
             </p>
           </motion.div>
         </div>
@@ -70,7 +71,8 @@ export default function MadingSection() {
               <ErrorAlert
                 title="Gagal Memuat Mading"
                 message={
-                  error?.message || "Gagal memuat pengumuman. Silakan coba lagi."
+                  error?.message ||
+                  "Gagal memuat pengumuman. Silakan coba lagi."
                 }
               />
               <div className="mt-4 flex justify-center">
@@ -273,4 +275,3 @@ export default function MadingSection() {
     </section>
   );
 }
-

@@ -50,8 +50,8 @@ export default function Hero() {
 
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
             Program pengembangan sekolah kejuruan terdepan untuk menghasilkan
-            lulusan kompeten dan berkarakter, diselaraskan secara mendalam dengan
-            kebutuhan dunia usaha, industri, dan kerja (DUDI).
+            lulusan kompeten dan berkarakter, diselaraskan secara mendalam
+            dengan kebutuhan dunia usaha, industri, dan kerja (DUDI).
           </p>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-10">
@@ -116,5 +116,3 @@ export default function Hero() {
     </section>
   );
 }
-
-

@@ -35,19 +35,20 @@ export default function ExtracurricularSection() {
           </h2>
 
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
-            SMKN 2 Surakarta menyediakan wadah kegiatan ekstrakurikuler komprehensif
-            mulai dari olahraga, seni budaya, teknologi, hingga organisasi kepemimpinan.
-            Dirancang untuk membentuk karakter tangguh, mengasah minat bakat, serta
-            membangun semangat kolaborasi siswa.
+            SMKN 2 Surakarta menyediakan wadah kegiatan ekstrakurikuler
+            komprehensif mulai dari olahraga, seni budaya, teknologi, hingga
+            organisasi kepemimpinan. Dirancang untuk membentuk karakter tangguh,
+            mengasah minat bakat, serta membangun semangat kolaborasi siswa.
           </p>
 
           <div className="w-full sm:w-auto">
-            <PrimaryButton href="/ekstrakurikuler" text="Daftar Ekstrakurikuler" />
+            <PrimaryButton
+              href="/ekstrakurikuler"
+              text="Daftar Ekstrakurikuler"
+            />
           </div>
         </motion.div>
       </div>
     </section>
   );
 }
-
-
