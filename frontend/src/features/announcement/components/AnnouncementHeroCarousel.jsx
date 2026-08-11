@@ -214,7 +214,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
                 )}
               </div>
 
-              <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-normal line-clamp-3">
+              <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-normal line-clamp-3 text-justify">
                 {stripHtml(slide.summary || slide.content)}
               </p>
 
