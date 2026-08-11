@@ -9,9 +9,9 @@ export default function FacilityCatalogSection() {
   return (
     <section
       id="facilities"
-      className="w-full bg-slate-50/60 border-t border-slate-100 py-14 sm:py-18 lg:py-22 px-4 sm:px-8 lg:px-12 relative overflow-hidden"
+      className="w-full bg-slate-50/70 border-t border-slate-100 py-16 sm:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
     >
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         <div className="lg:col-span-6 w-full flex justify-center lg:justify-start">
           <FacilityCollage />
         </div>
@@ -19,15 +19,20 @@ export default function FacilityCatalogSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
-          className="lg:col-span-6 flex flex-col items-start pr-0 lg:pr-4"
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="lg:col-span-6 flex flex-col items-start"
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-950 leading-tight mb-5">
+          {/* Section Kicker */}
+          <span className="text-xs font-bold tracking-wider text-[#2c1ee8] uppercase mb-2">
+            Fasilitas Sekolah
+          </span>
+
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight mb-4">
             Katalog & Peminjaman Fasilitas
           </h2>
 
-          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-6 lg:mb-8 max-w-xl font-normal text-justify">
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
             SMKN 2 Surakarta menyediakan sarana prasarana modern mulai dari laboratorium
             praktik kejuruan, aula serbaguna, hingga lapangan olahraga. Akses katalog
             fasilitas dan ajukan peminjaman secara digital dengan efisien.
@@ -41,4 +46,5 @@ export default function FacilityCatalogSection() {
     </section>
   );
 }
+
 

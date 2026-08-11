@@ -2,107 +2,119 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "@/lib/motion";
 import { Trophy, ShieldCheck, GraduationCap } from "lucide-react";
 import PrimaryButton from "./PrimaryButton";
-import FloatingBadge from "./FloatingBadge";
-import ContactCard from "./ContactCard";
+
+const HERO_STATS = [
+  {
+    icon: ShieldCheck,
+    title: "Akreditasi Unggul",
+    subtitle: "Nilai A (Sangat Baik)",
+  },
+  {
+    icon: Trophy,
+    title: "Berprestasi",
+    subtitle: "Tingkat Nasional",
+  },
+  {
+    icon: GraduationCap,
+    title: "Kurikulum Industri",
+    subtitle: "Diselaraskan DUDI",
+  },
+];
 
 export default function Hero() {
   return (
     <section
       id="home"
-      className="w-full bg-gradient-to-b from-slate-50/50 via-white to-white snap-start snap-always min-h-[calc(85vh-5rem)] flex items-center py-10 sm:py-14 lg:py-18 px-4 sm:px-6 lg:px-10 overflow-hidden relative"
+      className="w-full bg-white py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
     >
-      {/* Background Soft Glow Accents */}
-      <div className="absolute top-1/4 left-[-10%] w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-[-5%] w-[450px] h-[450px] bg-indigo-400/10 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center relative z-10 w-full">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         {/* Left Column: Heading, Subtitle & CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
-          className="lg:col-span-6 flex flex-col items-start pr-0 lg:pr-4"
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="lg:col-span-6 flex flex-col items-start"
         >
-          <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-slate-950 leading-[1.08] mb-5">
+          {/* Section Kicker / Eyebrow */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100/80 text-[#2c1ee8] text-xs font-semibold tracking-wide uppercase mb-5">
+            <span>Student Center SMKN 2 Surakarta</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15] mb-5">
             Mencetak Lulusan Unggul & Ready-to-Work
           </h1>
 
-          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-8 max-w-2xl font-normal text-justify">
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
             Program pengembangan sekolah kejuruan terdepan untuk menghasilkan
             lulusan kompeten dan berkarakter, diselaraskan secara mendalam dengan
             kebutuhan dunia usaha, industri, dan kerja (DUDI).
           </p>
 
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-10">
             <PrimaryButton text="Jelajahi Portal" href="/ekstrakurikuler" />
+            <Link
+              href="/fasilitas"
+              className="inline-flex items-center justify-center font-semibold text-sm sm:text-base px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors duration-200 cursor-pointer"
+            >
+              Katalog Fasilitas
+            </Link>
+          </div>
+
+          {/* Clean Integrated Highlights / Stats Grid */}
+          <div className="w-full grid grid-cols-3 gap-3 sm:gap-4 border-t border-slate-100 pt-6">
+            {HERO_STATS.map((stat, idx) => {
+              const IconComp = stat.icon;
+              return (
+                <div key={idx} className="flex flex-col items-start gap-1">
+                  <div className="flex items-center gap-1.5 text-blue-600 text-xs font-semibold">
+                    <IconComp className="w-4 h-4 shrink-0 text-[#2c1ee8]" />
+                    <span className="text-slate-900 font-bold text-xs sm:text-sm truncate">
+                      {stat.title}
+                    </span>
+                  </div>
+                  <span className="text-[11px] sm:text-xs text-slate-500 truncate">
+                    {stat.subtitle}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </motion.div>
 
-        {/* Right Column: Hero Image with Floating Badges & Contact Card */}
+        {/* Right Column: Hero Showcase Card */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: [0.21, 0.47, 0.32, 0.98] }}
-          className="lg:col-span-6 flex flex-col items-end w-full"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+          className="lg:col-span-6 w-full flex justify-center lg:justify-end"
         >
-          <div className="relative w-full max-w-[480px] aspect-[4/5] rounded-[28px] sm:rounded-[32px] lg:rounded-[36px] overflow-visible shadow-md shadow-slate-900/5 mx-auto lg:ml-auto lg:mr-0 group">
-            {/* Soft Ambient Glow */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#2c1ee8]/20 to-blue-400/20 rounded-[28px] sm:rounded-[32px] lg:rounded-[36px] blur-xl opacity-60 transition-opacity group-hover:opacity-80" />
-
-            {/* School Building Image Container */}
-            <div className="relative w-full h-full rounded-[28px] sm:rounded-[32px] lg:rounded-[36px] overflow-hidden bg-slate-100 border border-slate-200/60 shadow-inner">
-              <Image
-                src="/images/smknegeri2surakarta_cover.webp"
-                alt="SMK Negeri 2 Surakarta School Building"
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, 480px"
-                className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              />
+          <div className="relative w-full max-w-[480px] aspect-[4/3] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm group">
+            <Image
+              src="/images/smknegeri2surakarta_cover.webp"
+              alt="SMK Negeri 2 Surakarta"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 480px"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4 text-white">
+              <span className="text-xs font-medium text-slate-200 uppercase tracking-wider block">
+                Kampus Utama
+              </span>
+              <span className="text-sm sm:text-base font-bold text-white">
+                SMK Negeri 2 Surakarta
+              </span>
             </div>
-
-            {/* Floating Badges */}
-            <FloatingBadge
-              text="Berprestasi"
-              subtext="Tingkat Nasional"
-              position="top-right"
-              icon={Trophy}
-              delay={0.3}
-            />
-            <FloatingBadge
-              text="Akreditasi Unggul"
-              subtext="Nilai A (Sangat Baik)"
-              position="middle-left"
-              icon={ShieldCheck}
-              delay={0.4}
-            />
-            <FloatingBadge
-              text="Pendidikan Berkualitas"
-              subtext="Kurikulum Industri"
-              position="bottom-right"
-              icon={GraduationCap}
-              delay={0.5}
-            />
           </div>
-
-          {/* Contact Card Pill (Bottom Right) */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="w-full max-w-[480px] flex justify-end mt-5 pr-2 lg:pr-0 mx-auto lg:ml-auto lg:mr-0"
-          >
-            <ContactCard
-              phone="+62 823-2237-7070"
-              avatarSrc="/images/contact-avatar.png"
-            />
-          </motion.div>
         </motion.div>
       </div>
     </section>
   );
 }
+
 

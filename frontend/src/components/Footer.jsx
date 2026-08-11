@@ -112,7 +112,7 @@ export default function Footer() {
                 </span>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-slate-400 text-justify">
+            <p className="text-sm leading-relaxed text-slate-400 text-left">
               Portal informasi dan layanan digital terpadu untuk memudahkan siswa SMKN 2 Surakarta dalam mengakses mading, ekstrakurikuler, fasilitas sekolah, dan pengajuan kegiatan dalam satu platform.
             </p>
           </div>
