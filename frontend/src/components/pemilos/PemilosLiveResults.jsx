@@ -50,17 +50,6 @@ export default function PemilosLiveResults({
 
   const isOngoing = isElectionOpen || data?.status === "Open" || data?.status === 1;
 
-  const StatCard = ({ label, value, sub, icon, className }) => (
-    <div className={`bg-white border border-slate-200 p-4 rounded-lg shadow-xs ${className}`}>
-      <div className="flex items-center gap-2 mb-2">
-        {icon}
-        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
-      </div>
-      <div className="text-xl font-black text-slate-900">{value}</div>
-      <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
-    </div>
-  );
-
   return (
     <div className="space-y-6 font-sans">
       {/* Header Stats */}
@@ -78,11 +67,17 @@ export default function PemilosLiveResults({
           icon={<Activity className="w-4 h-4 text-slate-700" />}
         />
         <StatCard
+          label="Jumlah Pasangan Calon"
+          value={rawRankings.length || pairs.length || "0"}
+          sub="Kandidat resmi terdaftar"
+          icon={<Crown className="w-4 h-4 text-slate-700" />}
+        />
+      </div>
 
-      {/* ═════════════════════════════════════════════════════════════════════
-          KONDISI A: PEMILOS SEDANG BERLANGSUNG (LIVE SUARA REAL-TIME)
-      ═════════════════════════════════════════════════════════════════════ */}
       {isOngoing ? (
+        /* ═════════════════════════════════════════════════════════════════
+            KONDISI A: PEMILOS SEDANG BERLANGSUNG (LIVE SUARA REAL-TIME)
+        ═════════════════════════════════════════════════════════════════ */
         <div className="space-y-6">
           {/* Winner Highlight / Unggul Sementara */}
           {winnerPair && (
@@ -163,44 +158,6 @@ export default function PemilosLiveResults({
               </div>
             )}
           </div>
-
-          {/* Voter Audit Trail Table */}
-          {Array.isArray(data?.recentVoters) && data.recentVoters.length > 0 && (
-            <div className="pt-4 border-t border-slate-200 space-y-3">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4 text-slate-700" />
-                <span>Pemilih Terverifikasi ({data.recentVoters.length})</span>
-              </h3>
-              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-xs">
-                <table className="w-full text-left text-xs">
-                  <tbody className="divide-y divide-slate-100">
-                    {data.recentVoters.map((voter, idx) => (
-                      <tr key={voter.voterUserId || idx} className="hover:bg-slate-50/60 transition">
-                        <td className="p-3 font-bold text-slate-900 flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px] flex items-center justify-center border border-slate-200 shrink-0">
-                            {voter.studentName?.charAt(0) || "S"}
-                          </div>
-                          <span>{voter.studentName}</span>
-                        </td>
-                        <td className="p-3 text-slate-600 font-medium">{voter.className || "Siswa"}</td>
-                        <td className="p-3 text-slate-500">
-                          {new Date(voter.votedAt || Date.now()).toLocaleString("id-ID", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </td>
-                        <td className="p-3">
-                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md font-bold text-[11px]">
-                            ✓ Suara Masuk
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
         </div>
       ) : (
         /* ═════════════════════════════════════════════════════════════════════
@@ -226,133 +183,135 @@ export default function PemilosLiveResults({
             </div>
 
             {winnerPair ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                {/* Winner Profile Photo */}
-                <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                  <div className="w-20 h-20 rounded-md bg-slate-200 border border-slate-300 overflow-hidden shrink-0 flex items-center justify-center text-slate-700 font-black text-2xl">
-                    {winnerPair.photoUrl ? (
-                      <img
-                        src={resolveImageUrl(winnerPair.photoUrl)}
-                        alt={winnerPair.chairmanName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      winnerPair.chairmanName?.[0] || "U"
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900 text-white mb-1">
-                      Ketua & Wakil Terpilih
-                    </span>
-                    <h4 className="font-bold text-slate-900 text-base sm:text-lg truncate leading-tight">
-                      {winnerPair.chairmanName}
-                    </h4>
-                    {winnerPair.viceName && (
-                      <p className="text-xs font-bold text-slate-600 truncate mt-0.5">
-                        Wakil: {winnerPair.viceName}
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                  {/* Winner Profile Photo */}
+                  <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <div className="w-20 h-20 rounded-md bg-slate-200 border border-slate-300 overflow-hidden shrink-0 flex items-center justify-center text-slate-700 font-black text-2xl">
+                      {winnerPair.photoUrl ? (
+                        <img
+                          src={resolveImageUrl(winnerPair.photoUrl)}
+                          alt={winnerPair.chairmanName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        winnerPair.chairmanName?.[0] || "U"
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900 text-white mb-1">
+                        Ketua & Wakil Terpilih
+                      </span>
+                      <h4 className="font-bold text-slate-900 text-base sm:text-lg truncate leading-tight">
+                        {winnerPair.chairmanName}
+                      </h4>
+                      {winnerPair.viceName && (
+                        <p className="text-xs font-bold text-slate-600 truncate mt-0.5">
+                          Wakil: {winnerPair.viceName}
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-500 font-medium truncate mt-1">
+                        {winnerPair.chairmanClass || "SMKN 2 Surakarta"}
                       </p>
-                    )}
-                    <p className="text-xs text-slate-500 font-medium truncate mt-1">
-                      {winnerPair.chairmanClass || "SMKN 2 Surakarta"}
-                    </p>
+                    </div>
+                  </div>
+
+                  {/* Vote Stats Result Box */}
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                      <span className="text-xs font-medium text-slate-600">Perolehan Suara Terpilih</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {winnerPair.voteCount ?? totalVotesCast} Suara
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                      <span className="text-xs font-medium text-slate-600">Persentase Kemenangan</span>
+                      <span className="text-sm font-black text-slate-900">
+                        {winnerPair.votePercentage ?? (totalVotesCast > 0 ? 100 : 0)}%
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-600">Total Pemilih Sah Berpartisipasi</span>
+                      <span className="text-xs font-bold text-slate-800">
+                        {totalVotesCast} Pemilih ({participationRate}%)
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Vote Stats Result Box */}
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-                    <span className="text-xs font-medium text-slate-600">Perolehan Suara Terpilih</span>
-                    <span className="text-sm font-black text-slate-900">
-                      {winnerPair.voteCount ?? totalVotesCast} Suara
-                    </span>
-                  </div>
+                {/* Visi, Misi & Program Kerja Pemenang Terpilih */}
+                {(fullWinnerPair?.vision || fullWinnerPair?.mission || fullWinnerPair?.programs) && (
+                  <div className="border-t border-slate-100 pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-[#2c1ee8]" />
+                        <span>Visi, Misi & Program Kerja Pasangan Terpilih</span>
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => setShowWinnerModal(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Lihat Detail Lengkap</span>
+                      </button>
+                    </div>
 
-                  <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-                    <span className="text-xs font-medium text-slate-600">Persentase Kemenangan</span>
-                    <span className="text-sm font-black text-slate-900">
-                      {winnerPair.votePercentage ?? (totalVotesCast > 0 ? 100 : 0)}%
-                    </span>
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      {fullWinnerPair.vision && (
+                        <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                          <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
+                            Visi Utama
+                          </span>
+                          {/<[a-z][\s\S]*>/i.test(fullWinnerPair.vision) ? (
+                            <div
+                              className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
+                              dangerouslySetInnerHTML={{ __html: fullWinnerPair.vision }}
+                            />
+                          ) : (
+                            <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.vision}</p>
+                          )}
+                        </div>
+                      )}
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-600">Total Pemilih Sah Berpartisipasi</span>
-                    <span className="text-xs font-bold text-slate-800">
-                      {totalVotesCast} Pemilih ({participationRate}%)
-                    </span>
+                      {fullWinnerPair.mission && (
+                        <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                          <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
+                            Misi Kerja
+                          </span>
+                          {/<[a-z][\s\S]*>/i.test(fullWinnerPair.mission) ? (
+                            <div
+                              className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
+                              dangerouslySetInnerHTML={{ __html: fullWinnerPair.mission }}
+                            />
+                          ) : (
+                            <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.mission}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {fullWinnerPair.programs && (
+                        <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
+                          <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
+                            Program Kerja Prioritas
+                          </span>
+                          {/<[a-z][\s\S]*>/i.test(fullWinnerPair.programs) ? (
+                            <div
+                              className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
+                              dangerouslySetInnerHTML={{ __html: fullWinnerPair.programs }}
+                            />
+                          ) : (
+                            <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.programs}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-
-              {/* Visi, Misi & Program Kerja Pemenang Terpilih */}
-              {(fullWinnerPair?.vision || fullWinnerPair?.mission || fullWinnerPair?.programs) && (
-                <div className="border-t border-slate-100 pt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <FileText className="w-4 h-4 text-[#2c1ee8]" />
-                      <span>Visi, Misi & Program Kerja Pasangan Terpilih</span>
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => setShowWinnerModal(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-slate-600" />
-                      <span>Lihat Detail Lengkap</span>
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    {fullWinnerPair.vision && (
-                      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
-                        <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
-                          Visi Utama
-                        </span>
-                        {/<[a-z][\s\S]*>/i.test(fullWinnerPair.vision) ? (
-                          <div
-                            className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
-                            dangerouslySetInnerHTML={{ __html: fullWinnerPair.vision }}
-                          />
-                        ) : (
-                          <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.vision}</p>
-                        )}
-                      </div>
-                    )}
-
-                    {fullWinnerPair.mission && (
-                      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
-                        <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
-                          Misi Kerja
-                        </span>
-                        {/<[a-z][\s\S]*>/i.test(fullWinnerPair.mission) ? (
-                          <div
-                            className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
-                            dangerouslySetInnerHTML={{ __html: fullWinnerPair.mission }}
-                          />
-                        ) : (
-                          <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.mission}</p>
-                        )}
-                      </div>
-                    )}
-
-                    {fullWinnerPair.programs && (
-                      <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1.5">
-                        <span className="font-extrabold text-[#2c1ee8] uppercase tracking-wider text-[10px] block">
-                          Program Kerja Prioritas
-                        </span>
-                        {/<[a-z][\s\S]*>/i.test(fullWinnerPair.programs) ? (
-                          <div
-                            className="prose prose-xs max-w-none text-slate-700 font-normal line-clamp-4"
-                            dangerouslySetInnerHTML={{ __html: fullWinnerPair.programs }}
-                          />
-                        ) : (
-                          <p className="text-slate-700 whitespace-pre-line line-clamp-4">{fullWinnerPair.programs}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div> : (
+            ) : (
               <div className="text-center py-8 text-slate-400 space-y-1">
                 <ShieldCheck className="w-8 h-8 mx-auto text-slate-300 mb-1" />
                 <p className="font-bold text-xs text-slate-700">Hasil Pemilos Periode Aktif</p>
@@ -400,6 +359,14 @@ export default function PemilosLiveResults({
             </div>
           )}
         </div>
+      )}
+
+      {/* Winner Detail Modal */}
+      {showWinnerModal && fullWinnerPair && (
+        <CandidatePairDetailModal
+          pair={fullWinnerPair}
+          onClose={() => setShowWinnerModal(false)}
+        />
       )}
     </div>
   );
