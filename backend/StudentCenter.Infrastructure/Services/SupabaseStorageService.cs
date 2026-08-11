@@ -54,8 +54,13 @@ public class SupabaseStorageService : IFileStorageService
         }
 
         var extension = Path.GetExtension(fileName);
-        if (!string.Equals(extension, ".pdf", StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(contentType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+        var isPdfExtension = string.Equals(extension, ".pdf", StringComparison.OrdinalIgnoreCase);
+        var isPdfMime = string.Equals(contentType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(contentType, "application/x-pdf", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(contentType, "application/octet-stream", StringComparison.OrdinalIgnoreCase) ||
+                        string.IsNullOrWhiteSpace(contentType);
+
+        if (!isPdfExtension || !isPdfMime)
         {
             throw new ArgumentException("File harus berupa PDF.");
         }

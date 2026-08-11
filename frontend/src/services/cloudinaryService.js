@@ -47,6 +47,11 @@ export const uploadPdfDocument = async (file, folder = "proposals") => {
 
     const data = await response.json();
 
+    if (!response.ok) {
+      const errMsg = data?.message || data?.error || (response.status === 401 ? "Sesi login telah berakhir. Silakan login kembali." : "Gagal mengunggah file ke server.");
+      throw new Error(errMsg);
+    }
+
     const uploadData = data?.data || data;
     if (uploadData?.path || uploadData?.url) {
       return {
@@ -55,11 +60,10 @@ export const uploadPdfDocument = async (file, folder = "proposals") => {
       };
     }
 
-    console.warn("Upload API returned error:", data?.message || data?.error || data);
-    return null;
+    throw new Error(data?.message || "Format respon upload dari server tidak sesuai.");
   } catch (error) {
-    console.warn("Upload network error:", error);
-    return null;
+    console.warn("Upload PDF Error:", error?.message || error);
+    throw error;
   }
 };
 

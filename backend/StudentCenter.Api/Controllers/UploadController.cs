@@ -101,15 +101,19 @@ public class UploadController : ControllerBase
             return BadRequest(ApiResponse<object>.Fail("Invalid file type. Executable files are prohibited."));
         }
 
-        if (!AllowedExtensions.Contains(extension) || !AllowedMimeTypes.Contains(file.ContentType))
+        var isPdf = string.Equals(extension, ".pdf", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(file.ContentType, "application/x-pdf", StringComparison.OrdinalIgnoreCase);
+
+        var isAllowedMime = AllowedMimeTypes.Contains(file.ContentType) ||
+                            (isPdf && (string.Equals(file.ContentType, "application/octet-stream", StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(file.ContentType)));
+
+        if (!AllowedExtensions.Contains(extension) || !isAllowedMime)
         {
             return BadRequest(ApiResponse<object>.Fail("Only JPG, PNG, WEBP, GIF images, and PDF documents are allowed."));
         }
 
-        var isPdf = string.Equals(extension, ".pdf", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
-
-        // ── PDF UPLOAD PATH: SUPABASE STORAGE ──
+        // ── PDF UPLOAD PATH: SUPABASE STORAGE (WITH LOCAL FALLBACK) ──
         if (isPdf)
         {
             var pdfFolder = string.IsNullOrWhiteSpace(request.Folder) ? "proposals" : request.Folder.Trim();
@@ -137,13 +141,8 @@ public class UploadController : ControllerBase
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[Supabase PDF Upload Error] {ex.Message}");
-                    return BadRequest(ApiResponse<object>.Fail($"Gagal mengunggah dokumen PDF: {ex.Message}"));
+                    Console.WriteLine($"[Supabase PDF Upload Warning, falling back to local disk] {ex.Message}");
                 }
-            }
-            else
-            {
-                return BadRequest(ApiResponse<object>.Fail("Layanan penyimpanan PDF belum dikonfigurasi pada server."));
             }
         }
 
