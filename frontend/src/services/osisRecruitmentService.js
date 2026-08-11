@@ -34,8 +34,10 @@ export const osisRecruitmentService = {
     return await api.post(`/api/osis/recruitment/applications/${id}/admin-review`, data);
   },
 
-  getCabinetStructure: async (academicYearId) => {
-    const params = academicYearId ? { academicYearId } : {};
+  getCabinetStructure: async (academicYearId, includeArchived = false) => {
+    const params = {};
+    if (academicYearId) params.academicYearId = academicYearId;
+    if (includeArchived) params.includeArchived = true;
     return await api.get("/api/osis/recruitment/cabinet-structure", { params });
   },
 

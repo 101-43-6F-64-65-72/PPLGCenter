@@ -17,7 +17,7 @@ public interface IOsisRecruitmentService
     Task<bool> ReviewApplicationByAdminAsync(Guid applicationId, ReviewOsisApplicationRequest request, Guid adminUserId);
 
     // Cabinet History & Structure
-    Task<List<OsisCabinetMemberResponse>> GetCabinetStructureAsync(Guid? academicYearId = null);
+    Task<List<OsisCabinetMemberResponse>> GetCabinetStructureAsync(Guid? academicYearId = null, bool includeArchived = false);
     Task<OsisCabinetMemberResponse> AddCabinetMemberAsync(Guid? academicYearId, Guid studentId, string positionTitle, string department, string? photoUrl);
     Task<bool> DeleteCabinetMemberAsync(Guid id);
 }

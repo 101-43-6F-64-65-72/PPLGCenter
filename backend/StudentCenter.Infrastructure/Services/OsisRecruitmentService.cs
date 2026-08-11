@@ -224,7 +224,7 @@ public class OsisRecruitmentService : IOsisRecruitmentService
         return true;
     }
 
-    public async Task<List<OsisCabinetMemberResponse>> GetCabinetStructureAsync(Guid? academicYearId = null)
+    public async Task<List<OsisCabinetMemberResponse>> GetCabinetStructureAsync(Guid? academicYearId = null, bool includeArchived = false)
     {
         var query = _context.OsisCabinetHistories
             .AsNoTracking()
@@ -236,7 +236,7 @@ public class OsisRecruitmentService : IOsisRecruitmentService
         {
             query = query.Where(h => h.AcademicYearId == academicYearId.Value);
         }
-        else
+        else if (!includeArchived)
         {
             query = query.Where(h => h.IsActive);
         }
@@ -259,6 +259,12 @@ public class OsisRecruitmentService : IOsisRecruitmentService
 
     public async Task<OsisCabinetMemberResponse> AddCabinetMemberAsync(Guid? academicYearId, Guid studentId, string positionTitle, string department, string? photoUrl)
     {
+        // 1. Check if Pemilos is currently ongoing
+        var activeElection = await _context.Elections.FirstOrDefaultAsync(e => e.DeletedAt == null);
+        if (activeElection != null && activeElection.Status != ElectionStatus.Completed)
+        {
+            throw new InvalidOperationException("Penetapan & assign pengurus OSIS hanya dapat dilakukan setelah sesi Pemilos selesai (Hasil Pemilos Ditetapkan).");
+        }
         AcademicYear? year = null;
         if (academicYearId.HasValue && academicYearId.Value != Guid.Empty)
         {

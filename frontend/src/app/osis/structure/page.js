@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import AuthGuard from "@/components/layout/AuthGuard";
 import { USER_ROLES } from "@/constants/userRoles";
@@ -10,7 +10,7 @@ import { extracurricularService } from "@/services/extracurricularService";
 import electionService from "@/services/electionService";
 import useAuth from "@/hooks/useAuth";
 import toast from "react-hot-toast";
-import { GitBranch, Loader2, Calendar, History, RefreshCw, AlertTriangle, Plus, Edit3, X, Check } from "lucide-react";
+import { GitBranch, Loader2, Calendar, History, RefreshCw, AlertTriangle, Plus, Edit3, X, Check, Lock } from "lucide-react";
 
 export default function OsisStructurePage() {
   return (
@@ -24,6 +24,7 @@ function StructureContent() {
   const { user, role } = useAuth();
   const [cabinetMembers, setCabinetMembers] = useState([]);
   const [allCabinetHistory, setAllCabinetHistory] = useState([]);
+  const [activeElection, setActiveElection] = useState(null);
   const [osisMembers, setOsisMembers] = useState([]);
   const [osisInfo, setOsisInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -44,10 +45,21 @@ function StructureContent() {
     (role === "Teacher" && osisInfo?.supervisorTeacherId === user?.id) ||
     role === "Teacher";
 
+  // Check if current Pemilos election is Completed
+  const isPemilosCompleted = useMemo(() => {
+    if (!activeElection) return true;
+    const status = activeElection.status ?? activeElection.Status;
+    const statusText = activeElection.statusText ?? activeElection.StatusText;
+    return status === 3 || status === "Completed" || statusText === "Completed";
+  }, [activeElection]);
+
+  const canManageCabinet = isSupervisorTeacherOrAdmin && isPemilosCompleted;
+
   const loadCabinetData = useCallback(async () => {
     setLoading(true);
     try {
-      const activeRes = await osisRecruitmentService.getCabinetStructure(null);
+      // 1. Load active cabinet structure
+      const activeRes = await osisRecruitmentService.getCabinetStructure(null, false);
       const activeMembers = Array.isArray(activeRes?.data)
         ? activeRes.data
         : Array.isArray(activeRes?.data?.data)
@@ -57,7 +69,8 @@ function StructureContent() {
         : [];
       setCabinetMembers(activeMembers);
 
-      const allRes = await osisRecruitmentService.getCabinetStructure(null);
+      // 2. Load ALL cabinet structure (including archived history)
+      const allRes = await osisRecruitmentService.getCabinetStructure(null, true);
       const allMembers = Array.isArray(allRes?.data)
         ? allRes.data
         : Array.isArray(allRes?.data?.data)
@@ -66,6 +79,11 @@ function StructureContent() {
         ? allRes
         : [];
       setAllCabinetHistory(allMembers);
+
+      // 3. Load active Pemilos election status
+      const electionsRes = await electionService.getElections({ page: 1, pageSize: 1 }).catch(() => null);
+      const items = electionsRes?.data?.items || electionsRes?.data || electionsRes?.items || [];
+      setActiveElection(items[0] || null);
     } catch (err) {
       console.error("Error loading cabinet structure:", err);
       setCabinetMembers([]);
@@ -122,6 +140,10 @@ function StructureContent() {
   };
 
   const handleAssignSlot = (positionTitle) => {
+    if (!isPemilosCompleted) {
+      toast.error("Penetapan pengurus OSIS hanya dapat dilakukan setelah Sesi Pemilos Selesai (Stop & Simpan Hasil).");
+      return;
+    }
     setSelectedStudentId("");
     setCustomPositionTitle(positionTitle);
     setCustomDepartment(
@@ -135,6 +157,10 @@ function StructureContent() {
   };
 
   const handleAddNewDivision = () => {
+    if (!isPemilosCompleted) {
+      toast.error("Penetapan pengurus OSIS hanya dapat dilakukan setelah Sesi Pemilos Selesai (Stop & Simpan Hasil).");
+      return;
+    }
     setSelectedStudentId("");
     setCustomPositionTitle("");
     setCustomDepartment("");
@@ -142,6 +168,10 @@ function StructureContent() {
   };
 
   const handlePromoteMember = (studentId) => {
+    if (!isPemilosCompleted) {
+      toast.error("Penetapan pengurus OSIS hanya dapat dilakukan setelah Sesi Pemilos Selesai (Stop & Simpan Hasil).");
+      return;
+    }
     setSelectedStudentId(studentId);
     setCustomPositionTitle("");
     setCustomDepartment("");
@@ -150,6 +180,10 @@ function StructureContent() {
 
   const handleAddCabinetMember = async (e) => {
     e.preventDefault();
+    if (!isPemilosCompleted) {
+      toast.error("Penetapan pengurus OSIS hanya dapat dilakukan setelah Sesi Pemilos Selesai (Stop & Simpan Hasil).");
+      return;
+    }
     if (!selectedStudentId) {
       toast.error("Silakan pilih siswa pengurus terlebih dahulu.");
       return;
@@ -192,12 +226,19 @@ function StructureContent() {
     }
   };
 
-  const groupedByYear = allCabinetHistory.reduce((acc, m) => {
-    const key = m.academicYearName || "Periode Lalu";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(m);
-    return acc;
-  }, {});
+  // Group archived (non-active) cabinet members by academic year for history modal
+  const archivedHistory = useMemo(() => {
+    return allCabinetHistory.filter((m) => !m.isActive);
+  }, [allCabinetHistory]);
+
+  const groupedByYear = useMemo(() => {
+    return archivedHistory.reduce((acc, m) => {
+      const key = m.academicYearName || "Periode Generasi Sebelumnya";
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(m);
+      return acc;
+    }, {});
+  }, [archivedHistory]);
 
   const totalActiveMembers = cabinetMembers.length;
   const activeDivisionsCount = new Set(
@@ -239,9 +280,15 @@ function StructureContent() {
                 <>
                   <button
                     onClick={handleAddNewDivision}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-md bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold hover:bg-slate-200 transition-colors shadow-xs cursor-pointer"
+                    disabled={!isPemilosCompleted}
+                    className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-md border text-xs font-bold transition-colors shadow-xs ${
+                      isPemilosCompleted
+                        ? "bg-slate-100 border-slate-200 text-slate-800 hover:bg-slate-200 cursor-pointer"
+                        : "bg-slate-100/50 border-slate-200/60 text-slate-400 cursor-not-allowed opacity-75"
+                    }`}
+                    title={!isPemilosCompleted ? "Pemilos sedang berlangsung. Penetapan pengurus OSIS dibuka setelah Pemilos selesai." : ""}
                   >
-                    <Edit3 className="w-3.5 h-3.5 text-slate-700" />
+                    {!isPemilosCompleted ? <Lock className="w-3.5 h-3.5 text-slate-400" /> : <Edit3 className="w-3.5 h-3.5 text-slate-700" />}
                     <span>Kelola Struktur & Divisi</span>
                   </button>
 
@@ -257,6 +304,21 @@ function StructureContent() {
             </div>
           </div>
         </div>
+
+        {/* Notice Banner when Pemilos is currently ongoing / in progress */}
+        {!isPemilosCompleted && (
+          <div className="mb-6 rounded-xl bg-amber-50 border border-amber-200 p-4 text-xs text-amber-900 flex items-start gap-3 shadow-xs">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-extrabold text-amber-950 block">
+                Sesi Pemilos Periode Baru Sedang Berlangsung (Fase Pemilihan)
+              </span>
+              <p className="text-amber-800 leading-relaxed font-normal">
+                Pemilihan Ketua & Wakil Ketua OSIS dilakukan melalui Sesi Pemilos terlebih dahulu. Penugasan/assign pengurus OSIS secara manual oleh Pembina/Admin akan diaktifkan secara otomatis setelah Sesi Pemilos Selesai (Stop & Simpan Hasil).
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Summary Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -295,9 +357,14 @@ function StructureContent() {
               {isSupervisorTeacherOrAdmin && (
                 <button
                   onClick={handleAddNewDivision}
-                  className="px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold border border-slate-200 transition flex items-center gap-1.5 cursor-pointer"
+                  disabled={!isPemilosCompleted}
+                  className={`px-3 py-1.5 rounded-md text-xs font-bold border transition flex items-center gap-1.5 ${
+                    isPemilosCompleted
+                      ? "bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 cursor-pointer"
+                      : "bg-slate-100/50 text-slate-400 border-slate-200/60 cursor-not-allowed opacity-75"
+                  }`}
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  {!isPemilosCompleted ? <Lock className="w-3.5 h-3.5 text-slate-400" /> : <Plus className="w-3.5 h-3.5" />}
                   <span>+ Tambah Divisi Baru</span>
                 </button>
               )}
@@ -318,7 +385,7 @@ function StructureContent() {
               allOsisMembers={osisMembers}
               supervisorInfo={osisInfo}
               academicYearName="Periode Aktif"
-              canManage={isSupervisorTeacherOrAdmin}
+              canManage={canManageCabinet}
               onDeleteMember={handleDeleteMember}
               onAssignSlot={handleAssignSlot}
               onAddNewDivision={handleAddNewDivision}

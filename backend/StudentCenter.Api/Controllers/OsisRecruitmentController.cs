@@ -98,9 +98,9 @@ public class OsisRecruitmentController : ControllerBase
 
     [Authorize]
     [HttpGet("cabinet-structure")]
-    public async Task<IActionResult> GetCabinetStructure([FromQuery] Guid? academicYearId)
+    public async Task<IActionResult> GetCabinetStructure([FromQuery] Guid? academicYearId, [FromQuery] bool includeArchived = false)
     {
-        var result = await _recruitmentService.GetCabinetStructureAsync(academicYearId);
+        var result = await _recruitmentService.GetCabinetStructureAsync(academicYearId, includeArchived);
         return Ok(ApiResponse<List<OsisCabinetMemberResponse>>.Ok("Struktur kabinet OSIS berhasil diambil", result));
     }
 

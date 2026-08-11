@@ -604,12 +604,19 @@ public class ElectionService : IElectionService
             throw new UnauthorizedAccessException("Hanya Guru Pembina OSIS atau Admin yang dapat mereset dan memulai periode Pemilos baru.");
 
         // 1. Archive current active OSIS cabinet members
+        var activeYear = await _context.AcademicYears.FirstOrDefaultAsync(y => y.IsActive)
+            ?? await _context.AcademicYears.FirstOrDefaultAsync();
+
         var activeMembers = await _context.OsisCabinetHistories
             .Where(h => h.IsActive)
             .ToListAsync();
         foreach (var member in activeMembers)
         {
             member.IsActive = false;
+            if (activeYear != null && (member.AcademicYearId == Guid.Empty || member.AcademicYearId == null))
+            {
+                member.AcademicYearId = activeYear.Id;
+            }
         }
 
         // 2. Clear candidate pairs and votes for this election
