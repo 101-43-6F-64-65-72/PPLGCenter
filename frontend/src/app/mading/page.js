@@ -327,8 +327,6 @@ export default function MadingPage() {
           </svg>
         </button>
       )}
-        </button>
-      )}
 
       {/* Create Announcement Modal for Teachers, Admins, and OSIS Members */}
       <CreateAnnouncementModal
