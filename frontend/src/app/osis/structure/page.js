@@ -45,12 +45,20 @@ function StructureContent() {
     (role === "Teacher" && osisInfo?.supervisorTeacherId === user?.id) ||
     role === "Teacher";
 
-  // Check if current Pemilos election is Completed
+  // Check if current Pemilos election is Completed (Closed or PublishedResult)
   const isPemilosCompleted = useMemo(() => {
     if (!activeElection) return true;
     const status = activeElection.status ?? activeElection.Status;
     const statusText = activeElection.statusText ?? activeElection.StatusText;
-    return status === 3 || status === "Completed" || statusText === "Completed";
+    return (
+      status === 2 ||
+      status === 3 ||
+      status === "Closed" ||
+      status === "PublishedResult" ||
+      statusText === "Closed" ||
+      statusText === "PublishedResult" ||
+      statusText === "Completed"
+    );
   }, [activeElection]);
 
   const canManageCabinet = isSupervisorTeacherOrAdmin && isPemilosCompleted;

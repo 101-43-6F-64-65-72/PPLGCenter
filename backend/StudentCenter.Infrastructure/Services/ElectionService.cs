@@ -613,7 +613,7 @@ public class ElectionService : IElectionService
         foreach (var member in activeMembers)
         {
             member.IsActive = false;
-            if (activeYear != null && (member.AcademicYearId == Guid.Empty || member.AcademicYearId == null))
+            if (activeYear != null && member.AcademicYearId == Guid.Empty)
             {
                 member.AcademicYearId = activeYear.Id;
             }

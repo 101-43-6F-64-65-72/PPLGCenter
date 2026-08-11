@@ -261,7 +261,7 @@ public class OsisRecruitmentService : IOsisRecruitmentService
     {
         // 1. Check if Pemilos is currently ongoing
         var activeElection = await _context.Elections.FirstOrDefaultAsync(e => e.DeletedAt == null);
-        if (activeElection != null && activeElection.Status != ElectionStatus.Completed)
+        if (activeElection != null && activeElection.Status != ElectionStatus.Closed && activeElection.Status != ElectionStatus.PublishedResult)
         {
             throw new InvalidOperationException("Penetapan & assign pengurus OSIS hanya dapat dilakukan setelah sesi Pemilos selesai (Hasil Pemilos Ditetapkan).");
         }
