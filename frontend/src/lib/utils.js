@@ -43,7 +43,12 @@ export const resolveImageUrl = (
     return cleanSrc;
   }
 
-  // Case 2: Relative upload paths (e.g. /uploads/feb7404f...)
+  // Case 2: Local Next.js public assets (e.g. /images/..., /assets/...)
+  if (cleanSrc.startsWith("/images/") || cleanSrc.startsWith("/assets/") || cleanSrc.startsWith("/favicon") || cleanSrc.startsWith("/logo")) {
+    return cleanSrc;
+  }
+
+  // Case 3: Relative upload paths from backend (e.g. /uploads/feb7404f...)
   if (cleanSrc.startsWith("/")) {
     return `${backendOrigin}${cleanSrc}`;
   }

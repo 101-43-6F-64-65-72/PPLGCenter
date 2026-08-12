@@ -64,14 +64,6 @@ export default function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="lg:col-span-6 flex flex-col items-start"
         >
-          {/* Live Status Pill Kicker */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[11px] font-mono tracking-wider uppercase mb-6 shadow-2xs select-none">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2c1ee8] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2c1ee8]" />
-            </span>
-            <span className="font-semibold">Student Center SMKN 2 Surakarta</span>
-          </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-5">
             Mencetak Lulusan Unggul &{" "}
@@ -151,7 +143,7 @@ export default function Hero() {
 
               {/* School Cover Image */}
               <Image
-                src={resolveImageUrl("/images/smknegeri2surakarta_cover.webp")}
+                src="/images/smknegeri2surakarta_cover.webp"
                 alt="SMK Negeri 2 Surakarta"
                 fill
                 priority

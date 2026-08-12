@@ -10,6 +10,8 @@ import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import { Search, ShoppingBag, X, Clock, Building2, Trash2 } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import bookingService from "@/services/bookingService";
+import useAuth from "@/hooks/useAuth";
+import LoginModal from "@/features/auth/components/LoginModal";
 
 const getCategoryMatchingImage = (item) => {
   if (item.imageUrl || item.image || item.photo) {
@@ -56,8 +58,10 @@ const getDefaultFacilityDescription = (title = "", category = "", existingDesc =
 };
 
 export default function FasilitasPage() {
+  const { isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isUnauthorized, setIsUnauthorized] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("semua"); // 'semua' | 'aula' | 'lapangan' | 'lab' | 'tersedia'
   const [selectedFacility, setSelectedFacility] = useState(null);
@@ -169,6 +173,10 @@ export default function FasilitasPage() {
   }, []);
 
   const handleOpenModal = (facility) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
     setSelectedFacility(facility);
     setIsModalOpen(true);
   };
@@ -179,6 +187,10 @@ export default function FasilitasPage() {
   };
 
   const handleAddToCart = (item) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
     setCartItems((prev) => [...prev, item]);
   };
 
@@ -233,6 +245,10 @@ export default function FasilitasPage() {
               {/* Tombol 1: Peminjaman Saya (Private to Student) */}
               <button
                 onClick={() => {
+                  if (!isAuthenticated) {
+                    setIsLoginModalOpen(true);
+                    return;
+                  }
                   fetchMyBookings();
                   setIsMyBookingsOpen(true);
                 }}
@@ -542,6 +558,13 @@ export default function FasilitasPage() {
           </div>
         </div>
       )}
+
+      {/* Login Modal Prompt for Unauthenticated Users */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={() => setIsLoginModalOpen(false)}
+      />
     </div>
   );
 }
