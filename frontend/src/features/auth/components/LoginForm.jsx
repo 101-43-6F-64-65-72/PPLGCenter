@@ -201,16 +201,9 @@ export const LoginForm = ({ onSuccess }) => {
     <div className="w-full space-y-5">
       {/* Interactive Role Selection Pills */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <label className="block text-[11px] font-black uppercase tracking-wider text-white/80">
-            Login Sebagai
-          </label>
-          {loginType === "Admin" && (
-            <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 flex items-center gap-1">
-              <ShieldAlert className="w-3 h-3 text-amber-400" /> AUDIT ENFORCED
-            </span>
-          )}
-        </div>
+        <label className="block text-[11px] font-black uppercase tracking-wider text-white/80">
+          Login Sebagai
+        </label>
 
         <div className="grid grid-cols-3 p-1.5 bg-[#1e0873]/60 backdrop-blur-md rounded-2xl border border-white/20 gap-1 relative">
           {[
@@ -380,24 +373,6 @@ export const LoginForm = ({ onSuccess }) => {
           )}
         </Button>
 
-        {/* Admin Security Notice & Dedicated Portal Link */}
-        {loginType === "Admin" ? (
-          <div className="pt-2 text-center border-t border-white/10">
-            <p className="text-[11px] text-amber-200/90 leading-relaxed font-medium">
-              🔒 <strong className="text-white">Security Audit Enforced:</strong> Portal khusus Pengelola Sistem & Waka Kesiswaan. Seluruh sesi masuk diawasi secara otomatis.
-            </p>
-          </div>
-        ) : (
-          <div className="pt-1 text-center">
-            <Link
-              href="/admin/login"
-              className="text-[11px] font-bold text-white/60 hover:text-white transition inline-flex items-center gap-1.5"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-300" />
-              <span>Portal Akses Dedicated Executive Admin →</span>
-            </Link>
-          </div>
-        )}
       </form>
 
       {/* Forgot Password Modal */}
