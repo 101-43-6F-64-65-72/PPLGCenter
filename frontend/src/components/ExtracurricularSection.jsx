@@ -19,7 +19,7 @@ export default function ExtracurricularSection() {
   const wheelRef = useRef(null);
   const cardsRef = useRef([]);
 
-  // GSAP ScrollTrigger Pinned Centered Text + Revolving Biang Lala Orbit Sequence
+  // GSAP ScrollTrigger Pinned Showcase with 100% Upright Image Orbiting
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -33,12 +33,12 @@ export default function ExtracurricularSection() {
       const cardEls = cardsRef.current.filter(Boolean);
       if (!wheel || cardEls.length < 4) return;
 
-      // Pinned GSAP ScrollTrigger Timeline
+      // Pinned GSAP ScrollTrigger Timeline with proper pinSpacing
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top top",
-          end: "+=2200",
+          end: "+=1600",
           pin: true,
           pinSpacing: true,
           scrub: 1.2,
@@ -47,10 +47,10 @@ export default function ExtracurricularSection() {
         },
       });
 
-      // 1. Revolving Wheel Pivot (-180deg to 0deg orbital revolution)
+      // 1. Orbital Pivot Sweep (-50deg to 0deg)
       tl.fromTo(
         wheel,
-        { rotation: -180 },
+        { rotation: -50 },
         {
           rotation: 0,
           ease: "power2.inOut",
@@ -59,15 +59,15 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 2. Card 0 (Top-Left): Counter-rotate + expand outward around center text
+      // 2. Card 0 (Top-Left): Counter-rotate (+50deg -> -6deg) to keep image ALWAYS 100% UPRIGHT
       tl.fromTo(
         cardEls[0],
-        { rotation: 180 - 6, scale: 0.6, x: "40px", y: "40px", opacity: 0.4 },
+        { rotation: 44, scale: 0.85, x: "20px", y: "20px", opacity: 0.7 },
         {
           rotation: -6,
-          scale: 1.15,
-          x: "-85px",
-          y: "-55px",
+          scale: 1.12,
+          x: "-55px",
+          y: "-35px",
           opacity: 1,
           ease: "power2.inOut",
           force3D: true,
@@ -75,15 +75,15 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 3. Card 1 (Top-Right): Counter-rotate + expand outward around center text
+      // 3. Card 1 (Top-Right): Counter-rotate (+50deg -> +7deg) to keep image ALWAYS 100% UPRIGHT
       tl.fromTo(
         cardEls[1],
-        { rotation: 180 + 7, scale: 0.6, x: "-40px", y: "40px", opacity: 0.4 },
+        { rotation: 57, scale: 0.82, x: "-20px", y: "20px", opacity: 0.7 },
         {
           rotation: 7,
           scale: 0.92,
-          x: "90px",
-          y: "-45px",
+          x: "60px",
+          y: "-30px",
           opacity: 1,
           ease: "power2.inOut",
           force3D: true,
@@ -91,15 +91,15 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 4. Card 2 (Bottom-Left): Counter-rotate + expand outward around center text
+      // 4. Card 2 (Bottom-Left): Counter-rotate (+50deg -> +5deg) to keep image ALWAYS 100% UPRIGHT
       tl.fromTo(
         cardEls[2],
-        { rotation: 180 + 5, scale: 0.6, x: "40px", y: "-40px", opacity: 0.4 },
+        { rotation: 55, scale: 0.82, x: "20px", y: "-20px", opacity: 0.7 },
         {
           rotation: 5,
           scale: 0.94,
-          x: "-75px",
-          y: "65px",
+          x: "-50px",
+          y: "45px",
           opacity: 1,
           ease: "power2.inOut",
           force3D: true,
@@ -107,15 +107,15 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 5. Card 3 (Bottom-Right): Counter-rotate + expand outward around center text
+      // 5. Card 3 (Bottom-Right): Counter-rotate (+50deg -> -8deg) to keep image ALWAYS 100% UPRIGHT
       tl.fromTo(
         cardEls[3],
-        { rotation: 180 - 8, scale: 0.6, x: "-40px", y: "-40px", opacity: 0.4 },
+        { rotation: 42, scale: 0.85, x: "-20px", y: "-20px", opacity: 0.7 },
         {
           rotation: -8,
-          scale: 1.2,
-          x: "85px",
-          y: "60px",
+          scale: 1.15,
+          x: "55px",
+          y: "40px",
           opacity: 1,
           ease: "power2.inOut",
           force3D: true,
@@ -127,7 +127,7 @@ export default function ExtracurricularSection() {
       if (textContentRef.current) {
         tl.fromTo(
           textContentRef.current,
-          { scale: 0.94, y: "20px" },
+          { scale: 0.96, y: "15px" },
           { scale: 1, y: "0px", ease: "power1.out" },
           0
         );
@@ -151,7 +151,7 @@ export default function ExtracurricularSection() {
     <section
       ref={sectionRef}
       id="extracurricular"
-      className="w-full bg-slate-50/70 border-y border-slate-200/60 relative overflow-visible bg-dots-pattern select-none z-10"
+      className="w-full bg-slate-50/70 border-y border-slate-200/60 relative overflow-hidden bg-dots-pattern select-none z-10 my-12 lg:my-0"
     >
       {/* Background SVG Morphing Ambient Star Element */}
       <MorphingSvg
@@ -163,8 +163,8 @@ export default function ExtracurricularSection() {
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-35 pointer-events-none -z-10"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-0 min-h-screen flex items-center justify-center relative overflow-visible">
-        <div className="relative max-w-6xl mx-auto min-h-[580px] w-full flex items-center justify-center overflow-visible">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-0 min-h-screen flex items-center justify-center relative overflow-hidden">
+        <div className="relative max-w-6xl mx-auto min-h-[560px] w-full flex items-center justify-center overflow-hidden">
           
           {/* Encircling Orbiting Biang Lala Image Collage (Surrounding Center Text) */}
           <ExtracurricularCollage
