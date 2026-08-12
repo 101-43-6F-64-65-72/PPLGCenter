@@ -34,7 +34,29 @@ const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, r
 FallbackDiv.displayName = "FallbackDiv";
 
 const MotionDiv = motionImport?.div || FallbackDiv;
+const MotionSpan = motionImport?.span || (({ children, className }) => <span className={className}>{children}</span>);
 const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
+
+/**
+ * Smooth Gaussian Blur Text Morphing Component
+ * Morphs text content using gaussian blur, opacity, and vertical translation on key changes.
+ */
+const BlurMorphText = ({ textKey, children, className = "" }) => {
+  return (
+    <AnimatePresenceComponent mode="wait">
+      <MotionSpan
+        key={textKey}
+        initial={{ opacity: 0, filter: "blur(10px)", y: 3 }}
+        animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+        exit={{ opacity: 0, filter: "blur(10px)", y: -3 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className={`inline-block ${className}`}
+      >
+        {children}
+      </MotionSpan>
+    </AnimatePresenceComponent>
+  );
+};
 
 export const LoginForm = ({ onSuccess }) => {
   const { login } = useAuth();
@@ -127,9 +149,9 @@ export const LoginForm = ({ onSuccess }) => {
 
     return (
       <MotionDiv
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, type: "spring", stiffness: 350, damping: 25 }}
+        initial={{ opacity: 0, scale: 0.9, filter: "blur(12px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        transition={{ duration: 0.5, type: "spring", stiffness: 350, damping: 25 }}
         className="w-full py-6 flex flex-col items-center justify-center text-center space-y-5"
       >
         {/* Animated Glowing Ring & Checkmark */}
@@ -264,31 +286,35 @@ export const LoginForm = ({ onSuccess }) => {
           />
         )}
 
-        {/* Identifier Input */}
+        {/* Identifier Input with Gaussian Blur Morphing */}
         <div className="space-y-1">
           <label className="block text-xs font-bold text-white/90">
-            {loginType === "Student"
-              ? "NIS / NISN"
-              : loginType === "Teacher"
-              ? "NIP / Email"
-              : "Email / Username Admin"}
-          </label>
-          <Input
-            name="identifier"
-            type="text"
-            placeholder={
-              loginType === "Student"
-                ? "Masukkan NIS atau NISN"
+            <BlurMorphText textKey={loginType}>
+              {loginType === "Student"
+                ? "NIS / NISN"
                 : loginType === "Teacher"
-                ? "Masukkan NIP atau Email"
-                : "Masukkan Email atau Username Admin"
-            }
-            isRequired
-            variant="dark"
-            leftIcon={<User className="w-4 h-4 text-[#2c1ee8]" />}
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-          />
+                ? "NIP / Email"
+                : "Email / Username Admin"}
+            </BlurMorphText>
+          </label>
+          <BlurMorphText textKey={loginType} className="w-full">
+            <Input
+              name="identifier"
+              type="text"
+              placeholder={
+                loginType === "Student"
+                  ? "Masukkan NIS atau NISN"
+                  : loginType === "Teacher"
+                  ? "Masukkan NIP atau Email"
+                  : "Masukkan Email atau Username Admin"
+              }
+              isRequired
+              variant="dark"
+              leftIcon={<User className="w-4 h-4 text-[#2c1ee8]" />}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+            />
+          </BlurMorphText>
         </div>
 
         {/* Password Input */}
@@ -329,7 +355,7 @@ export const LoginForm = ({ onSuccess }) => {
           </div>
         </div>
 
-        {/* Submit Button */}
+        {/* Submit Button with Gaussian Blur Morphing */}
         <Button
           type="submit"
           variant="primary"
@@ -367,12 +393,11 @@ export const LoginForm = ({ onSuccess }) => {
               <span>Memverifikasi Akun...</span>
             </div>
           ) : (
-            `Masuk Sebagai ${
-              loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin"
-            }`
+            <BlurMorphText textKey={loginType}>
+              Masuk Sebagai {loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin"}
+            </BlurMorphText>
           )}
         </Button>
-
       </form>
 
       {/* Forgot Password Modal */}
