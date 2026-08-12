@@ -139,7 +139,7 @@ export default function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleToggle}
-        className="relative p-2 text-slate-300 hover:text-white hover:bg-slate-800/80 rounded-xl transition-all border border-transparent hover:border-slate-700/50"
+        className="relative p-2.5 text-slate-600 hover:text-[#2c1ee8] bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all border border-slate-200 cursor-pointer"
         title="Notifikasi"
         aria-label="Notifikasi"
       >
@@ -149,7 +149,7 @@ export default function NotificationBell() {
           viewBox="0 0 24 24"
           strokeWidth={1.75}
           stroke="currentColor"
-          className="w-5 h-5"
+          className="w-4 h-4"
         >
           <path
             strokeLinecap="round"
@@ -159,7 +159,7 @@ export default function NotificationBell() {
         </svg>
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shadow-lg ring-2 ring-slate-900 animate-pulse">
+          <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-600 text-[9px] font-black text-white shadow-md shadow-rose-500/20 ring-2 ring-white animate-pulse">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}

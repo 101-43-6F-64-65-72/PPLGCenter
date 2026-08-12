@@ -19,6 +19,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata = {
   title: "Student Center - SMK Negeri 2 Surakarta",
   description: "Platform Digital Terpadu untuk Informasi, Kegiatan Siswa, Ekstrakurikuler, dan Layanan Sekolah SMK Negeri 2 Surakarta.",
+  icons: {
+    icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
+    apple: "/images/logo.png",
+  }
 };
 
 export default function RootLayout({ children }) {
