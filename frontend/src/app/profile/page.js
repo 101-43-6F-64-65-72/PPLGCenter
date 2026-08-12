@@ -21,7 +21,7 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
         <Navbar />
 
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8 font-sans">
           <ProfileContent />
         </main>
 
@@ -241,7 +241,7 @@ function ProfileContent() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       {/* Banner Hero Header Card */}
       <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-r from-[#2C1EE8] via-indigo-700 to-[#1e0873] p-6 sm:p-10 text-white shadow-xl shadow-blue-900/15">
         {/* Ambient lighting glow overlays */}
@@ -379,7 +379,7 @@ function ProfileContent() {
       <AcademicInfoCard user={user} isStudent={isStudent} isTeacher={isTeacher} isAdmin={isAdmin} />
 
       {/* Main Profile Form Card */}
-      <div className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8">
+      <div className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8 font-sans">
         {/* Navigation Sub-Tabs & Edit Action */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
           <div className="flex items-center gap-2">
@@ -603,7 +603,7 @@ function ProfileContent() {
 
         {/* Tab 2: Ubah Password Form */}
         {activeTab === "password" && (
-          <form onSubmit={handleChangePassword} className="space-y-5">
+          <form onSubmit={handleChangePassword} className="space-y-5 font-sans">
             <div>
               <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
                 Password Saat Ini *
@@ -703,18 +703,18 @@ function AcademicInfoCard({ user, isStudent, isTeacher, isAdmin }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
+    <div className="rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs font-sans">
       <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Informasi Akademik</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="flex flex-wrap gap-4">
         {items.map((item) => {
           const IconComp = item.icon;
           return (
-            <div key={item.label} className="flex flex-col gap-1.5 p-3.5 rounded-xl bg-slate-50/80 border border-slate-100">
+            <div key={item.label} className="flex-1 min-w-[200px] flex flex-col gap-1.5 p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
               <div className="flex items-center gap-1.5 text-slate-400">
                 <IconComp className="w-3.5 h-3.5 text-[#2C1EE8]" />
                 <span className="text-[10px] font-extrabold uppercase tracking-wider">{item.label}</span>
               </div>
-              <span className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
+              <span className="text-sm font-extrabold text-slate-900 tracking-tight leading-snug break-words">
                 {item.value || "—"}
               </span>
             </div>
