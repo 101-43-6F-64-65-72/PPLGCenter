@@ -122,7 +122,7 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
             ref={(el) => {
               if (cardsRef) cardsRef.current[idx] = el;
             }}
-            className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible transform-gpu will-change-transform`}
+            className={`absolute ${img.positionClass} ${img.sizeClass} opacity-0 group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible transform-gpu will-change-transform`}
           >
             <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300 transform-gpu">
               <Image

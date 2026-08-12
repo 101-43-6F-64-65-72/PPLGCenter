@@ -21,7 +21,7 @@ export default function ExtracurricularSection() {
   const cardsRef = useRef([]);
   const ringsRef = useRef([]);
 
-  // GSAP ScrollTrigger Pinned Showcase with Asynchronous Staggered Rotation & 0% Opacity Start
+  // GSAP ScrollTrigger Pinned Showcase - Pure Scroll Opacity Fade-In on Revolving Wheel
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -37,8 +37,8 @@ export default function ExtracurricularSection() {
 
       if (!wheel || cardEls.length < 4) return;
 
-      // Ensure all 4 cards start strictly at opacity 0
-      gsap.set(cardEls, { opacity: 0, scale: 0.5 });
+      // Strictly set ALL 4 rotating image cards to 0% opacity at initialization
+      gsap.set(cardEls, { opacity: 0 });
 
       // Pinned GSAP ScrollTrigger Timeline
       const tl = gsap.timeline({
@@ -55,10 +55,10 @@ export default function ExtracurricularSection() {
         },
       });
 
-      // 1. Orbital Pivot Sweep (-70deg to 0deg)
+      // 1. Orbital Wheel Revolving Rotation (-60deg to 0deg)
       tl.fromTo(
         wheel,
-        { rotation: -70 },
+        { rotation: -60 },
         {
           rotation: 0,
           ease: "none",
@@ -67,72 +67,56 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 2. Asynchronous Staggered Rotation & Fade-In Reveal (Each card rotates & fades in at a unique time/angle!)
-      // Card 0 (Top-Left) - Starts at offset 0.00 (Clockwise entrance)
+      // 2. Pure Scroll-Driven Opacity Animation (STRICT 0% INIT -> Perlahan Muncul saat Scroll)
+      // Card 0 (Top-Left): Opacity 0 -> 1 slowly from 0% to 30% scroll
       tl.fromTo(
         cardEls[0],
-        { opacity: 0, rotation: 65, scale: 0.5, x: "30px", y: "30px" },
+        { opacity: 0 },
         {
           opacity: 1,
-          rotation: 0,
-          scale: 1.05,
-          x: "-35px",
-          y: "-20px",
-          ease: "power2.out",
+          ease: "sine.out",
           force3D: true,
         },
         0.00
       );
 
-      // Card 1 (Top-Right) - Starts at offset 0.18 (Counter-clockwise entrance)
+      // Card 1 (Top-Right): Opacity 0 -> 1 slowly from 20% to 50% scroll
       tl.fromTo(
         cardEls[1],
-        { opacity: 0, rotation: -50, scale: 0.5, x: "-30px", y: "30px" },
+        { opacity: 0 },
         {
           opacity: 1,
-          rotation: 0,
-          scale: 0.9,
-          x: "40px",
-          y: "-18px",
-          ease: "power2.out",
+          ease: "sine.out",
           force3D: true,
         },
-        0.18
+        0.20
       );
 
-      // Card 2 (Bottom-Left) - Starts at offset 0.36 (Clockwise entrance)
+      // Card 2 (Bottom-Left): Opacity 0 -> 1 slowly from 40% to 70% scroll
       tl.fromTo(
         cardEls[2],
-        { opacity: 0, rotation: 40, scale: 0.5, x: "30px", y: "-30px" },
+        { opacity: 0 },
         {
           opacity: 1,
-          rotation: 0,
-          scale: 0.92,
-          x: "-30px",
-          y: "25px",
-          ease: "power2.out",
+          ease: "sine.out",
           force3D: true,
         },
-        0.36
+        0.40
       );
 
-      // Card 3 (Bottom-Right) - Starts at offset 0.54 (Counter-clockwise entrance)
+      // Card 3 (Bottom-Right): Opacity 0 -> 1 slowly from 60% to 90% scroll
       tl.fromTo(
         cardEls[3],
-        { opacity: 0, rotation: -30, scale: 0.5, x: "-30px", y: "-30px" },
+        { opacity: 0 },
         {
           opacity: 1,
-          rotation: 0,
-          scale: 1.08,
-          x: "35px",
-          y: "22px",
-          ease: "power2.out",
+          ease: "sine.out",
           force3D: true,
         },
-        0.54
+        0.60
       );
 
-      // 3. Interactive Flying Orbit Rings Effect (Rotate & Fly Upwards into the Sky on Scroll Down!)
+      // 3. Interactive Flying Orbit Rings Effect (Flies Upwards into the Sky on Scroll Down!)
       if (ringEls.length > 0) {
         ringEls.forEach((ring, idx) => {
           tl.fromTo(
@@ -155,7 +139,7 @@ export default function ExtracurricularSection() {
       if (textContentRef.current) {
         tl.fromTo(
           textContentRef.current,
-          { scale: 0.92, y: "24px", opacity: 0.3 },
+          { scale: 0.94, y: "20px", opacity: 0.3 },
           { scale: 1, y: "0px", opacity: 1, ease: "power2.out" },
           0
         );
