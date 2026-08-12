@@ -8,6 +8,7 @@ import ExtracurricularCollage from "./ExtracurricularCollage";
 import PrimaryButton from "./PrimaryButton";
 import { Compass, Sparkles, Users } from "lucide-react";
 import MorphingSvg from "@/components/common/MorphingSvg";
+import FlyingRingsAccent from "@/components/common/FlyingRingsAccent";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -18,8 +19,9 @@ export default function ExtracurricularSection() {
   const textContentRef = useRef(null);
   const wheelRef = useRef(null);
   const cardsRef = useRef([]);
+  const ringsRef = useRef([]);
 
-  // GSAP ScrollTrigger Pinned Showcase with refreshPriority & 100% Upright Images & Full Overflow Visible
+  // GSAP ScrollTrigger Pinned Showcase with Cascading Staggered Card Reveal + Flying Rings Flight Effect
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -31,14 +33,16 @@ export default function ExtracurricularSection() {
     mm.add("(min-width: 1024px)", () => {
       const wheel = wheelRef.current;
       const cardEls = cardsRef.current.filter(Boolean);
+      const ringEls = ringsRef.current.filter(Boolean);
+
       if (!wheel || cardEls.length < 4) return;
 
-      // Pinned GSAP ScrollTrigger Timeline with refreshPriority: 1 & Silky Smooth Reveal
+      // Pinned GSAP ScrollTrigger Timeline with refreshPriority: 1
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top top",
-          end: "+=1600",
+          end: "+=1800",
           pin: true,
           pinSpacing: true,
           scrub: 1.4,
@@ -48,87 +52,107 @@ export default function ExtracurricularSection() {
         },
       });
 
-      // 1. Orbital Pivot Sweep (-50deg to 0deg)
+      // 1. Orbital Pivot Sweep (-70deg to 0deg)
       tl.fromTo(
         wheel,
-        { rotation: -50 },
+        { rotation: -70 },
         {
           rotation: 0,
-          ease: "power2.out",
+          ease: "none",
           force3D: true,
         },
         0
       );
 
-      // 2. Card 0 (Top-Left): Fluid reveal counter-rotation (+50deg -> 0deg)
+      // 2. Cascading Staggered Smooth Fade-In Reveal for the 4 Cards (One after another!)
+      // Card 0 (Top-Left) - Appears first at timeline offset 0.0
       tl.fromTo(
         cardEls[0],
-        { rotation: 50, scale: 0.75, x: "15px", y: "15px", opacity: 0.3 },
+        { rotation: 70, scale: 0.65, x: "20px", y: "20px", opacity: 0 },
         {
           rotation: 0,
           scale: 1.05,
           x: "-35px",
           y: "-20px",
           opacity: 1,
-          ease: "power3.out",
+          ease: "power2.out",
           force3D: true,
         },
-        0
+        0.0
       );
 
-      // 3. Card 1 (Top-Right): Fluid reveal counter-rotation (+50deg -> 0deg)
+      // Card 1 (Top-Right) - Appears second at timeline offset 0.15
       tl.fromTo(
         cardEls[1],
-        { rotation: 50, scale: 0.72, x: "-15px", y: "15px", opacity: 0.3 },
+        { rotation: 70, scale: 0.65, x: "-20px", y: "20px", opacity: 0 },
         {
           rotation: 0,
           scale: 0.9,
           x: "40px",
           y: "-18px",
           opacity: 1,
-          ease: "power3.out",
+          ease: "power2.out",
           force3D: true,
         },
-        0
+        0.15
       );
 
-      // 4. Card 2 (Bottom-Left): Fluid reveal counter-rotation (+50deg -> 0deg)
+      // Card 2 (Bottom-Left) - Appears third at timeline offset 0.30
       tl.fromTo(
         cardEls[2],
-        { rotation: 50, scale: 0.72, x: "15px", y: "-15px", opacity: 0.3 },
+        { rotation: 70, scale: 0.65, x: "20px", y: "-20px", opacity: 0 },
         {
           rotation: 0,
           scale: 0.92,
           x: "-30px",
           y: "25px",
           opacity: 1,
-          ease: "power3.out",
+          ease: "power2.out",
           force3D: true,
         },
-        0
+        0.30
       );
 
-      // 5. Card 3 (Bottom-Right): Fluid reveal counter-rotation (+50deg -> 0deg)
+      // Card 3 (Bottom-Right) - Appears fourth at timeline offset 0.45
       tl.fromTo(
         cardEls[3],
-        { rotation: 50, scale: 0.75, x: "-15px", y: "-15px", opacity: 0.3 },
+        { rotation: 70, scale: 0.65, x: "-20px", y: "-20px", opacity: 0 },
         {
           rotation: 0,
           scale: 1.08,
           x: "35px",
           y: "22px",
           opacity: 1,
-          ease: "power3.out",
+          ease: "power2.out",
           force3D: true,
         },
-        0
+        0.45
       );
 
-      // 6. Centered Text smooth scale & float reveal
+      // 3. Interactive Flying Orbit Rings Effect (Rotate & Fly Upwards into the Sky on Scroll Down!)
+      if (ringEls.length > 0) {
+        ringEls.forEach((ring, idx) => {
+          tl.fromTo(
+            ring,
+            { rotation: 0, y: 0, scale: 1, opacity: 0.8 },
+            {
+              rotation: 260 + idx * 40,
+              y: -240 - idx * 50,
+              scale: 1.5,
+              opacity: 0,
+              ease: "power2.inOut",
+              force3D: true,
+            },
+            0.1 + idx * 0.1
+          );
+        });
+      }
+
+      // 4. Centered Text smooth scale & float reveal
       if (textContentRef.current) {
         tl.fromTo(
           textContentRef.current,
-          { scale: 0.92, y: "24px", opacity: 0.5 },
+          { scale: 0.92, y: "24px", opacity: 0.4 },
           { scale: 1, y: "0px", opacity: 1, ease: "power2.out" },
           0
         );
@@ -154,6 +178,9 @@ export default function ExtracurricularSection() {
       id="extracurricular"
       className="w-full bg-slate-50/70 border-t border-slate-200/80 relative overflow-visible bg-dots-pattern select-none z-10 py-24 sm:py-32"
     >
+      {/* Interactive Flying Orbit Rings Accent (Flies upwards into the sky on scroll down, flies back on scroll up!) */}
+      <FlyingRingsAccent ringsRef={ringsRef} />
+
       {/* Background SVG Morphing Ambient Star Element */}
       <MorphingSvg
         preset="star"
