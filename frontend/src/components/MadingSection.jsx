@@ -1,18 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "@/lib/motion";
-import { Newspaper, ArrowRight, Sparkles } from "lucide-react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Newspaper, ArrowRight, Sparkles, Flame, BellRing } from "lucide-react";
 import MadingCollage from "./MadingCollage";
 import { useAnnouncements } from "@/features/announcement/hooks/useAnnouncements";
 import AnnouncementSkeleton from "@/features/announcement/components/AnnouncementSkeleton";
 import EmptyState from "@/components/common/EmptyState";
 import ErrorAlert from "@/components/common/ErrorAlert";
+import { resolveImageUrl } from "@/lib/utils";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export default function MadingSection() {
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const featuredCardRef = useRef(null);
+  const sectionRef = useRef(null);
 
   // Fetch real backend data for homepage Mading section using TanStack Query
   const { data, isLoading, isError, error, refetch } = useAnnouncements({
@@ -24,34 +34,96 @@ export default function MadingSection() {
   const featuredArticle = articles[0];
   const highlightArticle = articles[1];
 
+  // Interactive mouse tracking spotlight effect
+  const handleMouseMove = (e) => {
+    if (!featuredCardRef.current) return;
+    const rect = featuredCardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  // GSAP ScrollTrigger reveal animation for Mading Cards
+  useEffect(() => {
+    if (typeof window === "undefined" || !sectionRef.current) return;
+
+    const ctx = gsap.context(() => {
+      gsap.from(".mading-animate-item", {
+        opacity: 0,
+        y: 35,
+        rotationX: 8,
+        duration: 0.7,
+        stagger: 0.15,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+      });
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, [articles]);
+
   return (
     <section
+      ref={sectionRef}
       id="mading"
-      className="w-full bg-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+      className="w-full bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none"
     >
-      <div className="max-w-6xl mx-auto">
+      {/* Background Decorative Grid */}
+      <div className="absolute inset-0 bg-dots-pattern opacity-60 pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
+        
+        {/* INNOVATIVE INFINITE MARQUEE TICKER */}
+        <div className="mb-10 w-full overflow-hidden rounded-2xl bg-blue-50/70 border border-blue-100/90 py-2.5 px-4 backdrop-blur-xs select-none">
+          <div className="flex whitespace-nowrap animate-marquee gap-8 items-center text-xs font-mono font-semibold text-[#2c1ee8] uppercase tracking-widest">
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#2c1ee8] animate-pulse" />
+              MADING DIGITAL SMKN 2 SURAKARTA
+            </span>
+            <span>•</span>
+            <span className="inline-flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              PENGUMUMAN RESMI SEKOLAH
+            </span>
+            <span>•</span>
+            <span className="inline-flex items-center gap-2">
+              <Flame className="w-3.5 h-3.5 text-amber-500" />
+              PRESTASI & KARYA INOVASI SISWA
+            </span>
+            <span>•</span>
+            <span className="inline-flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-[#2c1ee8] animate-pulse" />
+              MADING DIGITAL SMKN 2 SURAKARTA
+            </span>
+            <span>•</span>
+            <span className="inline-flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              PENGUMUMAN RESMI SEKOLAH
+            </span>
+          </div>
+        </div>
+
         {/* Top Header Section: Left Collage, Right Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          {/* Left Column: Mading Image Collage */}
-          <div className="lg:col-span-5 w-full flex justify-center lg:justify-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+          {/* Left Column: 3D Floating Collage */}
+          <div className="lg:col-span-5 w-full flex justify-center lg:justify-start mading-animate-item">
             <MadingCollage articles={articles} />
           </div>
 
           {/* Right Column: Title & Text */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="lg:col-span-7 flex flex-col items-start"
-          >
+          <div className="lg:col-span-7 flex flex-col items-start mading-animate-item">
             {/* Section Kicker */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
-              <Newspaper className="w-3.5 h-3.5 text-blue-600" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
+              <Newspaper className="w-3.5 h-3.5 text-[#2c1ee8]" />
               <span className="font-semibold">Informasi & Berita</span>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-4">
               Mading Digital Sekolah
             </h2>
 
@@ -60,11 +132,11 @@ export default function MadingSection() {
               kreatif siswa-siswi SMK Negeri 2 Surakarta. Dapatkan informasi
               terkini secara cepat, tepat, dan terintegrasi.
             </p>
-          </motion.div>
+          </div>
         </div>
 
         {/* Middle Section: Cards Grid */}
-        <div className="mt-10 sm:mt-12">
+        <div className="mt-12 sm:mt-14">
           {isLoading && <AnnouncementSkeleton count={2} />}
 
           {isError && (
@@ -79,7 +151,7 @@ export default function MadingSection() {
               <div className="mt-4 flex justify-center">
                 <button
                   onClick={() => refetch()}
-                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-[0.97]"
+                  className="px-5 py-2.5 bg-[#2c1ee8] hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-[0.97]"
                 >
                   Coba Lagi
                 </button>
@@ -95,26 +167,31 @@ export default function MadingSection() {
           )}
 
           {!isLoading && !isError && featuredArticle && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
-            >
-              {/* Featured Card (Left) */}
-              <div className="lg:col-span-7 bg-slate-50/80 border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between group hover:shadow-lg hover:border-slate-300 transition-all duration-300">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-                  <div className="sm:col-span-5 relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-200/60 shadow-xs">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mading-animate-item">
+              
+              {/* Featured Card (Left) with Spotlight Flare Effect */}
+              <div
+                ref={featuredCardRef}
+                onMouseMove={handleMouseMove}
+                className="relative lg:col-span-7 bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-7 shadow-md flex flex-col justify-between group hover:shadow-xl hover:border-blue-300 transition-all duration-300 overflow-hidden"
+              >
+                {/* Dynamic Spotlight Glow Backdrop */}
+                <div
+                  className="pointer-events-none absolute -inset-px transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+                  style={{
+                    background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(44, 30, 232, 0.08), transparent 80%)`,
+                  }}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center relative z-10">
+                  <div className="sm:col-span-5 relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/80 shadow-xs">
                     <Image
-                      src={
-                        featuredArticle.image ||
-                        featuredArticle.imageUrl ||
-                        "/images/dummypic.jpg"
-                      }
+                      src={resolveImageUrl(
+                        featuredArticle.image || featuredArticle.imageUrl
+                      )}
                       alt={featuredArticle.title}
                       fill
-                      sizes="(max-width: 640px) 100vw, 240px"
+                      sizes="(max-width: 640px) 100vw, 260px"
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                       unoptimized
                     />
@@ -122,23 +199,23 @@ export default function MadingSection() {
 
                   <div className="sm:col-span-7 flex flex-col justify-between h-full">
                     <div>
-                      <span className="inline-block bg-white text-slate-800 border border-slate-200 px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider mb-2.5 shadow-2xs">
+                      <span className="inline-block bg-blue-50 text-[#2c1ee8] border border-blue-100 px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase tracking-wider mb-3 shadow-2xs">
                         {featuredArticle.category || "Berita Utama"}
                       </span>
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug mb-2 tracking-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug mb-2 tracking-tight line-clamp-2 group-hover:text-[#2c1ee8] transition-colors">
                         {featuredArticle.title}
                       </h3>
-                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mb-4 line-clamp-3">
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mb-5 line-clamp-3">
                         {featuredArticle.summary}
                       </p>
                     </div>
 
                     <Link
                       href={`/mading/${featuredArticle.id || 1}`}
-                      className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors self-start group/btn"
+                      className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#2c1ee8] hover:text-blue-700 transition-colors self-start group/btn"
                     >
-                      <span>Baca Artikel</span>
-                      <ArrowRight className="w-4 h-4 text-blue-600 transition-transform duration-200 group-hover/btn:translate-x-1" />
+                      <span>Baca Artikel Selengkapnya</span>
+                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-1" />
                     </Link>
                   </div>
                 </div>
@@ -148,45 +225,43 @@ export default function MadingSection() {
               {highlightArticle && (
                 <Link
                   href={`/mading/${highlightArticle.id || 2}`}
-                  className="lg:col-span-5 relative rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 group cursor-pointer min-h-[240px] flex flex-col justify-end p-5 sm:p-6 hover:shadow-lg transition-all duration-300 bg-slate-900"
+                  className="lg:col-span-5 relative rounded-3xl overflow-hidden shadow-md border border-slate-200/90 group cursor-pointer min-h-[260px] flex flex-col justify-end p-6 sm:p-7 hover:shadow-xl transition-all duration-300 bg-slate-900"
                 >
                   <Image
-                    src={
-                      highlightArticle.image ||
-                      highlightArticle.imageUrl ||
-                      "/images/dummypic.jpg"
-                    }
+                    src={resolveImageUrl(
+                      highlightArticle.image || highlightArticle.imageUrl
+                    )}
                     alt={highlightArticle.title}
                     fill
-                    sizes="(max-width: 1024px) 100vw, 400px"
+                    sizes="(max-width: 1024px) 100vw, 420px"
                     className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
                     unoptimized
                   />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent z-10" />
 
                   <div className="relative z-20">
-                    <span className="inline-block bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-2.5 py-0.5 rounded-md mb-2 shadow-2xs">
+                    <span className="inline-block bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-3 py-1 rounded-lg mb-2.5 shadow-2xs">
                       {highlightArticle.category || "Pengumuman"}
                     </span>
-                    <h3 className="text-base sm:text-lg font-bold text-white leading-snug line-clamp-2">
+                    <h3 className="text-lg sm:text-xl font-extrabold text-white leading-snug line-clamp-2 drop-shadow-xs">
                       {highlightArticle.title}
                     </h3>
                   </div>
                 </Link>
               )}
-            </motion.div>
+            </div>
           )}
         </div>
 
         {/* Bottom Action Button */}
-        <div className="mt-10 flex justify-center">
+        <div className="mt-12 flex justify-center mading-animate-item">
           <Link
             href="/mading"
-            className="inline-flex items-center justify-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm sm:text-base px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.97] border border-slate-800"
+            className="inline-flex items-center justify-center gap-2.5 bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.97]"
           >
             <span>Jelajahi Seluruh Mading Digital</span>
-            <ArrowRight className="w-4 h-4 text-blue-400" />
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </Link>
         </div>
       </div>
@@ -195,16 +270,14 @@ export default function MadingSection() {
       {selectedArticle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
           <div
-            className="relative w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto border border-slate-200 text-slate-900"
+            className="relative w-full max-w-xl bg-white rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto border border-slate-200 text-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative h-48 sm:h-60 w-full bg-slate-900">
               <Image
-                src={
-                  selectedArticle.image ||
-                  selectedArticle.imageUrl ||
-                  "/images/dummypic.jpg"
-                }
+                src={resolveImageUrl(
+                  selectedArticle.image || selectedArticle.imageUrl
+                )}
                 alt={selectedArticle.title}
                 fill
                 className="object-cover"
@@ -259,7 +332,7 @@ export default function MadingSection() {
             <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
               <Link
                 href={`/mading/${selectedArticle.id}`}
-                className="text-xs font-bold text-slate-900 hover:text-blue-600 transition-colors"
+                className="text-xs font-bold text-[#2c1ee8] hover:text-blue-700 transition-colors"
               >
                 Buka Halaman Penuh →
               </Link>

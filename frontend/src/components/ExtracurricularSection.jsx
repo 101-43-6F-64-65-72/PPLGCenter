@@ -27,8 +27,8 @@ export default function ExtracurricularSection() {
           className="lg:col-span-6 flex flex-col items-start"
         >
           {/* Section Kicker */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
-            <Compass className="w-3.5 h-3.5 text-blue-600" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
+            <Compass className="w-3.5 h-3.5 text-[#2c1ee8]" />
             <span className="font-semibold">Ekstrakurikuler</span>
           </div>
 
@@ -46,10 +46,10 @@ export default function ExtracurricularSection() {
           {/* Quick Highlight Badges */}
           <div className="flex flex-wrap gap-2 mb-8">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 shadow-2xs">
-              <Users className="w-3.5 h-3.5 text-blue-600" /> 20+ Ekstrakurikuler Active
+              <Users className="w-3.5 h-3.5 text-[#2c1ee8]" /> 20+ Ekstrakurikuler Active
             </span>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Pembinaan Prestasi
+              <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" /> Pembinaan Prestasi
             </span>
           </div>
 

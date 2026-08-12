@@ -20,7 +20,7 @@ const DEFAULT_FACILITIES = [
     category: "Fasilitas Utama",
     description: "Laboratorium komputer & praktik kejuruan berstandar industri modern.",
     image: "/images/tempat/labsmkn2ska.jpeg",
-    gradient: "from-blue-600/90 via-blue-700/85 to-sky-500/90",
+    gradient: "from-blue-700/90 via-blue-600/85 to-sky-500/90",
   },
   {
     id: "kreatif",
@@ -28,7 +28,7 @@ const DEFAULT_FACILITIES = [
     category: "Ruang Kolaborasi",
     description: "Ruang diskusi & laboratorium inovasi kreatif siswa.",
     image: "/images/tempat/halamandepansmkn2ska.jpg",
-    gradient: "from-rose-800/90 via-pink-800/85 to-purple-900/90",
+    gradient: "from-indigo-900/90 via-blue-800/85 to-blue-600/90",
   },
   {
     id: "lapangan",
@@ -36,7 +36,7 @@ const DEFAULT_FACILITIES = [
     category: "Olahraga & Seni",
     description: "Lapangan outdoor serbaguna untuk olahraga dan kegiatan akbar.",
     image: "/images/tempat/lapangansmkn2ska.jpg",
-    gradient: "from-emerald-800/90 via-teal-800/85 to-emerald-700/90",
+    gradient: "from-slate-900/95 via-blue-900/85 to-sky-700/90",
   },
   {
     id: "aula",
@@ -44,7 +44,7 @@ const DEFAULT_FACILITIES = [
     category: "Auditorium",
     description: "Aula utama untuk pentas seni, seminar, dan pertemuan resmi.",
     image: "/images/tempat/aulasmkn2ska.jpg",
-    gradient: "from-indigo-800/90 via-blue-800/85 to-sky-700/90",
+    gradient: "from-blue-900/90 via-indigo-900/85 to-sky-600/90",
   },
 ];
 
@@ -205,10 +205,11 @@ export default function FacilityCatalogSection() {
           
           {/* LEFT CONTENT COLUMN (~45%) - 100% Stationary & Pinned during sequence */}
           <div className="lg:col-span-5 flex flex-col items-start justify-center lg:py-12">
-            {/* Eyebrow */}
-            <span className="text-xs font-bold tracking-widest text-[#2c1ee8] uppercase mb-3 block">
-              FASILITAS SEKOLAH
-            </span>
+            {/* Section Kicker Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
+              <Building2 className="w-3.5 h-3.5 text-[#2c1ee8]" />
+              <span className="font-semibold">Fasilitas Sekolah</span>
+            </div>
 
             {/* Heading */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-5">
@@ -217,17 +218,27 @@ export default function FacilityCatalogSection() {
             </h2>
 
             {/* Description */}
-            <p className="text-base text-slate-600 leading-relaxed mb-8 max-w-md text-left font-normal">
+            <p className="text-base text-slate-600 leading-relaxed mb-6 max-w-md text-left font-normal">
               Akses sarana sekolah modern, dari laboratorium praktik hingga ruang kolaborasi,
               dan ajukan peminjaman dengan alur yang transparan.
             </p>
+
+            {/* Feature Highlight Badges */}
+            <div className="flex flex-wrap gap-2 mb-8">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200/90 text-slate-700 shadow-2xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Lab Komputer & Kejuruan
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200/90 text-slate-700 shadow-2xs">
+                <Shield className="w-3.5 h-3.5 text-[#2c1ee8]" /> System Peminjaman Digital
+              </span>
+            </div>
 
             {/* Primary CTA */}
             <div className="w-full sm:w-auto">
               <Link
                 href="/fasilitas"
                 aria-label="Jelajahi Fasilitas"
-                className="group inline-flex items-center justify-center gap-2.5 bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm sm:text-base px-6 py-3.5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                className="group inline-flex items-center justify-center gap-2.5 bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm sm:text-base px-6 py-3.5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.97]"
               >
                 <span>Jelajahi Fasilitas</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5] transition-transform duration-200 group-hover:translate-x-1" />
