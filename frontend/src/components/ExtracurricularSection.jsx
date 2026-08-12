@@ -26,7 +26,7 @@ export default function ExtracurricularSection() {
     setItemsVersion((v) => v + 1);
   }, []);
 
-  // GSAP ScrollTrigger Pinned Showcase - Unique Staggered Entrance Animations for Each Image Card
+  // Hardware-Accelerated 60 FPS GSAP ScrollTrigger Pinned Showcase
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -50,10 +50,10 @@ export default function ExtracurricularSection() {
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top top",
-          end: "+=1800",
+          end: "+=1600",
           pin: true,
           pinSpacing: true,
-          scrub: 1.4,
+          scrub: 1,
           anticipatePin: 1,
           refreshPriority: 1,
           invalidateOnRefresh: true,
@@ -72,83 +72,82 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 2. Unique Asynchronous Staggered Entrance Animations for Each Image Card
-      // Card 0 (Top-Left): Starts early at offset 0.00 with top-left floating entrance
+      // 2. Unique Asynchronous Staggered Entrance Animations for Each Image Card (Fast Sine/Power Eases)
+      // Card 0 (Top-Left): Starts early at offset 0.00
       tl.fromTo(
         cardEls[0],
-        { opacity: 0, x: -40, y: -30, scale: 0.8 },
+        { opacity: 0, x: -35, y: -25, scale: 0.85 },
         {
           opacity: 1,
           x: 0,
           y: 0,
           scale: 1,
-          duration: 0.35,
-          ease: "power2.out",
+          duration: 0.3,
+          ease: "power1.out",
           force3D: true,
         },
         0.00
       );
 
-      // Card 1 (Top-Right): Starts at offset 0.22 with top-right floating entrance & elastic feel
+      // Card 1 (Top-Right): Starts at offset 0.20
       tl.fromTo(
         cardEls[1],
-        { opacity: 0, x: 45, y: -25, scale: 0.82 },
+        { opacity: 0, x: 40, y: -20, scale: 0.85 },
         {
           opacity: 1,
           x: 0,
           y: 0,
           scale: 1,
-          duration: 0.35,
-          ease: "back.out(1.4)",
+          duration: 0.3,
+          ease: "power1.out",
           force3D: true,
         },
-        0.22
+        0.20
       );
 
-      // Card 2 (Bottom-Left): Starts at offset 0.45 with bottom-left floating entrance
+      // Card 2 (Bottom-Left): Starts at offset 0.40
       tl.fromTo(
         cardEls[2],
-        { opacity: 0, x: -35, y: 35, scale: 0.85 },
+        { opacity: 0, x: -30, y: 30, scale: 0.85 },
         {
           opacity: 1,
           x: 0,
           y: 0,
           scale: 1,
-          duration: 0.35,
-          ease: "sine.out",
+          duration: 0.3,
+          ease: "power1.out",
           force3D: true,
         },
-        0.45
+        0.40
       );
 
-      // Card 3 (Bottom-Right): Starts at offset 0.65 with bottom-right floating entrance
+      // Card 3 (Bottom-Right): Starts at offset 0.60
       tl.fromTo(
         cardEls[3],
-        { opacity: 0, x: 40, y: 30, scale: 0.8 },
+        { opacity: 0, x: 35, y: 25, scale: 0.85 },
         {
           opacity: 1,
           x: 0,
           y: 0,
           scale: 1,
-          duration: 0.35,
-          ease: "power3.out",
+          duration: 0.3,
+          ease: "power1.out",
           force3D: true,
         },
-        0.65
+        0.60
       );
 
-      // 3. Interactive Flying Orbit Rings Effect (Flies Upwards into the Sky on Scroll Down!)
+      // 3. Interactive Flying Orbit Rings Effect (Rotate & Fly Upwards into the Sky on Scroll Down!)
       if (ringEls.length > 0) {
         ringEls.forEach((ring, idx) => {
           tl.fromTo(
             ring,
-            { rotation: 0, y: 0, scale: 1, opacity: 0.8 },
+            { rotation: 0, y: 0, opacity: 0.8 },
             {
-              rotation: 260 + idx * 40,
-              y: -240 - idx * 50,
-              scale: 1.5,
+              rotation: 200 + idx * 30,
+              y: -200 - idx * 40,
               opacity: 0,
-              ease: "power2.inOut",
+              ease: "none",
               force3D: true,
             },
             0.1 + idx * 0.1
@@ -160,8 +159,8 @@ export default function ExtracurricularSection() {
       if (textContentRef.current) {
         tl.fromTo(
           textContentRef.current,
-          { scale: 0.94, y: "20px", opacity: 0.3 },
-          { scale: 1, y: "0px", opacity: 1, ease: "power2.out" },
+          { scale: 0.96, y: "15px", opacity: 0.4 },
+          { scale: 1, y: "0px", opacity: 1, ease: "power1.out" },
           0
         );
       }
@@ -236,10 +235,10 @@ export default function ExtracurricularSection() {
 
             {/* Quick Highlight Badges Row */}
             <div className="flex flex-wrap justify-center gap-3 mb-9">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 text-slate-800 shadow-2xs">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
                 <Users className="w-3.5 h-3.5 text-[#2c1ee8]" /> 20+ Ekstrakurikuler Active
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200 text-slate-800 shadow-2xs">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
                 <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" /> Pembinaan Prestasi
               </span>
             </div>
