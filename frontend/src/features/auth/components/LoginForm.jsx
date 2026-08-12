@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { User, Lock, Eye, EyeOff } from "@/components/common/Icons";
 import { GraduationCap, BookOpen, ShieldAlert, Sparkles, CheckCircle2, Check } from "lucide-react";
@@ -80,7 +81,7 @@ export const LoginForm = ({ onSuccess }) => {
     try {
       const payload = {
         loginType,
-        identifier,
+        identifier: identifier.trim(),
         password,
       };
 
@@ -94,8 +95,9 @@ export const LoginForm = ({ onSuccess }) => {
 
       // Smooth post-login celebration delay before navigation
       setTimeout(() => {
-        router.push(callbackUrl);
-      }, 1500);
+        const dest = loginType === "Admin" ? "/admin" : callbackUrl;
+        router.push(dest);
+      }, 2800);
     } catch (error) {
       const backendMessage =
         error?.response?.data?.message ||
@@ -183,7 +185,7 @@ export const LoginForm = ({ onSuccess }) => {
             <MotionDiv
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
-              transition={{ duration: 1.3, ease: "easeInOut" }}
+              transition={{ duration: 2.5, ease: "easeInOut" }}
               className="h-full bg-gradient-to-r from-emerald-400 via-teal-300 to-white rounded-full shadow-sm"
             />
           </div>
@@ -199,10 +201,18 @@ export const LoginForm = ({ onSuccess }) => {
     <div className="w-full space-y-5">
       {/* Interactive Role Selection Pills */}
       <div className="space-y-1.5">
-        <label className="block text-[11px] font-black uppercase tracking-wider text-white/80">
-          Login Sebagai
-        </label>
-        <div className="grid grid-cols-3 p-1.5 bg-[#1e0873]/60 backdrop-blur-md rounded-2xl border border-white/20 gap-1">
+        <div className="flex items-center justify-between">
+          <label className="block text-[11px] font-black uppercase tracking-wider text-white/80">
+            Login Sebagai
+          </label>
+          {loginType === "Admin" && (
+            <span className="text-[10px] font-mono font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/30 flex items-center gap-1">
+              <ShieldAlert className="w-3 h-3 text-amber-400" /> AUDIT ENFORCED
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 p-1.5 bg-[#1e0873]/60 backdrop-blur-md rounded-2xl border border-white/20 gap-1 relative">
           {[
             { id: "Student", label: "Siswa", icon: GraduationCap },
             { id: "Teacher", label: "Guru", icon: BookOpen },
@@ -215,16 +225,37 @@ export const LoginForm = ({ onSuccess }) => {
                 key={roleItem.id}
                 type="button"
                 onClick={() => setLoginType(roleItem.id)}
-                className={`py-2.5 px-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer ${
+                className={`relative py-2.5 px-2 rounded-xl text-xs font-extrabold flex items-center justify-center transition-colors duration-200 cursor-pointer ${
                   isActive
-                    ? "bg-white text-[#2c1ee8] shadow-md shadow-black/20 scale-[1.02]"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
+                    ? roleItem.id === "Admin"
+                      ? "text-slate-950"
+                      : "text-[#2c1ee8]"
+                    : "text-white/70 hover:text-white"
                 }`}
               >
-                <IconComponent
-                  className={`w-3.5 h-3.5 ${isActive ? "text-[#2c1ee8]" : "text-white/70"}`}
-                />
-                <span>{roleItem.label}</span>
+                {isActive && (
+                  <MotionDiv
+                    layoutId="activeRoleTab"
+                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                    className={`absolute inset-0 rounded-xl shadow-md ${
+                      roleItem.id === "Admin"
+                        ? "bg-amber-400 shadow-amber-500/20"
+                        : "bg-white shadow-black/20"
+                    }`}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1.5">
+                  <IconComponent
+                    className={`w-3.5 h-3.5 ${
+                      isActive
+                        ? roleItem.id === "Admin"
+                          ? "text-slate-950"
+                          : "text-[#2c1ee8]"
+                        : "text-white/70"
+                    }`}
+                  />
+                  <span>{roleItem.label}</span>
+                </span>
               </button>
             );
           })}
@@ -313,12 +344,16 @@ export const LoginForm = ({ onSuccess }) => {
           fullWidth
           isLoading={isSubmitting}
           disabled={isSubmitting}
-          className="!bg-white !text-[#2c1ee8] hover:!bg-slate-100 active:scale-[0.98] shadow-xl shadow-white/20 font-black py-3.5 text-sm sm:text-base rounded-2xl mt-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200"
+          className={`font-black py-3.5 text-sm sm:text-base rounded-2xl mt-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 active:scale-[0.98] shadow-xl ${
+            loginType === "Admin"
+              ? "!bg-amber-400 hover:!bg-amber-300 !text-slate-950 shadow-amber-500/20"
+              : "!bg-white !text-[#2c1ee8] hover:!bg-slate-100 shadow-white/20"
+          }`}
         >
           {isSubmitting ? (
             <div className="flex items-center gap-2">
               <svg
-                className="animate-spin h-5 w-5 text-[#2c1ee8]"
+                className="animate-spin h-5 w-5 text-current"
                 fill="none"
                 viewBox="0 0 24 24"
               >
@@ -344,6 +379,25 @@ export const LoginForm = ({ onSuccess }) => {
             }`
           )}
         </Button>
+
+        {/* Admin Security Notice & Dedicated Portal Link */}
+        {loginType === "Admin" ? (
+          <div className="pt-2 text-center border-t border-white/10">
+            <p className="text-[11px] text-amber-200/90 leading-relaxed font-medium">
+              🔒 <strong className="text-white">Security Audit Enforced:</strong> Portal khusus Pengelola Sistem & Waka Kesiswaan. Seluruh sesi masuk diawasi secara otomatis.
+            </p>
+          </div>
+        ) : (
+          <div className="pt-1 text-center">
+            <Link
+              href="/admin/login"
+              className="text-[11px] font-bold text-white/60 hover:text-white transition inline-flex items-center gap-1.5"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-300" />
+              <span>Portal Akses Dedicated Executive Admin →</span>
+            </Link>
+          </div>
+        )}
       </form>
 
       {/* Forgot Password Modal */}
