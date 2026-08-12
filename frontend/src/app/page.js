@@ -15,8 +15,8 @@ export default function Home() {
       <Navbar />
       <main className="flex-1 flex flex-col pt-20 lg:pt-24">
         <Hero />
-        <ExtracurricularSection />
         <FacilityCatalogSection />
+        <ExtracurricularSection />
         <MadingSection />
       </main>
       <Footer />
