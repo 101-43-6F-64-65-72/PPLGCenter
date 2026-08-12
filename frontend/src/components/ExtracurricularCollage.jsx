@@ -17,8 +17,8 @@ const DEFAULT_ITEMS = [
     src: "/images/tempat/lapangansmkn2ska.jpg",
     alt: "Ekstrakurikuler Olahraga",
     label: "Olahraga",
-    positionClass: "top-4 left-4 sm:top-2 sm:left-2 lg:top-1 lg:left-1 z-30",
-    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
+    positionClass: "top-0 left-0 z-30",
+    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
     initialRot: -5,
   },
   {
@@ -26,7 +26,7 @@ const DEFAULT_ITEMS = [
     src: "/images/eskul.jpeg",
     alt: "Ekstrakurikuler Paskibra",
     label: "Paskibra",
-    positionClass: "top-4 right-4 sm:top-2 sm:right-2 lg:top-1 lg:right-1 z-10",
+    positionClass: "top-0 right-0 z-10",
     sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
     initialRot: 6,
   },
@@ -35,7 +35,7 @@ const DEFAULT_ITEMS = [
     src: "/images/mading.jpeg",
     alt: "Ekstrakurikuler PMR & Seni",
     label: "PMR & Seni",
-    positionClass: "bottom-4 left-4 sm:bottom-2 sm:left-2 lg:bottom-1 lg:left-1 z-10",
+    positionClass: "bottom-0 left-0 z-10",
     sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
     initialRot: 4,
   },
@@ -44,8 +44,8 @@ const DEFAULT_ITEMS = [
     src: "/images/fasilitas.jpeg",
     alt: "Ekstrakurikuler Pramuka",
     label: "Pramuka",
-    positionClass: "bottom-4 right-4 sm:bottom-2 sm:right-2 lg:bottom-1 lg:right-1 z-30",
-    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
+    positionClass: "bottom-0 right-0 z-30",
+    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
     initialRot: -6,
   },
 ];
@@ -121,7 +121,7 @@ export default function ExtracurricularCollage({ containerRef }) {
     };
   }, []);
 
-  // GSAP Biang Lala (Ferris Wheel) Orbit Reveal encircling center text + Floating Idle + Scroll Parallax
+  // Hardware-Accelerated 60 FPS GSAP Biang Lala (Ferris Wheel) Orbital Revolution + Counter-Rotation Upright Alignment
   useEffect(() => {
     if (typeof window === "undefined" || !wheelRef.current) return;
 
@@ -131,19 +131,6 @@ export default function ExtracurricularCollage({ containerRef }) {
     const els = cardRefs.current.filter(Boolean);
     if (els.length < 4) return;
 
-    // 1. Floating Idle Effect (Awal - continuous subtle floating)
-    const idleTweens = els.map((card, i) => {
-      return gsap.to(card, {
-        y: "-=10",
-        duration: 2.5 + i * 0.4,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-        delay: i * 0.2,
-      });
-    });
-
-    // 2. Ferris Wheel (Biang Lala) Orbital Revolution & Parallax Timeline
     let mm = gsap.matchMedia();
 
     mm.add("(min-width: 1024px)", () => {
@@ -154,73 +141,78 @@ export default function ExtracurricularCollage({ containerRef }) {
           trigger: triggerTarget,
           start: "top bottom",
           end: "bottom top",
-          scrub: 1.5,
+          scrub: 1.2,
         },
       });
 
-      // Ferris Wheel Pivot Container Revolution (-100deg to 0deg)
+      // Ferris Wheel Pivot Container Revolution (-120deg to 0deg) with force3D GPU compositing
       tl.fromTo(
         wheelRef.current,
-        { rotation: -100 },
+        { rotation: -120 },
         {
           rotation: 0,
           ease: "sine.inOut",
+          force3D: true,
         },
         0
       );
 
-      // Card 0 (Top-Left): Counter-rotate + tight float around text
+      // Card 0 (Top-Left): Counter-rotate + float outward
       tl.fromTo(
         els[0],
-        { rotation: 100 + DEFAULT_ITEMS[0].initialRot, scale: 0.85, x: "-10px", y: "-10px" },
+        { rotation: 120 + DEFAULT_ITEMS[0].initialRot, scale: 0.85, x: "-10px", y: "-10px" },
         {
           rotation: DEFAULT_ITEMS[0].initialRot - 6,
           scale: 1.1,
-          x: "-35px",
-          y: "-25px",
+          x: "-45px",
+          y: "-35px",
           ease: "power2.inOut",
+          force3D: true,
         },
         0
       );
 
-      // Card 1 (Top-Right): Counter-rotate + tight float around text
+      // Card 1 (Top-Right): Counter-rotate + float outward
       tl.fromTo(
         els[1],
-        { rotation: 100 + DEFAULT_ITEMS[1].initialRot, scale: 0.82, x: "10px", y: "-10px" },
+        { rotation: 120 + DEFAULT_ITEMS[1].initialRot, scale: 0.82, x: "10px", y: "-10px" },
         {
           rotation: DEFAULT_ITEMS[1].initialRot + 6,
           scale: 0.92,
-          x: "38px",
-          y: "-22px",
+          x: "45px",
+          y: "-30px",
           ease: "sine.inOut",
+          force3D: true,
         },
         0
       );
 
-      // Card 2 (Bottom-Left): Counter-rotate + tight float around text
+      // Card 2 (Bottom-Left): Counter-rotate + float outward
       tl.fromTo(
         els[2],
-        { rotation: 100 + DEFAULT_ITEMS[2].initialRot, scale: 0.85, x: "-10px", y: "10px" },
+        { rotation: 120 + DEFAULT_ITEMS[2].initialRot, scale: 0.85, x: "-10px", y: "10px" },
         {
           rotation: DEFAULT_ITEMS[2].initialRot + 5,
           scale: 0.94,
-          x: "-32px",
-          y: "28px",
+          x: "-40px",
+          y: "35px",
           ease: "power2.inOut",
+          force3D: true,
         },
         0
       );
 
-      // Card 3 (Bottom-Right): Counter-rotate + tight float around text
+      // Card 3 (Bottom-Right): Counter-rotate + float outward
       tl.fromTo(
         els[3],
-        { rotation: 100 + DEFAULT_ITEMS[3].initialRot, scale: 0.88, x: "10px", y: "10px" },
+        { rotation: 120 + DEFAULT_ITEMS[3].initialRot, scale: 0.88, x: "10px", y: "10px" },
         {
           rotation: DEFAULT_ITEMS[3].initialRot - 8,
           scale: 1.14,
-          x: "35px",
-          y: "26px",
+          x: "42px",
+          y: "32px",
           ease: "sine.inOut",
+          force3D: true,
         },
         0
       );
@@ -231,26 +223,25 @@ export default function ExtracurricularCollage({ containerRef }) {
     });
 
     return () => {
-      idleTweens.forEach((t) => t.kill());
       mm.revert();
     };
   }, [items, containerRef]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none overflow-visible z-10">
-      {/* Ferris Wheel (Biang Lala) Revolving Pivot Container encircling center stage */}
+    <div className="relative w-full max-w-[500px] aspect-square mx-auto lg:mx-0 select-none p-2 overflow-visible">
+      {/* Ferris Wheel (Biang Lala) Revolving Pivot Container on Left Side */}
       <div
         ref={wheelRef}
-        className="relative w-full h-full transform-gpu origin-center overflow-visible"
+        className="relative w-full h-full transform-gpu origin-center overflow-visible will-change-transform"
       >
         {items.map((img, idx) => (
           <div
             key={img.id || idx}
             ref={(el) => (cardRefs.current[idx] = el)}
-            className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible`}
+            className={`absolute ${img.positionClass} ${img.sizeClass} group cursor-pointer overflow-visible transform-gpu will-change-transform`}
           >
             <div
-              className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300"
+              className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-xl shadow-slate-900/15 group-hover:shadow-blue-900/25 group-hover:border-blue-400 transition-all duration-300 transform-gpu"
               style={{ transform: `rotate(${img.initialRot}deg)` }}
             >
               <Image
@@ -258,7 +249,7 @@ export default function ExtracurricularCollage({ containerRef }) {
                 alt={img.alt}
                 fill
                 sizes="(max-width: 768px) 50vw, 260px"
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
                 unoptimized
               />
               
@@ -267,7 +258,7 @@ export default function ExtracurricularCollage({ containerRef }) {
 
               {/* Glass Pill Label */}
               <div className="absolute bottom-3 left-3 z-10 pr-2">
-                <span className="inline-block bg-white/95 backdrop-blur-md text-slate-900 text-xs font-extrabold px-3 py-1 rounded-xl shadow-sm border border-white/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-blue-400 transition-all duration-200 max-w-[140px] truncate">
+                <span className="inline-block bg-white/95 backdrop-blur-md text-slate-900 text-xs font-extrabold px-3 py-1 rounded-xl shadow-xs border border-white/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-blue-400 transition-all duration-200 max-w-[140px] truncate">
                   {img.label}
                 </span>
               </div>

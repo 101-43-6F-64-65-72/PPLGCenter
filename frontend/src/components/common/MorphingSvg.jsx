@@ -32,14 +32,14 @@ export default function MorphingSvg({
   gradientId = "starGrad",
   startColor = "#2c1ee8",
   endColor = "#60a5fa",
-  opacity = 0.28,
+  opacity = 0.25,
   triggerRef = null,
 }) {
   const containerRef = useRef(null);
   const svgRef = useRef(null);
   const pathRef = useRef(null);
 
-  // GSAP 2-Second Entrance Reveal Morphing + ScrollTrigger 360 Rotation Scrub
+  // Hardware-Accelerated GSAP 2-Second Entrance Reveal Morphing + ScrollTrigger 360 Rotation Scrub
   useEffect(() => {
     if (typeof window === "undefined" || !containerRef.current) return;
 
@@ -52,6 +52,7 @@ export default function MorphingSvg({
     const rotationTween = gsap.to(svgRef.current, {
       rotation: 360,
       ease: "none",
+      force3D: true,
       scrollTrigger: {
         trigger: sectionTrigger,
         start: "top bottom",
@@ -93,19 +94,16 @@ export default function MorphingSvg({
       <svg
         ref={svgRef}
         viewBox="-350 -350 700 700"
-        className="w-full h-full overflow-visible transform-gpu origin-center"
+        className="w-full h-full overflow-visible transform-gpu origin-center will-change-transform"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ filter: "drop-shadow(0px 8px 16px rgba(44, 30, 232, 0.12))" }}
       >
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={startColor} stopOpacity={opacity} />
-            <stop offset="50%" stopColor="#3b82f6" stopOpacity={opacity * 0.8} />
-            <stop offset="100%" stopColor={endColor} stopOpacity={opacity * 0.25} />
+            <stop offset="50%" stopColor="#3b82f6" stopOpacity={opacity * 0.7} />
+            <stop offset="100%" stopColor={endColor} stopOpacity={opacity * 0.2} />
           </linearGradient>
-          <filter id={`${gradientId}-glow`} x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="24" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
 
         {preset === "star" ? (
@@ -113,26 +111,24 @@ export default function MorphingSvg({
             ref={pathRef}
             d={STAR_BASE_PATH}
             fill={`url(#${gradientId})`}
-            filter={`url(#${gradientId}-glow)`}
             stroke={startColor}
-            strokeWidth="1.75"
-            strokeOpacity={opacity * 1.6}
+            strokeWidth="1.5"
+            strokeOpacity={opacity * 1.4}
           />
         ) : (
           <motion.path
             d={BLOB_PATHS[0]}
             animate={{ d: BLOB_PATHS }}
             transition={{
-              duration: 10,
+              duration: 12,
               repeat: Infinity,
               repeatType: "mirror",
               ease: "easeInOut",
             }}
             fill={`url(#${gradientId})`}
-            filter={`url(#${gradientId}-glow)`}
             stroke={startColor}
             strokeWidth="1.5"
-            strokeOpacity={opacity * 1.5}
+            strokeOpacity={opacity * 1.4}
           />
         )}
       </svg>
