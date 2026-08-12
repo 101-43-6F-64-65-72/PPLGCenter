@@ -135,6 +135,7 @@ export default function FacilityCatalogSection() {
           start: "top top",
           end: "+=2800",
           pin: true,
+          pinSpacing: true,
           scrub: 1,
           anticipatePin: 1,
           invalidateOnRefresh: true,
@@ -177,6 +178,11 @@ export default function FacilityCatalogSection() {
           );
         }
       }
+
+      // Refresh ScrollTrigger positions after DOM calculations
+      setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 100);
 
       return () => {
         tl.kill();
