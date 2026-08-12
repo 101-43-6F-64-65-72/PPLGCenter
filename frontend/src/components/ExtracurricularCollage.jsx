@@ -112,22 +112,22 @@ export default function ExtracurricularCollage() {
               delay: idx * 0.08,
               ease: "easeOut",
             }}
-            className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer"
+            className="group relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-900 border border-slate-200/90 shadow-md hover:shadow-xl hover:shadow-slate-900/10 transition-all duration-300 cursor-pointer"
           >
             <Image
               src={img.src}
               alt={img.alt}
               fill
               sizes="(max-width: 768px) 50vw, 250px"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
               unoptimized
             />
             {/* Dark gradient bottom overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
 
-            {/* Pill Label */}
+            {/* Glass Pill Label */}
             <div className="absolute bottom-3 left-3 z-10 pr-2">
-              <span className="inline-block bg-white/95 text-slate-900 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-2xs border border-slate-200/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-[#2c1ee8] transition-colors duration-200 max-w-[150px] truncate">
+              <span className="inline-block bg-white/90 backdrop-blur-md text-slate-900 text-xs font-semibold px-3 py-1 rounded-lg shadow-xs border border-white/60 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-800 transition-all duration-200 max-w-[150px] truncate">
                 {img.label}
               </span>
             </div>

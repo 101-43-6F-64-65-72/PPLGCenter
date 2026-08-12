@@ -47,38 +47,38 @@ export default function MadingCollage({ articles = [] }) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-40px" }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="bg-slate-50 rounded-2xl p-3 shadow-xs border border-slate-200 space-y-3"
+        className="bg-slate-50/80 backdrop-blur-md rounded-2xl p-3 shadow-sm border border-slate-200/90 space-y-3"
       >
         {/* Top Preview Card */}
-        <div className="group relative h-[140px] sm:h-[150px] w-full overflow-hidden rounded-xl bg-slate-100 border border-slate-200/80">
+        <div className="group relative h-[140px] sm:h-[150px] w-full overflow-hidden rounded-xl bg-slate-900 border border-slate-200/80">
           <Image
             src={topCard.src}
             alt={topCard.alt}
             fill
             sizes="(max-width: 768px) 100vw, 420px"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
             unoptimized
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
-          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/95 text-slate-900 border border-slate-200/80 text-xs font-semibold px-2.5 py-0.5 rounded-lg shadow-2xs max-w-[200px] truncate">
-            <Newspaper className="w-3.5 h-3.5 shrink-0 text-[#2c1ee8]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-slate-900 border border-white/60 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-xs max-w-[200px] truncate">
+            <Newspaper className="w-3.5 h-3.5 shrink-0 text-blue-600" />
             <span className="truncate">{topCard.label}</span>
           </div>
         </div>
 
         {/* Bottom Preview Card */}
-        <div className="group relative h-[140px] sm:h-[150px] w-full overflow-hidden rounded-xl bg-slate-100 border border-slate-200/80">
+        <div className="group relative h-[140px] sm:h-[150px] w-full overflow-hidden rounded-xl bg-slate-900 border border-slate-200/80">
           <Image
             src={bottomCard.src}
             alt={bottomCard.alt}
             fill
             sizes="(max-width: 768px) 100vw, 420px"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
             unoptimized
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent" />
-          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/95 text-slate-900 border border-slate-200/80 text-xs font-semibold px-2.5 py-0.5 rounded-lg shadow-2xs max-w-[200px] truncate">
-            <BellRing className="w-3.5 h-3.5 shrink-0 text-[#2c1ee8]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent" />
+          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-slate-900 border border-white/60 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-xs max-w-[200px] truncate">
+            <BellRing className="w-3.5 h-3.5 shrink-0 text-amber-500" />
             <span className="truncate">{bottomCard.label}</span>
           </div>
         </div>

@@ -46,15 +46,16 @@ export default function MadingSection() {
             className="lg:col-span-7 flex flex-col items-start"
           >
             {/* Section Kicker */}
-            <span className="text-xs font-bold tracking-wider text-[#2c1ee8] uppercase mb-2">
-              Informasi & Berita
-            </span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
+              <Newspaper className="w-3.5 h-3.5 text-blue-600" />
+              <span className="font-semibold">Informasi & Berita</span>
+            </div>
 
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight mb-4">
+            <h2 className="text-3xl sm:text-4xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight mb-4">
               Mading Digital Sekolah
             </h2>
 
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl text-left font-normal">
+            <p className="text-base text-slate-600 leading-relaxed max-w-xl text-left font-normal">
               Pusat kearsipan berita, prestasi, pengumuman resmi, serta karya
               kreatif siswa-siswi SMK Negeri 2 Surakarta. Dapatkan informasi
               terkini secara cepat, tepat, dan terintegrasi.
@@ -78,7 +79,7 @@ export default function MadingSection() {
               <div className="mt-4 flex justify-center">
                 <button
                   onClick={() => refetch()}
-                  className="px-5 py-2 bg-[#2c1ee8] text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors"
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-[0.97]"
                 >
                   Coba Lagi
                 </button>
@@ -102,9 +103,9 @@ export default function MadingSection() {
               className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
             >
               {/* Featured Card (Left) */}
-              <div className="lg:col-span-7 bg-slate-50 border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between group hover:shadow-md hover:border-slate-300 transition-all duration-300">
+              <div className="lg:col-span-7 bg-slate-50/80 border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col justify-between group hover:shadow-lg hover:border-slate-300 transition-all duration-300">
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-                  <div className="sm:col-span-5 relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-200/60">
+                  <div className="sm:col-span-5 relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-200/60 shadow-xs">
                     <Image
                       src={
                         featuredArticle.image ||
@@ -114,17 +115,17 @@ export default function MadingSection() {
                       alt={featuredArticle.title}
                       fill
                       sizes="(max-width: 640px) 100vw, 240px"
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
                       unoptimized
                     />
                   </div>
 
                   <div className="sm:col-span-7 flex flex-col justify-between h-full">
                     <div>
-                      <span className="inline-block bg-blue-50 text-[#2c1ee8] border border-blue-100/80 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider mb-2.5">
+                      <span className="inline-block bg-white text-slate-800 border border-slate-200 px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider mb-2.5 shadow-2xs">
                         {featuredArticle.category || "Berita Utama"}
                       </span>
-                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug mb-2 tracking-tight line-clamp-2">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug mb-2 tracking-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
                         {featuredArticle.title}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal mb-4 line-clamp-3">
@@ -134,10 +135,10 @@ export default function MadingSection() {
 
                     <Link
                       href={`/mading/${featuredArticle.id || 1}`}
-                      className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#2c1ee8] hover:text-blue-700 transition-colors self-start group/btn"
+                      className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors self-start group/btn"
                     >
                       <span>Baca Artikel</span>
-                      <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-1" />
+                      <ArrowRight className="w-4 h-4 text-blue-600 transition-transform duration-200 group-hover/btn:translate-x-1" />
                     </Link>
                   </div>
                 </div>
@@ -147,7 +148,7 @@ export default function MadingSection() {
               {highlightArticle && (
                 <Link
                   href={`/mading/${highlightArticle.id || 2}`}
-                  className="lg:col-span-5 relative rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 group cursor-pointer min-h-[240px] flex flex-col justify-end p-5 sm:p-6 hover:shadow-md transition-all duration-300"
+                  className="lg:col-span-5 relative rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 group cursor-pointer min-h-[240px] flex flex-col justify-end p-5 sm:p-6 hover:shadow-lg transition-all duration-300 bg-slate-900"
                 >
                   <Image
                     src={
@@ -158,14 +159,14 @@ export default function MadingSection() {
                     alt={highlightArticle.title}
                     fill
                     sizes="(max-width: 1024px) 100vw, 400px"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
                     unoptimized
                   />
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent z-10" />
 
                   <div className="relative z-20">
-                    <span className="inline-block bg-white/90 text-slate-900 text-[11px] font-bold px-2.5 py-0.5 rounded-md mb-2">
+                    <span className="inline-block bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-2.5 py-0.5 rounded-md mb-2 shadow-2xs">
                       {highlightArticle.category || "Pengumuman"}
                     </span>
                     <h3 className="text-base sm:text-lg font-bold text-white leading-snug line-clamp-2">
@@ -179,25 +180,25 @@ export default function MadingSection() {
         </div>
 
         {/* Bottom Action Button */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-10 flex justify-center">
           <Link
             href="/mading"
-            className="inline-flex items-center justify-center gap-2 bg-[#2c1ee8] hover:bg-blue-700 text-white font-semibold text-sm sm:text-base px-6 py-3 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm sm:text-base px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.97] border border-slate-800"
           >
             <span>Jelajahi Seluruh Mading Digital</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 text-blue-400" />
           </Link>
         </div>
       </div>
 
       {/* Detail Modal */}
       {selectedArticle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fadeIn">
           <div
-            className="relative w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto border border-gray-100 text-gray-900"
+            className="relative w-full max-w-xl bg-white rounded-2xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col my-auto border border-slate-200 text-slate-900"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative h-48 sm:h-60 w-full bg-gray-900">
+            <div className="relative h-48 sm:h-60 w-full bg-slate-900">
               <Image
                 src={
                   selectedArticle.image ||
@@ -209,11 +210,11 @@ export default function MadingSection() {
                 className="object-cover"
                 unoptimized
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
 
               <button
                 onClick={() => setSelectedArticle(null)}
-                className="absolute top-3 right-3 bg-black/50 hover:bg-black/80 text-white rounded-full p-1.5 backdrop-blur-md transition-colors cursor-pointer"
+                className="absolute top-3 right-3 bg-slate-950/60 hover:bg-slate-950/90 text-white rounded-full p-1.5 backdrop-blur-md transition-colors cursor-pointer border border-white/20"
                 aria-label="Tutup modal"
               >
                 <svg
@@ -232,7 +233,7 @@ export default function MadingSection() {
               </button>
 
               <div className="absolute bottom-3 left-5 right-5 text-white">
-                <span className="bg-[#2c1ee8] text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full mb-1.5 inline-block">
+                <span className="bg-white/90 backdrop-blur-md text-slate-900 text-[11px] font-bold px-2.5 py-0.5 rounded-md mb-2 inline-block">
                   {selectedArticle.category}
                 </span>
                 <h3 className="text-lg sm:text-xl font-bold leading-snug drop-shadow-md">
@@ -242,29 +243,29 @@ export default function MadingSection() {
             </div>
 
             <div className="p-5 sm:p-6 overflow-y-auto space-y-3">
-              <div className="flex items-center justify-between text-xs text-gray-500 border-b border-gray-100 pb-2.5">
+              <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-100 pb-2.5">
                 <span>
                   Penulis:{" "}
-                  <strong className="text-gray-800">
+                  <strong className="text-slate-800">
                     {selectedArticle.author || "Redaksi"}
                   </strong>
                 </span>
               </div>
-              <div className="text-gray-700 leading-relaxed text-sm whitespace-pre-line text-justify">
+              <div className="text-slate-700 leading-relaxed text-sm whitespace-pre-line text-justify">
                 {selectedArticle.content || selectedArticle.summary}
               </div>
             </div>
 
-            <div className="p-3.5 sm:p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+            <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
               <Link
                 href={`/mading/${selectedArticle.id}`}
-                className="text-xs font-bold text-[#2c1ee8] hover:underline"
+                className="text-xs font-bold text-slate-900 hover:text-blue-600 transition-colors"
               >
                 Buka Halaman Penuh →
               </Link>
               <button
                 onClick={() => setSelectedArticle(null)}
-                className="bg-[#2c1ee8] hover:bg-[#2013ce] text-white font-semibold px-5 py-2 rounded-full text-sm transition-colors cursor-pointer"
+                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-5 py-2 rounded-xl text-sm transition-all cursor-pointer shadow-xs active:scale-[0.97]"
               >
                 Tutup
               </button>

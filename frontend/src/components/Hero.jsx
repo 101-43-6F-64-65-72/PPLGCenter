@@ -29,9 +29,12 @@ export default function Hero() {
   return (
     <section
       id="home"
-      className="w-full bg-white py-12 sm:py-16 lg:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
+      className="w-full bg-gradient-to-b from-slate-50/80 via-white to-white py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-grid-pattern"
     >
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+      {/* Background ambient lighting blur */}
+      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-400/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         {/* Left Column: Heading, Subtitle & CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -39,16 +42,20 @@ export default function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="lg:col-span-6 flex flex-col items-start"
         >
-          {/* Section Kicker / Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100/80 text-[#2c1ee8] text-xs font-semibold tracking-wide uppercase mb-5">
-            <span>Student Center SMKN 2 Surakarta</span>
+          {/* Live Status Pill Kicker */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/5 border border-slate-900/10 text-slate-800 text-[11px] font-mono tracking-wider uppercase mb-6 shadow-xs select-none">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="font-semibold text-slate-900">Student Center SMKN 2 Surakarta</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15] mb-5">
-            Mencetak Lulusan Unggul & Ready-to-Work
+          <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-5">
+            Mencetak Lulusan Unggul & <span className="text-slate-900 underline decoration-blue-500/40 decoration-wavy decoration-2 underline-offset-4">Ready-to-Work</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
             Program pengembangan sekolah kejuruan terdepan untuk menghasilkan
             lulusan kompeten dan berkarakter, diselaraskan secara mendalam
             dengan kebutuhan dunia usaha, industri, dan kerja (DUDI).
@@ -58,25 +65,27 @@ export default function Hero() {
             <PrimaryButton text="Jelajahi Portal" href="/ekstrakurikuler" />
             <Link
               href="/fasilitas"
-              className="inline-flex items-center justify-center font-semibold text-sm sm:text-base px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors duration-200 cursor-pointer"
+              className="inline-flex items-center justify-center font-semibold text-sm sm:text-base px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl border border-slate-200/90 text-slate-800 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 cursor-pointer shadow-xs active:scale-[0.97] select-none"
             >
               Katalog Fasilitas
             </Link>
           </div>
 
-          {/* Clean Integrated Highlights / Stats Grid */}
-          <div className="w-full grid grid-cols-3 gap-3 sm:gap-4 border-t border-slate-100 pt-6">
+          {/* Integrated Highlights / Stats Grid */}
+          <div className="w-full grid grid-cols-3 gap-3 sm:gap-4 border-t border-slate-200/80 pt-6">
             {HERO_STATS.map((stat, idx) => {
               const IconComp = stat.icon;
               return (
-                <div key={idx} className="flex flex-col items-start gap-1">
-                  <div className="flex items-center gap-1.5 text-blue-600 text-xs font-semibold">
-                    <IconComp className="w-4 h-4 shrink-0 text-[#2c1ee8]" />
+                <div key={idx} className="flex flex-col items-start gap-1.5 p-2 rounded-xl hover:bg-slate-50/80 transition-colors">
+                  <div className="flex items-center gap-1.5 text-slate-900 text-xs font-semibold">
+                    <div className="p-1 rounded-md bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+                      <IconComp className="w-3.5 h-3.5" />
+                    </div>
                     <span className="text-slate-900 font-bold text-xs sm:text-sm truncate">
                       {stat.title}
                     </span>
                   </div>
-                  <span className="text-[11px] sm:text-xs text-slate-500 truncate">
+                  <span className="text-[11px] sm:text-xs text-slate-500 truncate pl-0.5">
                     {stat.subtitle}
                   </span>
                 </div>
@@ -92,21 +101,28 @@ export default function Hero() {
           transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
           className="lg:col-span-6 w-full flex justify-center lg:justify-end"
         >
-          <div className="relative w-full max-w-[480px] aspect-[4/3] sm:aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm group">
+          <div className="relative w-full max-w-[490px] aspect-[4/3] rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/90 shadow-xl shadow-slate-900/10 group">
             <Image
               src="/images/smknegeri2surakarta_cover.webp"
               alt="SMK Negeri 2 Surakarta"
               fill
               priority
-              sizes="(max-width: 768px) 100vw, 480px"
-              className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+              sizes="(max-width: 768px) 100vw, 490px"
+              className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 text-white">
-              <span className="text-xs font-medium text-slate-200 uppercase tracking-wider block">
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
+            
+            {/* Top Floating Glass Badge */}
+            <div className="absolute top-4 right-4 z-10 px-3 py-1 rounded-full bg-slate-950/60 backdrop-blur-md border border-white/20 text-white text-[11px] font-medium tracking-wide">
+              Official Campus
+            </div>
+
+            {/* Bottom Info Lockup */}
+            <div className="absolute bottom-4 left-4 right-4 text-white z-10 flex flex-col gap-0.5">
+              <span className="text-[11px] font-mono uppercase text-blue-300 tracking-wider">
                 Kampus Utama
               </span>
-              <span className="text-sm sm:text-base font-bold text-white">
+              <span className="text-base sm:text-lg font-bold text-white tracking-tight">
                 SMK Negeri 2 Surakarta
               </span>
             </div>
@@ -116,3 +132,4 @@ export default function Hero() {
     </section>
   );
 }
+

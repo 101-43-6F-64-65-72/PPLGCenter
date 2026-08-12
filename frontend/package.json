@@ -9,10 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.1",
     "@hookform/resolvers": "^3.10.0",
     "@tanstack/react-query": "^5.66.0",
     "axios": "^1.7.9",
     "cloudinary": "^2.5.1",
+    "gsap": "^3.12.7",
     "lucide-react": "^0.475.0",
     "motion": "^12.4.3",
     "next": "16.2.12",

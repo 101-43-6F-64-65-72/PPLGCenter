@@ -147,8 +147,8 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 border-t border-slate-800 text-white">
-      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-12">
+    <footer className="bg-[#090d16] border-t border-slate-800/80 text-white relative">
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-12">
         {/* Main Grid: 4 columns */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {/* Column 1: Brand Info */}
@@ -164,16 +164,16 @@ export default function Footer() {
                   priority
                 />
               </div>
-              <div>
-                <span className="text-base font-bold text-white">
+              <div className="flex flex-col leading-tight">
+                <span className="text-base font-bold text-white tracking-tight">
                   Student Center
                 </span>
-                <span className="block text-xs text-slate-400">
+                <span className="text-xs text-slate-400 font-medium">
                   SMKN 2 Surakarta
                 </span>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-slate-400 text-left">
+            <p className="text-xs sm:text-sm leading-relaxed text-slate-400 text-left font-normal">
               Portal informasi dan layanan digital terpadu untuk memudahkan
               siswa SMKN 2 Surakarta dalam mengakses mading, ekstrakurikuler,
               fasilitas sekolah, dan pengajuan kegiatan dalam satu platform.
@@ -182,15 +182,15 @@ export default function Footer() {
 
           {/* Column 2: Quick Links */}
           <div className="flex flex-col space-y-4">
-            <h4 className="text-sm font-semibold text-white">Tautan Cepat</h4>
-            <ul className="space-y-2.5 text-sm">
+            <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">Tautan Cepat</h4>
+            <ul className="space-y-2.5 text-xs sm:text-sm">
               {quickLinks.map((item) => (
                 <li key={item.label}>
                   <Link
                     href={item.href}
-                    className="text-slate-400 hover:text-white transition-colors"
+                    className="text-slate-400 hover:text-white transition-colors duration-200 inline-flex items-center gap-1 group"
                   >
-                    {item.label}
+                    <span className="group-hover:translate-x-0.5 transition-transform duration-200">{item.label}</span>
                   </Link>
                 </li>
               ))}
@@ -199,8 +199,8 @@ export default function Footer() {
 
           {/* Column 3: Contact Info */}
           <div className="flex flex-col space-y-4">
-            <h4 className="text-sm font-semibold text-white">Kontak Kami</h4>
-            <ul className="space-y-3 text-sm">
+            <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">Kontak Kami</h4>
+            <ul className="space-y-3 text-xs sm:text-sm">
               {contactInfo.map((contact, index) => (
                 <li key={index} className="flex items-start gap-3">
                   {contact.icon}
@@ -225,8 +225,8 @@ export default function Footer() {
 
           {/* Column 4: Follow Us / Social Media */}
           <div className="flex flex-col space-y-4">
-            <h4 className="text-sm font-semibold text-white">Ikuti Kami</h4>
-            <p className="text-sm text-slate-400">
+            <h4 className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold">Ikuti Kami</h4>
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
               Dapatkan berita terbaru dan aktivitas sekolah melalui media sosial
               resmi kami.
             </p>
@@ -238,7 +238,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.name}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 transition-all duration-200 hover:border-slate-600 hover:bg-slate-800 hover:text-white shadow-xs"
                 >
                   {social.icon}
                 </a>
@@ -248,13 +248,18 @@ export default function Footer() {
         </div>
 
         {/* Divider & Copyright */}
-        <div className="mt-12 border-t border-slate-800 pt-6">
-          <p className="text-center text-xs text-slate-500">
-            &copy; 2026 Student Center SMK Negeri 2 Surakarta. Semua Hak Cipta
-            Dilindungi.
+        <div className="mt-14 border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <p>
+            &copy; 2026 Student Center SMK Negeri 2 Surakarta. Semua Hak Cipta Dilindungi.
           </p>
+          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+            <span>Preserving Functionality</span>
+            <span>•</span>
+            <span>High-End Vocational UI</span>
+          </div>
         </div>
       </div>
     </footer>
   );
 }
+
