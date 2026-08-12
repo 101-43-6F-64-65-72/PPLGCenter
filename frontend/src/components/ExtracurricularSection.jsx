@@ -26,7 +26,7 @@ export default function ExtracurricularSection() {
     setItemsVersion((v) => v + 1);
   }, []);
 
-  // GSAP ScrollTrigger Pinned Showcase - Pure Scroll Opacity Fade-In on Revolving Wheel
+  // GSAP ScrollTrigger Pinned Showcase - Unique Staggered Entrance Animations for Each Image Card
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -72,53 +72,69 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 2. Pure Scroll-Driven Staggered Opacity Fade-In (STRICT 0% INIT -> Perlahan Muncul saat Scroll)
-      // Card 0 (Top-Left): Opacity 0 -> 1 slowly from 0% to 30% scroll
+      // 2. Unique Asynchronous Staggered Entrance Animations for Each Image Card
+      // Card 0 (Top-Left): Starts early at offset 0.00 with top-left floating entrance
       tl.fromTo(
         cardEls[0],
-        { opacity: 0 },
+        { opacity: 0, x: -40, y: -30, scale: 0.8 },
         {
           opacity: 1,
-          ease: "power1.out",
+          x: 0,
+          y: 0,
+          scale: 1,
+          duration: 0.35,
+          ease: "power2.out",
           force3D: true,
         },
         0.00
       );
 
-      // Card 1 (Top-Right): Opacity 0 -> 1 slowly from 20% to 50% scroll
+      // Card 1 (Top-Right): Starts at offset 0.22 with top-right floating entrance & elastic feel
       tl.fromTo(
         cardEls[1],
-        { opacity: 0 },
+        { opacity: 0, x: 45, y: -25, scale: 0.82 },
         {
           opacity: 1,
-          ease: "power1.out",
+          x: 0,
+          y: 0,
+          scale: 1,
+          duration: 0.35,
+          ease: "back.out(1.4)",
           force3D: true,
         },
-        0.20
+        0.22
       );
 
-      // Card 2 (Bottom-Left): Opacity 0 -> 1 slowly from 40% to 70% scroll
+      // Card 2 (Bottom-Left): Starts at offset 0.45 with bottom-left floating entrance
       tl.fromTo(
         cardEls[2],
-        { opacity: 0 },
+        { opacity: 0, x: -35, y: 35, scale: 0.85 },
         {
           opacity: 1,
-          ease: "power1.out",
+          x: 0,
+          y: 0,
+          scale: 1,
+          duration: 0.35,
+          ease: "sine.out",
           force3D: true,
         },
-        0.40
+        0.45
       );
 
-      // Card 3 (Bottom-Right): Opacity 0 -> 1 slowly from 60% to 90% scroll
+      // Card 3 (Bottom-Right): Starts at offset 0.65 with bottom-right floating entrance
       tl.fromTo(
         cardEls[3],
-        { opacity: 0 },
+        { opacity: 0, x: 40, y: 30, scale: 0.8 },
         {
           opacity: 1,
-          ease: "power1.out",
+          x: 0,
+          y: 0,
+          scale: 1,
+          duration: 0.35,
+          ease: "power3.out",
           force3D: true,
         },
-        0.60
+        0.65
       );
 
       // 3. Interactive Flying Orbit Rings Effect (Flies Upwards into the Sky on Scroll Down!)
