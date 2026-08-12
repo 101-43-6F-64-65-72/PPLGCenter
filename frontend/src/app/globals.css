@@ -13,11 +13,17 @@ html,
 body {
   background-color: #ffffff;
   color: #0f172a;
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-plus-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   margin: 0;
   padding: 0;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-jetbrains-mono), monospace !important;
 }
 
 /* Glassmorphism & Surface Utilities */
@@ -92,4 +98,3 @@ body {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
-
