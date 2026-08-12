@@ -337,13 +337,13 @@ export default function NotificationsPage() {
           {/* TAB 1: Notifikasi Saya */}
           {activeTab === "my" && (
             <>
-              {/* Filters Bar */}
-              <div className="flex flex-wrap items-center gap-3 bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs">
-                <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Filter:</span>
+              {/* Filters Bar with Glassmorphism */}
+              <div className="flex flex-wrap items-center gap-3 bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-md shadow-blue-900/5">
+                <span className="text-xs text-slate-500 font-extrabold uppercase tracking-wider">Filter:</span>
                 <select
                   value={filterType}
                   onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
-                  className="bg-white border border-slate-300 text-xs font-semibold text-slate-800 rounded-md px-3 py-1.5 outline-none focus:border-slate-900"
+                  className="bg-white/90 border border-slate-200 text-xs font-semibold text-slate-800 rounded-xl px-3.5 py-2 outline-none focus:border-[#2c1ee8] focus:ring-2 focus:ring-blue-100 transition"
                 >
                   <option value="">Semua Tipe</option>
                   <option value="0">Pengumuman</option>
@@ -360,7 +360,7 @@ export default function NotificationsPage() {
                 <select
                   value={filterRead}
                   onChange={(e) => { setFilterRead(e.target.value); setPage(1); }}
-                  className="bg-white border border-slate-300 text-xs font-semibold text-slate-800 rounded-md px-3 py-1.5 outline-none focus:border-slate-900"
+                  className="bg-white/90 border border-slate-200 text-xs font-semibold text-slate-800 rounded-xl px-3.5 py-2 outline-none focus:border-[#2c1ee8] focus:ring-2 focus:ring-blue-100 transition"
                 >
                   <option value="">Semua Status</option>
                   <option value="unread">Belum Dibaca</option>
