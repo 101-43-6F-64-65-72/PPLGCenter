@@ -4,7 +4,7 @@ import React from "react";
 
 export default function FlyingRingsAccent({ ringsRef }) {
   return (
-    <div className="absolute inset-0 pointer-events-none select-none overflow-visible z-0">
+    <div className="hidden lg:block absolute inset-0 pointer-events-none select-none overflow-visible z-0">
       {/* Ring 1 - Top Left Orbit Bubble */}
       <div
         ref={(el) => {

@@ -111,43 +111,70 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef, onItemsLoad
   }, [onItemsLoaded]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none overflow-visible z-10">
-      {/* Ferris Wheel (Biang Lala) Revolving Pivot Container surrounding Center Stage */}
-      <div
-        ref={wheelRef}
-        className="relative w-full h-full transform-gpu origin-center overflow-visible will-change-transform"
-      >
+    <>
+      {/* MOBILE LAYOUT (< 1024px): Fast, Static, Lightweight 2x2 Grid with Zero Pinning Overhead */}
+      <div className="grid grid-cols-2 gap-3.5 w-full max-w-md mx-auto my-6 lg:hidden pointer-events-auto z-10">
         {items.map((img, idx) => (
           <div
-            key={img.id || idx}
-            ref={(el) => {
-              if (cardsRef) cardsRef.current[idx] = el;
-            }}
-            className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible transform-gpu will-change-transform`}
+            key={`mobile-${img.id || idx}`}
+            className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-900 border border-white/80 shadow-md"
           >
-            <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300 transform-gpu">
-              <Image
-                src={img.src}
-                alt={img.alt}
-                fill
-                sizes="(max-width: 768px) 50vw, 260px"
-                className="object-cover transition-transform duration-700 group-hover:scale-110"
-                unoptimized
-              />
-              
-              {/* Dark gradient bottom overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
-
-              {/* Glass Pill Label */}
-              <div className="absolute bottom-3 left-3 z-10 pr-2">
-                <span className="inline-block bg-white/95 backdrop-blur-md text-slate-900 text-xs font-extrabold px-3 py-1 rounded-xl shadow-sm border border-white/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-blue-400 transition-all duration-200 max-w-[140px] truncate">
-                  {img.label}
-                </span>
-              </div>
+            <Image
+              src={img.src}
+              alt={img.alt}
+              fill
+              sizes="(max-width: 768px) 50vw, 200px"
+              className="object-cover"
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+            <div className="absolute bottom-2 left-2 right-2">
+              <span className="inline-block bg-white/95 text-slate-900 text-[11px] font-bold px-2.5 py-0.5 rounded-lg truncate max-w-full">
+                {img.label}
+              </span>
             </div>
           </div>
         ))}
       </div>
-    </div>
+
+      {/* DESKTOP LAYOUT (>= 1024px): Full GSAP ScrollTrigger Biang Lala Revolving Wheel */}
+      <div className="hidden lg:block absolute inset-0 pointer-events-none select-none overflow-visible z-10">
+        <div
+          ref={wheelRef}
+          className="relative w-full h-full transform-gpu origin-center overflow-visible will-change-transform"
+        >
+          {items.map((img, idx) => (
+            <div
+              key={`desktop-${img.id || idx}`}
+              ref={(el) => {
+                if (cardsRef) cardsRef.current[idx] = el;
+              }}
+              className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible transform-gpu will-change-transform`}
+            >
+              <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300 transform-gpu">
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  fill
+                  sizes="260px"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  unoptimized
+                />
+                
+                {/* Dark gradient bottom overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
+
+                {/* Glass Pill Label */}
+                <div className="absolute bottom-3 left-3 z-10 pr-2">
+                  <span className="inline-block bg-white/95 backdrop-blur-md text-slate-900 text-xs font-extrabold px-3 py-1 rounded-xl shadow-sm border border-white/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-blue-400 transition-all duration-200 max-w-[140px] truncate">
+                    {img.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
