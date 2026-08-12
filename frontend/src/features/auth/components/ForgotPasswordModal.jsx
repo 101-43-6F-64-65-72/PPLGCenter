@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import ErrorAlert from "@/components/common/ErrorAlert";
@@ -33,6 +34,8 @@ const MotionDiv = motionImport?.div || FallbackDiv;
 const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
 
 export default function ForgotPasswordModal({ isOpen, onClose }) {
+  const [mounted, setMounted] = useState(false);
+
   // Steps: 'request' | 'pending' | 'set_new' | 'success'
   const [step, setStep] = useState("request");
 
@@ -52,6 +55,22 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock body scroll when overlay is active
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   // Step 1: Submit Reset Request
   const handleCreateRequest = async (e) => {
@@ -169,7 +188,9 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
     onClose();
   };
 
-  return (
+  if (!mounted) return null;
+
+  const modalContent = (
     <AnimatePresenceComponent mode="wait">
       {isOpen && (
         <MotionDiv
@@ -177,7 +198,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md font-sans"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md font-sans select-none"
           onClick={handleResetModal}
         >
           <MotionDiv
@@ -185,7 +206,7 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
             animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 25, rotateX: 6 }}
             transition={{ type: "spring", stiffness: 350, damping: 26 }}
-            className="relative w-full max-w-md bg-[#2c1ee8]/95 border border-white/25 rounded-[32px] p-6 sm:p-8 text-white shadow-2xl shadow-slate-950/80 backdrop-blur-2xl space-y-6 overflow-hidden my-auto pointer-events-auto"
+            className="relative w-full max-w-md bg-[#2c1ee8] border border-white/25 rounded-[32px] p-6 sm:p-8 text-white shadow-2xl shadow-slate-950/90 backdrop-blur-2xl space-y-6 overflow-hidden my-auto pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Glowing Ambient Background Orbs */}
@@ -461,4 +482,6 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
       )}
     </AnimatePresenceComponent>
   );
+
+  return createPortal(modalContent, document.body);
 }
