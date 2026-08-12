@@ -34,6 +34,13 @@ export default function MadingSection() {
   const featuredArticle = articles[0];
   const highlightArticle = articles[1];
 
+  // Helper for resolving announcement images with fallbacks
+  const getArticleImage = (art, fallback = "/images/tempat/aulasmkn2ska.jpg") => {
+    if (!art) return fallback;
+    const raw = art.coverImageUrl || art.imageUrl || art.image || art.photoUrl || art.photo;
+    return resolveImageUrl(raw, fallback);
+  };
+
   // Interactive mouse tracking spotlight effect
   const handleMouseMove = (e) => {
     if (!featuredCardRef.current) return;
@@ -186,9 +193,7 @@ export default function MadingSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center relative z-10">
                   <div className="sm:col-span-5 relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/80 shadow-xs">
                     <Image
-                      src={resolveImageUrl(
-                        featuredArticle.image || featuredArticle.imageUrl
-                      )}
+                      src={getArticleImage(featuredArticle, "/images/tempat/aulasmkn2ska.jpg")}
                       alt={featuredArticle.title}
                       fill
                       sizes="(max-width: 640px) 100vw, 260px"
@@ -228,9 +233,7 @@ export default function MadingSection() {
                   className="lg:col-span-5 relative rounded-3xl overflow-hidden shadow-md border border-slate-200/90 group cursor-pointer min-h-[260px] flex flex-col justify-end p-6 sm:p-7 hover:shadow-xl transition-all duration-300 bg-slate-900"
                 >
                   <Image
-                    src={resolveImageUrl(
-                      highlightArticle.image || highlightArticle.imageUrl
-                    )}
+                    src={getArticleImage(highlightArticle, "/images/tempat/halamandepansmkn2ska.jpg")}
                     alt={highlightArticle.title}
                     fill
                     sizes="(max-width: 1024px) 100vw, 420px"

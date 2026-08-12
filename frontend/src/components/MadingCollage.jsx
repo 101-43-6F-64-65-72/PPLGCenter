@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "@/lib/motion";
-import { Newspaper, BellRing, Sparkles, Flame } from "lucide-react";
+import { Newspaper, BellRing } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils";
 
 const DEFAULT_MADING = [
@@ -26,19 +26,21 @@ export default function MadingCollage({ articles = [] }) {
   const topArticle = articles[0];
   const secondArticle = articles[1];
 
+  const getArticleImage = (art, fallbackIdx) => {
+    if (!art) return DEFAULT_MADING[fallbackIdx].src;
+    const raw = art.coverImageUrl || art.imageUrl || art.image || art.photoUrl || art.photo;
+    return resolveImageUrl(raw, DEFAULT_MADING[fallbackIdx].src);
+  };
+
   const topCard = {
-    src: resolveImageUrl(
-      topArticle?.image || topArticle?.imageUrl || DEFAULT_MADING[0].src
-    ),
+    src: getArticleImage(topArticle, 0),
     alt: topArticle?.title || DEFAULT_MADING[0].alt,
     label: topArticle?.category || DEFAULT_MADING[0].label,
     title: topArticle?.title || "Pengumuman Prestasi & Kegiatan Siswa",
   };
 
   const bottomCard = {
-    src: resolveImageUrl(
-      secondArticle?.image || secondArticle?.imageUrl || DEFAULT_MADING[1].src
-    ),
+    src: getArticleImage(secondArticle, 1),
     alt: secondArticle?.title || DEFAULT_MADING[1].alt,
     label: secondArticle?.category || DEFAULT_MADING[1].label,
     title: secondArticle?.title || "Informasi Resmi SMKN 2 Surakarta",

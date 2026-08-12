@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { motion, AnimatePresence } from "@/lib/motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import facilityService from "@/services/facilityService";
@@ -50,6 +51,8 @@ const DEFAULT_FACILITIES = [
 
 export default function FacilityCatalogSection() {
   const [facilities, setFacilities] = useState(DEFAULT_FACILITIES);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
+  const activeIndexRef = useRef(0);
   const sectionRef = useRef(null);
   const cardsRef = useRef([]);
 
@@ -98,26 +101,20 @@ export default function FacilityCatalogSection() {
     };
   }, []);
 
-  // Setup GSAP ScrollTrigger Pinned Left Content + Scrollable Card Stack
+  // Setup GSAP ScrollTrigger Pinned Left Content + Smooth Card Stack
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
-    // Check prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
 
     let mm = gsap.matchMedia();
 
-    // Desktop GSAP ScrollTrigger setup (>= 1024px)
     mm.add("(min-width: 1024px)", () => {
       const cardEls = cardsRef.current.filter(Boolean);
       if (cardEls.length < 2) return;
 
-      // 1. Initial Stack Positions
-      // Card 0: y: 0, scale: 1, zIndex: 40
-      // Card 1: y: 35px, scale: 0.96, zIndex: 30
-      // Card 2: y: 70px, scale: 0.92, zIndex: 20
-      // Card 3: y: 105px, scale: 0.88, zIndex: 10
+      // Initial Stack Positions
       cardEls.forEach((card, idx) => {
         gsap.set(card, {
           y: idx * 35,
@@ -128,7 +125,7 @@ export default function FacilityCatalogSection() {
         });
       });
 
-      // 2. Timeline with ScrollTrigger pin & scrub
+      // Ultra-smooth GSAP ScrollTrigger timeline with scrub: 1.2
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
@@ -136,20 +133,25 @@ export default function FacilityCatalogSection() {
           end: "+=2800",
           pin: true,
           pinSpacing: true,
-          scrub: 1,
+          scrub: 1.2,
           anticipatePin: 1,
           invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const p = self.progress;
+            const count = cardEls.length;
+            const idx = Math.min(count - 1, Math.floor(p * count));
+            if (idx !== activeIndexRef.current) {
+              activeIndexRef.current = idx;
+              setActiveCardIndex(idx);
+            }
+          },
         },
       });
 
-      // 3. Card Stack Sequence Transitions
-      // Phase 1: Card 0 moves up & out, Card 1 becomes foreground (y:0, scale:1)
-      // Phase 2: Card 1 moves up & out, Card 2 becomes foreground
-      // Phase 3: Card 2 moves up & out, Card 3 becomes foreground
+      // Card Stack Sequence Transitions
       for (let i = 0; i < cardEls.length - 1; i++) {
         const currentCard = cardEls[i];
         
-        // Active card moves up & out
         tl.to(
           currentCard,
           {
@@ -162,7 +164,6 @@ export default function FacilityCatalogSection() {
           i * 1.2
         );
 
-        // Subsequent cards step forward in the stack
         for (let j = i + 1; j < cardEls.length; j++) {
           const nextCard = cardEls[j];
           const relativeIndex = j - (i + 1);
@@ -179,7 +180,6 @@ export default function FacilityCatalogSection() {
         }
       }
 
-      // Refresh ScrollTrigger positions after DOM calculations
       setTimeout(() => {
         ScrollTrigger.refresh();
       }, 100);
@@ -194,6 +194,8 @@ export default function FacilityCatalogSection() {
     };
   }, [facilities]);
 
+  const activeFacility = facilities[activeCardIndex] || facilities[0];
+
   return (
     <section
       ref={sectionRef}
@@ -203,27 +205,37 @@ export default function FacilityCatalogSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-0 min-h-screen flex items-center">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
           
-          {/* LEFT CONTENT COLUMN (~45%) - 100% Stationary & Pinned during sequence */}
+          {/* LEFT CONTENT COLUMN (~45%) - Pinned & Dynamic Text Morphing */}
           <div className="lg:col-span-5 flex flex-col items-start justify-center lg:py-12">
-            {/* Section Kicker Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
-              <Building2 className="w-3.5 h-3.5 text-[#2c1ee8]" />
-              <span className="font-semibold">Fasilitas Sekolah</span>
-            </div>
+            
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeCardIndex}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="w-full flex flex-col items-start"
+              >
+                {/* Dynamic Category Kicker Badge */}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[11px] font-mono tracking-widest uppercase mb-4 select-none">
+                  <Building2 className="w-3.5 h-3.5 text-[#2c1ee8]" />
+                  <span className="font-semibold">{activeFacility.category || "Fasilitas Sekolah"}</span>
+                </div>
 
-            {/* Heading */}
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-5">
-              Katalog & <br className="hidden sm:inline" />
-              Peminjaman Fasilitas
-            </h2>
+                {/* Dynamic Heading Morph */}
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-4">
+                  {activeFacility.name}
+                </h2>
 
-            {/* Description */}
-            <p className="text-base text-slate-600 leading-relaxed mb-6 max-w-md text-left font-normal">
-              Akses sarana sekolah modern, dari laboratorium praktik hingga ruang kolaborasi,
-              dan ajukan peminjaman dengan alur yang transparan.
-            </p>
+                {/* Dynamic Description Morph */}
+                <p className="text-base text-slate-600 leading-relaxed mb-6 max-w-md text-left font-normal">
+                  {activeFacility.description}
+                </p>
+              </motion.div>
+            </AnimatePresence>
 
-            {/* Feature Highlight Badges */}
+            {/* Static Highlight Badges */}
             <div className="flex flex-wrap gap-2 mb-8">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-slate-100/80 border border-slate-200/90 text-slate-700 shadow-2xs">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Lab Komputer & Kejuruan
@@ -267,7 +279,7 @@ export default function FacilityCatalogSection() {
                     unoptimized
                   />
 
-                  {/* Gradient Overlay matching reference style */}
+                  {/* Gradient Overlay */}
                   <div className={`absolute inset-0 bg-gradient-to-t ${facility.gradient} opacity-85 group-hover:opacity-90 transition-opacity duration-300`} />
 
                   {/* Text Content Overlay at Bottom */}
@@ -286,7 +298,7 @@ export default function FacilityCatalogSection() {
               ))}
             </div>
 
-            {/* MOBILE & TABLET STACK VIEW (< 1024px) - Clean vertical stack */}
+            {/* MOBILE & TABLET STACK VIEW (< 1024px) */}
             <div className="lg:hidden w-full flex flex-col gap-5">
               {facilities.map((facility, index) => (
                 <div
