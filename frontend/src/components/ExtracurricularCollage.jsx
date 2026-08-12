@@ -11,7 +11,7 @@ const DEFAULT_ITEMS = [
     src: "/images/tempat/lapangansmkn2ska.jpg",
     alt: "Ekstrakurikuler Olahraga",
     label: "Olahraga",
-    positionClass: "top-2 left-2 sm:-top-4 sm:-left-6 lg:-top-8 lg:-left-12 z-30",
+    positionClass: "top-4 left-4 sm:top-2 sm:left-4 lg:top-0 lg:left-0 z-30",
     sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
   },
   {
@@ -19,7 +19,7 @@ const DEFAULT_ITEMS = [
     src: "/images/eskul.jpeg",
     alt: "Ekstrakurikuler Paskibra",
     label: "Paskibra",
-    positionClass: "top-2 right-2 sm:-top-4 sm:-right-6 lg:-top-8 lg:-right-12 z-10",
+    positionClass: "top-4 right-4 sm:top-2 sm:right-4 lg:top-0 lg:right-0 z-10",
     sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
   },
   {
@@ -27,7 +27,7 @@ const DEFAULT_ITEMS = [
     src: "/images/mading.jpeg",
     alt: "Ekstrakurikuler PMR & Seni",
     label: "PMR & Seni",
-    positionClass: "bottom-2 left-2 sm:-bottom-4 sm:-left-6 lg:-bottom-8 lg:-left-10 z-10",
+    positionClass: "bottom-4 left-4 sm:bottom-2 sm:left-4 lg:bottom-0 lg:left-0 z-10",
     sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
   },
   {
@@ -35,7 +35,7 @@ const DEFAULT_ITEMS = [
     src: "/images/fasilitas.jpeg",
     alt: "Ekstrakurikuler Pramuka",
     label: "Pramuka",
-    positionClass: "bottom-2 right-2 sm:-bottom-4 sm:-right-6 lg:-bottom-8 lg:-right-10 z-30",
+    positionClass: "bottom-4 right-4 sm:bottom-2 sm:right-4 lg:bottom-0 lg:right-0 z-30",
     sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
   },
 ];
@@ -110,11 +110,11 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
   }, []);
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-10">
+    <div className="absolute inset-0 pointer-events-none select-none overflow-visible z-10">
       {/* Ferris Wheel (Biang Lala) Revolving Pivot Container surrounding Center Stage */}
       <div
         ref={wheelRef}
-        className="relative w-full h-full transform-gpu origin-center overflow-hidden will-change-transform"
+        className="relative w-full h-full transform-gpu origin-center overflow-visible will-change-transform"
       >
         {items.map((img, idx) => (
           <div
@@ -122,7 +122,7 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
             ref={(el) => {
               if (cardsRef) cardsRef.current[idx] = el;
             }}
-            className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-hidden transform-gpu will-change-transform`}
+            className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible transform-gpu will-change-transform`}
           >
             <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300 transform-gpu">
               <Image

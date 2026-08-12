@@ -8,6 +8,7 @@ import { Trophy, ShieldCheck, GraduationCap, MapPin, Sparkles } from "lucide-rea
 import PrimaryButton from "./PrimaryButton";
 import { resolveImageUrl } from "@/lib/utils";
 import MorphingSvg from "@/components/common/MorphingSvg";
+import ChalkboardOverlay from "@/components/common/ChalkboardOverlay";
 
 const HERO_STATS = [
   {
@@ -54,6 +55,9 @@ export default function Hero() {
       id="home"
       className="w-full bg-gradient-to-b from-blue-50/40 via-white to-white py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-grid-pattern select-none"
     >
+      {/* Background Chalkboard Formulas & Random Graph Accent Overlay */}
+      <ChalkboardOverlay />
+
       {/* Background SVG Morphing Shard & Blob Elements */}
       <MorphingSvg
         preset="shard"

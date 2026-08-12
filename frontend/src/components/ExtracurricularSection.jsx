@@ -19,7 +19,7 @@ export default function ExtracurricularSection() {
   const wheelRef = useRef(null);
   const cardsRef = useRef([]);
 
-  // GSAP ScrollTrigger Pinned Showcase with refreshPriority & 100% Upright Images
+  // GSAP ScrollTrigger Pinned Showcase with refreshPriority & 100% Upright Images & Full Overflow Visible
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -33,7 +33,7 @@ export default function ExtracurricularSection() {
       const cardEls = cardsRef.current.filter(Boolean);
       if (!wheel || cardEls.length < 4) return;
 
-      // Pinned GSAP ScrollTrigger Timeline with refreshPriority: 1
+      // Pinned GSAP ScrollTrigger Timeline with refreshPriority: 1 & Silky Smooth Reveal
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
@@ -41,7 +41,7 @@ export default function ExtracurricularSection() {
           end: "+=1600",
           pin: true,
           pinSpacing: true,
-          scrub: 1.2,
+          scrub: 1.4,
           anticipatePin: 1,
           refreshPriority: 1,
           invalidateOnRefresh: true,
@@ -54,82 +54,82 @@ export default function ExtracurricularSection() {
         { rotation: -50 },
         {
           rotation: 0,
-          ease: "power2.inOut",
+          ease: "power2.out",
           force3D: true,
         },
         0
       );
 
-      // 2. Card 0 (Top-Left): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
+      // 2. Card 0 (Top-Left): Fluid reveal counter-rotation (+50deg -> 0deg)
       tl.fromTo(
         cardEls[0],
-        { rotation: 50, scale: 0.85, x: "20px", y: "20px", opacity: 0.7 },
+        { rotation: 50, scale: 0.75, x: "15px", y: "15px", opacity: 0.3 },
         {
           rotation: 0,
-          scale: 1.1,
-          x: "-50px",
-          y: "-30px",
+          scale: 1.05,
+          x: "-35px",
+          y: "-20px",
           opacity: 1,
-          ease: "power2.inOut",
+          ease: "power3.out",
           force3D: true,
         },
         0
       );
 
-      // 3. Card 1 (Top-Right): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
+      // 3. Card 1 (Top-Right): Fluid reveal counter-rotation (+50deg -> 0deg)
       tl.fromTo(
         cardEls[1],
-        { rotation: 50, scale: 0.82, x: "-20px", y: "20px", opacity: 0.7 },
+        { rotation: 50, scale: 0.72, x: "-15px", y: "15px", opacity: 0.3 },
+        {
+          rotation: 0,
+          scale: 0.9,
+          x: "40px",
+          y: "-18px",
+          opacity: 1,
+          ease: "power3.out",
+          force3D: true,
+        },
+        0
+      );
+
+      // 4. Card 2 (Bottom-Left): Fluid reveal counter-rotation (+50deg -> 0deg)
+      tl.fromTo(
+        cardEls[2],
+        { rotation: 50, scale: 0.72, x: "15px", y: "-15px", opacity: 0.3 },
         {
           rotation: 0,
           scale: 0.92,
-          x: "55px",
-          y: "-25px",
+          x: "-30px",
+          y: "25px",
           opacity: 1,
-          ease: "power2.inOut",
+          ease: "power3.out",
           force3D: true,
         },
         0
       );
 
-      // 4. Card 2 (Bottom-Left): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
-      tl.fromTo(
-        cardEls[2],
-        { rotation: 50, scale: 0.82, x: "20px", y: "-20px", opacity: 0.7 },
-        {
-          rotation: 0,
-          scale: 0.94,
-          x: "-45px",
-          y: "40px",
-          opacity: 1,
-          ease: "power2.inOut",
-          force3D: true,
-        },
-        0
-      );
-
-      // 5. Card 3 (Bottom-Right): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
+      // 5. Card 3 (Bottom-Right): Fluid reveal counter-rotation (+50deg -> 0deg)
       tl.fromTo(
         cardEls[3],
-        { rotation: 50, scale: 0.85, x: "-20px", y: "-20px", opacity: 0.7 },
+        { rotation: 50, scale: 0.75, x: "-15px", y: "-15px", opacity: 0.3 },
         {
           rotation: 0,
-          scale: 1.12,
-          x: "50px",
-          y: "35px",
+          scale: 1.08,
+          x: "35px",
+          y: "22px",
           opacity: 1,
-          ease: "power2.inOut",
+          ease: "power3.out",
           force3D: true,
         },
         0
       );
 
-      // 6. Centered Text subtle scale & float reveal
+      // 6. Centered Text smooth scale & float reveal
       if (textContentRef.current) {
         tl.fromTo(
           textContentRef.current,
-          { scale: 0.96, y: "15px" },
-          { scale: 1, y: "0px", ease: "power1.out" },
+          { scale: 0.92, y: "24px", opacity: 0.5 },
+          { scale: 1, y: "0px", opacity: 1, ease: "power2.out" },
           0
         );
       }
@@ -152,7 +152,7 @@ export default function ExtracurricularSection() {
     <section
       ref={sectionRef}
       id="extracurricular"
-      className="w-full bg-slate-50/70 border-t border-slate-200/80 relative overflow-hidden bg-dots-pattern select-none z-10"
+      className="w-full bg-slate-50/70 border-t border-slate-200/80 relative overflow-visible bg-dots-pattern select-none z-10 py-24 sm:py-32"
     >
       {/* Background SVG Morphing Ambient Star Element */}
       <MorphingSvg
@@ -164,8 +164,8 @@ export default function ExtracurricularSection() {
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-35 pointer-events-none -z-10"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-0 min-h-screen flex items-center justify-center relative overflow-hidden">
-        <div className="relative max-w-6xl mx-auto min-h-[560px] w-full flex items-center justify-center overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-0 min-h-[580px] flex items-center justify-center relative overflow-visible">
+        <div className="relative max-w-6xl mx-auto min-h-[560px] w-full flex items-center justify-center overflow-visible">
           
           {/* Encircling Orbiting Biang Lala Image Collage (Surrounding Center Text) */}
           <ExtracurricularCollage
