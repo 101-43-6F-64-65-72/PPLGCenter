@@ -21,7 +21,7 @@ export default function ExtracurricularSection() {
   const cardsRef = useRef([]);
   const ringsRef = useRef([]);
 
-  // GSAP ScrollTrigger Pinned Showcase with Cascading Staggered Card Reveal + Flying Rings Flight Effect
+  // GSAP ScrollTrigger Pinned Showcase with Asynchronous Staggered Rotation & 0% Opacity Start
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -37,7 +37,10 @@ export default function ExtracurricularSection() {
 
       if (!wheel || cardEls.length < 4) return;
 
-      // Pinned GSAP ScrollTrigger Timeline with refreshPriority: 1
+      // Ensure all 4 cards start strictly at opacity 0
+      gsap.set(cardEls, { opacity: 0, scale: 0.5 });
+
+      // Pinned GSAP ScrollTrigger Timeline
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
@@ -64,69 +67,69 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 2. Cascading Staggered Smooth Fade-In Reveal for the 4 Cards (One after another!)
-      // Card 0 (Top-Left) - Appears first at timeline offset 0.0
+      // 2. Asynchronous Staggered Rotation & Fade-In Reveal (Each card rotates & fades in at a unique time/angle!)
+      // Card 0 (Top-Left) - Starts at offset 0.00 (Clockwise entrance)
       tl.fromTo(
         cardEls[0],
-        { rotation: 70, scale: 0.65, x: "20px", y: "20px", opacity: 0 },
+        { opacity: 0, rotation: 65, scale: 0.5, x: "30px", y: "30px" },
         {
+          opacity: 1,
           rotation: 0,
           scale: 1.05,
           x: "-35px",
           y: "-20px",
-          opacity: 1,
           ease: "power2.out",
           force3D: true,
         },
-        0.0
+        0.00
       );
 
-      // Card 1 (Top-Right) - Appears second at timeline offset 0.15
+      // Card 1 (Top-Right) - Starts at offset 0.18 (Counter-clockwise entrance)
       tl.fromTo(
         cardEls[1],
-        { rotation: 70, scale: 0.65, x: "-20px", y: "20px", opacity: 0 },
+        { opacity: 0, rotation: -50, scale: 0.5, x: "-30px", y: "30px" },
         {
+          opacity: 1,
           rotation: 0,
           scale: 0.9,
           x: "40px",
           y: "-18px",
-          opacity: 1,
           ease: "power2.out",
           force3D: true,
         },
-        0.15
+        0.18
       );
 
-      // Card 2 (Bottom-Left) - Appears third at timeline offset 0.30
+      // Card 2 (Bottom-Left) - Starts at offset 0.36 (Clockwise entrance)
       tl.fromTo(
         cardEls[2],
-        { rotation: 70, scale: 0.65, x: "20px", y: "-20px", opacity: 0 },
+        { opacity: 0, rotation: 40, scale: 0.5, x: "30px", y: "-30px" },
         {
+          opacity: 1,
           rotation: 0,
           scale: 0.92,
           x: "-30px",
           y: "25px",
-          opacity: 1,
           ease: "power2.out",
           force3D: true,
         },
-        0.30
+        0.36
       );
 
-      // Card 3 (Bottom-Right) - Appears fourth at timeline offset 0.45
+      // Card 3 (Bottom-Right) - Starts at offset 0.54 (Counter-clockwise entrance)
       tl.fromTo(
         cardEls[3],
-        { rotation: 70, scale: 0.65, x: "-20px", y: "-20px", opacity: 0 },
+        { opacity: 0, rotation: -30, scale: 0.5, x: "-30px", y: "-30px" },
         {
+          opacity: 1,
           rotation: 0,
           scale: 1.08,
           x: "35px",
           y: "22px",
-          opacity: 1,
           ease: "power2.out",
           force3D: true,
         },
-        0.45
+        0.54
       );
 
       // 3. Interactive Flying Orbit Rings Effect (Rotate & Fly Upwards into the Sky on Scroll Down!)
@@ -152,7 +155,7 @@ export default function ExtracurricularSection() {
       if (textContentRef.current) {
         tl.fromTo(
           textContentRef.current,
-          { scale: 0.92, y: "24px", opacity: 0.4 },
+          { scale: 0.92, y: "24px", opacity: 0.3 },
           { scale: 1, y: "0px", opacity: 1, ease: "power2.out" },
           0
         );
