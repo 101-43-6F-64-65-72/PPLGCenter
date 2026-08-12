@@ -373,7 +373,7 @@ export default function ExtracurricularDetailPage() {
                   </h1>
 
                   {/* Deskripsi */}
-                  <p className="mt-4 text-base leading-relaxed text-gray-600 sm:text-lg text-justify">
+                  <p className="mt-4 text-base leading-relaxed text-gray-600 sm:text-lg">
                     {data.description}
                   </p>
 

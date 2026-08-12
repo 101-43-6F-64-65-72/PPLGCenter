@@ -19,9 +19,16 @@ import {
 import bookingService from "@/services/bookingService";
 import OrganizationSelect from "@/components/common/OrganizationSelect";
 
-export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }) {
+export default function ScheduleModal({
+  isOpen,
+  onClose,
+  facility,
+  onAddToCart,
+}) {
   const [step, setStep] = useState(1); // 1: Slot selection, 2: Borrowing Form
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [selectedDate, setSelectedDate] = useState(
+    () => new Date().toISOString().split("T")[0],
+  );
   const [slots, setSlots] = useState([]);
   const [extracurriculars, setExtracurriculars] = useState([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
@@ -45,12 +52,19 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
     setFetchError("");
     setConflictMessage("");
 
-    const res = await bookingService.getSlotAvailability(facility, selectedDate);
+    const res = await bookingService.getSlotAvailability(
+      facility,
+      selectedDate,
+    );
     if (res.success) {
       setSlots(res.slots);
       // Remove any selected slot that is no longer available
-      const availableIds = res.slots.filter((s) => s.available).map((s) => s.id);
-      setSelectedSlots((prev) => prev.filter((id) => availableIds.includes(id)));
+      const availableIds = res.slots
+        .filter((s) => s.available)
+        .map((s) => s.id);
+      setSelectedSlots((prev) =>
+        prev.filter((id) => availableIds.includes(id)),
+      );
     } else {
       setFetchError(res.message || "Gagal memuat jadwal ketersediaan.");
     }
@@ -74,7 +88,12 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
     async function loadExtracurriculars() {
       try {
         const res = await extracurricularService.getExtracurriculars();
-        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+        if (
+          res &&
+          res.success &&
+          Array.isArray(res.data) &&
+          res.data.length > 0
+        ) {
           setExtracurriculars(res.data);
         }
       } catch (err) {
@@ -106,10 +125,12 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
   if (!isOpen || !facility) return null;
 
   const slotsToDisplay = slots;
-  const selectedSlotsToDisplay = slotsToDisplay.filter((s) => selectedSlots.includes(s.id));
-  const selectedTimesFormatted = selectedSlotsToDisplay.map((s) => s.time).join(", ");
-
-
+  const selectedSlotsToDisplay = slotsToDisplay.filter((s) =>
+    selectedSlots.includes(s.id),
+  );
+  const selectedTimesFormatted = selectedSlotsToDisplay
+    .map((s) => s.time)
+    .join(", ");
 
   const toggleSlot = (slotId) => {
     if (selectedSlots.includes(slotId)) {
@@ -124,15 +145,26 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
     setIsLoadingSlots(true);
     setConflictMessage("");
 
-    const res = await bookingService.getSlotAvailability(facility, selectedDate);
+    const res = await bookingService.getSlotAvailability(
+      facility,
+      selectedDate,
+    );
     if (res.success) {
       setSlots(res.slots);
-      const availableIds = res.slots.filter((s) => s.available).map((s) => s.id);
-      const invalidSelected = selectedSlots.filter((id) => !availableIds.includes(id));
+      const availableIds = res.slots
+        .filter((s) => s.available)
+        .map((s) => s.id);
+      const invalidSelected = selectedSlots.filter(
+        (id) => !availableIds.includes(id),
+      );
 
       if (invalidSelected.length > 0) {
-        setSelectedSlots((prev) => prev.filter((id) => availableIds.includes(id)));
-        setConflictMessage("Maaf, salah satu slot yang Anda pilih telah dipesan oleh pengguna lain. Jadwal telah diperbarui.");
+        setSelectedSlots((prev) =>
+          prev.filter((id) => availableIds.includes(id)),
+        );
+        setConflictMessage(
+          "Maaf, salah satu slot yang Anda pilih telah dipesan oleh pengguna lain. Jadwal telah diperbarui.",
+        );
         setIsLoadingSlots(false);
         return;
       }
@@ -178,9 +210,13 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
     e.preventDefault();
     const newErrors = {};
 
-    const finalOrg = organization === "Lainnya (Ketik Manual)" ? customOrg.trim() : organization;
+    const finalOrg =
+      organization === "Lainnya (Ketik Manual)"
+        ? customOrg.trim()
+        : organization;
     if (!finalOrg) {
-      newErrors.organization = "Nama organisasi terdaftar wajib dipilih atau diisi";
+      newErrors.organization =
+        "Nama organisasi terdaftar wajib dipilih atau diisi";
     }
     if (!activityName.trim()) {
       newErrors.activityName = "Nama kegiatan wajib diisi";
@@ -198,13 +234,18 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
     setIsSubmitting(true);
 
     const firstSlot = selectedSlotsToDisplay[0];
-    const lastSlot = selectedSlotsToDisplay[selectedSlotsToDisplay.length - 1] || firstSlot;
+    const lastSlot =
+      selectedSlotsToDisplay[selectedSlotsToDisplay.length - 1] || firstSlot;
 
     const startHour = firstSlot?.startHour ?? 7;
-    const endHour = lastSlot?.endHour ?? (startHour + 1);
+    const endHour = lastSlot?.endHour ?? startHour + 1;
 
-    const startLocalDate = new Date(`${selectedDate}T${String(startHour).padStart(2, "0")}:00:00`);
-    const endLocalDate = new Date(`${selectedDate}T${String(endHour).padStart(2, "0")}:00:00`);
+    const startLocalDate = new Date(
+      `${selectedDate}T${String(startHour).padStart(2, "0")}:00:00`,
+    );
+    const endLocalDate = new Date(
+      `${selectedDate}T${String(endHour).padStart(2, "0")}:00:00`,
+    );
 
     if (isNaN(startLocalDate.getTime()) || isNaN(endLocalDate.getTime())) {
       setErrors({ submit: "Format tanggal atau jam peminjaman tidak valid." });
@@ -213,7 +254,10 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
     }
 
     if (startLocalDate < new Date()) {
-      setErrors({ submit: "Waktu awal peminjaman tidak boleh di masa lalu. Silakan pilih tanggal atau jam di masa mendatang." });
+      setErrors({
+        submit:
+          "Waktu awal peminjaman tidak boleh di masa lalu. Silakan pilih tanggal atau jam di masa mendatang.",
+      });
       setIsSubmitting(false);
       return;
     }
@@ -234,12 +278,15 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
       setIsSuccess(true);
       await fetchAvailability();
     } else {
-      setErrors({ submit: res.message || "Gagal menyimpan pengajuan peminjaman." });
+      setErrors({
+        submit: res.message || "Gagal menyimpan pengajuan peminjaman.",
+      });
     }
     setIsSubmitting(false);
   };
 
-  const finalOrgDisplay = organization === "Lainnya (Ketik Manual)" ? customOrg : organization;
+  const finalOrgDisplay =
+    organization === "Lainnya (Ketik Manual)" ? customOrg : organization;
 
   return (
     <AnimatePresence>
@@ -280,13 +327,20 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   Pengajuan Peminjaman Berhasil!
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Permohonan peminjaman <strong>{facility.title}</strong> oleh <strong>{finalOrgDisplay}</strong> untuk kegiatan <strong>&quot;{activityName}&quot;</strong> telah berhasil dikirim.
+                  Permohonan peminjaman <strong>{facility.title}</strong> oleh{" "}
+                  <strong>{finalOrgDisplay}</strong> untuk kegiatan{" "}
+                  <strong>&quot;{activityName}&quot;</strong> telah berhasil
+                  dikirim.
                 </p>
               </div>
 
               <div className="p-4 bg-blue-50/80 rounded-2xl text-xs text-[#2c1ee8] font-medium border border-blue-100 flex items-center gap-3 text-left">
                 <ShieldCheck className="w-6 h-6 flex-shrink-0" />
-                <span>Form ini telah diteruskan ke <strong>Guru</strong> dan <strong>Admin</strong> untuk proses verifikasi. Status pengajuan dapat dipantau secara berkala.</span>
+                <span>
+                  Form ini telah diteruskan ke <strong>Guru</strong> dan{" "}
+                  <strong>Admin</strong> untuk proses verifikasi. Status
+                  pengajuan dapat dipantau secara berkala.
+                </span>
               </div>
 
               <button
@@ -307,14 +361,17 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   </h2>
 
                   {facility.description && (
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-4 font-normal text-justify">
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-4 font-normal">
                       {facility.description}
                     </p>
                   )}
 
                   {/* Date Selector Bar */}
                   <div className="mb-5 flex flex-wrap items-center justify-between gap-3 bg-gray-50/80 p-3 rounded-2xl border border-gray-200/80">
-                    <label htmlFor="bookingDate" className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                    <label
+                      htmlFor="bookingDate"
+                      className="text-xs font-bold text-gray-700 flex items-center gap-1.5"
+                    >
                       <Calendar className="w-4 h-4 text-[#2c1ee8]" />
                       <span>Tanggal Peminjaman:</span>
                     </label>
@@ -329,10 +386,14 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   </div>
 
                   {/* Inactive Facility Notice */}
-                  {(facility.isActive === false || facility.status === "tidak tersedia") && (
+                  {(facility.isActive === false ||
+                    facility.status === "tidak tersedia") && (
                     <div className="mb-4 p-3.5 bg-rose-50 text-rose-800 border border-rose-200 rounded-2xl text-xs font-bold flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 flex-shrink-0 text-rose-600" />
-                      <span>Fasilitas ini sedang dinonaktifkan oleh sekolah dan tidak dapat dipinjam.</span>
+                      <span>
+                        Fasilitas ini sedang dinonaktifkan oleh sekolah dan
+                        tidak dapat dipinjam.
+                      </span>
                     </div>
                   )}
 
@@ -362,7 +423,10 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   <div className="space-y-3.5 mb-8">
                     {isLoadingSlots ? (
                       Array.from({ length: 5 }).map((_, idx) => (
-                        <div key={idx} className="h-12 w-full bg-gray-100 rounded-xl animate-pulse" />
+                        <div
+                          key={idx}
+                          className="h-12 w-full bg-gray-100 rounded-xl animate-pulse"
+                        />
                       ))
                     ) : slotsToDisplay.length > 0 ? (
                       slotsToDisplay.map((slot) => {
@@ -370,20 +434,30 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
 
                         if (!slot.available) {
                           return (
-                            <div key={slot.id} className="flex items-center gap-3.5">
+                            <div
+                              key={slot.id}
+                              className="flex items-center gap-3.5"
+                            >
                               <div className="w-7 h-7 rounded-full border-2 border-rose-500/80 flex items-center justify-center text-rose-500 flex-shrink-0">
                                 <X className="w-4 h-4 stroke-[3]" />
                               </div>
                               <div className="flex-1 bg-[#ff8a8a] text-gray-900 font-medium px-5 py-3 rounded-xl flex items-center justify-between text-sm sm:text-base shadow-sm">
-                                <span className="font-semibold">{slot.time}</span>
-                                <span className="font-medium text-gray-800">{slot.status}</span>
+                                <span className="font-semibold">
+                                  {slot.time}
+                                </span>
+                                <span className="font-medium text-gray-800">
+                                  {slot.status}
+                                </span>
                               </div>
                             </div>
                           );
                         }
 
                         return (
-                          <div key={slot.id} className="flex items-center gap-3.5">
+                          <div
+                            key={slot.id}
+                            className="flex items-center gap-3.5"
+                          >
                             <button
                               type="button"
                               onClick={() => toggleSlot(slot.id)}
@@ -393,7 +467,9 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                                   : "border-gray-400 bg-white hover:border-[#2c1ee8]"
                               }`}
                             >
-                              {isSelected && <Check className="w-4 h-4 stroke-[3]" />}
+                              {isSelected && (
+                                <Check className="w-4 h-4 stroke-[3]" />
+                              )}
                             </button>
 
                             <div
@@ -431,9 +507,17 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     <button
                       type="button"
                       onClick={handleAddToCartClick}
-                      disabled={selectedSlots.length === 0 || isLoadingSlots || facility.isActive === false || facility.status === "tidak tersedia"}
+                      disabled={
+                        selectedSlots.length === 0 ||
+                        isLoadingSlots ||
+                        facility.isActive === false ||
+                        facility.status === "tidak tersedia"
+                      }
                       className={`flex-1 px-5 py-3.5 font-bold text-sm rounded-2xl border transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
-                        selectedSlots.length > 0 && !isLoadingSlots && facility.isActive !== false && facility.status !== "tidak tersedia"
+                        selectedSlots.length > 0 &&
+                        !isLoadingSlots &&
+                        facility.isActive !== false &&
+                        facility.status !== "tidak tersedia"
                           ? "border-[#2c1ee8] text-[#2c1ee8] bg-blue-50/60 hover:bg-blue-100/80 active:scale-95 shadow-sm"
                           : "border-gray-200 text-gray-400 bg-gray-50 cursor-not-allowed"
                       }`}
@@ -445,9 +529,17 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     <button
                       type="button"
                       onClick={handleNextToForm}
-                      disabled={selectedSlots.length === 0 || isLoadingSlots || facility.isActive === false || facility.status === "tidak tersedia"}
+                      disabled={
+                        selectedSlots.length === 0 ||
+                        isLoadingSlots ||
+                        facility.isActive === false ||
+                        facility.status === "tidak tersedia"
+                      }
                       className={`flex-1 px-5 py-3.5 font-bold text-sm rounded-2xl shadow-md transition-all duration-200 cursor-pointer ${
-                        selectedSlots.length > 0 && !isLoadingSlots && facility.isActive !== false && facility.status !== "tidak tersedia"
+                        selectedSlots.length > 0 &&
+                        !isLoadingSlots &&
+                        facility.isActive !== false &&
+                        facility.status !== "tidak tersedia"
                           ? "bg-[#2c1ee8] hover:bg-[#2218a3] text-white active:scale-95 shadow-blue-500/25"
                           : "bg-gray-200 text-gray-400 cursor-not-allowed"
                       }`}
@@ -461,7 +553,9 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
               {/* RIGHT COLUMN: Facility Image */}
               <div className="md:col-span-5 h-[340px] sm:h-[400px] relative rounded-[28px] overflow-hidden shadow-lg border border-black/5">
                 <Image
-                  src={facility.imageSrc || "/images/tempat/lapangansmkn2ska.jpg"}
+                  src={
+                    facility.imageSrc || "/images/tempat/lapangansmkn2ska.jpg"
+                  }
                   alt={facility.title || "Facility Image"}
                   fill
                   className="object-cover"
@@ -487,7 +581,9 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   <h2 className="text-xl sm:text-2xl font-black text-gray-900">
                     Form Peminjaman Fasilitas
                   </h2>
-                  <p className="text-xs text-gray-500">Lengkapi data pengajuan di bawah ini</p>
+                  <p className="text-xs text-gray-500">
+                    Lengkapi data pengajuan di bawah ini
+                  </p>
                 </div>
               </div>
 
@@ -495,8 +591,12 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
               <div className="p-3.5 bg-blue-50/90 rounded-2xl border border-blue-100 flex items-start gap-3 text-xs text-[#2c1ee8] font-medium">
                 <ShieldCheck className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <strong className="block text-sm font-bold mb-0.5">Informasi Alur Pengajuan:</strong>
-                  Formulir ini akan diteruskan ke <strong>Guru</strong> dan <strong>Admin</strong> untuk persetujuan utama (peninjauan OSIS bersifat opsional).
+                  <strong className="block text-sm font-bold mb-0.5">
+                    Informasi Alur Pengajuan:
+                  </strong>
+                  Formulir ini akan diteruskan ke <strong>Guru</strong> dan{" "}
+                  <strong>Admin</strong> untuk persetujuan utama (peninjauan
+                  OSIS bersifat opsional).
                 </div>
               </div>
 
@@ -508,11 +608,17 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                   <div>
-                    <span className="text-xs text-gray-500">Fasilitas / Tempat:</span>
-                    <p className="text-base font-extrabold text-gray-900">{facility.title}</p>
+                    <span className="text-xs text-gray-500">
+                      Fasilitas / Tempat:
+                    </span>
+                    <p className="text-base font-extrabold text-gray-900">
+                      {facility.title}
+                    </p>
                   </div>
                   <div className="sm:text-right">
-                    <span className="text-xs text-gray-500">Jam Terpilih ({selectedDate}):</span>
+                    <span className="text-xs text-gray-500">
+                      Jam Terpilih ({selectedDate}):
+                    </span>
                     <p className="text-sm font-bold text-[#2c1ee8] bg-blue-100/70 px-3 py-1 rounded-xl inline-block">
                       {selectedTimesFormatted}
                     </p>
@@ -535,7 +641,8 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                   customValue={customOrg}
                   onChange={(val) => {
                     setOrganization(val);
-                    if (errors.organization) setErrors({ ...errors, organization: null });
+                    if (errors.organization)
+                      setErrors({ ...errors, organization: null });
                   }}
                   onCustomChange={(val) => setCustomOrg(val)}
                   error={errors.organization}
@@ -553,10 +660,13 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     value={activityName}
                     onChange={(e) => {
                       setActivityName(e.target.value);
-                      if (errors.activityName) setErrors({ ...errors, activityName: null });
+                      if (errors.activityName)
+                        setErrors({ ...errors, activityName: null });
                     }}
                     className={`w-full px-4 py-3 rounded-2xl border bg-gray-50/50 focus:bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all ${
-                      errors.activityName ? "border-rose-400 focus:border-rose-500" : "border-gray-200 focus:border-[#2c1ee8]"
+                      errors.activityName
+                        ? "border-rose-400 focus:border-rose-500"
+                        : "border-gray-200 focus:border-[#2c1ee8]"
                     }`}
                   />
                   {errors.activityName && (
@@ -571,7 +681,8 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider">
-                      Tujuan & Deskripsi Peminjaman <span className="text-rose-500">*</span>
+                      Tujuan & Deskripsi Peminjaman{" "}
+                      <span className="text-rose-500">*</span>
                     </label>
                     <span className="text-[11px] text-gray-400 font-medium">
                       {description.length}/500 karakter
@@ -584,10 +695,13 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     value={description}
                     onChange={(e) => {
                       setDescription(e.target.value);
-                      if (errors.description) setErrors({ ...errors, description: null });
+                      if (errors.description)
+                        setErrors({ ...errors, description: null });
                     }}
                     className={`w-full px-4 py-3 rounded-2xl border bg-gray-50/50 focus:bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all resize-none ${
-                      errors.description ? "border-rose-400 focus:border-rose-500" : "border-gray-200 focus:border-[#2c1ee8]"
+                      errors.description
+                        ? "border-rose-400 focus:border-rose-500"
+                        : "border-gray-200 focus:border-[#2c1ee8]"
                     }`}
                   />
                   {errors.description && (
@@ -614,7 +728,9 @@ export default function ScheduleModal({ isOpen, onClose, facility, onAddToCart }
                     className="inline-flex items-center gap-2 px-8 py-3 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-sm rounded-2xl shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isSubmitting ? "Mengirim..." : "Kirim Pengajuan"}</span>
+                    <span>
+                      {isSubmitting ? "Mengirim..." : "Kirim Pengajuan"}
+                    </span>
                   </button>
                 </div>
               </form>

@@ -10,8 +10,8 @@ export default function RichContentViewer({ content, className = "" }) {
 
   return (
     <div
-      className={`prose prose-indigo max-w-none text-gray-900 font-sans leading-relaxed text-base sm:text-lg lg:text-xl text-justify
-        [&_p]:mb-5 [&_p]:leading-relaxed [&_p]:text-gray-800 [&_p]:text-base [&_p]:sm:text-lg [&_p]:lg:text-xl [&_p]:text-justify
+      className={`prose prose-indigo max-w-none text-gray-900 font-sans leading-relaxed text-base sm:text-lg lg:text-xl
+        [&_p]:mb-5 [&_p]:leading-relaxed [&_p]:text-gray-800 [&_p]:text-base [&_p]:sm:text-lg [&_p]:lg:text-xl
         [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:lg:text-4xl [&_h1]:font-black [&_h1]:text-gray-900 [&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:tracking-tight
         [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:lg:text-3xl [&_h2]:font-extrabold [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:tracking-tight
         [&_h3]:text-lg [&_h3]:sm:text-xl [&_h3]:font-bold [&_h3]:text-gray-900 [&_h3]:mt-5 [&_h3]:mb-2

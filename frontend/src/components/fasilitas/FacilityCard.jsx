@@ -8,16 +8,37 @@ const getCategoryMatchingImage = (title, location, currentSrc) => {
     return currentSrc;
   }
   const text = `${title || ""} ${location || ""}`.toLowerCase();
-  if (text.includes("halaman") || text.includes("area") || text.includes("depan") || text.includes("taman")) {
+  if (
+    text.includes("halaman") ||
+    text.includes("area") ||
+    text.includes("depan") ||
+    text.includes("taman")
+  ) {
     return "/images/tempat/halamandepansmkn2ska.jpg";
   }
-  if (text.includes("lapangan") || text.includes("olahraga") || text.includes("stadion") || text.includes("basket") || text.includes("futsal")) {
+  if (
+    text.includes("lapangan") ||
+    text.includes("olahraga") ||
+    text.includes("stadion") ||
+    text.includes("basket") ||
+    text.includes("futsal")
+  ) {
     return "/images/tempat/lapangansmkn2ska.jpg";
   }
-  if (text.includes("aula") || text.includes("ruang utama") || text.includes("hall") || text.includes("auditorium")) {
+  if (
+    text.includes("aula") ||
+    text.includes("ruang utama") ||
+    text.includes("hall") ||
+    text.includes("auditorium")
+  ) {
     return "/images/tempat/aulasmkn2ska.jpg";
   }
-  if (text.includes("lab") || text.includes("komputer") || text.includes("laboratorium") || text.includes("bengkel")) {
+  if (
+    text.includes("lab") ||
+    text.includes("komputer") ||
+    text.includes("laboratorium") ||
+    text.includes("bengkel")
+  ) {
     return "/images/tempat/labsmkn2ska.jpeg";
   }
   return currentSrc || "/images/tempat/halamandepansmkn2ska.jpg";
@@ -38,12 +59,28 @@ export default function FacilityCard({
 }) {
   const isAvailable = isActive && (status || "").toLowerCase() === "tersedia";
   const displayTitle = (title || "").replace(/^\[SEED\]\s*/i, "").trim();
-  const resolvedImageSrc = getCategoryMatchingImage(displayTitle, location, imageSrc);
+  const resolvedImageSrc = getCategoryMatchingImage(
+    displayTitle,
+    location,
+    imageSrc,
+  );
   const [imgSrc, setImgSrc] = useState(resolvedImageSrc);
 
   const handleCardClick = () => {
     if (!isAvailable) return;
-    onActionClick && onActionClick({ title: displayTitle, location, capacity, category, description, status, isActive, time, imageSrc: imgSrc, managerTeacherName });
+    onActionClick &&
+      onActionClick({
+        title: displayTitle,
+        location,
+        capacity,
+        category,
+        description,
+        status,
+        isActive,
+        time,
+        imageSrc: imgSrc,
+        managerTeacherName,
+      });
   };
 
   return (
@@ -99,20 +136,28 @@ export default function FacilityCard({
             <span className="truncate max-w-[200px]">{location}</span>
           </div>
 
-          <h3 className={`text-base font-bold transition-colors leading-snug line-clamp-2 ${
-            isAvailable ? "text-slate-900 group-hover:text-[#2c1ee8]" : "text-slate-600"
-          }`} title={displayTitle}>
+          <h3
+            className={`text-base font-bold transition-colors leading-snug line-clamp-2 ${
+              isAvailable
+                ? "text-slate-900 group-hover:text-[#2c1ee8]"
+                : "text-slate-600"
+            }`}
+            title={displayTitle}
+          >
             {displayTitle}
           </h3>
 
           {/* Manager Teacher Badge */}
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold">
             <UserCheck className="w-3.5 h-3.5 text-[#2c1ee8]" />
-            <span>Pengurus: {managerTeacherName ? managerTeacherName : "Tim Sarpras Sekolah"}</span>
+            <span>
+              Pengurus:{" "}
+              {managerTeacherName ? managerTeacherName : "Tim Sarpras Sekolah"}
+            </span>
           </div>
 
           {description && (
-            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-1 font-normal text-justify">
+            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-1 font-normal">
               {description}
             </p>
           )}
@@ -139,7 +184,9 @@ export default function FacilityCard({
               : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
           }`}
         >
-          <span>{isAvailable ? "Ajukan Peminjaman" : "Fasilitas Nonaktif"}</span>
+          <span>
+            {isAvailable ? "Ajukan Peminjaman" : "Fasilitas Nonaktif"}
+          </span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

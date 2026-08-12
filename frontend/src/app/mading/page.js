@@ -205,11 +205,10 @@ export default function MadingPage() {
               <button
                 key={cat}
                 onClick={() => handleCategoryChange(cat)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                  activeCategory === cat
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${activeCategory === cat
                     ? "bg-blue-600 text-white shadow-sm"
                     : "text-gray-700 hover:bg-gray-100"
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -342,7 +341,7 @@ export default function MadingPage() {
                       </h3>
 
                       {/* Excerpt */}
-                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 text-justify">
+                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
                         {stripHtml(item.summary || item.content || "")}
                       </p>
                     </div>
@@ -393,11 +392,10 @@ export default function MadingPage() {
                     <button
                       key={item}
                       onClick={() => setCurrentPage(item)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold border transition-colors cursor-pointer shadow-sm ${
-                        currentPage === item
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-semibold border transition-colors cursor-pointer shadow-sm ${currentPage === item
                           ? "bg-blue-600 text-white border-blue-600"
                           : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {item}
                     </button>
@@ -467,9 +465,8 @@ export default function MadingPage() {
                             {item.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                              item.category ? getCatPillStyle(item.category) : "bg-gray-100 text-gray-500 border-gray-200"
-                            }`}>
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${item.category ? getCatPillStyle(item.category) : "bg-gray-100 text-gray-500 border-gray-200"
+                              }`}>
                               {item.category || "Umum"}
                             </span>
                             <span className="flex items-center gap-0.5 text-[10px] text-gray-400">

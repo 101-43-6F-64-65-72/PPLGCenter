@@ -83,28 +83,28 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
           border: "border-l-4 border-l-rose-600",
           badge: (
             <span className="text-[10px] bg-rose-50 text-rose-700 border border-rose-200 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-              <AlertTriangle className="w-3 h-3 text-rose-600" />
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
               Darurat
             </span>
           ),
-          unreadBg: "bg-rose-50/40 border-slate-200 hover:border-rose-300",
+          unreadBg: "bg-rose-50/20 border-white/20 hover:bg-rose-50/35 hover:border-white/40",
           iconBg: "bg-rose-50 text-rose-600 border-rose-200",
           unreadDot: "bg-rose-600",
-          titleColor: "text-slate-900 font-bold",
+          titleColor: "text-slate-900 font-extrabold",
         };
       case 2:
         return {
           border: "border-l-4 border-l-amber-500",
           badge: (
             <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-              <AlertCircle className="w-3 h-3 text-amber-600" />
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
               Penting
             </span>
           ),
-          unreadBg: "bg-amber-50/30 border-slate-200 hover:border-amber-300",
+          unreadBg: "bg-amber-50/15 border-white/20 hover:bg-amber-50/25 hover:border-white/40",
           iconBg: "bg-amber-50 text-amber-700 border-amber-200",
           unreadDot: "bg-amber-500",
-          titleColor: "text-slate-900 font-bold",
+          titleColor: "text-slate-900 font-extrabold",
         };
       case 0:
         return {
@@ -114,10 +114,10 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
               Rendah
             </span>
           ),
-          unreadBg: "bg-slate-50 border-slate-200 hover:border-slate-300",
+          unreadBg: "bg-white/30 border-white/20 hover:bg-white/45 hover:border-white/40",
           iconBg: "bg-slate-100 text-slate-600 border-slate-200",
           unreadDot: "bg-slate-400",
-          titleColor: "text-slate-900 font-bold",
+          titleColor: "text-slate-900 font-extrabold",
         };
       case 1:
       default:
@@ -128,10 +128,10 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
               Normal
             </span>
           ),
-          unreadBg: "bg-slate-50/90 border-slate-300 hover:border-slate-400",
+          unreadBg: "bg-white/40 border-white/20 hover:bg-white/55 hover:border-white/40",
           iconBg: "bg-slate-100 text-slate-800 border-slate-200",
           unreadDot: "bg-slate-900",
-          titleColor: "text-slate-900 font-bold",
+          titleColor: "text-slate-900 font-extrabold",
         };
     }
   };
@@ -148,14 +148,14 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
   const content = (
     <div
       onClick={handleClick}
-      className={`p-3.5 rounded-lg border transition-all flex items-start gap-3 cursor-pointer ${priorityConfig.border} ${
+      className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 cursor-pointer ${priorityConfig.border} ${
         isRead
-          ? "bg-white border-slate-200 text-slate-700 hover:border-slate-300 shadow-2xs"
+          ? "bg-white/40 border-white/25 text-slate-700 hover:border-white/50 hover:bg-white/55 shadow-2xs"
           : `${priorityConfig.unreadBg} text-slate-900 shadow-xs`
       }`}
     >
-      <div className={`shrink-0 w-9 h-9 rounded-md border flex items-center justify-center shadow-2xs transition-colors ${
-        isRead ? "bg-slate-50 text-slate-500 border-slate-200" : priorityConfig.iconBg
+      <div className={`shrink-0 w-9 h-9 rounded-xl border flex items-center justify-center shadow-2xs transition-colors ${
+        isRead ? "bg-white/50 text-slate-500 border-white/30" : priorityConfig.iconBg
       }`}>
         {getIcon()}
       </div>

@@ -3,7 +3,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ChevronLeft, ChevronRight, Play, Info } from "@/components/common/Icons";
+import {
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Info,
+} from "@/components/common/Icons";
 import { ThumbsUp, MessageSquare } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils";
 import { stripHtml } from "@/lib/sanitizer";
@@ -23,15 +29,18 @@ try {
   } catch (e2) {}
 }
 
-const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, ref) => (
-  <div ref={ref} className={className} style={style} onClick={onClick}>
-    {children}
-  </div>
-));
+const FallbackDiv = React.forwardRef(
+  ({ children, className, style, onClick }, ref) => (
+    <div ref={ref} className={className} style={style} onClick={onClick}>
+      {children}
+    </div>
+  ),
+);
 FallbackDiv.displayName = "FallbackDiv";
 
 const MotionDiv = motionImport?.div || FallbackDiv;
-const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
+const AnimatePresenceComponent =
+  animatePresenceImport || (({ children }) => <>{children}</>);
 
 export const AnnouncementHeroCarousel = ({ items = [] }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -61,7 +70,7 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
       if (newIndex === currentSlide || slides.length === 0) return;
       setCurrentSlide(newIndex);
     },
-    [currentSlide, slides.length]
+    [currentSlide, slides.length],
   );
 
   const handleNext = useCallback(() => {
@@ -125,7 +134,9 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
             </h1>
 
             <p className="text-sm sm:text-base lg:text-lg text-blue-100/90 leading-relaxed max-w-xl mb-8 font-normal drop-shadow">
-              Wadahi prestasi, berita kegiatan ekstrakurikuler, inovasi sains teknologi, dan pengumuman resmi warga sekolah dalam satu platform digital terpadu.
+              Wadahi prestasi, berita kegiatan ekstrakurikuler, inovasi sains
+              teknologi, dan pengumuman resmi warga sekolah dalam satu platform
+              digital terpadu.
             </p>
 
             <button
@@ -158,7 +169,9 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
           }}
         >
           <Image
-            src={resolveImageUrl(slide.coverImageUrl || slide.imageUrl || slide.image)}
+            src={resolveImageUrl(
+              slide.coverImageUrl || slide.imageUrl || slide.image,
+            )}
             alt={slide.title}
             fill
             sizes="100vw"
@@ -197,24 +210,40 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
                   {slide.category || "Berita Utama"}
                 </span>
                 <span className="w-1 h-1 rounded-full bg-blue-200" />
-                <span className="text-gray-200">Oleh: {slide.author || "Redaksi Sekolah"}</span>
+                <span className="text-gray-200">
+                  Oleh: {slide.author || "Redaksi Sekolah"}
+                </span>
 
-                {(slide.reactionCount || slide.ReactionCount || slide.reactionsCount || 0) > 0 && (
+                {(slide.reactionCount ||
+                  slide.ReactionCount ||
+                  slide.reactionsCount ||
+                  0) > 0 && (
                   <span className="inline-flex items-center gap-1 bg-white/10 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
                     <ThumbsUp className="w-3 h-3 text-blue-200" />
-                    <span>{slide.reactionCount ?? slide.ReactionCount ?? slide.reactionsCount}</span>
+                    <span>
+                      {slide.reactionCount ??
+                        slide.ReactionCount ??
+                        slide.reactionsCount}
+                    </span>
                   </span>
                 )}
 
-                {(slide.commentCount || slide.CommentCount || slide.commentsCount || 0) > 0 && (
+                {(slide.commentCount ||
+                  slide.CommentCount ||
+                  slide.commentsCount ||
+                  0) > 0 && (
                   <span className="inline-flex items-center gap-1 bg-white/10 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full border border-white/20">
                     <MessageSquare className="w-3 h-3 text-blue-200" />
-                    <span>{slide.commentCount ?? slide.CommentCount ?? slide.commentsCount}</span>
+                    <span>
+                      {slide.commentCount ??
+                        slide.CommentCount ??
+                        slide.commentsCount}
+                    </span>
                   </span>
                 )}
               </div>
 
-              <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-normal line-clamp-3 text-justify">
+              <p className="text-xs sm:text-sm lg:text-base text-gray-100 leading-relaxed max-w-lg mb-5 drop-shadow-lg font-normal line-clamp-3">
                 {stripHtml(slide.summary || slide.content)}
               </p>
 
@@ -239,7 +268,6 @@ export const AnnouncementHeroCarousel = ({ items = [] }) => {
           </AnimatePresenceComponent>
         </div>
       </div>
-
 
       {slides.length > 1 && (
         <>

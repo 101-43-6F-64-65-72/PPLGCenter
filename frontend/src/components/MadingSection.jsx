@@ -36,9 +36,17 @@ export default function MadingSection() {
   const highlightArticle = articles[1];
 
   // Helper for resolving announcement images with fallbacks
-  const getArticleImage = (art, fallback = "/images/tempat/aulasmkn2ska.jpg") => {
+  const getArticleImage = (
+    art,
+    fallback = "/images/tempat/aulasmkn2ska.jpg",
+  ) => {
     if (!art) return fallback;
-    const raw = art.coverImageUrl || art.imageUrl || art.image || art.photoUrl || art.photo;
+    const raw =
+      art.coverImageUrl ||
+      art.imageUrl ||
+      art.image ||
+      art.photoUrl ||
+      art.photo;
     return resolveImageUrl(raw, fallback);
   };
 
@@ -93,7 +101,6 @@ export default function MadingSection() {
       <div className="absolute inset-0 bg-dots-pattern opacity-60 pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        
         {/* INNOVATIVE INFINITE MARQUEE TICKER */}
         <div className="mb-10 w-full overflow-hidden rounded-2xl bg-blue-50/70 border border-blue-100/90 py-2.5 px-4 backdrop-blur-xs select-none">
           <div className="flex whitespace-nowrap animate-marquee gap-8 items-center text-xs font-mono font-semibold text-[#2c1ee8] uppercase tracking-widest">
@@ -184,7 +191,6 @@ export default function MadingSection() {
 
           {!isLoading && !isError && featuredArticle && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mading-animate-item">
-              
               {/* Featured Card (Left) with Spotlight Flare Effect */}
               <div
                 ref={featuredCardRef}
@@ -202,7 +208,10 @@ export default function MadingSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center relative z-10">
                   <div className="sm:col-span-5 relative aspect-[4/3] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200/80 shadow-xs">
                     <Image
-                      src={getArticleImage(featuredArticle, "/images/tempat/aulasmkn2ska.jpg")}
+                      src={getArticleImage(
+                        featuredArticle,
+                        "/images/tempat/aulasmkn2ska.jpg",
+                      )}
                       alt={featuredArticle.title}
                       fill
                       sizes="(max-width: 640px) 100vw, 260px"
@@ -242,7 +251,10 @@ export default function MadingSection() {
                   className="lg:col-span-5 relative rounded-3xl overflow-hidden shadow-md border border-slate-200/90 group cursor-pointer min-h-[260px] flex flex-col justify-end p-6 sm:p-7 hover:shadow-xl transition-all duration-300 bg-slate-900"
                 >
                   <Image
-                    src={getArticleImage(highlightArticle, "/images/tempat/halamandepansmkn2ska.jpg")}
+                    src={getArticleImage(
+                      highlightArticle,
+                      "/images/tempat/halamandepansmkn2ska.jpg",
+                    )}
                     alt={highlightArticle.title}
                     fill
                     sizes="(max-width: 1024px) 100vw, 420px"
@@ -288,7 +300,7 @@ export default function MadingSection() {
             <div className="relative h-48 sm:h-60 w-full bg-slate-900">
               <Image
                 src={resolveImageUrl(
-                  selectedArticle.image || selectedArticle.imageUrl
+                  selectedArticle.image || selectedArticle.imageUrl,
                 )}
                 alt={selectedArticle.title}
                 fill
@@ -336,7 +348,7 @@ export default function MadingSection() {
                   </strong>
                 </span>
               </div>
-              <div className="text-slate-700 leading-relaxed text-sm whitespace-pre-line text-justify">
+              <div className="text-slate-700 leading-relaxed text-sm whitespace-pre-line">
                 {selectedArticle.content || selectedArticle.summary}
               </div>
             </div>
