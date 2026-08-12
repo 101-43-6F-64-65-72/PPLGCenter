@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "@/lib/motion";
 import { extracurricularService } from "@/services/extracurricularService";
+import { resolveImageUrl } from "@/lib/utils";
 
 const DEFAULT_ITEMS = [
   {
@@ -29,8 +30,9 @@ const DEFAULT_ITEMS = [
 ];
 
 const getCategoryMatchingImage = (item, index) => {
-  if (item.imageUrl || item.image || item.logoUrl || item.bannerUrl) {
-    return item.imageUrl || item.image || item.logoUrl || item.bannerUrl;
+  const raw = item.imageUrl || item.image || item.logoUrl || item.bannerUrl || item.photoUrl || item.photo;
+  if (raw) {
+    return resolveImageUrl(raw, DEFAULT_ITEMS[index % DEFAULT_ITEMS.length].src);
   }
   const text = `${item.category || ""} ${item.name || item.Name || ""}`.toLowerCase();
   if (text.includes("olahraga") || text.includes("basket") || text.includes("futsal") || text.includes("voli")) {

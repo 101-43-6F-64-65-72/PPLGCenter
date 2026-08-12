@@ -47,7 +47,7 @@ const getDefaultFacilityDescription = (title = "", category = "", existingDesc =
     return "Laboratorium komputer modern dengan 36+ PC spesifikasi tinggi, koneksi internet serat optik kecepatan tinggi, pendingin ruangan, dan proyektor presentasi untuk kebutuhan ujian berbasis komputer & workshop praktikum.";
   }
   if (text.includes("halaman") || text.includes("taman") || text.includes("depan") || text.includes("area")) {
-    return "Area ruang terbuka hijau dan lapangan utama kampus SMKN 2 Surakarta. Tempat serbaguna untuk pelaksanaan upacara bendera, bazar UMKM siswa, expo ekstrakurikuler, dan kegiatan outdoor.";
+    return "Area ruang terbuka hijau dan lapangan utama SMKN 2 Surakarta. Tempat serbaguna untuk pelaksanaan upacara bendera, bazar UMKM siswa, expo ekstrakurikuler, dan kegiatan outdoor.";
   }
   if (text.includes("perpustakaan") || text.includes("baca")) {
     return "Ruang literasi ber-AC yang nyaman dengan ribuan koleksi buku referensi akademik, literatur digital, meja belajar diskusi kelompok, serta area baca terpisah.";

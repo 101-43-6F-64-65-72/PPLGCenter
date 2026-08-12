@@ -179,7 +179,7 @@ export default function Navbar() {
                     href="/profile"
                     className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-semibold text-xs xl:text-sm transition-all border border-slate-200 cursor-pointer shrink-0"
                   >
-                    <User className="w-3.5 h-3.5 text-blue-600" />
+                    <User className="w-3.5 h-3.5 text-[#2c1ee8]" />
                     <span className="max-w-[90px] sm:max-w-[120px] xl:max-w-[150px] truncate">
                       {user?.fullName || user?.name?.split(" ")[0] || "Profil"}
                     </span>
@@ -195,7 +195,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={handleOpenLogin}
-                  className="inline-flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs xl:text-sm px-4.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs border border-slate-800 hover:border-slate-700 active:scale-[0.97]"
+                  className="inline-flex items-center justify-center bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs xl:text-sm px-5 py-2 rounded-2xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-sm active:scale-[0.97]"
                 >
                   Login
                 </button>

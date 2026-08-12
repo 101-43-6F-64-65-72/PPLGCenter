@@ -253,9 +253,9 @@ export default function Footer() {
             &copy; 2026 Student Center SMK Negeri 2 Surakarta. Semua Hak Cipta Dilindungi.
           </p>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
-            <span>Preserving Functionality</span>
+            <span>Portal Resmi Kesiswaan</span>
             <span>•</span>
-            <span>High-End Vocational UI</span>
+            <span>SMK Negeri 2 Surakarta</span>
           </div>
         </div>
       </div>
