@@ -17,37 +17,36 @@ const DEFAULT_ITEMS = [
     src: "/images/tempat/lapangansmkn2ska.jpg",
     alt: "Ekstrakurikuler Olahraga",
     label: "Olahraga",
-    // Position classes encircling the center text (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
-    positionClass: "top-2 left-2 sm:-top-6 sm:-left-8 lg:-top-12 lg:-left-16 z-30",
-    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-56 lg:h-56",
-    initialRot: -6,
+    positionClass: "top-4 left-4 sm:top-2 sm:left-2 lg:top-1 lg:left-1 z-30",
+    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
+    initialRot: -5,
   },
   {
     id: "eskul-paskibra",
     src: "/images/eskul.jpeg",
     alt: "Ekstrakurikuler Paskibra",
     label: "Paskibra",
-    positionClass: "top-2 right-2 sm:-top-4 sm:-right-8 lg:-top-10 lg:-right-16 z-10",
-    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-60 lg:h-60",
-    initialRot: 7,
+    positionClass: "top-4 right-4 sm:top-2 sm:right-2 lg:top-1 lg:right-1 z-10",
+    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
+    initialRot: 6,
   },
   {
     id: "eskul-pmr",
     src: "/images/mading.jpeg",
     alt: "Ekstrakurikuler PMR & Seni",
     label: "PMR & Seni",
-    positionClass: "bottom-2 left-2 sm:-bottom-6 sm:-left-6 lg:-bottom-12 lg:-left-14 z-10",
-    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-60 lg:h-60",
-    initialRot: 5,
+    positionClass: "bottom-4 left-4 sm:bottom-2 sm:left-2 lg:bottom-1 lg:left-1 z-10",
+    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
+    initialRot: 4,
   },
   {
     id: "eskul-pramuka",
     src: "/images/fasilitas.jpeg",
     alt: "Ekstrakurikuler Pramuka",
     label: "Pramuka",
-    positionClass: "bottom-2 right-2 sm:-bottom-8 sm:-right-6 lg:-bottom-14 lg:-right-14 z-30",
-    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-56 lg:h-56",
-    initialRot: -8,
+    positionClass: "bottom-4 right-4 sm:bottom-2 sm:right-2 lg:bottom-1 lg:right-1 z-30",
+    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
+    initialRot: -6,
   },
 ];
 
@@ -135,7 +134,7 @@ export default function ExtracurricularCollage({ containerRef }) {
     // 1. Floating Idle Effect (Awal - continuous subtle floating)
     const idleTweens = els.map((card, i) => {
       return gsap.to(card, {
-        y: "-=14",
+        y: "-=10",
         duration: 2.5 + i * 0.4,
         repeat: -1,
         yoyo: true,
@@ -159,10 +158,10 @@ export default function ExtracurricularCollage({ containerRef }) {
         },
       });
 
-      // Ferris Wheel Pivot Container Revolution (-140deg to 0deg)
+      // Ferris Wheel Pivot Container Revolution (-100deg to 0deg)
       tl.fromTo(
         wheelRef.current,
-        { rotation: -140 },
+        { rotation: -100 },
         {
           rotation: 0,
           ease: "sine.inOut",
@@ -170,57 +169,57 @@ export default function ExtracurricularCollage({ containerRef }) {
         0
       );
 
-      // Card 0 (Top-Left): Counter-rotate to stay upright + float outward encircling center text
+      // Card 0 (Top-Left): Counter-rotate + tight float around text
       tl.fromTo(
         els[0],
-        { rotation: 140 + DEFAULT_ITEMS[0].initialRot, scale: 0.75, x: "-20px", y: "-20px" },
+        { rotation: 100 + DEFAULT_ITEMS[0].initialRot, scale: 0.85, x: "-10px", y: "-10px" },
         {
-          rotation: DEFAULT_ITEMS[0].initialRot - 10,
-          scale: 1.18,
-          x: "-95px",
-          y: "-65px",
+          rotation: DEFAULT_ITEMS[0].initialRot - 6,
+          scale: 1.1,
+          x: "-35px",
+          y: "-25px",
           ease: "power2.inOut",
         },
         0
       );
 
-      // Card 1 (Top-Right): Counter-rotate + float outward encircling center text
+      // Card 1 (Top-Right): Counter-rotate + tight float around text
       tl.fromTo(
         els[1],
-        { rotation: 140 + DEFAULT_ITEMS[1].initialRot, scale: 0.7, x: "20px", y: "-20px" },
+        { rotation: 100 + DEFAULT_ITEMS[1].initialRot, scale: 0.82, x: "10px", y: "-10px" },
         {
-          rotation: DEFAULT_ITEMS[1].initialRot + 8,
-          scale: 0.88,
-          x: "105px",
-          y: "-55px",
+          rotation: DEFAULT_ITEMS[1].initialRot + 6,
+          scale: 0.92,
+          x: "38px",
+          y: "-22px",
           ease: "sine.inOut",
         },
         0
       );
 
-      // Card 2 (Bottom-Left): Counter-rotate + float outward encircling center text
+      // Card 2 (Bottom-Left): Counter-rotate + tight float around text
       tl.fromTo(
         els[2],
-        { rotation: 140 + DEFAULT_ITEMS[2].initialRot, scale: 0.75, x: "-20px", y: "20px" },
+        { rotation: 100 + DEFAULT_ITEMS[2].initialRot, scale: 0.85, x: "-10px", y: "10px" },
         {
-          rotation: DEFAULT_ITEMS[2].initialRot + 6,
-          scale: 0.92,
-          x: "-85px",
-          y: "75px",
+          rotation: DEFAULT_ITEMS[2].initialRot + 5,
+          scale: 0.94,
+          x: "-32px",
+          y: "28px",
           ease: "power2.inOut",
         },
         0
       );
 
-      // Card 3 (Bottom-Right): Counter-rotate + float outward encircling center text
+      // Card 3 (Bottom-Right): Counter-rotate + tight float around text
       tl.fromTo(
         els[3],
-        { rotation: 140 + DEFAULT_ITEMS[3].initialRot, scale: 0.8, x: "20px", y: "20px" },
+        { rotation: 100 + DEFAULT_ITEMS[3].initialRot, scale: 0.88, x: "10px", y: "10px" },
         {
-          rotation: DEFAULT_ITEMS[3].initialRot - 12,
-          scale: 1.25,
-          x: "100px",
-          y: "70px",
+          rotation: DEFAULT_ITEMS[3].initialRot - 8,
+          scale: 1.14,
+          x: "35px",
+          y: "26px",
           ease: "sine.inOut",
         },
         0
