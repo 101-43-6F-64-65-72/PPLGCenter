@@ -2,188 +2,257 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
-  Instagram,
-  Youtube,
-  Facebook,
-  ArrowUpRight,
-  Heart,
-} from "lucide-react";
+import Image from "next/image";
 
-export default function Footer({ data }) {
-  const footerData = data || {
-    schoolName: "Student Center SMKN 2 Surakarta",
-    tagline: "Unggul, Berkarakter & Siap Kerja",
-    description:
-      "Platform terpadu informasi kegiatan siswa, pendaftaran ekstrakurikuler, mading digital, dan reservasi fasilitas sekolah SMK Negeri 2 Surakarta.",
-    contact: {
-      address: "Jl. Yosodipuro No. 105, Mangkubumen, Banjarsari, Surakarta, Jawa Tengah 57139",
-      phone: "(0271) 714422",
-      email: "info@smkn2surakarta.sch.id",
-      hours: "Senin - Jumat: 07.00 - 15.30 WIB",
-    },
-    quickLinks: [
-      { name: "Beranda", href: "#beranda" },
-      { name: "Ekstrakurikuler", href: "#ekstrakurikuler" },
-      { name: "Mading Digital", href: "#mading" },
-      { name: "Fasilitas Sekolah", href: "#fasilitas" },
-      { name: "Kalender Akademik", href: "/kalender" },
-    ],
-    servicesLinks: [
-      { name: "Portal Siswa", href: "/login" },
-      { name: "Peminjaman Alat & Lab", href: "/fasilitas" },
-      { name: "Pendaftaran Ekskul", href: "/ekstrakurikuler" },
-      { name: "Submit Karya Mading", href: "/mading" },
-      { name: "Pengajuan Surat OSIS", href: "/proposal" },
-    ],
-    socials: [
-      { name: "Instagram", href: "https://instagram.com/smkn2surakarta", icon: "Instagram" },
-      { name: "YouTube", href: "https://youtube.com/smkn2surakarta", icon: "Youtube" },
-      { name: "Facebook", href: "https://facebook.com/smkn2surakarta", icon: "Facebook" },
-      { name: "Email", href: "mailto:info@smkn2surakarta.sch.id", icon: "Mail" },
-    ],
-    copyright: "© 2026 Student Center SMK Negeri 2 Surakarta. All Rights Reserved.",
-  };
+const quickLinks = [
+  { label: "Beranda", href: "/" },
+  { label: "Fasilitas", href: "/fasilitas" },
+  { label: "Ekstrakurikuler", href: "/ekstrakurikuler" },
+  { label: "Mading", href: "/mading" },
+  { label: "Proposal", href: "/proposal" },
+  { label: "Kalender Akademik", href: "/kalender" },
+];
 
-  const getSocialIcon = (iconName) => {
-    switch (iconName) {
-      case "Instagram":
-        return <Instagram className="w-5 h-5" />;
-      case "Youtube":
-        return <Youtube className="w-5 h-5" />;
-      case "Facebook":
-        return <Facebook className="w-5 h-5" />;
-      default:
-        return <Mail className="w-5 h-5" />;
-    }
-  };
+const contactInfo = [
+  {
+    icon: (
+      <svg
+        className="w-5 h-5 flex-shrink-0 text-slate-400"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+        />
+      </svg>
+    ),
+    text: "Jl. Ahmad Yani No. 374, Banjarsari, Surakarta, Jawa Tengah 57134",
+  },
+  {
+    icon: (
+      <svg
+        className="w-5 h-5 flex-shrink-0 text-slate-400"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-1.514 2.007a14.28 14.28 0 0 1-5.918-5.918l2.007-1.514c.362-.272.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
+        />
+      </svg>
+    ),
+    text: "(0271) 714200",
+  },
+  {
+    icon: (
+      <svg
+        className="w-5 h-5 flex-shrink-0 text-slate-400"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25H4.5A2.25 2.25 0 0 1 2.25 17.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5H4.5a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
+        />
+      </svg>
+    ),
+    text: "info@smkn2surakarta.sch.id",
+  },
+  {
+    icon: (
+      <svg
+        className="w-5 h-5 flex-shrink-0 text-slate-400"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-.778.099-1.533.284-2.253"
+        />
+      </svg>
+    ),
+    text: "www.smkn2surakarta.sch.id",
+    href: "https://www.smkn2surakarta.sch.id",
+  },
+];
 
+const socialLinks = [
+  {
+    name: "Instagram",
+    href: "https://www.instagram.com/smkn2surakarta?igsh=cHB6MDQ1aTlrd3Jm",
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        viewBox="0 0 24 24"
+      >
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+      </svg>
+    ),
+  },
+  {
+    name: "YouTube",
+    href: "https://youtube.com/@smknegeri2surakarta1952?si=WJovtcQGO6J07QFi",
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        viewBox="0 0 24 24"
+      >
+        <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" />
+        <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" />
+      </svg>
+    ),
+  },
+  {
+    name: "Facebook",
+    href: "https://www.facebook.com/share/1EcqkNdk4r/",
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        viewBox="0 0 24 24"
+      >
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+      </svg>
+    ),
+  },
+];
+
+export default function Footer() {
   return (
-    <footer className="bg-slate-950 text-slate-300 border-t border-slate-800/80 relative overflow-hidden">
-      {/* Top Ambient Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[150px] bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
-          {/* Brand & Description */}
-          <div className="lg:col-span-4 space-y-4">
+    <footer className="bg-slate-950 border-t border-slate-800 text-white">
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-12">
+        {/* Main Grid: 4 columns */}
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          {/* Column 1: Brand Info */}
+          <div className="flex flex-col space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 shadow-lg shadow-blue-500/20">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                  <span className="font-extrabold text-lg text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
-                    S2
-                  </span>
-                </div>
+              <div className="relative h-10 w-10 flex-shrink-0">
+                <Image
+                  src="/images/logo.png"
+                  alt="Logo SMKN 2 Surakarta"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                  priority
+                />
               </div>
               <div>
-                <h3 className="font-extrabold text-lg text-white">
+                <span className="text-base font-bold text-white">
                   Student Center
-                </h3>
-                <p className="text-xs text-blue-400 font-semibold tracking-wide">
-                  SMK Negeri 2 Surakarta
-                </p>
+                </span>
+                <span className="block text-xs text-slate-400">
+                  SMKN 2 Surakarta
+                </span>
               </div>
             </div>
-
-            <p className="text-sm text-slate-400 leading-relaxed">
-              {footerData.description}
+            <p className="text-sm leading-relaxed text-slate-400 text-left">
+              Portal informasi dan layanan digital terpadu untuk memudahkan
+              siswa SMKN 2 Surakarta dalam mengakses mading, ekstrakurikuler,
+              fasilitas sekolah, dan pengajuan kegiatan dalam satu platform.
             </p>
+          </div>
 
-            {/* Social Links */}
-            <div className="pt-2 flex items-center gap-3">
-              {footerData.socials?.map((social, i) => (
+          {/* Column 2: Quick Links */}
+          <div className="flex flex-col space-y-4">
+            <h4 className="text-sm font-semibold text-white">Tautan Cepat</h4>
+            <ul className="space-y-2.5 text-sm">
+              {quickLinks.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className="text-slate-400 hover:text-white transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 3: Contact Info */}
+          <div className="flex flex-col space-y-4">
+            <h4 className="text-sm font-semibold text-white">Kontak Kami</h4>
+            <ul className="space-y-3 text-sm">
+              {contactInfo.map((contact, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  {contact.icon}
+                  {contact.href ? (
+                    <a
+                      href={contact.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-slate-400 hover:text-white transition-colors leading-relaxed"
+                    >
+                      {contact.text}
+                    </a>
+                  ) : (
+                    <span className="text-slate-400 leading-relaxed">
+                      {contact.text}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 4: Follow Us / Social Media */}
+          <div className="flex flex-col space-y-4">
+            <h4 className="text-sm font-semibold text-white">Ikuti Kami</h4>
+            <p className="text-sm text-slate-400">
+              Dapatkan berita terbaru dan aktivitas sekolah melalui media sosial
+              resmi kami.
+            </p>
+            <div className="flex gap-3 pt-1">
+              {socialLinks.map((social) => (
                 <a
-                  key={i}
+                  key={social.name}
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.name}
-                  className="p-2.5 rounded-xl bg-slate-900 hover:bg-blue-600 text-slate-400 hover:text-white border border-slate-800 hover:border-blue-500 transition-all duration-300 shadow-md"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
                 >
-                  {getSocialIcon(social.icon)}
+                  {social.icon}
                 </a>
               ))}
             </div>
           </div>
-
-          {/* Quick Links */}
-          <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white border-b border-slate-800/80 pb-2">
-              Navigasi Halaman
-            </h4>
-            <ul className="space-y-2.5 text-sm">
-              {footerData.quickLinks?.map((link, i) => (
-                <li key={i}>
-                  <Link
-                    href={link.href}
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-1 group"
-                  >
-                    <ArrowUpRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                    <span>{link.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Services Links */}
-          <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white border-b border-slate-800/80 pb-2">
-              Layanan Siswa
-            </h4>
-            <ul className="space-y-2.5 text-sm">
-              {footerData.servicesLinks?.map((link, i) => (
-                <li key={i}>
-                  <Link
-                    href={link.href}
-                    className="text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-1 group"
-                  >
-                    <ArrowUpRight className="w-3.5 h-3.5 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                    <span>{link.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact Details */}
-          <div className="lg:col-span-4 space-y-4">
-            <h4 className="text-sm font-bold uppercase tracking-wider text-white border-b border-slate-800/80 pb-2">
-              Kontak Sekolah
-            </h4>
-            <div className="space-y-3 text-sm text-slate-400">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-blue-400 shrink-0 mt-1" />
-                <span>{footerData.contact?.address}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>{footerData.contact?.phone}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>{footerData.contact?.email}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Clock className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>{footerData.contact?.hours}</span>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>{footerData.copyright}</p>
-          <div className="flex items-center gap-1">
-            <span>Dibuat dengan</span>
-            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
-            <span>untuk SMKN 2 Surakarta</span>
-          </div>
+        {/* Divider & Copyright */}
+        <div className="mt-12 border-t border-slate-800 pt-6">
+          <p className="text-center text-xs text-slate-500">
+            &copy; 2026 Student Center SMK Negeri 2 Surakarta. Semua Hak Cipta
+            Dilindungi.
+          </p>
         </div>
       </div>
     </footer>

@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import { User, LogOut } from "@/components/common/Icons";
 import LoginModal from "@/features/auth/components/LoginModal";
 import NotificationBell from "@/components/notification/NotificationBell";
-import { Menu, X, ChevronRight, Sparkles } from "lucide-react";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -20,235 +19,288 @@ export default function Navbar() {
 
   const userRole = (role || user?.role || "").toLowerCase();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const baseNavItems = [
-    { name: "Beranda", path: "#beranda", route: "/" },
-    { name: "Fasilitas", path: "#fasilitas", route: "/fasilitas" },
-    { name: "Ekstrakurikuler", path: "#ekstrakurikuler", route: "/ekstrakurikuler" },
-    { name: "Mading", path: "#mading", route: "/mading" },
-    { name: "Kalender", path: "/kalender", route: "/kalender" },
+    { name: "Beranda", path: "/" },
+    { name: "Fasilitas", path: "/fasilitas" },
+    { name: "Ekstrakurikuler", path: "/ekstrakurikuler" },
+    { name: "Mading", path: "/mading" },
+    { name: "Kalender", path: "/kalender" },
   ];
 
+  // Add Proposal menu only for authenticated users
   if (isAuthenticated) {
-    baseNavItems.push({ name: "Proposal", path: "/proposal", route: "/proposal" });
-    baseNavItems.push({ name: "PEMILOS", path: "/pemilos", route: "/pemilos" });
+    baseNavItems.push({ name: "Proposal", path: "/proposal" });
+    // Phase 6: Pemilos & OSIS Structure
+    baseNavItems.push({ name: "PEMILOS", path: "/pemilos" });
+    baseNavItems.push({ name: "Struktur OSIS", path: "/osis/structure" });
   }
 
   if (isAuthenticated) {
     if (userRole === "admin") {
-      baseNavItems.push({ name: "Panel Admin", path: "/admin", route: "/admin" });
+      baseNavItems.push({ name: "Panel Admin", path: "/admin" });
     } else if (userRole === "osis") {
-      baseNavItems.push({ name: "Panel OSIS", path: "/osis", route: "/osis" });
+      baseNavItems.push({ name: "Panel OSIS", path: "/osis" });
+      baseNavItems.push({ name: "Rekrutmen OSIS", path: "/osis/recruitment" });
     } else if (userRole === "teacher") {
-      baseNavItems.push({ name: "Panel Guru", path: "/guru", route: "/guru" });
+      baseNavItems.push({ name: "Panel Guru", path: "/guru" });
     }
   }
 
+  const navItems = baseNavItems;
+
   const handleNavClick = (e, item) => {
+    e.preventDefault();
     setMobileMenuOpen(false);
 
-    if (item.path.startsWith("#")) {
+    if (item.path === "/") {
       if (pathname === "/") {
-        e.preventDefault();
-        const element = document.querySelector(item.path);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth" });
-        } else {
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        router.push("/" + item.path);
+        router.push("/");
       }
+      return;
     }
+
+    if (item.path === "/ekstrakurikuler") {
+      if (pathname === "/ekstrakurikuler") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push("/ekstrakurikuler");
+      }
+      return;
+    }
+
+    if (item.path === "/mading") {
+      if (pathname === "/mading") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push("/mading");
+      }
+      return;
+    }
+
+    if (item.path === "/proposal") {
+      if (pathname === "/proposal") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push("/proposal");
+      }
+      return;
+    }
+
+    if (item.path === "/osis") {
+      if (pathname === "/osis") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        router.push("/osis");
+      }
+      return;
+    }
+
+    router.push(item.path);
   };
 
-  const getDashboardPath = () => {
-    if (userRole === "admin") return "/admin";
-    if (userRole === "osis") return "/osis";
-    if (userRole === "teacher") return "/guru";
-    return "/dashboard";
+  const handleOpenLogin = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleCloseLogin = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false);
+    router.push("/profile");
   };
 
   return (
     <>
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? "bg-slate-900/90 backdrop-blur-md py-3 shadow-xl border-b border-white/10"
-            : "bg-gradient-to-b from-slate-950/90 via-slate-900/70 to-transparent py-5 border-b border-transparent"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link
-              href="/"
-              className="flex items-center gap-3 group focus:outline-none"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
-                <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                  <span className="font-extrabold text-lg text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
-                    S2
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-lg tracking-tight text-white group-hover:text-blue-400 transition-colors">
-                    Student Center
-                  </span>
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                    SKADA
-                  </span>
-                </div>
-                <span className="text-xs text-slate-400 font-medium tracking-wide">
-                  SMK Negeri 2 Surakarta
-                </span>
-              </div>
-            </Link>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md py-3 px-4 sm:px-6 lg:px-8 border-b border-slate-200/80 shadow-2xs transition-all duration-200">
+        <div className="w-full max-w-[1536px] mx-auto flex items-center justify-between gap-3 sm:gap-6">
+          {/* Left Side: Logo & School Name */}
+          <Link
+            href="/"
+            onClick={(e) => handleNavClick(e, navItems[0])}
+            className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer shrink-0"
+          >
+            <div className="relative h-9 w-7.5 sm:h-10 sm:w-8 shrink-0 transition-transform group-hover:scale-105">
+              <Image
+                src="/images/logo.png"
+                alt="SMK Negeri 2 Surakarta Logo"
+                fill
+                sizes="48px"
+                className="object-contain"
+                priority
+              />
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="text-slate-900 font-bold text-sm sm:text-base tracking-tight group-hover:text-[#2c1ee8] transition-colors whitespace-nowrap">
+                Student Center
+              </span>
+              <span className="text-slate-500 font-medium text-[10px] sm:text-xs whitespace-nowrap">
+                SMK Negeri 2 Surakarta
+              </span>
+            </div>
+          </Link>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-full border border-white/10 backdrop-blur-md shadow-inner">
-              {baseNavItems.map((item) => {
-                const isActive =
-                  pathname === item.route ||
-                  (item.path.startsWith("#") && pathname === "/");
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.path}
-                    onClick={(e) => handleNavClick(e, item)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                      isActive
-                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/30"
-                        : "text-slate-300 hover:text-white hover:bg-white/5"
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
+          {/* Desktop Navigation Links */}
+          <nav className="hidden xl:flex items-center gap-1 shrink min-w-0">
+            {navItems.map((item) => {
+              const isActive =
+                item.path === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.path);
 
-            {/* Desktop Auth / Action */}
-            <div className="hidden md:flex items-center gap-3">
+              return (
+                <Link
+                  key={item.name}
+                  href={item.path}
+                  onClick={(e) => handleNavClick(e, item)}
+                  className={`font-semibold text-xs xl:text-sm transition-all cursor-pointer py-1.5 px-3 whitespace-nowrap rounded-lg ${
+                    isActive
+                      ? "text-[#2c1ee8] bg-blue-50 font-bold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Right Side Auth Actions & Mobile Toggle */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* Desktop Auth */}
+            <div className="flex items-center gap-2">
               {isAuthenticated ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <NotificationBell />
                   <Link
-                    href={getDashboardPath()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-700 transition-colors"
+                    href="/profile"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 text-[#2c1ee8] hover:bg-blue-100/80 font-semibold text-xs xl:text-sm transition-all border border-blue-100 cursor-pointer shrink-0"
                   >
-                    <User className="w-4 h-4 text-blue-400" />
-                    <span>{user?.name || "Dashboard"}</span>
+                    <User className="w-3.5 h-3.5" />
+                    <span className="max-w-[90px] sm:max-w-[120px] xl:max-w-[150px] truncate">
+                      {user?.fullName || user?.name?.split(" ")[0] || "Profil"}
+                    </span>
                   </Link>
                   <button
                     onClick={logout}
-                    title="Keluar"
-                    className="p-2.5 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors"
+                    className="p-1.5 text-slate-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                    title="Keluar Sesi"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
                 <button
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-semibold rounded-xl group bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 group-hover:from-blue-500 group-hover:to-purple-600 hover:text-white text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 active:scale-95"
+                  onClick={handleOpenLogin}
+                  className="inline-flex items-center justify-center bg-[#2c1ee8] hover:bg-blue-700 text-white font-semibold text-xs xl:text-sm px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
                 >
-                  <span className="relative px-5 py-2 transition-all ease-in duration-75 bg-slate-950/40 rounded-[10px] group-hover:bg-opacity-0 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-blue-400 group-hover:text-white transition-colors" />
-                    Login Portal
-                  </span>
+                  Login
                 </button>
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="flex md:hidden items-center gap-2">
-              {isAuthenticated && <NotificationBell />}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/80 focus:outline-none"
-                aria-label="Toggle Navigation Menu"
+            {/* Hamburger Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="xl:hidden p-2 text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer rounded-lg hover:bg-slate-100"
+              aria-label="Toggle Navigation Menu"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
+                {mobileMenuOpen ? (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                ) : (
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-slate-900/95 backdrop-blur-xl border-b border-slate-800 px-4 pt-3 pb-6 space-y-2 mt-3 animate-in fade-in slide-in-from-top-4 duration-200">
-            {baseNavItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.path}
-                onClick={(e) => handleNavClick(e, item)}
-                className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium text-slate-200 hover:bg-slate-800 hover:text-white transition-colors"
-              >
-                <span>{item.name}</span>
-                <ChevronRight className="w-4 h-4 text-slate-500" />
-              </Link>
-            ))}
+          <div className="xl:hidden mt-3 pb-4 border-t border-gray-100 flex flex-col gap-2 pt-3 px-2 max-h-[75vh] overflow-y-auto">
+            {navItems.map((item) => {
+              const isActive =
+                item.path === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.path);
 
-            <div className="pt-4 border-t border-slate-800">
-              {isAuthenticated ? (
-                <div className="space-y-2">
-                  <Link
-                    href={getDashboardPath()}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-blue-600 text-white font-medium shadow-md shadow-blue-600/30"
-                  >
-                    <span>Masuk Dashboard ({user?.name || "Profil"})</span>
-                    <User className="w-4 h-4" />
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      logout();
-                    }}
-                    className="flex items-center justify-between w-full px-4 py-3 rounded-xl bg-red-500/10 text-red-400 font-medium border border-red-500/20"
-                  >
-                    <span>Keluar dari Akun</span>
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
+              return (
+                <Link
+                  key={item.name}
+                  href={item.path}
+                  onClick={(e) => handleNavClick(e, item)}
+                  className={`font-semibold text-sm py-2 px-3 rounded-xl transition-colors cursor-pointer ${
+                    isActive
+                      ? "text-[#2c1ee8] bg-blue-50 font-bold"
+                      : "text-gray-800 hover:text-[#2c1ee8] hover:bg-gray-50"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+
+            {isAuthenticated ? (
+              <div className="pt-2 border-t border-gray-100 flex flex-col gap-2">
+                <Link
+                  href="/profile"
+                  className="font-semibold text-sm py-2 px-3 rounded-xl text-gray-800 hover:text-[#2c1ee8] hover:bg-blue-50 flex items-center gap-2 cursor-pointer"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="w-4 h-4 text-[#2c1ee8]" />
+                  Profil Saya ({user?.fullName || user?.name})
+                </Link>
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    setIsLoginModalOpen(true);
+                    logout();
                   }}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+                  className="w-full text-left font-semibold text-sm py-2 px-3 rounded-xl text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Login Portal Student Center</span>
+                  <LogOut className="w-4 h-4" />
+                  Keluar Sesi
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleOpenLogin();
+                }}
+                className="w-full text-center border-2 border-[#2c1ee8] text-[#2c1ee8] font-semibold text-sm py-2.5 rounded-full mt-2 cursor-pointer"
+              >
+                Login
+              </button>
+            )}
           </div>
         )}
       </header>
 
-      {/* Login Modal */}
-      {isLoginModalOpen && (
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-        />
-      )}
+      {/* Overlap Login Modal Overlay Component */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleCloseLogin}
+        onSuccess={handleLoginSuccess}
+      />
     </>
   );
 }
