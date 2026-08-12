@@ -9,6 +9,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import facilityService from "@/services/facilityService";
 import { resolveImageUrl } from "@/lib/utils";
 import { ArrowRight, Building2, CheckCircle2, Shield } from "lucide-react";
+import MorphingSvg from "@/components/common/MorphingSvg";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -202,6 +203,14 @@ export default function FacilityCatalogSection() {
       id="facilities"
       className="w-full bg-white border-t border-slate-200/80 relative overflow-hidden select-none"
     >
+      {/* Background SVG Morphing Ring Element */}
+      <MorphingSvg
+        preset="ring"
+        size={580}
+        duration={14}
+        gradientId="facilityRingGrad"
+        className="absolute top-12 -left-28 opacity-50 pointer-events-none -z-10"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-0 min-h-screen flex items-center">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
           

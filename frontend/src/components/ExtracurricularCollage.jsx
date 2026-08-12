@@ -17,37 +17,37 @@ const DEFAULT_ITEMS = [
     src: "/images/tempat/lapangansmkn2ska.jpg",
     alt: "Ekstrakurikuler Olahraga",
     label: "Olahraga",
-    // Position classes encircling the center (Desktop & Mobile grid)
-    positionClass: "top-0 left-0 lg:-top-6 lg:-left-8 z-30",
-    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
-    initialRot: "-6deg",
+    // Position classes encircling the center text (Top-Left, Top-Right, Bottom-Left, Bottom-Right)
+    positionClass: "top-2 left-2 sm:-top-6 sm:-left-8 lg:-top-12 lg:-left-16 z-30",
+    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-56 lg:h-56",
+    initialRot: -6,
   },
   {
     id: "eskul-paskibra",
     src: "/images/eskul.jpeg",
     alt: "Ekstrakurikuler Paskibra",
     label: "Paskibra",
-    positionClass: "top-0 right-0 lg:-top-4 lg:-right-8 z-10",
-    sizeClass: "w-40 h-40 sm:w-52 sm:h-52 lg:w-60 lg:h-60",
-    initialRot: "7deg",
+    positionClass: "top-2 right-2 sm:-top-4 sm:-right-8 lg:-top-10 lg:-right-16 z-10",
+    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-60 lg:h-60",
+    initialRot: 7,
   },
   {
     id: "eskul-pmr",
     src: "/images/mading.jpeg",
     alt: "Ekstrakurikuler PMR & Seni",
     label: "PMR & Seni",
-    positionClass: "bottom-0 left-0 lg:-bottom-6 lg:-left-6 z-10",
-    sizeClass: "w-40 h-40 sm:w-52 sm:h-52 lg:w-60 lg:h-60",
-    initialRot: "5deg",
+    positionClass: "bottom-2 left-2 sm:-bottom-6 sm:-left-6 lg:-bottom-12 lg:-left-14 z-10",
+    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-60 lg:h-60",
+    initialRot: 5,
   },
   {
     id: "eskul-pramuka",
     src: "/images/fasilitas.jpeg",
     alt: "Ekstrakurikuler Pramuka",
     label: "Pramuka",
-    positionClass: "bottom-0 right-0 lg:-bottom-8 lg:-right-6 z-30",
-    sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
-    initialRot: "-8deg",
+    positionClass: "bottom-2 right-2 sm:-bottom-8 sm:-right-6 lg:-bottom-14 lg:-right-14 z-30",
+    sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-56 lg:h-56",
+    initialRot: -8,
   },
 ];
 
@@ -74,6 +74,7 @@ const getCategoryMatchingImage = (item, index) => {
 
 export default function ExtracurricularCollage({ containerRef }) {
   const [items, setItems] = useState(DEFAULT_ITEMS);
+  const wheelRef = useRef(null);
   const cardRefs = useRef([]);
 
   // Fetch dynamic items from REST API
@@ -121,9 +122,9 @@ export default function ExtracurricularCollage({ containerRef }) {
     };
   }, []);
 
-  // GSAP Floating Idle Effect (Awal) + Scroll-Driven Parallax Timeline
+  // GSAP Biang Lala (Ferris Wheel) Orbit Reveal encircling center text + Floating Idle + Scroll Parallax
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !wheelRef.current) return;
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReducedMotion) return;
@@ -131,11 +132,11 @@ export default function ExtracurricularCollage({ containerRef }) {
     const els = cardRefs.current.filter(Boolean);
     if (els.length < 4) return;
 
-    // 1. Floating Idle Effect (Awal - before scroll)
+    // 1. Floating Idle Effect (Awal - continuous subtle floating)
     const idleTweens = els.map((card, i) => {
       return gsap.to(card, {
         y: "-=14",
-        duration: 2.4 + i * 0.4,
+        duration: 2.5 + i * 0.4,
         repeat: -1,
         yoyo: true,
         ease: "sine.inOut",
@@ -143,68 +144,83 @@ export default function ExtracurricularCollage({ containerRef }) {
       });
     });
 
-    // 2. ScrollTrigger Timeline Transformation (Scroll-driven Parallax, Scale, Rotation & Z-Index)
+    // 2. Ferris Wheel (Biang Lala) Orbital Revolution & Parallax Timeline
     let mm = gsap.matchMedia();
 
     mm.add("(min-width: 1024px)", () => {
-      const triggerTarget = containerRef?.current || cardRefs.current[0];
+      const triggerTarget = containerRef?.current || wheelRef.current;
 
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: triggerTarget,
           start: "top bottom",
           end: "bottom top",
-          scrub: 1.2,
+          scrub: 1.5,
         },
       });
 
-      // Card 0 (Top-Left): Asynchronous float outward, scale up, float in front (z-30)
-      tl.to(
-        els[0],
+      // Ferris Wheel Pivot Container Revolution (-140deg to 0deg)
+      tl.fromTo(
+        wheelRef.current,
+        { rotation: -140 },
         {
-          x: "-85px",
-          y: "-55px",
-          scale: 1.18,
-          rotation: -12,
-          ease: "power2.inOut",
-        },
-        0
-      );
-
-      // Card 1 (Top-Right): Asynchronous float outward, scale down, float in back (z-10)
-      tl.to(
-        els[1],
-        {
-          x: "90px",
-          y: "-45px",
-          scale: 0.86,
-          rotation: 10,
+          rotation: 0,
           ease: "sine.inOut",
         },
         0
       );
 
-      // Card 2 (Bottom-Left): Asynchronous float outward, scale down, float in back (z-10)
-      tl.to(
-        els[2],
+      // Card 0 (Top-Left): Counter-rotate to stay upright + float outward encircling center text
+      tl.fromTo(
+        els[0],
+        { rotation: 140 + DEFAULT_ITEMS[0].initialRot, scale: 0.75, x: "-20px", y: "-20px" },
         {
-          x: "-70px",
-          y: "65px",
-          scale: 0.9,
-          rotation: 8,
+          rotation: DEFAULT_ITEMS[0].initialRot - 10,
+          scale: 1.18,
+          x: "-95px",
+          y: "-65px",
           ease: "power2.inOut",
         },
         0
       );
 
-      // Card 3 (Bottom-Right): Asynchronous float outward, scale up, float in front (z-30)
-      tl.to(
-        els[3],
+      // Card 1 (Top-Right): Counter-rotate + float outward encircling center text
+      tl.fromTo(
+        els[1],
+        { rotation: 140 + DEFAULT_ITEMS[1].initialRot, scale: 0.7, x: "20px", y: "-20px" },
         {
-          x: "85px",
-          y: "60px",
-          scale: 1.22,
-          rotation: -10,
+          rotation: DEFAULT_ITEMS[1].initialRot + 8,
+          scale: 0.88,
+          x: "105px",
+          y: "-55px",
+          ease: "sine.inOut",
+        },
+        0
+      );
+
+      // Card 2 (Bottom-Left): Counter-rotate + float outward encircling center text
+      tl.fromTo(
+        els[2],
+        { rotation: 140 + DEFAULT_ITEMS[2].initialRot, scale: 0.75, x: "-20px", y: "20px" },
+        {
+          rotation: DEFAULT_ITEMS[2].initialRot + 6,
+          scale: 0.92,
+          x: "-85px",
+          y: "75px",
+          ease: "power2.inOut",
+        },
+        0
+      );
+
+      // Card 3 (Bottom-Right): Counter-rotate + float outward encircling center text
+      tl.fromTo(
+        els[3],
+        { rotation: 140 + DEFAULT_ITEMS[3].initialRot, scale: 0.8, x: "20px", y: "20px" },
+        {
+          rotation: DEFAULT_ITEMS[3].initialRot - 12,
+          scale: 1.25,
+          x: "100px",
+          y: "70px",
           ease: "sine.inOut",
         },
         0
@@ -222,39 +238,44 @@ export default function ExtracurricularCollage({ containerRef }) {
   }, [items, containerRef]);
 
   return (
-    <div className="relative w-full max-w-[540px] aspect-square mx-auto select-none p-4">
-      {/* 4 Encircling Image Cards with Thick Rounded Corners (rounded-[28px]) */}
-      {items.map((img, idx) => (
-        <div
-          key={img.id || idx}
-          ref={(el) => (cardRefs.current[idx] = el)}
-          className={`absolute ${img.positionClass} ${img.sizeClass} group cursor-pointer transition-shadow duration-500`}
-        >
+    <div className="absolute inset-0 pointer-events-none select-none overflow-visible z-10">
+      {/* Ferris Wheel (Biang Lala) Revolving Pivot Container encircling center stage */}
+      <div
+        ref={wheelRef}
+        className="relative w-full h-full transform-gpu origin-center overflow-visible"
+      >
+        {items.map((img, idx) => (
           <div
-            className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/80 shadow-xl shadow-slate-900/15 group-hover:shadow-2xl group-hover:border-blue-400/90 transition-all duration-300"
-            style={{ transform: `rotate(${img.initialRot})` }}
+            key={img.id || idx}
+            ref={(el) => (cardRefs.current[idx] = el)}
+            className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible`}
           >
-            <Image
-              src={img.src}
-              alt={img.alt}
-              fill
-              sizes="(max-width: 768px) 50vw, 260px"
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-              unoptimized
-            />
-            
-            {/* Dark gradient bottom overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
+            <div
+              className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300"
+              style={{ transform: `rotate(${img.initialRot}deg)` }}
+            >
+              <Image
+                src={img.src}
+                alt={img.alt}
+                fill
+                sizes="(max-width: 768px) 50vw, 260px"
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+                unoptimized
+              />
+              
+              {/* Dark gradient bottom overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
 
-            {/* Glass Pill Label with Thick Rounded Styling */}
-            <div className="absolute bottom-3 left-3 z-10 pr-2">
-              <span className="inline-block bg-white/95 backdrop-blur-md text-slate-900 text-xs font-extrabold px-3 py-1 rounded-xl shadow-sm border border-white/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-blue-400 transition-all duration-200 max-w-[140px] truncate">
-                {img.label}
-              </span>
+              {/* Glass Pill Label */}
+              <div className="absolute bottom-3 left-3 z-10 pr-2">
+                <span className="inline-block bg-white/95 backdrop-blur-md text-slate-900 text-xs font-extrabold px-3 py-1 rounded-xl shadow-sm border border-white/80 group-hover:bg-[#2c1ee8] group-hover:text-white group-hover:border-blue-400 transition-all duration-200 max-w-[140px] truncate">
+                  {img.label}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { motion } from "@/lib/motion";
 import { Trophy, ShieldCheck, GraduationCap, MapPin, Sparkles } from "lucide-react";
 import PrimaryButton from "./PrimaryButton";
 import { resolveImageUrl } from "@/lib/utils";
+import MorphingSvg from "@/components/common/MorphingSvg";
 
 const HERO_STATS = [
   {
@@ -53,6 +54,22 @@ export default function Hero() {
       id="home"
       className="w-full bg-gradient-to-b from-blue-50/40 via-white to-white py-12 sm:py-16 lg:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-grid-pattern select-none"
     >
+      {/* Background SVG Morphing Shard & Blob Elements */}
+      <MorphingSvg
+        preset="shard"
+        size={640}
+        duration={12}
+        gradientId="heroShardGrad"
+        className="absolute -top-16 -right-20 opacity-70 pointer-events-none -z-10"
+      />
+      <MorphingSvg
+        preset="blob"
+        size={540}
+        duration={10}
+        gradientId="heroBlobGrad"
+        className="absolute -bottom-20 -left-20 opacity-60 pointer-events-none -z-10"
+      />
+
       {/* Background ambient lighting blur */}
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 

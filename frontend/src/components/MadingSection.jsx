@@ -13,6 +13,7 @@ import AnnouncementSkeleton from "@/features/announcement/components/Announcemen
 import EmptyState from "@/components/common/EmptyState";
 import ErrorAlert from "@/components/common/ErrorAlert";
 import { resolveImageUrl } from "@/lib/utils";
+import MorphingSvg from "@/components/common/MorphingSvg";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
@@ -78,8 +79,16 @@ export default function MadingSection() {
     <section
       ref={sectionRef}
       id="mading"
-      className="w-full bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none"
+      className="w-full bg-slate-50/80 border-t border-slate-200/80 py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden select-none"
     >
+      {/* Background SVG Morphing Shard Element */}
+      <MorphingSvg
+        preset="shard"
+        size={600}
+        duration={11}
+        gradientId="madingShardGrad"
+        className="absolute top-10 -right-24 opacity-50 pointer-events-none -z-10"
+      />
       {/* Background Decorative Grid */}
       <div className="absolute inset-0 bg-dots-pattern opacity-60 pointer-events-none" />
 
