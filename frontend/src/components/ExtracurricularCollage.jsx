@@ -13,7 +13,6 @@ const DEFAULT_ITEMS = [
     label: "Olahraga",
     positionClass: "top-2 left-2 sm:-top-4 sm:-left-6 lg:-top-8 lg:-left-12 z-30",
     sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
-    initialRot: -6,
   },
   {
     id: "eskul-paskibra",
@@ -22,7 +21,6 @@ const DEFAULT_ITEMS = [
     label: "Paskibra",
     positionClass: "top-2 right-2 sm:-top-4 sm:-right-6 lg:-top-8 lg:-right-12 z-10",
     sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
-    initialRot: 7,
   },
   {
     id: "eskul-pmr",
@@ -31,7 +29,6 @@ const DEFAULT_ITEMS = [
     label: "PMR & Seni",
     positionClass: "bottom-2 left-2 sm:-bottom-4 sm:-left-6 lg:-bottom-8 lg:-left-10 z-10",
     sizeClass: "w-36 h-36 sm:w-48 sm:h-48 lg:w-56 lg:h-56",
-    initialRot: 5,
   },
   {
     id: "eskul-pramuka",
@@ -40,7 +37,6 @@ const DEFAULT_ITEMS = [
     label: "Pramuka",
     positionClass: "bottom-2 right-2 sm:-bottom-4 sm:-right-6 lg:-bottom-8 lg:-right-10 z-30",
     sizeClass: "w-32 h-32 sm:w-44 sm:h-44 lg:w-52 lg:h-52",
-    initialRot: -8,
   },
 ];
 
@@ -128,10 +124,7 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
             }}
             className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-hidden transform-gpu will-change-transform`}
           >
-            <div
-              className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300 transform-gpu"
-              style={{ transform: `rotate(${img.initialRot}deg)` }}
-            >
+            <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300 transform-gpu">
               <Image
                 src={img.src}
                 alt={img.alt}

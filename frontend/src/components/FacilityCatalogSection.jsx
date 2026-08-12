@@ -131,11 +131,12 @@ export default function FacilityCatalogSection() {
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top top",
-          end: "+=2800",
+          end: "+=2400",
           pin: true,
           pinSpacing: true,
           scrub: 1.2,
           anticipatePin: 1,
+          refreshPriority: 2,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             const p = self.progress;

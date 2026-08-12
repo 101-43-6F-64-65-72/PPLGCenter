@@ -19,7 +19,7 @@ export default function ExtracurricularSection() {
   const wheelRef = useRef(null);
   const cardsRef = useRef([]);
 
-  // GSAP ScrollTrigger Pinned Showcase with 100% Upright Image Orbiting
+  // GSAP ScrollTrigger Pinned Showcase with refreshPriority & 100% Upright Images
   useEffect(() => {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
@@ -33,7 +33,7 @@ export default function ExtracurricularSection() {
       const cardEls = cardsRef.current.filter(Boolean);
       if (!wheel || cardEls.length < 4) return;
 
-      // Pinned GSAP ScrollTrigger Timeline with proper pinSpacing
+      // Pinned GSAP ScrollTrigger Timeline with refreshPriority: 1
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: sectionRef.current,
@@ -43,6 +43,7 @@ export default function ExtracurricularSection() {
           pinSpacing: true,
           scrub: 1.2,
           anticipatePin: 1,
+          refreshPriority: 1,
           invalidateOnRefresh: true,
         },
       });
@@ -59,30 +60,14 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 2. Card 0 (Top-Left): Counter-rotate (+50deg -> -6deg) to keep image ALWAYS 100% UPRIGHT
+      // 2. Card 0 (Top-Left): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
       tl.fromTo(
         cardEls[0],
-        { rotation: 44, scale: 0.85, x: "20px", y: "20px", opacity: 0.7 },
+        { rotation: 50, scale: 0.85, x: "20px", y: "20px", opacity: 0.7 },
         {
-          rotation: -6,
-          scale: 1.12,
-          x: "-55px",
-          y: "-35px",
-          opacity: 1,
-          ease: "power2.inOut",
-          force3D: true,
-        },
-        0
-      );
-
-      // 3. Card 1 (Top-Right): Counter-rotate (+50deg -> +7deg) to keep image ALWAYS 100% UPRIGHT
-      tl.fromTo(
-        cardEls[1],
-        { rotation: 57, scale: 0.82, x: "-20px", y: "20px", opacity: 0.7 },
-        {
-          rotation: 7,
-          scale: 0.92,
-          x: "60px",
+          rotation: 0,
+          scale: 1.1,
+          x: "-50px",
           y: "-30px",
           opacity: 1,
           ease: "power2.inOut",
@@ -91,15 +76,15 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 4. Card 2 (Bottom-Left): Counter-rotate (+50deg -> +5deg) to keep image ALWAYS 100% UPRIGHT
+      // 3. Card 1 (Top-Right): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
       tl.fromTo(
-        cardEls[2],
-        { rotation: 55, scale: 0.82, x: "20px", y: "-20px", opacity: 0.7 },
+        cardEls[1],
+        { rotation: 50, scale: 0.82, x: "-20px", y: "20px", opacity: 0.7 },
         {
-          rotation: 5,
-          scale: 0.94,
-          x: "-50px",
-          y: "45px",
+          rotation: 0,
+          scale: 0.92,
+          x: "55px",
+          y: "-25px",
           opacity: 1,
           ease: "power2.inOut",
           force3D: true,
@@ -107,15 +92,31 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 5. Card 3 (Bottom-Right): Counter-rotate (+50deg -> -8deg) to keep image ALWAYS 100% UPRIGHT
+      // 4. Card 2 (Bottom-Left): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
+      tl.fromTo(
+        cardEls[2],
+        { rotation: 50, scale: 0.82, x: "20px", y: "-20px", opacity: 0.7 },
+        {
+          rotation: 0,
+          scale: 0.94,
+          x: "-45px",
+          y: "40px",
+          opacity: 1,
+          ease: "power2.inOut",
+          force3D: true,
+        },
+        0
+      );
+
+      // 5. Card 3 (Bottom-Right): Counter-rotate (+50deg -> 0deg) so net angle is ALWAYS 0° (100% UPRIGHT)
       tl.fromTo(
         cardEls[3],
-        { rotation: 42, scale: 0.85, x: "-20px", y: "-20px", opacity: 0.7 },
+        { rotation: 50, scale: 0.85, x: "-20px", y: "-20px", opacity: 0.7 },
         {
-          rotation: -8,
-          scale: 1.15,
-          x: "55px",
-          y: "40px",
+          rotation: 0,
+          scale: 1.12,
+          x: "50px",
+          y: "35px",
           opacity: 1,
           ease: "power2.inOut",
           force3D: true,
@@ -135,7 +136,7 @@ export default function ExtracurricularSection() {
 
       setTimeout(() => {
         ScrollTrigger.refresh();
-      }, 100);
+      }, 150);
 
       return () => {
         tl.kill();
@@ -151,7 +152,7 @@ export default function ExtracurricularSection() {
     <section
       ref={sectionRef}
       id="extracurricular"
-      className="w-full bg-slate-50/70 border-y border-slate-200/60 relative overflow-hidden bg-dots-pattern select-none z-10 my-12 lg:my-0"
+      className="w-full bg-slate-50/70 border-t border-slate-200/80 relative overflow-hidden bg-dots-pattern select-none z-10"
     >
       {/* Background SVG Morphing Ambient Star Element */}
       <MorphingSvg
