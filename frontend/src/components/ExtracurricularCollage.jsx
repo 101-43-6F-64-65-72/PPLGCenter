@@ -61,7 +61,7 @@ const getCategoryMatchingImage = (item, index) => {
   return DEFAULT_ITEMS[index % DEFAULT_ITEMS.length].src;
 };
 
-export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
+export default function ExtracurricularCollage({ wheelRef, cardsRef, onItemsLoaded }) {
   const [items, setItems] = useState(DEFAULT_ITEMS);
 
   // Fetch dynamic items from REST API
@@ -97,6 +97,7 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
           }
 
           setItems(mapped);
+          if (onItemsLoaded) onItemsLoaded(mapped);
         }
       } catch (err) {
         // Safe fallback
@@ -107,7 +108,7 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [onItemsLoaded]);
 
   return (
     <div className="absolute inset-0 pointer-events-none select-none overflow-visible z-10">
@@ -122,7 +123,7 @@ export default function ExtracurricularCollage({ wheelRef, cardsRef }) {
             ref={(el) => {
               if (cardsRef) cardsRef.current[idx] = el;
             }}
-            className={`absolute ${img.positionClass} ${img.sizeClass} opacity-0 group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible transform-gpu will-change-transform`}
+            className={`absolute ${img.positionClass} ${img.sizeClass} group pointer-events-auto cursor-pointer transition-shadow duration-500 overflow-visible transform-gpu will-change-transform`}
           >
             <div className="relative w-full h-full rounded-[28px] overflow-hidden bg-slate-900 border-2 border-white/90 shadow-2xl shadow-slate-900/20 group-hover:shadow-blue-900/30 group-hover:border-blue-400 transition-all duration-300 transform-gpu">
               <Image

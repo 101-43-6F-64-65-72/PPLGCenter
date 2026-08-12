@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { motion } from "@/lib/motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -20,6 +20,11 @@ export default function ExtracurricularSection() {
   const wheelRef = useRef(null);
   const cardsRef = useRef([]);
   const ringsRef = useRef([]);
+  const [itemsVersion, setItemsVersion] = useState(0);
+
+  const handleItemsLoaded = useCallback(() => {
+    setItemsVersion((v) => v + 1);
+  }, []);
 
   // GSAP ScrollTrigger Pinned Showcase - Pure Scroll Opacity Fade-In on Revolving Wheel
   useEffect(() => {
@@ -67,14 +72,14 @@ export default function ExtracurricularSection() {
         0
       );
 
-      // 2. Pure Scroll-Driven Opacity Animation (STRICT 0% INIT -> Perlahan Muncul saat Scroll)
+      // 2. Pure Scroll-Driven Staggered Opacity Fade-In (STRICT 0% INIT -> Perlahan Muncul saat Scroll)
       // Card 0 (Top-Left): Opacity 0 -> 1 slowly from 0% to 30% scroll
       tl.fromTo(
         cardEls[0],
         { opacity: 0 },
         {
           opacity: 1,
-          ease: "sine.out",
+          ease: "power1.out",
           force3D: true,
         },
         0.00
@@ -86,7 +91,7 @@ export default function ExtracurricularSection() {
         { opacity: 0 },
         {
           opacity: 1,
-          ease: "sine.out",
+          ease: "power1.out",
           force3D: true,
         },
         0.20
@@ -98,7 +103,7 @@ export default function ExtracurricularSection() {
         { opacity: 0 },
         {
           opacity: 1,
-          ease: "sine.out",
+          ease: "power1.out",
           force3D: true,
         },
         0.40
@@ -110,7 +115,7 @@ export default function ExtracurricularSection() {
         { opacity: 0 },
         {
           opacity: 1,
-          ease: "sine.out",
+          ease: "power1.out",
           force3D: true,
         },
         0.60
@@ -157,7 +162,7 @@ export default function ExtracurricularSection() {
     return () => {
       mm.revert();
     };
-  }, []);
+  }, [itemsVersion]);
 
   return (
     <section
@@ -185,6 +190,7 @@ export default function ExtracurricularSection() {
           <ExtracurricularCollage
             wheelRef={wheelRef}
             cardsRef={cardsRef}
+            onItemsLoaded={handleItemsLoaded}
           />
 
           {/* Centered Main Text Content */}
