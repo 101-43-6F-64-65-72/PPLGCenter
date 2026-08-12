@@ -358,23 +358,46 @@ export default function KalenderPage() {
     setSelectedDate(formatDate(current));
   };
 
+  // OSIS, Admin, and Guru (Teacher) are allowed to view OSIS category & OSIS events
+  const canViewOsisCategory = useMemo(() => {
+    return (
+      userRole === "admin" ||
+      userRole === "teacher" ||
+      userRole === "guru" ||
+      userRole === "osis" ||
+      role === "Admin" ||
+      role === "Teacher" ||
+      role === "Guru" ||
+      role === "OSIS"
+    );
+  }, [userRole, role]);
+
+  // Filter base events so non-OSIS/Guru/Admin users cannot see OSIS events at all
+  const visibleEvents = useMemo(() => {
+    if (canViewOsisCategory) return events;
+    return events.filter((e) => {
+      const cat = (e.category || "").trim().toLowerCase();
+      return !cat.includes("osis") && !cat.includes("mpk");
+    });
+  }, [events, canViewOsisCategory]);
+
   // Filter & Search Logic
   const filteredEvents = useMemo(() => {
-    return filter === "All" ? events : events.filter((e) => e.category === filter);
-  }, [events, filter]);
+    return filter === "All" ? visibleEvents : visibleEvents.filter((e) => e.category === filter);
+  }, [visibleEvents, filter]);
 
   // Search Results
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
-    return events.filter(
+    return visibleEvents.filter(
       (e) =>
         e.title.toLowerCase().includes(query) ||
         (e.description && e.description.toLowerCase().includes(query)) ||
         (e.location && e.location.toLowerCase().includes(query)) ||
         e.category.toLowerCase().includes(query)
     );
-  }, [events, searchQuery]);
+  }, [visibleEvents, searchQuery]);
 
   // Check if a date string falls within an event range
   const isEventOnDate = useCallback((e, dateStr) => {
@@ -396,7 +419,7 @@ export default function KalenderPage() {
 
   // Total events in current selected month
   const currentMonthEventsCount = useMemo(() => {
-    return events.filter((e) => {
+    return visibleEvents.filter((e) => {
       if (!e.date) return false;
       const d = new Date(e.date);
       return (
@@ -404,7 +427,7 @@ export default function KalenderPage() {
         d.getFullYear() === currentMonth.getFullYear()
       );
     }).length;
-  }, [events, currentMonth]);
+  }, [visibleEvents, currentMonth]);
 
   // Open Detail Modal
   const openDetail = (dateStr) => {
@@ -415,31 +438,32 @@ export default function KalenderPage() {
   // Today Events computed list
   const todayEvents = useMemo(() => {
     const todayStr = formatDate(today);
-    return events.filter((e) => isEventOnDate(e, todayStr));
-  }, [events, today, isEventOnDate]);
+    return visibleEvents.filter((e) => isEventOnDate(e, todayStr));
+  }, [visibleEvents, today, isEventOnDate]);
 
   // Upcoming events sorted chronologically (excluding past events)
   const upcomingEvents = useMemo(() => {
     const todayStr = formatDate(today);
-    return events
+    return visibleEvents
       .filter((e) => {
         const checkDate = e.end || e.date;
         return checkDate >= todayStr;
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .slice(0, 5);
-  }, [events, today]);
+  }, [visibleEvents, today]);
 
   // Statistics Computations
   const stats = useMemo(() => {
     return {
-      total: events.length,
-      libur: events.filter((e) => e.category === "Libur Nasional").length,
-      akademik: events.filter((e) => e.category === "Akademik").length,
-      ujian: events.filter((e) => e.category === "Ujian").length,
-      ekskul: events.filter((e) => e.category === "Ekstrakurikuler").length,
+      total: visibleEvents.length,
+      libur: visibleEvents.filter((e) => e.category === "Libur Nasional").length,
+      akademik: visibleEvents.filter((e) => e.category === "Akademik").length,
+      ujian: visibleEvents.filter((e) => e.category === "Ujian").length,
+      ekskul: visibleEvents.filter((e) => e.category === "Ekstrakurikuler").length,
+      osis: visibleEvents.filter((e) => e.category === "OSIS").length,
     };
-  }, [events]);
+  }, [visibleEvents]);
 
   const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
@@ -515,7 +539,7 @@ export default function KalenderPage() {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2">
-                {["All", "Libur Nasional", "Akademik", "Ujian", "OSIS", "Ekstrakurikuler"].map((cat) => {
+                {["All", "Libur Nasional", "Akademik", "Ujian", ...(canViewOsisCategory ? ["OSIS"] : []), "Ekstrakurikuler"].map((cat) => {
                   const isActive = filter === cat;
                   return (
                     <button
@@ -716,12 +740,14 @@ export default function KalenderPage() {
                   <span className="w-2.5 h-2.5 bg-blue-600 rounded-full inline-block" />
                   <span>Hari Ini</span>
                 </div>
-                {Object.keys(categoryColors).map((cat) => (
-                  <div key={cat} className="flex items-center gap-1.5">
-                    <span className={`w-2.5 h-2.5 rounded-full inline-block ${categoryColors[cat]}`} />
-                    <span>{cat}</span>
-                  </div>
-                ))}
+                {Object.keys(categoryColors)
+                  .filter((cat) => cat !== "OSIS" || canViewOsisCategory)
+                  .map((cat) => (
+                    <div key={cat} className="flex items-center gap-1.5">
+                      <span className={`w-2.5 h-2.5 rounded-full inline-block ${categoryColors[cat]}`} />
+                      <span>{cat}</span>
+                    </div>
+                  ))}
               </div>
 
               {/* Add event button */}
@@ -1021,7 +1047,7 @@ export default function KalenderPage() {
                 <option value="Libur Nasional">Libur Nasional</option>
                 <option value="Akademik">Akademik</option>
                 <option value="Ujian">Ujian</option>
-                <option value="OSIS">OSIS</option>
+                {canViewOsisCategory && <option value="OSIS">OSIS</option>}
                 <option value="Ekstrakurikuler">Ekstrakurikuler</option>
               </select>
             </div>
