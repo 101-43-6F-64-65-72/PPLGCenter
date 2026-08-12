@@ -1,2 +1,2 @@
-import MadingSection from '../MadingSection';
-export default MadingSection;
+import MadingDigital from "../MadingDigital";
+export default MadingDigital;

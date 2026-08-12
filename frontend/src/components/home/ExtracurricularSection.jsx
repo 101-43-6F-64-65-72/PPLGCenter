@@ -1,2 +1,2 @@
-import ExtracurricularSection from '../ExtracurricularSection';
-export default ExtracurricularSection;
+import Ekstrakurikuler from "../Ekstrakurikuler";
+export default Ekstrakurikuler;
