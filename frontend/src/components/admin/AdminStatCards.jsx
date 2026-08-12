@@ -31,24 +31,26 @@ export default function AdminStatCards() {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5 font-sans">
       {cards.map((item) => {
         const IconComp = item.icon;
         return (
           <div
             key={item.id}
-            className="bg-white p-4 rounded-lg border border-slate-200 space-y-1.5"
+            className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between min-h-[110px] transition-all hover:shadow-md hover:border-blue-200/50"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{item.title}</span>
-              <IconComp className="w-4 h-4 text-slate-400" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{item.title}</span>
+              <div className="p-1.5 rounded-lg bg-blue-50 text-[#2c1ee8] border border-blue-100">
+                <IconComp className="w-3.5 h-3.5" />
+              </div>
             </div>
 
-            <div>
+            <div className="mt-4">
               {loading ? (
-                <div className="h-7 w-12 bg-slate-100 rounded-md animate-pulse" />
+                <div className="h-8 w-14 bg-slate-100 rounded-md animate-pulse" />
               ) : (
-                <span className="text-2xl font-bold text-slate-900 block tracking-tight">
+                <span className="text-2xl font-black text-slate-900 tracking-tight leading-none">
                   {item.value}
                 </span>
               )}

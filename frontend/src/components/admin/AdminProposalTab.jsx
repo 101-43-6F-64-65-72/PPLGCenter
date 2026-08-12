@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   RotateCcw,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  ArrowRight
 } from "lucide-react";
 import proposalService from "@/services/proposalService";
 import AnimatedContent from "@/components/common/AnimatedContent";
@@ -26,10 +27,8 @@ function parseTitleAndOrg(rawTitle = "") {
   let org = "Ekstrakurikuler";
   let cleanTitle = titleStr;
 
-  // Clean [SEED] prefix first if present
   let temp = titleStr.replace(/^\[SEED\]\s*/i, "");
 
-  // Match optional bracket like [[SEED] Klub...] or [OSIS] Title
   const bracketMatch = temp.match(/^\[+(.*?)\]+\s*(.*)$/);
   if (bracketMatch) {
     org = bracketMatch[1].replace(/\[SEED\]\s*/i, "").trim();
@@ -47,7 +46,7 @@ function parseTitleAndOrg(rawTitle = "") {
 }
 
 const ProposalSkeleton = () => (
-  <div className="divide-y divide-gray-100 animate-pulse">
+  <div className="divide-y divide-slate-100 animate-pulse">
     {Array.from({ length: 3 }).map((_, idx) => (
       <div key={idx} className="p-5 space-y-3">
         <div className="flex items-center gap-2">
@@ -61,7 +60,7 @@ const ProposalSkeleton = () => (
   </div>
 );
 
-export default function AdminProposalTab() {
+export default function AdminProposalTab({ isQuickView = false, onViewAll }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("semua"); // 'semua' | 'pending_admin' | 'approved' | 'rejected'
   const [selectedProposal, setSelectedProposal] = useState(null);
@@ -99,11 +98,11 @@ export default function AdminProposalTab() {
           let badgeStyle = "bg-amber-50 text-amber-700 border-amber-200";
 
           if (statusVal === 1 || statusVal === "Approved") {
-            statusText = reviewerName ? `Disetujui oleh ${reviewerName}` : "Disetujui Admin";
+            statusText = reviewerName ? `Disetujui: ${reviewerName}` : "Disetujui Admin";
             statusKey = "approved";
             badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200";
           } else if (statusVal === 2 || statusVal === "Rejected") {
-            statusText = reviewerName ? `Ditolak oleh ${reviewerName}` : "Ditolak Admin";
+            statusText = reviewerName ? `Ditolak: ${reviewerName}` : "Ditolak Admin";
             statusKey = "rejected";
             badgeStyle = "bg-rose-50 text-rose-700 border-rose-200";
           }
@@ -170,6 +169,11 @@ export default function AdminProposalTab() {
   }, [fetchProposals]);
 
   const filteredProposals = proposals.filter((item) => {
+    // If it's dashboard quick view, filter to show only pending ones to let admin review fast
+    if (isQuickView) {
+      return item.statusKey === "pending";
+    }
+
     const q = searchQuery.toLowerCase();
     const titleMatch = (item.title || "").toLowerCase().includes(q);
     const orgMatch = (item.organization || "").toLowerCase().includes(q);
@@ -184,6 +188,9 @@ export default function AdminProposalTab() {
 
     return true;
   });
+
+  // Limit display size for quick view
+  const displayProposals = isQuickView ? filteredProposals.slice(0, 5) : filteredProposals;
 
   const handleUpdateStatus = async (proposalId, statusNum) => {
     if (isSubmitting) return;
@@ -208,106 +215,119 @@ export default function AdminProposalTab() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Search & Filter Header Bar */}
-      <div className="bg-white rounded-lg border border-slate-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Cari judul proposal, pengaju, atau organisasi..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-md py-2 pl-9 pr-3 text-xs font-medium text-slate-900 outline-none focus:bg-white focus:border-[#2c1ee8] transition"
-          />
-        </div>
+    <div className="space-y-5 font-sans">
+      {/* Search & Filter Header Bar - Hidden in QuickView to keep dashboard clean */}
+      {!isQuickView && (
+        <div className="bg-white rounded-[20px] border border-slate-200/80 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari judul proposal, pengaju, atau organisasi..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200/70 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:border-[#2c1ee8] focus:ring-2 focus:ring-blue-100 transition shadow-2xs"
+            />
+          </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-          {[
-            { id: "semua", label: "Semua Proposal" },
-            { id: "pending_admin", label: "Menunggu Approval" },
-            { id: "approved", label: "Disetujui" },
-            { id: "rejected", label: "Ditolak" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                statusFilter === tab.id
-                  ? "bg-[#2c1ee8] text-white"
-                  : "bg-white hover:bg-slate-50 text-slate-700 border border-slate-200"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+            {[
+              { id: "semua", label: "Semua Proposal" },
+              { id: "pending_admin", label: "Menunggu Approval" },
+              { id: "approved", label: "Disetujui" },
+              { id: "rejected", label: "Ditolak" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                  statusFilter === tab.id
+                    ? "bg-[#2c1ee8] text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200/85"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Error State Banner */}
       {errorMessage && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-md flex items-center justify-between gap-3 text-rose-700 text-xs font-bold">
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between gap-3 text-rose-700 text-xs font-bold shadow-2xs">
           <span>{errorMessage}</span>
           <button
             onClick={fetchProposals}
-            className="px-3 py-1 bg-rose-600 text-white rounded-md text-xs hover:bg-rose-700 transition"
+            className="px-4 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition"
           >
             Coba Lagi
           </button>
         </div>
       )}
 
-      {/* Proposal Table Container wrapped in AnimatedContent */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <FileText className="w-4 h-4 text-[#2c1ee8]" />
-            <span>Persetujuan Final Proposal ({filteredProposals.length})</span>
+      {/* Proposal List Box Container */}
+      <div className="bg-white rounded-[24px] border border-slate-200/80 overflow-hidden shadow-xs">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2.5">
+            <FileText className="w-5 h-5 text-[#2c1ee8]" />
+            <span>
+              {isQuickView 
+                ? `Permohonan Proposal Masuk (${filteredProposals.length})`
+                : `Persetujuan Final Proposal (${filteredProposals.length})`
+              }
+            </span>
           </h3>
+          {isQuickView && (
+            <span className="text-[10px] font-extrabold uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full">
+              Panding
+            </span>
+          )}
         </div>
 
         <AnimatedContent isLoading={isLoading} skeleton={<ProposalSkeleton />}>
           {apiState === "error" ? (
-            /* Error State UI */
             <div className="p-10 text-center space-y-4">
               <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" />
               </div>
               <div>
-                <h4 className="text-base font-bold text-gray-900">Gagal Memuat Proposal</h4>
+                <h4 className="text-sm font-bold text-gray-900">Gagal Memuat Proposal</h4>
                 <p className="text-xs text-gray-500 max-w-sm mx-auto mt-1">{errorMessage}</p>
               </div>
               <button
                 type="button"
                 onClick={fetchProposals}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-blue-700 transition shadow-md shadow-blue-500/20"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Coba Lagi</span>
               </button>
             </div>
-          ) : filteredProposals.length > 0 ? (
+          ) : displayProposals.length > 0 ? (
             <div className="divide-y divide-slate-100">
-              {filteredProposals.map((prop) => (
-                <div key={prop.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <div className="space-y-1 max-w-2xl">
+              {displayProposals.map((prop) => (
+                <div key={prop.id} className="p-5 hover:bg-slate-50/70 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="space-y-2 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap text-xs">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-bold border ${prop.badgeStyle}`}>
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-bold border text-[11px] ${prop.badgeStyle}`}>
                         <ShieldCheck className="w-3.5 h-3.5" />
                         <span>{prop.statusText}</span>
                       </span>
-                      <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                      <span className="font-extrabold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-xl border border-slate-200/80">
                         {prop.organization}
                       </span>
-                      <span className="text-slate-500">Pengaju: {prop.submittedByUserName} • {prop.submittedDate}</span>
+                      <span className="text-slate-500 font-semibold truncate max-w-[250px]">
+                        Pengaju: {prop.submittedByUserName} • {prop.submittedDate}
+                      </span>
                     </div>
 
-                    <h4 className="text-sm font-bold text-slate-900 leading-snug">
+                    <h4 className="text-sm font-extrabold text-slate-900 leading-snug group-hover:text-[#2c1ee8] transition-colors">
                       {prop.title}
                     </h4>
 
                     {prop.rejectionReason && (
-                      <p className="text-xs text-rose-700 font-semibold bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-100">
+                      <p className="text-xs text-rose-700 font-bold bg-rose-50 px-3 py-1 rounded-xl border border-rose-100 max-w-fit">
                         Catatan Reviu: {prop.rejectionReason}
                       </p>
                     )}
@@ -318,107 +338,118 @@ export default function AdminProposalTab() {
                       setSelectedProposal(prop);
                       setAdminNote(prop.rejectionReason || "");
                     }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all cursor-pointer shrink-0 self-start md:self-center"
+                    className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-extrabold bg-[#2c1ee8] text-white hover:bg-blue-700 transition shadow-sm active:scale-95 shrink-0 self-start md:self-center cursor-pointer"
                   >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Verifikasi Admin</span>
+                    <Eye className="w-4 h-4" />
+                    <span>Verifikasi</span>
                   </button>
                 </div>
               ))}
             </div>
           ) : (
-            /* Empty State */
-            <div className="p-10 text-center space-y-2">
-              <FileText className="w-8 h-8 text-slate-300 mx-auto" />
-              <h4 className="text-xs font-bold text-slate-700">Belum Ada Proposal Ditemukan</h4>
+            <div className="py-16 text-center space-y-3">
+              <FileText className="w-10 h-10 text-slate-300 mx-auto" />
+              <h4 className="text-sm font-extrabold text-slate-500">Tidak ada proposal baru</h4>
             </div>
           )}
         </AnimatedContent>
+
+        {isQuickView && onViewAll && filteredProposals.length > 5 && (
+          <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-center">
+            <button
+              onClick={onViewAll}
+              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#2c1ee8] hover:text-blue-700 hover:underline transition"
+            >
+              <span>Lihat Semua Proposal ({filteredProposals.length})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Review Modal */}
       {selectedProposal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white w-full max-w-2xl rounded-lg border border-slate-200 p-5 space-y-4 max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="flex items-start justify-between border-b border-slate-200 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-[28px] border border-slate-200 p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
-                <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-wider block">
-                  VERIFIKASI PROPOSAL ADMIN
+                <span className="text-xs font-black text-[#2c1ee8] uppercase tracking-widest block">
+                  VERIFIKASI PROPOSAL KESISWAAN
                 </span>
-                <h3 className="text-base font-bold text-slate-900 mt-0.5">
+                <h3 className="text-base font-extrabold text-slate-900 mt-1 leading-snug">
                   {selectedProposal.title}
                 </h3>
               </div>
               <button
                 onClick={() => setSelectedProposal(null)}
-                className="p-1 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-md cursor-pointer"
+                className="p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4 text-sm text-gray-700">
-              <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+            <div className="space-y-4 text-xs sm:text-sm text-slate-700">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                 <div>
-                  <span className="text-xs text-gray-400 block font-bold">Organisasi Pengaju:</span>
-                  <span className="font-extrabold text-gray-900">{selectedProposal.organization}</span>
+                  <span className="text-[10px] text-slate-400 block font-black uppercase tracking-wider">Organisasi Pengaju</span>
+                  <span className="font-extrabold text-slate-900 text-sm">{selectedProposal.organization}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block font-bold">Diajukan Oleh:</span>
-                  <span className="font-semibold text-gray-800">{selectedProposal.submittedByUserName} ({selectedProposal.submittedDate})</span>
+                  <span className="text-[10px] text-slate-400 block font-black uppercase tracking-wider">Diajukan Oleh</span>
+                  <span className="font-bold text-slate-800">{selectedProposal.submittedByUserName} <span className="text-[11px] text-slate-500 font-semibold">({selectedProposal.submittedDate})</span></span>
                 </div>
-                <div className="col-span-2">
-                  <span className="text-xs text-gray-400 block font-bold mb-1">File Dokumen PDF:</span>
+                <div className="col-span-1 sm:col-span-2">
+                  <span className="text-[10px] text-slate-400 block font-black uppercase tracking-wider mb-2">File Dokumen PDF</span>
                   {selectedProposal.fileUrl ? (
                     <a
                       href={selectedProposal.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-200 font-bold text-xs text-[#2c1ee8] hover:bg-[#2c1ee8] hover:text-white transition-all shadow-2xs"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 border border-blue-200 font-extrabold text-xs text-[#2c1ee8] hover:bg-[#2c1ee8] hover:text-white transition shadow-2xs"
                     >
                       <FileText className="w-4 h-4" />
-                      <span>Lihat Dokumen PDF Proposal</span>
+                      <span>Buka Dokumen Proposal</span>
                       <ExternalLink className="w-3.5 h-3.5 ml-1" />
                     </a>
                   ) : (
-                    <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 inline-block">
-                      Dokumen Tidak Tersedia
+                    <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-3.5 py-2 rounded-xl border border-slate-200 inline-block">
+                      Dokumen proposal tidak tersedia
                     </span>
                   )}
                 </div>
               </div>
 
               <div>
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">
-                  Deskripsi Kegiatan:
+                <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block mb-1.5">
+                  Deskripsi Kegiatan
                 </span>
-                <p className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 text-xs sm:text-sm leading-relaxed">
+                <p className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs sm:text-sm leading-relaxed font-medium">
                   {selectedProposal.description}
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Catatan Reviu / Rejection Reason:
+                <label className="block text-[10px] text-slate-400 font-black uppercase tracking-wider mb-1.5">
+                  Catatan Reviu Admin (Opsional)
                 </label>
                 <textarea
                   rows={3}
                   maxLength={500}
-                  placeholder="Tambahkan alasan penolakan, disposisi, atau instruksi persetujuan..."
+                  placeholder="Tambahkan disposisi, alasan penolakan, atau instruksi tindak lanjut..."
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
-                  className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white text-xs sm:text-sm focus:outline-none focus:border-[#2c1ee8]"
+                  className="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs sm:text-sm font-medium focus:bg-white focus:border-[#2c1ee8] focus:ring-2 focus:ring-blue-100 outline-none transition"
                 />
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 flex flex-wrap items-center justify-end gap-2.5">
+            <div className="pt-3 flex flex-wrap items-center justify-end gap-2.5 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setSelectedProposal(null)}
                 disabled={isSubmitting}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
               >
                 Batal
               </button>
@@ -426,7 +457,7 @@ export default function AdminProposalTab() {
                 type="button"
                 onClick={() => handleUpdateStatus(selectedProposal.id, 2)}
                 disabled={isSubmitting}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-600 hover:text-white transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
                 <span>Tolak Proposal</span>
@@ -435,10 +466,10 @@ export default function AdminProposalTab() {
                 type="button"
                 onClick={() => handleUpdateStatus(selectedProposal.id, 1)}
                 disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                className="px-6 py-2.5 rounded-xl text-xs font-extrabold bg-[#2c1ee8] text-white hover:bg-blue-700 transition shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>ACC (Disetujui Admin)</span>
+                <span>ACC & Setujui</span>
               </button>
             </div>
           </div>

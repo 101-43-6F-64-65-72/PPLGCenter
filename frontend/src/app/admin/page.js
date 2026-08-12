@@ -56,14 +56,14 @@ function AdminPanelContent() {
       <Navbar />
 
       {/* Main Layout containing Sidebar + Content */}
-      <div className="flex-1 flex w-full max-w-7xl mx-auto pt-20 lg:pt-24 min-h-[calc(100vh-6rem)]">
+      <div className="flex-1 flex w-full max-w-[1400px] mx-auto pt-20 lg:pt-24 min-h-[calc(100vh-6rem)] gap-6 px-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Role-based Sidebar Navigation */}
         <div className="hidden lg:block">
           <Sidebar role="Admin" activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
 
         {/* Content Area */}
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto space-y-6">
+        <main className="flex-1 py-8 overflow-y-auto space-y-6 min-w-0">
           {/* Glassmorphic Header Card */}
           <div className="bg-white/80 backdrop-blur-md rounded-[24px] border border-slate-200/80 p-5 sm:p-6 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -132,54 +132,54 @@ function AdminPanelContent() {
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("students")}
-                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
+                    className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
                   >
-                    <GraduationCap className="w-3.5 h-3.5 text-[#2C1EE8] group-hover:text-white transition-colors" />
-                    <span>+ Tambah Siswa</span>
+                    <GraduationCap className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
+                    <span>Tambah Siswa</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("teachers")}
-                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
+                    className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-[#2C1EE8] group-hover:text-white transition-colors" />
-                    <span>+ Tambah Guru</span>
+                    <BookOpen className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
+                    <span>Tambah Guru</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("schedules")}
-                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
+                    className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-[#2C1EE8] group-hover:text-white transition-colors" />
-                    <span>+ Buat Jadwal</span>
+                    <Calendar className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
+                    <span>Buat Jadwal</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("departments")}
-                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
+                    className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
                   >
-                    <Briefcase className="w-3.5 h-3.5 text-[#2C1EE8] group-hover:text-white transition-colors" />
-                    <span>+ Tambah Jurusan</span>
+                    <Briefcase className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
+                    <span>Tambah Jurusan</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("classes")}
-                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
+                    className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
                   >
-                    <Layers className="w-3.5 h-3.5 text-[#2C1EE8] group-hover:text-white transition-colors" />
-                    <span>+ Tambah Kelas</span>
+                    <Layers className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
+                    <span>Tambah Kelas</span>
                   </button>
 
                   <button
                     suppressHydrationWarning={true}
                     onClick={() => setActiveTab("students")}
-                    className="px-3.5 py-2 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
+                    className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-[#2C1EE8] hover:text-white text-slate-700 text-xs font-extrabold flex items-center gap-2 border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
                   >
-                    <Upload className="w-3.5 h-3.5 text-[#2C1EE8] group-hover:text-white transition-colors" />
+                    <Upload className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
                     <span>Import CSV</span>
                   </button>
                 </div>
@@ -188,12 +188,12 @@ function AdminPanelContent() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Proposal Quick Section */}
                 <div className="lg:col-span-7">
-                  <AdminProposalTab />
+                  <AdminProposalTab isQuickView={true} onViewAll={() => setActiveTab("proposals")} />
                 </div>
 
                 {/* Facility Quick Section */}
                 <div className="lg:col-span-5">
-                  <AdminFacilityTab />
+                  <AdminFacilityTab isQuickView={true} onViewAll={() => setActiveTab("facilities")} />
                 </div>
               </div>
             </div>

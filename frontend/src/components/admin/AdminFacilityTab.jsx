@@ -23,7 +23,7 @@ import {
   Image as ImageIcon,
   AlignLeft,
   ChevronDown,
-  Sparkles,
+  ArrowRight,
 } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import userService from "@/services/userService";
@@ -440,7 +440,7 @@ function DeleteConfirmModal({ facility, onClose, onDeleted }) {
 // ─────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────
-export default function AdminFacilityTab() {
+export default function AdminFacilityTab({ isQuickView = false, onViewAll }) {
   // Sub-tabs: 'facilities' | 'bookings'
   const [subTab, setSubTab] = useState("facilities");
 
@@ -549,223 +549,285 @@ export default function AdminFacilityTab() {
       b.facilityTitle?.toLowerCase().includes(searchBooking.toLowerCase())
   );
 
-  return (
-    <div className="space-y-6">
-      {/* ── Header ── */}
-      <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-blue-50 text-[#2C1EE8] border border-blue-100">
-            <Building2 className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Manajemen Fasilitas & Sarpras</h2>
-            <p className="text-xs text-slate-500 font-medium">Kelola data laboratorium, aula, lapangan, dan persetujuan booking</p>
-          </div>
-        </div>
+  // If in quick view, show max 4 facilities and use a clean double-column/single-column list
+  const displayFacilities = isQuickView ? filteredFacilities.slice(0, 4) : filteredFacilities;
+  const gridClasses = isQuickView
+    ? "grid grid-cols-1 sm:grid-cols-2 gap-4"
+    : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
 
-        {/* Sub-tab Switcher */}
-        <div className="flex bg-slate-100 rounded-xl p-1.5 gap-1.5 border border-slate-200/80 shrink-0">
-          <button
-            onClick={() => setSubTab("facilities")}
-            className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              subTab === "facilities"
-                ? "bg-white text-[#2C1EE8] shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Data Fasilitas
-          </button>
-          <button
-            onClick={() => setSubTab("bookings")}
-            className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              subTab === "bookings"
-                ? "bg-white text-[#2C1EE8] shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            Approval Booking
-          </button>
+  return (
+    <div className="space-y-6 font-sans">
+      {/* ── Header (Hidden in QuickView) ── */}
+      {!isQuickView && (
+        <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-blue-50 text-[#2C1EE8] border border-blue-100">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Manajemen Fasilitas & Sarpras</h2>
+              <p className="text-xs text-slate-500 font-medium">Kelola data laboratorium, aula, lapangan, dan persetujuan booking</p>
+            </div>
+          </div>
+
+          {/* Sub-tab Switcher */}
+          <div className="flex bg-slate-100 rounded-xl p-1.5 gap-1.5 border border-slate-200/80 shrink-0">
+            <button
+              onClick={() => setSubTab("facilities")}
+              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                subTab === "facilities"
+                  ? "bg-white text-[#2C1EE8] shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Data Fasilitas
+            </button>
+            <button
+              onClick={() => setSubTab("bookings")}
+              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                subTab === "bookings"
+                  ? "bg-white text-[#2C1EE8] shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Approval Booking
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ══════════════════════════════════════
           SUB-TAB: KELOLA FASILITAS
       ══════════════════════════════════════ */}
-      {subTab === "facilities" && (
+      {(subTab === "facilities" || isQuickView) && (
         <div className="space-y-6">
-          {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                suppressHydrationWarning={true}
-                type="text"
-                placeholder="Cari fasilitas, lokasi, atau kategori..."
-                value={searchFacility}
-                onChange={(e) => setSearchFacility(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 text-xs sm:text-sm font-semibold outline-none transition-all shadow-2xs"
-              />
+          {/* Toolbar (Hidden in QuickView) */}
+          {!isQuickView && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  suppressHydrationWarning={true}
+                  type="text"
+                  placeholder="Cari fasilitas, lokasi, atau kategori..."
+                  value={searchFacility}
+                  onChange={(e) => setSearchFacility(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 text-xs sm:text-sm font-semibold outline-none transition-all shadow-2xs"
+                />
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={loadFacilities}
+                  className="p-2.5 rounded-xl border border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer shadow-2xs"
+                  title="Refresh Data"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingFacilities ? "animate-spin" : ""}`} />
+                </button>
+                <button
+                  onClick={() => { setEditingFacility(null); setShowFormModal(true); }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2C1EE8] text-white text-xs sm:text-sm font-extrabold hover:bg-blue-700 transition cursor-pointer shrink-0 shadow-md shadow-blue-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Fasilitas</span>
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2.5">
-              <button
-                onClick={loadFacilities}
-                className="p-2.5 rounded-xl border border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer shadow-2xs"
-                title="Refresh Data"
-              >
-                <RefreshCw className={`w-4 h-4 ${loadingFacilities ? "animate-spin" : ""}`} />
-              </button>
-              <button
-                onClick={() => { setEditingFacility(null); setShowFormModal(true); }}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2C1EE8] text-white text-xs sm:text-sm font-extrabold hover:bg-blue-700 transition cursor-pointer shrink-0 shadow-md shadow-blue-500/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Tambah Fasilitas</span>
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Error */}
           {facilityError && (
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold flex items-center gap-2">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold flex items-center gap-2 shadow-2xs">
               <XCircle className="w-4 h-4 shrink-0" />
               {facilityError}
             </div>
           )}
 
-          {/* Facilities Grid */}
-          {loadingFacilities ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-64 rounded-[24px] bg-slate-100 animate-pulse" />
-              ))}
-            </div>
-          ) : filteredFacilities.length === 0 ? (
-            <div className="py-16 flex flex-col items-center justify-center bg-white rounded-[28px] border border-slate-200/80 shadow-xs">
-              <Package className="w-12 h-12 text-slate-300 mb-3" />
-              <p className="font-extrabold text-slate-600 text-base">
-                {searchFacility ? "Fasilitas tidak ditemukan" : "Belum ada fasilitas"}
-              </p>
-              {!searchFacility && (
-                <button
-                  onClick={() => { setEditingFacility(null); setShowFormModal(true); }}
-                  className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2C1EE8] text-white text-xs font-bold hover:bg-blue-700 transition cursor-pointer shadow-md shadow-blue-500/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Fasilitas Pertama
-                </button>
+          {/* Facilities Grid Wrapper inside card container in QuickView */}
+          {isQuickView ? (
+            <div className="bg-white rounded-[24px] border border-slate-200/80 p-5 shadow-xs space-y-4">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2.5">
+                <Building2 className="w-5 h-5 text-[#2C1EE8]" />
+                <span>Katalog Sarana Prasarana ({filteredFacilities.length})</span>
+              </h3>
+
+              {loadingFacilities ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-44 rounded-2xl bg-slate-100 animate-pulse" />
+                  ))}
+                </div>
+              ) : displayFacilities.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 font-medium">Belum ada data sarpras</div>
+              ) : (
+                <div className={gridClasses}>
+                  {displayFacilities.map((f) => (
+                    <div key={f.id} className="border border-slate-200/60 rounded-2xl overflow-hidden flex flex-col justify-between group hover:border-[#2C1EE8]/40 transition shadow-2xs">
+                      <div className="h-32 bg-slate-900 overflow-hidden relative">
+                        {f.imageUrl ? (
+                          <img
+                            src={resolveImageUrl(f.imageUrl)}
+                            alt={f.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-blue-50 text-[#2C1EE8]">
+                            <Building2 className="w-8 h-8 opacity-45" />
+                          </div>
+                        )}
+                        <span className={`absolute top-2 right-2 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${f.isActive ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-150 text-slate-600 border border-slate-200"}`}>
+                          {f.isActive ? "Aktif" : "Mati"}
+                        </span>
+                      </div>
+                      <div className="p-3.5 space-y-1.5">
+                        <h4 className="font-extrabold text-slate-900 text-xs truncate">{f.name}</h4>
+                        <p className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-slate-400" />
+                          <span className="truncate">{f.location}</span>
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {onViewAll && filteredFacilities.length > 4 && (
+                <div className="pt-2 border-t border-slate-100 flex justify-center">
+                  <button
+                    onClick={onViewAll}
+                    className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#2C1EE8] hover:text-blue-700 hover:underline transition"
+                  >
+                    <span>Kelola Semua Sarpras ({filteredFacilities.length})</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredFacilities.map((f) => (
-                <div
-                  key={f.id}
-                  className="bg-white rounded-[24px] border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-[#2C1EE8]/40 transition-all duration-300 overflow-hidden flex flex-col justify-between group"
-                >
-                  <div>
-                    {/* Image or placeholder */}
-                    {f.imageUrl ? (
-                      <div className="h-48 sm:h-52 overflow-hidden relative border-b border-slate-100 bg-slate-900">
-                        <img
-                          src={resolveImageUrl(f.imageUrl)}
-                          alt={f.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => { e.target.style.display = "none"; }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="h-48 sm:h-52 bg-gradient-to-br from-[#2C1EE8]/10 via-blue-50 to-indigo-100 flex items-center justify-center border-b border-slate-100">
-                        <Building2 className="w-14 h-14 text-[#2C1EE8]/30" />
-                      </div>
-                    )}
-
-                    <div className="p-5 sm:p-6 space-y-3.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1 min-w-0">
-                          <h4 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-[#2C1EE8] transition-colors truncate">
-                            {f.name}
-                          </h4>
-                          <p className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span className="truncate">{f.location}</span>
-                          </p>
+            /* Full Catalog Screen Layout */
+            loadingFacilities ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-64 rounded-[24px] bg-slate-100 animate-pulse" />
+                ))}
+              </div>
+            ) : filteredFacilities.length === 0 ? (
+              <div className="py-16 flex flex-col items-center justify-center bg-white rounded-[28px] border border-slate-200/80 shadow-xs">
+                <Package className="w-12 h-12 text-slate-300 mb-3" />
+                <p className="font-extrabold text-slate-600 text-base">
+                  {searchFacility ? "Fasilitas tidak ditemukan" : "Belum ada fasilitas"}
+                </p>
+              </div>
+            ) : (
+              <div className={gridClasses}>
+                {filteredFacilities.map((f) => (
+                  <div
+                    key={f.id}
+                    className="bg-white rounded-[24px] border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-[#2C1EE8]/40 transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+                  >
+                    <div>
+                      {f.imageUrl ? (
+                        <div className="h-48 sm:h-52 overflow-hidden relative border-b border-slate-100 bg-slate-900">
+                          <img
+                            src={resolveImageUrl(f.imageUrl)}
+                            alt={f.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => { e.target.style.display = "none"; }}
+                          />
                         </div>
-                        <span
-                          className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-extrabold border ${
-                            f.isActive
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-slate-100 text-slate-500 border-slate-200"
-                          }`}
-                        >
-                          {f.isActive ? "Aktif" : "Nonaktif"}
-                        </span>
-                      </div>
+                      ) : (
+                        <div className="h-48 sm:h-52 bg-gradient-to-br from-[#2C1EE8]/10 via-blue-50 to-indigo-100 flex items-center justify-center border-b border-slate-100">
+                          <Building2 className="w-14 h-14 text-[#2C1EE8]/30" />
+                        </div>
+                      )}
 
-                      {/* Badges Info */}
-                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/80">
-                          <Users className="w-3.5 h-3.5 text-slate-500" />
-                          {f.capacity} orang
-                        </span>
-                        {f.category && (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-blue-50 text-[#2C1EE8] border border-blue-100">
-                            <Tag className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                            {f.category}
+                      <div className="p-5 sm:p-6 space-y-3.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 min-w-0">
+                            <h4 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-[#2C1EE8] transition-colors truncate">
+                              {f.name}
+                            </h4>
+                            <p className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span className="truncate">{f.location}</span>
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-extrabold border ${
+                              f.isActive
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-slate-100 text-slate-500 border-slate-200"
+                            }`}
+                          >
+                            {f.isActive ? "Aktif" : "Nonaktif"}
                           </span>
+                        </div>
+
+                        {/* Badges Info */}
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/80">
+                            <Users className="w-3.5 h-3.5 text-slate-500" />
+                            {f.capacity} orang
+                          </span>
+                          {f.category && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-blue-50 text-[#2C1EE8] border border-blue-100">
+                              <Tag className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                              {f.category}
+                            </span>
+                          )}
+                        </div>
+
+                        {f.description && (
+                          <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50/80 p-3 rounded-xl border border-slate-100 line-clamp-2">
+                            {f.description}
+                          </p>
                         )}
                       </div>
+                    </div>
 
-                      {f.description && (
-                        <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50/80 p-3 rounded-xl border border-slate-100 line-clamp-2">
-                          {f.description}
-                        </p>
-                      )}
+                    {/* Actions Footer */}
+                    <div className="p-5 sm:p-6 pt-0">
+                      <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                        <button
+                          onClick={() => handleToggleActive(f)}
+                          title={f.isActive ? "Nonaktifkan Akses" : "Aktifkan Akses"}
+                          className={`p-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            f.isActive
+                              ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                              : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                          }`}
+                        >
+                          {f.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                        </button>
+
+                        <button
+                          onClick={() => { setEditingFacility(f); setShowFormModal(true); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-extrabold bg-blue-50 text-[#2C1EE8] border border-blue-200/80 hover:bg-[#2C1EE8] hover:text-white transition-all cursor-pointer shadow-2xs"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          onClick={() => setDeletingFacility(f)}
+                          className="p-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white transition-all cursor-pointer"
+                          title="Hapus Fasilitas"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Actions Footer */}
-                  <div className="p-5 sm:p-6 pt-0">
-                    <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
-                      <button
-                        onClick={() => handleToggleActive(f)}
-                        title={f.isActive ? "Nonaktifkan Akses" : "Aktifkan Akses"}
-                        className={`p-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                          f.isActive
-                            ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                            : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
-                        }`}
-                      >
-                        {f.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                      </button>
-
-                      <button
-                        onClick={() => { setEditingFacility(f); setShowFormModal(true); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-extrabold bg-blue-50 text-[#2C1EE8] border border-blue-200/80 hover:bg-[#2C1EE8] hover:text-white transition-all cursor-pointer shadow-2xs"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                        <span>Edit</span>
-                      </button>
-
-                      <button
-                        onClick={() => setDeletingFacility(f)}
-                        className="p-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white transition-all cursor-pointer"
-                        title="Hapus Fasilitas"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       )}
 
       {/* ══════════════════════════════════════
-          SUB-TAB: APPROVAL BOOKING
+          SUB-TAB: APPROVAL BOOKING (Only full screen view)
       ══════════════════════════════════════ */}
-      {subTab === "bookings" && (
+      {subTab === "bookings" && !isQuickView && (
         <div className="space-y-4">
           {/* Toolbar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -789,7 +851,7 @@ export default function AdminFacilityTab() {
           {/* Bookings List */}
           <div className="bg-white rounded-[24px] border border-slate-200/80 shadow-xs overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2.5">
                 <Building2 className="w-5 h-5 text-[#2C1EE8]" />
                 <span>Permohonan Peminjaman ({filteredBookings.length})</span>
               </h3>
@@ -895,7 +957,7 @@ export default function AdminFacilityTab() {
                 </div>
                 <div>
                   <span className="text-xs text-slate-400 block font-bold">Fasilitas & Jam:</span>
-                  <span className="font-bold text-slate-800">
+                  <span className="font-bold text-gray-800">
                     {selectedBooking.facilityTitle} ({selectedBooking.slotFormatted})
                   </span>
                 </div>
