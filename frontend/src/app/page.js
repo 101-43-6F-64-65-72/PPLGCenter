@@ -11,9 +11,9 @@ export default function Home() {
   ensureAssets();
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden max-w-full w-full">
       <Navbar />
-      <main className="flex-1 flex flex-col pt-20 lg:pt-24">
+      <main className="flex-1 flex flex-col pt-20 lg:pt-24 overflow-x-hidden max-w-full w-full">
         <Hero />
         <FacilityCatalogSection />
         <ExtracurricularSection />

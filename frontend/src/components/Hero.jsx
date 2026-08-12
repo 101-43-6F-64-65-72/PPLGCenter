@@ -64,14 +64,14 @@ export default function Hero() {
         size={640}
         duration={12}
         gradientId="heroShardGrad"
-        className="absolute -top-16 -right-20 opacity-70 pointer-events-none -z-10"
+        className="hidden sm:block absolute -top-16 -right-20 opacity-70 pointer-events-none -z-10"
       />
       <MorphingSvg
         preset="blob"
         size={540}
         duration={10}
         gradientId="heroBlobGrad"
-        className="absolute -bottom-20 -left-20 opacity-60 pointer-events-none -z-10"
+        className="hidden sm:block absolute -bottom-20 -left-20 opacity-60 pointer-events-none -z-10"
       />
 
       {/* Background ambient lighting blur */}
