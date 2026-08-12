@@ -344,7 +344,7 @@ function ProfileContent() {
               </div>
 
               <p className="mt-2 text-sm font-medium text-blue-100 sm:text-base">
-                ID Akun: <span className="font-semibold text-white font-mono">{savedEmail}</span>
+                ID Akun: <span className="font-extrabold text-white">{savedEmail}</span>
               </p>
               {/* Student: department subtitle */}
               {isStudent && user?.departmentName && (
@@ -368,7 +368,7 @@ function ProfileContent() {
             size="md"
             onClick={logout}
             leftIcon={<LogOut className="h-4 w-4" />}
-            className="border-white/30 text-white hover:bg-white/15 bg-white/10 backdrop-blur-md transition-all"
+            className="border-white/30 text-white hover:bg-white/15 bg-white/10 backdrop-blur-md transition-all font-bold"
           >
             Keluar Sesi
           </Button>
@@ -411,7 +411,7 @@ function ProfileContent() {
             <button
               type="button"
               onClick={() => setIsEditingInfo(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-indigo-200 bg-indigo-50/80 text-[#2C1EE8] hover:bg-indigo-100 transition cursor-pointer self-start sm:self-auto shadow-2xs"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold border border-indigo-200 bg-indigo-50/80 text-[#2C1EE8] hover:bg-indigo-100 transition cursor-pointer self-start sm:self-auto shadow-2xs"
             >
               <User className="w-4 h-4" />
               <span>Edit Informasi Profil</span>
@@ -458,23 +458,23 @@ function ProfileContent() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Nama Lengkap</span>
+                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Nama Lengkap</span>
                   <p className="text-base font-extrabold text-slate-900">{fullName || savedName}</p>
                 </div>
 
                 <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Email / Identitas Akun</span>
-                  <p className="text-base font-extrabold text-slate-900 font-mono">{email || savedEmail}</p>
+                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Email / Identitas Akun</span>
+                  <p className="text-base font-extrabold text-slate-900">{email || savedEmail}</p>
                 </div>
 
                 <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Nomor Telepon / WA</span>
-                  <p className="text-base font-extrabold text-slate-900 font-mono">{phone || "Belum diisi"}</p>
+                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Nomor Telepon / WA</span>
+                  <p className="text-base font-extrabold text-slate-900">{phone || "Belum diisi"}</p>
                 </div>
 
                 <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Alamat Domisili</span>
-                  <p className="text-sm font-semibold text-slate-800 leading-relaxed">{address || "Belum diisi"}</p>
+                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Alamat Domisili</span>
+                  <p className="text-sm font-extrabold text-slate-800 leading-relaxed">{address || "Belum diisi"}</p>
                 </div>
               </div>
             </div>
@@ -502,8 +502,8 @@ function ProfileContent() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Masukkan nama lengkap"
-                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
-                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm font-semibold shadow-2xs outline-none transition ${!isAdmin
+                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none"
                       : "bg-white text-slate-900 border-slate-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                       }`}
                   />
@@ -531,8 +531,8 @@ function ProfileContent() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Masukkan email atau NIS/NIP"
-                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm shadow-2xs outline-none transition ${!isAdmin
-                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none font-medium"
+                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm font-semibold shadow-2xs outline-none transition ${!isAdmin
+                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none"
                       : "bg-white text-slate-900 border-slate-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                       }`}
                   />
@@ -550,7 +550,7 @@ function ProfileContent() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Contoh: 082322377070"
-                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
               </div>
@@ -566,7 +566,7 @@ function ProfileContent() {
                     onChange={(e) => setAddress(e.target.value)}
                     rows="3"
                     placeholder="Masukkan alamat domisili Anda"
-                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                   />
                 </div>
               </div>
@@ -575,14 +575,14 @@ function ProfileContent() {
                 <button
                   type="button"
                   onClick={() => setIsEditingInfo(false)}
-                  className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition cursor-pointer"
+                  className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-bold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
                 >
                   {isSaving ? (
                     <>
@@ -616,7 +616,7 @@ function ProfileContent() {
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
                   placeholder="Masukkan password lama"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
             </div>
@@ -634,7 +634,7 @@ function ProfileContent() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimal 6 karakter"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
             </div>
@@ -651,7 +651,7 @@ function ProfileContent() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Ketik ulang password baru Anda"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
                 />
               </div>
             </div>
@@ -659,7 +659,7 @@ function ProfileContent() {
             <button
               type="submit"
               disabled={isSaving}
-              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-semibold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
+              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-bold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
             >
               {isSaving ? (
                 <>
@@ -709,12 +709,12 @@ function AcademicInfoCard({ user, isStudent, isTeacher, isAdmin }) {
         {items.map((item) => {
           const IconComp = item.icon;
           return (
-            <div key={item.label} className="flex flex-col gap-1.5 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+            <div key={item.label} className="flex flex-col gap-1.5 p-3.5 rounded-xl bg-slate-50/80 border border-slate-100">
               <div className="flex items-center gap-1.5 text-slate-400">
                 <IconComp className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{item.label}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider">{item.label}</span>
               </div>
-              <span className="text-sm font-black text-slate-900 font-mono tracking-wide truncate">
+              <span className="text-sm font-extrabold text-slate-900 tracking-tight truncate">
                 {item.value || "—"}
               </span>
             </div>

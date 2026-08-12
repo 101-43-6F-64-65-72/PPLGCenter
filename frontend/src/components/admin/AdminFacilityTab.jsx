@@ -23,6 +23,7 @@ import {
   Image as ImageIcon,
   AlignLeft,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import userService from "@/services/userService";
@@ -107,27 +108,29 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-      <div className="bg-white w-full max-w-lg rounded-lg border border-slate-200 shadow-xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-lg rounded-[28px] border border-slate-200 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white rounded-t-lg z-10">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-[#2c1ee8]" />
-            <h3 className="text-base font-bold text-slate-900">
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md rounded-t-[28px] z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-50 text-[#2C1EE8]">
+              <Building2 className="w-5 h-5" />
+            </div>
+            <h3 className="text-base font-extrabold text-slate-900">
               {isEdit ? "Edit Fasilitas" : "Tambah Fasilitas Baru"}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-md transition cursor-pointer"
+            className="p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="p-3 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
               <XCircle className="w-4 h-4 shrink-0" />
               {error}
             </div>
@@ -135,36 +138,36 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
 
           {/* Nama */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+            <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
               Nama Fasilitas <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 name="name"
                 value={form.name}
                 onChange={handleChange}
                 placeholder="cth. Aula Utama SMKN 2 Surakarta"
                 maxLength={100}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
 
           {/* Lokasi */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+            <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
               Lokasi <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 name="location"
                 value={form.location}
                 onChange={handleChange}
                 placeholder="cth. Lantai 1, Gedung Utama"
                 maxLength={200}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
@@ -172,11 +175,11 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
           {/* Kapasitas & Kategori */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">
+              <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
                 Kapasitas <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   name="capacity"
                   type="number"
@@ -185,21 +188,21 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                   value={form.capacity}
                   onChange={handleChange}
                   placeholder="200"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1.5">Kategori</label>
+              <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Kategori</label>
               <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   name="category"
                   value={form.category}
                   onChange={handleChange}
                   placeholder="cth. Ruangan, Lapangan"
                   maxLength={100}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
                 />
               </div>
             </div>
@@ -207,16 +210,16 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
 
           {/* Guru Pengurus Fasilitas */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">
+            <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
               Guru Pengurus / Penanggung Jawab
             </label>
             <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <select
                 name="managerTeacherId"
                 value={form.managerTeacherId}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all appearance-none cursor-pointer"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
               >
                 <option value="">-- Tanpa Guru Pengurus (Hanya Admin) --</option>
                 {teachers.map((t) => (
@@ -226,16 +229,16 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                 ))}
               </select>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
+            <p className="text-[11px] text-slate-500 mt-1 font-medium">
               Guru yang dipilih akan memiliki tab khusus untuk menyetujui / menolak peminjaman fasilitas ini.
             </p>
           </div>
 
           {/* Deskripsi */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Deskripsi</label>
+            <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Deskripsi</label>
             <div className="relative">
-              <AlignLeft className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+              <AlignLeft className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
               <textarea
                 name="description"
                 value={form.description}
@@ -243,22 +246,22 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                 placeholder="Deskripsi singkat tentang fasilitas ini..."
                 maxLength={1000}
                 rows={3}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all resize-none"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all resize-none"
               />
             </div>
           </div>
 
           {/* Upload Gambar Fasilitas */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-1.5">Foto / Gambar Fasilitas</label>
+            <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Foto / Gambar Fasilitas</label>
             <div className="space-y-3">
               {form.imageUrl && (
-                <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50">
+                <div className="relative w-full h-44 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900">
                   <img src={resolveImageUrl(form.imageUrl)} alt="Preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setForm((prev) => ({ ...prev, imageUrl: "" }))}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-rose-600 transition cursor-pointer"
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black/60 text-white hover:bg-rose-600 transition cursor-pointer"
                     title="Hapus gambar"
                   >
                     <X className="w-4 h-4" />
@@ -297,19 +300,19 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                   type="button"
                   disabled={uploadingImage}
                   onClick={() => document.getElementById("facility-image-input")?.click()}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-700 transition cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer disabled:opacity-50"
                 >
                   {uploadingImage ? (
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#2c1ee8]" />
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#2C1EE8]" />
                   ) : (
-                    <ImageIcon className="w-4 h-4 text-[#2c1ee8]" />
+                    <ImageIcon className="w-4 h-4 text-[#2C1EE8]" />
                   )}
                   <span>{uploadingImage ? "Mengunggah..." : form.imageUrl ? "Ganti Gambar" : "Upload Gambar"}</span>
                 </button>
                 {form.imageUrl && (
-                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Gambar siap
+                  <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Gambar Siap
                   </span>
                 )}
               </div>
@@ -317,11 +320,11 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
           </div>
 
           {/* Status Aktif */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-200">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200">
             <div>
-              <p className="text-sm font-bold text-gray-800">Status Fasilitas</p>
-              <p className="text-xs text-gray-500">
-                {form.isActive ? "Aktif — dapat dibooking" : "Nonaktif — tidak bisa dibooking"}
+              <p className="text-xs font-extrabold text-slate-800">Status Akses Fasilitas</p>
+              <p className="text-[11px] text-slate-500 font-medium">
+                {form.isActive ? "Aktif — dapat dibooking oleh siswa/organisasi" : "Nonaktif — tidak dapat dibooking"}
               </p>
             </div>
             <button
@@ -330,7 +333,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 form.isActive
                   ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                  : "bg-gray-200 text-gray-500 border border-gray-300"
+                  : "bg-slate-200 text-slate-600 border border-slate-300"
               }`}
             >
               {form.isActive ? (
@@ -343,18 +346,18 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-3">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-50 transition cursor-pointer"
+              className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-3 rounded-2xl bg-[#2c1ee8] text-white text-sm font-bold hover:bg-[#2218a3] transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
+              className="flex-1 py-3 rounded-xl bg-[#2C1EE8] text-white text-sm font-extrabold hover:bg-blue-700 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 shadow-md shadow-blue-500/20"
             >
               {loading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -390,21 +393,21 @@ function DeleteConfirmModal({ facility, onClose, onDeleted }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center">
-            <Trash2 className="w-6 h-6 text-rose-600" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-sm rounded-[28px] p-6 shadow-2xl space-y-4 border border-slate-200">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+            <Trash2 className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-black text-gray-900">Hapus Fasilitas?</h3>
-            <p className="text-xs text-gray-500">Tindakan ini tidak bisa dibatalkan.</p>
+            <h3 className="font-extrabold text-slate-900 text-base">Hapus Fasilitas?</h3>
+            <p className="text-xs text-slate-500">Tindakan ini tidak bisa dibatalkan.</p>
           </div>
         </div>
 
-        <div className="p-3 rounded-2xl bg-gray-50 border border-gray-200">
-          <p className="text-sm font-bold text-gray-800">{facility.name}</p>
-          <p className="text-xs text-gray-500">{facility.location}</p>
+        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-0.5">
+          <p className="text-sm font-extrabold text-slate-900">{facility.name}</p>
+          <p className="text-xs text-slate-500 font-medium">{facility.location}</p>
         </div>
 
         {error && (
@@ -413,17 +416,17 @@ function DeleteConfirmModal({ facility, onClose, onDeleted }) {
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-1">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-700 text-sm font-bold hover:bg-gray-50 transition cursor-pointer"
+            className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition cursor-pointer"
           >
             Batal
           </button>
           <button
             onClick={handleDelete}
             disabled={loading}
-            className="flex-1 py-3 rounded-2xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-700 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+            className="flex-1 py-3 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 shadow-md shadow-rose-600/20"
           >
             {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             Hapus
@@ -547,31 +550,36 @@ export default function AdminFacilityTab() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* ── Header ── */}
-      <div className="bg-white p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-[#2c1ee8]" />
-          <h2 className="text-base font-bold text-slate-900">Manajemen Fasilitas & Sarpras</h2>
+      <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-blue-50 text-[#2C1EE8] border border-blue-100">
+            <Building2 className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Manajemen Fasilitas & Sarpras</h2>
+            <p className="text-xs text-slate-500 font-medium">Kelola data laboratorium, aula, lapangan, dan persetujuan booking</p>
+          </div>
         </div>
 
         {/* Sub-tab Switcher */}
-        <div className="flex bg-slate-100 rounded-md p-1 gap-1 border border-slate-200">
+        <div className="flex bg-slate-100 rounded-xl p-1.5 gap-1.5 border border-slate-200/80 shrink-0">
           <button
             onClick={() => setSubTab("facilities")}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
               subTab === "facilities"
-                ? "bg-white text-[#2c1ee8] shadow-2xs"
+                ? "bg-white text-[#2C1EE8] shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Fasilitas
+            Data Fasilitas
           </button>
           <button
             onClick={() => setSubTab("bookings")}
-            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
               subTab === "bookings"
-                ? "bg-white text-[#2c1ee8] shadow-2xs"
+                ? "bg-white text-[#2C1EE8] shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -584,34 +592,34 @@ export default function AdminFacilityTab() {
           SUB-TAB: KELOLA FASILITAS
       ══════════════════════════════════════ */}
       {subTab === "facilities" && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 suppressHydrationWarning={true}
                 type="text"
                 placeholder="Cari fasilitas, lokasi, atau kategori..."
                 value={searchFacility}
                 onChange={(e) => setSearchFacility(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-md border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2c1ee8] text-xs transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 text-xs sm:text-sm font-semibold outline-none transition-all shadow-2xs"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <button
                 onClick={loadFacilities}
-                className="p-2 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-                title="Refresh"
+                className="p-2.5 rounded-xl border border-slate-200/90 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer shadow-2xs"
+                title="Refresh Data"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingFacilities ? "animate-spin" : ""}`} />
               </button>
               <button
                 onClick={() => { setEditingFacility(null); setShowFormModal(true); }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition cursor-pointer shrink-0"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2C1EE8] text-white text-xs sm:text-sm font-extrabold hover:bg-blue-700 transition cursor-pointer shrink-0 shadow-md shadow-blue-500/20"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Tambah Fasilitas</span>
+                <span>Tambah Fasilitas</span>
               </button>
             </div>
           </div>
@@ -619,28 +627,28 @@ export default function AdminFacilityTab() {
           {/* Error */}
           {facilityError && (
             <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm font-semibold flex items-center gap-2">
-              <XCircle className="w-4 h-4 flex-shrink-0" />
+              <XCircle className="w-4 h-4 shrink-0" />
               {facilityError}
             </div>
           )}
 
           {/* Facilities Grid */}
           {loadingFacilities ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 rounded-3xl bg-gray-100 animate-pulse" />
+                <div key={i} className="h-64 rounded-[24px] bg-slate-100 animate-pulse" />
               ))}
             </div>
           ) : filteredFacilities.length === 0 ? (
-            <div className="py-16 flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-100">
-              <Package className="w-12 h-12 text-gray-300 mb-3" />
-              <p className="font-bold text-gray-500 text-sm">
+            <div className="py-16 flex flex-col items-center justify-center bg-white rounded-[28px] border border-slate-200/80 shadow-xs">
+              <Package className="w-12 h-12 text-slate-300 mb-3" />
+              <p className="font-extrabold text-slate-600 text-base">
                 {searchFacility ? "Fasilitas tidak ditemukan" : "Belum ada fasilitas"}
               </p>
               {!searchFacility && (
                 <button
                   onClick={() => { setEditingFacility(null); setShowFormModal(true); }}
-                  className="mt-4 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#2c1ee8] text-white text-xs font-bold hover:bg-[#2218a3] transition cursor-pointer"
+                  className="mt-4 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2C1EE8] text-white text-xs font-bold hover:bg-blue-700 transition cursor-pointer shadow-md shadow-blue-500/20"
                 >
                   <Plus className="w-4 h-4" />
                   Tambah Fasilitas Pertama
@@ -648,90 +656,102 @@ export default function AdminFacilityTab() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredFacilities.map((f) => (
                 <div
                   key={f.id}
-                  className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all overflow-hidden group"
+                  className="bg-white rounded-[24px] border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-[#2C1EE8]/40 transition-all duration-300 overflow-hidden flex flex-col justify-between group"
                 >
-                  {/* Image or placeholder */}
-                  {f.imageUrl ? (
-                    <div className="h-36 overflow-hidden">
-                      <img
-                        src={resolveImageUrl(f.imageUrl)}
-                        alt={f.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => { e.target.style.display = "none"; }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-36 bg-gradient-to-br from-[#2c1ee8]/10 to-blue-100 flex items-center justify-center">
-                      <Building2 className="w-12 h-12 text-[#2c1ee8]/30" />
-                    </div>
-                  )}
-
-                  <div className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="font-black text-gray-900 text-sm leading-tight">{f.name}</h4>
-                        <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {f.location}
-                        </p>
+                  <div>
+                    {/* Image or placeholder */}
+                    {f.imageUrl ? (
+                      <div className="h-48 sm:h-52 overflow-hidden relative border-b border-slate-100 bg-slate-900">
+                        <img
+                          src={resolveImageUrl(f.imageUrl)}
+                          alt={f.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => { e.target.style.display = "none"; }}
+                        />
                       </div>
-                      <span
-                        className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                          f.isActive
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
-                        }`}
-                      >
-                        {f.isActive ? "Aktif" : "Nonaktif"}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {f.capacity} orang
-                      </span>
-                      {f.category && (
-                        <span className="flex items-center gap-1 bg-blue-50 text-[#2c1ee8] px-2 py-0.5 rounded-lg font-semibold">
-                          <Tag className="w-3 h-3" />
-                          {f.category}
-                        </span>
-                      )}
-                    </div>
-
-                    {f.description && (
-                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{f.description}</p>
+                    ) : (
+                      <div className="h-48 sm:h-52 bg-gradient-to-br from-[#2C1EE8]/10 via-blue-50 to-indigo-100 flex items-center justify-center border-b border-slate-100">
+                        <Building2 className="w-14 h-14 text-[#2C1EE8]/30" />
+                      </div>
                     )}
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
+                    <div className="p-5 sm:p-6 space-y-3.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <h4 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-[#2C1EE8] transition-colors truncate">
+                            {f.name}
+                          </h4>
+                          <p className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span className="truncate">{f.location}</span>
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-extrabold border ${
+                            f.isActive
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-slate-100 text-slate-500 border-slate-200"
+                          }`}
+                        >
+                          {f.isActive ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </div>
+
+                      {/* Badges Info */}
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200/80">
+                          <Users className="w-3.5 h-3.5 text-slate-500" />
+                          {f.capacity} orang
+                        </span>
+                        {f.category && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-blue-50 text-[#2C1EE8] border border-blue-100">
+                            <Tag className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                            {f.category}
+                          </span>
+                        )}
+                      </div>
+
+                      {f.description && (
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium bg-slate-50/80 p-3 rounded-xl border border-slate-100 line-clamp-2">
+                          {f.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions Footer */}
+                  <div className="p-5 sm:p-6 pt-0">
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
                       <button
                         onClick={() => handleToggleActive(f)}
-                        title={f.isActive ? "Nonaktifkan" : "Aktifkan"}
-                        className={`p-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                        title={f.isActive ? "Nonaktifkan Akses" : "Aktifkan Akses"}
+                        className={`p-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                           f.isActive
-                            ? "bg-amber-50 text-amber-600 hover:bg-amber-100"
-                            : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                            ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                            : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                         }`}
                       >
                         {f.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
                       </button>
+
                       <button
                         onClick={() => { setEditingFacility(f); setShowFormModal(true); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold bg-blue-50 text-[#2c1ee8] hover:bg-blue-100 transition cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-extrabold bg-blue-50 text-[#2C1EE8] border border-blue-200/80 hover:bg-[#2C1EE8] hover:text-white transition-all cursor-pointer shadow-2xs"
                       >
                         <Pencil className="w-3.5 h-3.5" />
-                        Edit
+                        <span>Edit</span>
                       </button>
+
                       <button
                         onClick={() => setDeletingFacility(f)}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 transition cursor-pointer"
+                        className="p-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-600 hover:text-white transition-all cursor-pointer"
+                        title="Hapus Fasilitas"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -748,77 +768,78 @@ export default function AdminFacilityTab() {
       {subTab === "bookings" && (
         <div className="space-y-4">
           {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 suppressHydrationWarning={true}
                 type="text"
                 placeholder="Cari booking, tempat, atau organisasi..."
                 value={searchBooking}
                 onChange={(e) => setSearchBooking(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:border-[#2C1EE8] text-xs sm:text-sm font-semibold outline-none transition-all shadow-2xs"
               />
             </div>
-            <div className="flex items-center gap-2 text-xs font-extrabold text-[#2c1ee8] bg-blue-50 px-4 py-2.5 rounded-2xl border border-blue-100">
+            <div className="flex items-center gap-2 text-xs font-extrabold text-[#2C1EE8] bg-blue-50 px-4 py-2.5 rounded-xl border border-blue-100">
               <ShieldCheck className="w-4 h-4" />
               <span>Persetujuan Final Admin</span>
             </div>
           </div>
 
           {/* Bookings List */}
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#2c1ee8]" />
+          <div className="bg-white rounded-[24px] border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-[#2C1EE8]" />
                 <span>Permohonan Peminjaman ({filteredBookings.length})</span>
               </h3>
               <button
                 onClick={loadBookings}
-                className="p-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition cursor-pointer"
+                className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition cursor-pointer"
+                title="Refresh"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingBookings ? "animate-spin" : ""}`} />
               </button>
             </div>
 
             {loadingBookings ? (
-              <div className="p-8 text-center text-gray-400 animate-pulse text-sm">Memuat data booking...</div>
+              <div className="p-8 text-center text-slate-400 animate-pulse text-xs font-medium">Memuat data booking...</div>
             ) : filteredBookings.length === 0 ? (
-              <div className="py-16 flex flex-col items-center justify-center text-gray-400">
+              <div className="py-16 flex flex-col items-center justify-center text-slate-400">
                 <Package className="w-10 h-10 mb-3 opacity-40" />
-                <p className="text-sm font-bold text-gray-500">Tidak ada permohonan booking</p>
+                <p className="text-sm font-extrabold text-slate-600">Tidak ada permohonan booking</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-slate-100">
                 {filteredBookings.map((b) => (
-                  <div key={b.id} className="p-5 hover:bg-gray-50/80 transition-colors space-y-3">
+                  <div key={b.id} className="p-5 hover:bg-slate-50/80 transition-colors space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-[#2c1ee8] border border-blue-200">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-[#2C1EE8] border border-blue-200">
                           <ShieldCheck className="w-3.5 h-3.5" />
                           {b.status}
                         </span>
-                        <span className="text-xs font-extrabold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-lg">
+                        <span className="text-xs font-extrabold text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200/80">
                           {b.organization}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-400">Tanggal: {b.date}</span>
+                      <span className="text-xs text-slate-500 font-semibold">Tanggal: {b.date}</span>
                     </div>
 
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="space-y-1">
-                        <h4 className="text-base font-extrabold text-gray-900">&quot;{b.activityName}&quot;</h4>
-                        <div className="flex items-center gap-3 text-xs text-gray-600">
-                          <span className="font-bold text-[#2c1ee8]">{b.facilityTitle}</span>
+                        <h4 className="text-base font-extrabold text-slate-900">&quot;{b.activityName}&quot;</h4>
+                        <div className="flex items-center gap-3 text-xs text-slate-600">
+                          <span className="font-extrabold text-[#2C1EE8]">{b.facilityTitle}</span>
                           <span>•</span>
-                          <span className="bg-blue-50 text-[#2c1ee8] px-2 py-0.5 rounded font-semibold">
+                          <span className="bg-blue-50 text-[#2C1EE8] px-2.5 py-0.5 rounded-lg font-bold">
                             Jam: {b.slotFormatted}
                           </span>
                         </div>
                       </div>
                       <button
                         onClick={() => setSelectedBooking(b)}
-                        className="self-start md:self-center inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all cursor-pointer shadow-sm active:scale-95"
+                        className="self-start md:self-center inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold bg-[#2C1EE8] text-white hover:bg-blue-700 transition-all cursor-pointer shadow-md shadow-blue-500/20 active:scale-95"
                       >
                         <Eye className="w-4 h-4" />
                         Detail & Verifikasi
@@ -850,49 +871,49 @@ export default function AdminFacilityTab() {
       )}
 
       {selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-black text-gray-900">Persetujuan Final Sarpras Admin</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-xl rounded-[28px] p-6 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h3 className="text-lg font-black text-slate-900">Persetujuan Final Sarpras Admin</h3>
               <button
                 onClick={() => setSelectedBooking(null)}
-                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full cursor-pointer"
+                className="p-2 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-full cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-3 text-xs sm:text-sm">
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-2">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
                 <div>
-                  <span className="text-xs text-gray-400 block font-bold">Organisasi:</span>
-                  <span className="font-extrabold text-gray-900">{selectedBooking.organization}</span>
+                  <span className="text-xs text-slate-400 block font-bold">Organisasi:</span>
+                  <span className="font-extrabold text-slate-900">{selectedBooking.organization}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block font-bold">Nama Kegiatan:</span>
-                  <span className="font-extrabold text-[#2c1ee8]">{selectedBooking.activityName}</span>
+                  <span className="text-xs text-slate-400 block font-bold">Nama Kegiatan:</span>
+                  <span className="font-extrabold text-[#2C1EE8]">{selectedBooking.activityName}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block font-bold">Fasilitas & Jam:</span>
-                  <span className="font-bold text-gray-800">
+                  <span className="text-xs text-slate-400 block font-bold">Fasilitas & Jam:</span>
+                  <span className="font-bold text-slate-800">
                     {selectedBooking.facilityTitle} ({selectedBooking.slotFormatted})
                   </span>
                 </div>
               </div>
               <div>
-                <span className="text-xs font-bold text-gray-400 block mb-1">Deskripsi Kegiatan:</span>
-                <p className="p-3 bg-gray-50 rounded-2xl border border-gray-100 text-xs leading-relaxed">
+                <span className="text-xs font-bold text-slate-400 block mb-1">Deskripsi Kegiatan:</span>
+                <p className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs leading-relaxed font-medium">
                   {selectedBooking.description}
                 </p>
               </div>
               <div>
-                <span className="text-xs font-bold text-gray-400 block mb-1">Catatan Admin (Opsional):</span>
+                <span className="text-xs font-bold text-slate-400 block mb-1">Catatan Admin (Opsional):</span>
                 <input
                   type="text"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Tambahkan catatan..."
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-xs focus:outline-none focus:border-[#2c1ee8] transition"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium focus:outline-none focus:border-[#2C1EE8] transition"
                 />
               </div>
             </div>
@@ -900,13 +921,13 @@ export default function AdminFacilityTab() {
             <div className="pt-2 flex items-center justify-end gap-2">
               <button
                 onClick={() => handleUpdateBookingStatus(selectedBooking.id, "Ditolak Admin")}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl text-xs font-extrabold bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
               >
                 Tolak Peminjaman
               </button>
               <button
                 onClick={() => handleUpdateBookingStatus(selectedBooking.id, "Disetujui Admin")}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                className="px-6 py-2.5 rounded-xl text-xs font-extrabold bg-[#2C1EE8] text-white hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20 cursor-pointer flex items-center gap-2"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 ACC Final (Disetujui Admin)
