@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { User, Lock, Eye, EyeOff } from "@/components/common/Icons";
 import { GraduationCap, BookOpen, ShieldAlert, Sparkles, CheckCircle2, Check } from "lucide-react";
@@ -34,29 +33,7 @@ const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, r
 FallbackDiv.displayName = "FallbackDiv";
 
 const MotionDiv = motionImport?.div || FallbackDiv;
-const MotionSpan = motionImport?.span || (({ children, className }) => <span className={className}>{children}</span>);
 const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
-
-/**
- * Smooth Gaussian Blur Text Morphing Component
- * Morphs text content using gaussian blur, opacity, and vertical translation on key changes.
- */
-const BlurMorphText = ({ textKey, children, className = "" }) => {
-  return (
-    <AnimatePresenceComponent mode="wait">
-      <MotionSpan
-        key={textKey}
-        initial={{ opacity: 0, filter: "blur(10px)", y: 3 }}
-        animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
-        exit={{ opacity: 0, filter: "blur(10px)", y: -3 }}
-        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className={`inline-block ${className}`}
-      >
-        {children}
-      </MotionSpan>
-    </AnimatePresenceComponent>
-  );
-};
 
 export const LoginForm = ({ onSuccess }) => {
   const { login } = useAuth();
@@ -149,10 +126,11 @@ export const LoginForm = ({ onSuccess }) => {
 
     return (
       <MotionDiv
-        initial={{ opacity: 0, scale: 0.9, filter: "blur(12px)" }}
-        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-        transition={{ duration: 0.5, type: "spring", stiffness: 350, damping: 25 }}
+        initial={{ opacity: 0, scale: 0.9, rotateY: 90 }}
+        animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+        transition={{ duration: 0.5, type: "spring", stiffness: 300, damping: 24 }}
         className="w-full py-6 flex flex-col items-center justify-center text-center space-y-5"
+        style={{ transformStyle: "preserve-3d" }}
       >
         {/* Animated Glowing Ring & Checkmark */}
         <div className="relative flex items-center justify-center">
@@ -220,7 +198,7 @@ export const LoginForm = ({ onSuccess }) => {
   }
 
   return (
-    <div className="w-full space-y-5">
+    <div className="w-full space-y-5 [perspective:1200px]">
       {/* Interactive Role Selection Pills */}
       <div className="space-y-1.5">
         <label className="block text-[11px] font-black uppercase tracking-wider text-white/80">
@@ -277,128 +255,137 @@ export const LoginForm = ({ onSuccess }) => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        {errorMessage && (
-          <ErrorAlert
-            title="Login Gagal"
-            message={errorMessage}
-            onClose={() => setErrorMessage("")}
-          />
-        )}
-
-        {/* Identifier Input with Gaussian Blur Morphing */}
-        <div className="space-y-1">
-          <label className="block text-xs font-bold text-white/90">
-            <BlurMorphText textKey={loginType}>
-              {loginType === "Student"
-                ? "NIS / NISN"
-                : loginType === "Teacher"
-                ? "NIP / Email"
-                : "Email / Username Admin"}
-            </BlurMorphText>
-          </label>
-          <BlurMorphText textKey={loginType} className="w-full">
-            <Input
-              name="identifier"
-              type="text"
-              placeholder={
-                loginType === "Student"
-                  ? "Masukkan NIS atau NISN"
-                  : loginType === "Teacher"
-                  ? "Masukkan NIP atau Email"
-                  : "Masukkan Email atau Username Admin"
-              }
-              isRequired
-              variant="dark"
-              leftIcon={<User className="w-4 h-4 text-[#2c1ee8]" />}
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-            />
-          </BlurMorphText>
-        </div>
-
-        {/* Password Input */}
-        <div className="space-y-1">
-          <label className="block text-xs font-bold text-white/90">Password</label>
-          <Input
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder="Masukkan password"
-            isRequired
-            variant="dark"
-            leftIcon={<Lock className="w-4 h-4 text-[#2c1ee8]" />}
-            rightIcon={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-slate-400 hover:text-white transition-colors focus:outline-none cursor-pointer"
-                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-              </button>
-            }
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <div className="flex justify-end pt-0.5">
-            <button
-              type="button"
-              onClick={() => setIsForgotOpen(true)}
-              className="text-xs font-semibold text-white/80 hover:text-white underline transition cursor-pointer"
-            >
-              Lupa Password?
-            </button>
-          </div>
-        </div>
-
-        {/* Submit Button with Gaussian Blur Morphing */}
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          fullWidth
-          isLoading={isSubmitting}
-          disabled={isSubmitting}
-          className={`font-black py-3.5 text-sm sm:text-base rounded-2xl mt-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 active:scale-[0.98] shadow-xl ${
-            loginType === "Admin"
-              ? "!bg-amber-400 hover:!bg-amber-300 !text-slate-950 shadow-amber-500/20"
-              : "!bg-white !text-[#2c1ee8] hover:!bg-slate-100 shadow-white/20"
-          }`}
+      {/* 3D ROTATION FLIP CONTAINER ON OPTION SELECT */}
+      <AnimatePresenceComponent mode="wait">
+        <MotionDiv
+          key={loginType}
+          initial={{ rotateY: -90, opacity: 0.1, scale: 0.94 }}
+          animate={{ rotateY: 0, opacity: 1, scale: 1 }}
+          exit={{ rotateY: 90, opacity: 0.1, scale: 0.94 }}
+          transition={{ duration: 0.42, type: "spring", stiffness: 280, damping: 24 }}
+          style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
+          className="w-full space-y-4"
         >
-          {isSubmitting ? (
-            <div className="flex items-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5 text-current"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              <span>Memverifikasi Akun...</span>
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            {errorMessage && (
+              <ErrorAlert
+                title="Login Gagal"
+                message={errorMessage}
+                onClose={() => setErrorMessage("")}
+              />
+            )}
+
+            {/* Identifier Input */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-white/90">
+                {loginType === "Student"
+                  ? "NIS / NISN"
+                  : loginType === "Teacher"
+                  ? "NIP / Email"
+                  : "Email / Username Admin"}
+              </label>
+              <Input
+                name="identifier"
+                type="text"
+                placeholder={
+                  loginType === "Student"
+                    ? "Masukkan NIS atau NISN"
+                    : loginType === "Teacher"
+                    ? "Masukkan NIP atau Email"
+                    : "Masukkan Email atau Username Admin"
+                }
+                isRequired
+                variant="dark"
+                leftIcon={<User className="w-4 h-4 text-[#2c1ee8]" />}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+              />
             </div>
-          ) : (
-            <BlurMorphText textKey={loginType}>
-              Masuk Sebagai {loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin"}
-            </BlurMorphText>
-          )}
-        </Button>
-      </form>
+
+            {/* Password Input */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-white/90">Password</label>
+              <Input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Masukkan password"
+                isRequired
+                variant="dark"
+                leftIcon={<Lock className="w-4 h-4 text-[#2c1ee8]" />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-slate-400 hover:text-white transition-colors focus:outline-none cursor-pointer"
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                }
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <div className="flex justify-end pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotOpen(true)}
+                  className="text-xs font-semibold text-white/80 hover:text-white underline transition cursor-pointer"
+                >
+                  Lupa Password?
+                </button>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
+              className={`font-black py-3.5 text-sm sm:text-base rounded-2xl mt-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 active:scale-[0.98] shadow-xl ${
+                loginType === "Admin"
+                  ? "!bg-amber-400 hover:!bg-amber-300 !text-slate-950 shadow-amber-500/20"
+                  : "!bg-white !text-[#2c1ee8] hover:!bg-slate-100 shadow-white/20"
+              }`}
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5 text-current"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  <span>Memverifikasi Akun...</span>
+                </div>
+              ) : (
+                `Masuk Sebagai ${
+                  loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin"
+                }`
+              )}
+            </Button>
+          </form>
+        </MotionDiv>
+      </AnimatePresenceComponent>
 
       {/* Forgot Password Modal */}
       <ForgotPasswordModal isOpen={isForgotOpen} onClose={() => setIsForgotOpen(false)} />

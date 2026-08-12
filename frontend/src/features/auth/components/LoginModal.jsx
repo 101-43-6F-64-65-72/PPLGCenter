@@ -87,7 +87,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
 
           {/* 3. LOGIN CARD OVERLAY WITH SPRING ANIMATION & GLOW ORBS */}
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 [perspective:1200px]"
             onClick={onClose}
           >
             <MotionDiv
@@ -95,6 +95,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
               animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
               exit={{ opacity: 0, scale: 0.85, y: 25, rotateX: 6 }}
               transition={{ delay: 0.25, duration: 0.45, type: "spring", stiffness: 320, damping: 26 }}
+              style={{ transformStyle: "preserve-3d" }}
               className="relative w-full max-w-md rounded-[36px] border border-white/25 bg-[#2c1ee8]/95 p-7 sm:p-8 text-white shadow-2xl shadow-slate-950/80 backdrop-blur-2xl font-sans my-auto pointer-events-auto overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
