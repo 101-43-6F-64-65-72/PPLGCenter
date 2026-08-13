@@ -11,4 +11,7 @@ public interface IFacilityService
     Task<bool> DeleteFacilityAsync(Guid id);
     Task<List<FacilityResponse>> GetManagedFacilitiesAsync(Guid teacherId);
     Task<PagedResult<BookingResponse>> GetManagedBookingsAsync(Guid teacherId, int page, int pageSize);
+    Task<bool> AssignManagerAsync(Guid facilityId, Guid managerUserId);
+    Task<bool> RemoveManagerAsync(Guid facilityId, Guid managerUserId);
+    Task<List<FacilityManagerResponse>> GetFacilityManagersAsync(Guid facilityId);
 }

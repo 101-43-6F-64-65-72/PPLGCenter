@@ -2,9 +2,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const cloudName = 'vzq8p7ot';
-const apiKey = '361676817915771';
-const apiSecret = 'HdLS3Zkb971WfCXlIPOBuB54_fE';
+const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+const apiKey = process.env.CLOUDINARY_API_KEY;
+const apiSecret = process.env.CLOUDINARY_API_SECRET;
 const folder = 'test-uploads';
 
 async function testUpload() {

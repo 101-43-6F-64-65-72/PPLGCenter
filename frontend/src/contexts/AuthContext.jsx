@@ -13,9 +13,11 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [memberships, setMemberships] = useState([]);
   const [advisorFor, setAdvisorFor] = useState([]);
+  const [permissions, setPermissions] = useState([]);
+  const [communityGroups, setCommunityGroups] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Restore memberships / advisorFor from localStorage on initial load
+  // Restore memberships / advisorFor / permissions from localStorage on initial load
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -24,10 +26,28 @@ export const AuthProvider = ({ children }) => {
         if (storedM) setMemberships(JSON.parse(storedM));
         const storedA = localStorage.getItem("sc_advisor_for");
         if (storedA) setAdvisorFor(JSON.parse(storedA));
+        const storedP = localStorage.getItem("sc_permissions");
+        if (storedP) setPermissions(JSON.parse(storedP));
+        const storedCG = localStorage.getItem("sc_community_groups");
+        if (storedCG) setCommunityGroups(JSON.parse(storedCG));
       } catch (e) {}
     }
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  const hasPermission = useCallback((cap) => {
+    if (!cap || !Array.isArray(permissions)) return false;
+    return permissions.some((p) => p.toLowerCase() === cap.toLowerCase());
+  }, [permissions]);
+
+  const hasRole = useCallback((targetRole) => {
+    if (!role) return false;
+    const rUpper = role.toString().toUpperCase();
+    if (Array.isArray(targetRole)) {
+      return targetRole.some((r) => r.toUpperCase() === rUpper);
+    }
+    return rUpper === targetRole.toString().toUpperCase();
+  }, [role]);
 
   /**
    * Fetch authenticated user profile using stored JWT token from database
@@ -182,7 +202,7 @@ export const AuthProvider = ({ children }) => {
       setAdvisorFor([]);
       if (typeof window !== "undefined") {
         try {
-          localStorage.removeItem("studentcenter:pinned-proposals");
+          localStorage.removeItem("pplgcenter:pinned-proposals");
           localStorage.removeItem("sc_memberships");
           localStorage.removeItem("sc_advisor_for");
         } catch (e) {}

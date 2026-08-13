@@ -38,4 +38,8 @@ public class User
     // ── Navigation ─────────────────────────────────────────────────────────────
     public ICollection<ExtracurricularMember> Memberships { get; set; } = new List<ExtracurricularMember>();
     public ICollection<ExtracurricularAdvisor> AdvisorExtracurriculars { get; set; } = new List<ExtracurricularAdvisor>();
+
+    // ── PPLG Center Navigation ──────────────────────────────────────────────────
+    public StudentProfile? StudentProfile { get; set; }
+    public ICollection<UserPermission> CustomPermissions { get; set; } = new List<UserPermission>();
 }

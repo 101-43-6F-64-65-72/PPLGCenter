@@ -21,18 +21,16 @@ export const resolveImageUrl = (
 
   // Determine production vs dev environment and backend base URL
   const isHttpsProd = typeof window !== "undefined" && window.location.protocol === "https:";
-  let rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || API_CONFIG.BASE_URL || "https://studentcenter-backend.onrender.com";
+  let rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || API_CONFIG.BASE_URL || "http://localhost:5000";
 
   // Strip trailing slash and /api suffix if present
   let backendOrigin = rawApiBase.replace(/\/api\/?$/i, "").replace(/\/$/, "");
 
   // In HTTPS production, force HTTPS backend origin if it was configured as localhost or HTTP
-  if (isHttpsProd && (backendOrigin.includes("localhost") || backendOrigin.includes("127.0.0.1") || backendOrigin.startsWith("http://"))) {
-    if (backendOrigin.includes("localhost") || backendOrigin.includes("127.0.0.1")) {
-      backendOrigin = "https://studentcenter-backend.onrender.com";
-    } else {
-      backendOrigin = backendOrigin.replace(/^http:/, "https:");
-    }
+  // In HTTPS production with a non-localhost backend, upgrade HTTP → HTTPS to prevent mixed content.
+  // If NEXT_PUBLIC_API_BASE_URL is not set in production, requests will fail intentionally (no hidden fallback to old production URL).
+  if (isHttpsProd && backendOrigin.startsWith("http://") && !backendOrigin.includes("localhost") && !backendOrigin.includes("127.0.0.1")) {
+    backendOrigin = backendOrigin.replace(/^http:/, "https:");
   }
 
   // Case 1: Replace legacy stored localhost URLs (e.g. http://localhost:5051/uploads/feb7404f...)

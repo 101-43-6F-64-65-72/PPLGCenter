@@ -21,8 +21,10 @@ export default function Navbar() {
 
   const baseNavItems = [
     { name: "Beranda", path: "/" },
+    { name: "Kelas & Jadwal", path: "/kelas" },
     { name: "Fasilitas", path: "/fasilitas" },
-    { name: "Ekstrakurikuler", path: "/ekstrakurikuler" },
+    { name: "Perpustakaan", path: "/perpustakaan" },
+    { name: "Komunitas PPLG", path: "/komunitas" },
     { name: "Mading", path: "/mading" },
     { name: "Kalender", path: "/kalender" },
   ];
@@ -30,17 +32,11 @@ export default function Navbar() {
   // Add Proposal menu only for authenticated users
   if (isAuthenticated) {
     baseNavItems.push({ name: "Proposal", path: "/proposal" });
-    // Phase 6: Pemilos & OSIS Structure
-    baseNavItems.push({ name: "PEMILOS", path: "/pemilos" });
-    baseNavItems.push({ name: "Struktur OSIS", path: "/osis/structure" });
   }
 
   if (isAuthenticated) {
     if (userRole === "admin") {
       baseNavItems.push({ name: "Panel Admin", path: "/admin" });
-    } else if (userRole === "osis") {
-      baseNavItems.push({ name: "Panel OSIS", path: "/osis" });
-      baseNavItems.push({ name: "Rekrutmen OSIS", path: "/osis/recruitment" });
     } else if (userRole === "teacher") {
       baseNavItems.push({ name: "Panel Guru", path: "/guru" });
     }
@@ -135,7 +131,7 @@ export default function Navbar() {
             </div>
             <div className="flex flex-col leading-tight">
               <span className="text-slate-900 font-bold text-sm sm:text-base tracking-tight group-hover:text-blue-600 transition-colors whitespace-nowrap">
-                Student Center
+                PPLG Center
               </span>
               <span className="text-slate-500 font-medium text-[10px] sm:text-xs whitespace-nowrap">
                 SMK Negeri 2 Surakarta

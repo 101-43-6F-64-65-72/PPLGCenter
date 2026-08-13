@@ -14,6 +14,14 @@ public class AdvisorInfo
     public string Name { get; set; } = string.Empty;
 }
 
+public class CommunityGroupMembershipInfo
+{
+    public Guid GroupId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+}
+
 public class LoginUserInfo
 {
     public Guid Id { get; set; }
@@ -35,6 +43,7 @@ public class LoginUserInfo
     public DateTime? BirthDate { get; set; }
     public string? Address { get; set; }
     public string? Position { get; set; }
+    public List<string> Permissions { get; set; } = new();
 }
 
 public class LoginResponse
@@ -46,6 +55,8 @@ public class LoginResponse
     public string UserType { get; set; } = string.Empty;
     public string PrimaryIdentifier { get; set; } = string.Empty;
     public LoginUserInfo? User { get; set; }
+    public List<string> Permissions { get; set; } = new();
+    public List<CommunityGroupMembershipInfo> CommunityGroups { get; set; } = new();
     public List<MembershipInfo> Memberships { get; set; } = new();
     public List<AdvisorInfo> AdvisorFor { get; set; } = new();
 }

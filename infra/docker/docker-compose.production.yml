@@ -8,18 +8,18 @@ secrets:
 services:
   db:
     image: postgres:16-alpine
-    container_name: studentcenter-db-prod
+    container_name: pplgcenter-db-prod
     restart: unless-stopped
     environment:
-      POSTGRES_DB: studentcenter
-      POSTGRES_USER: studentcenter_prod
+      POSTGRES_DB: pplgcenter
+      POSTGRES_USER: pplgcenter_prod
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_password
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U studentcenter_prod -d studentcenter"]
+      test: ["CMD-SHELL", "pg_isready -U pplgcenter_prod -d pplgcenter"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,7 +36,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: studentcenter-backend-prod
+    container_name: pplgcenter-backend-prod
     restart: unless-stopped
     read_only: false
     security_opt:
@@ -45,9 +45,9 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET__FILE=/run/secrets/jwt_secret
-      - JWT_ISSUER=${JWT_ISSUER:-StudentCenter}
-      - JWT_AUDIENCE=${JWT_AUDIENCE:-StudentCenterApp}
-      - CORS__AllowedOrigins=${ALLOWED_ORIGINS:-https://studentcenter.vercel.app,https://studentcenter.smkn2surakarta.sch.id}
+      - JWT_ISSUER=${JWT_ISSUER:-PPLGCenter}
+      - JWT_AUDIENCE=${JWT_AUDIENCE:-PPLGCenterApp}
+      - CORS__AllowedOrigins=${ALLOWED_ORIGINS:?ALLOWED_ORIGINS must be set}
     secrets:
       - db_password
       - jwt_secret
@@ -67,13 +67,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: studentcenter-frontend-prod
+    container_name: pplgcenter-frontend-prod
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-https://studentcenter.smkn2surakarta.sch.id}
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:?NEXT_PUBLIC_API_BASE_URL must be set}
     depends_on:
       - backend
     deploy:
@@ -87,7 +87,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: studentcenter-proxy-prod
+    container_name: pplgcenter-proxy-prod
     restart: unless-stopped
     ports:
       - "80:80"

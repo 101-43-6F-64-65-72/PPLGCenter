@@ -109,8 +109,7 @@ export default function TestUploadPage() {
     addLog(`Memulai upload file '${file.name}' (${(file.size / 1024).toFixed(1)} KB)...`, "info");
 
     if (uploadMethod === "direct") {
-      addLog(`Metode: Direct Browser Upload (Frontend -> Cloudinary CDN API)`, "info");
-      addLog(`Target Cloud Name: vzq8p7ot`, "info");
+      addLog(`Metode: Upload Image Service (Frontend -> ASP.NET Core API /api/upload)`, "info");
       try {
         addLog(`Membuat SHA-1 Signature & Mengirim Direct Request ke Cloudinary...`, "info");
         const url = await uploadImageToCloudinary(file, folder);
@@ -403,16 +402,16 @@ export default function TestUploadPage() {
               
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">Cloud Name:</span>
-                  <span className="font-mono text-emerald-400 font-bold">vzq8p7ot</span>
+                  <span className="text-slate-400">Target Server:</span>
+                  <span className="font-mono text-emerald-400 font-bold">ASP.NET Core API</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800/60">
-                  <span className="text-slate-400">API Key:</span>
-                  <span className="font-mono text-slate-300">361676817915771</span>
+                  <span className="text-slate-400">Endpoint:</span>
+                  <span className="font-mono text-slate-300">/api/upload</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800/60">
                   <span className="text-slate-400">Mode Upload:</span>
-                  <span className="font-mono text-indigo-300 font-semibold">Signed SHA1</span>
+                  <span className="font-mono text-indigo-300 font-semibold">Backend Signed SHA1</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-800/60">
                   <span className="text-slate-400">Response Time:</span>

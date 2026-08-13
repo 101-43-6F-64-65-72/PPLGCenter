@@ -152,7 +152,7 @@ public class NotificationController : ControllerBase
             var broadcasts = await _notificationService.GetBroadcastListAsync();
             return Ok(ApiResponse<List<BroadcastItemResponse>>.Ok("Broadcast list retrieved successfully", broadcasts));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return Ok(ApiResponse<List<BroadcastItemResponse>>.Ok("Broadcast list retrieved successfully", new List<BroadcastItemResponse>()));
         }

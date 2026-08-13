@@ -31,6 +31,9 @@ public class SearchService : ISearchService
             SearchAssignmentsAsync(response, normalizedKeyword, page, pageSize),
             SearchCalendarEventsAsync(response, normalizedKeyword, page, pageSize),
             SearchFacilitiesAsync(response, normalizedKeyword, page, pageSize),
+            SearchBooksAsync(response, normalizedKeyword, page, pageSize),
+            SearchCommunityGroupsAsync(response, normalizedKeyword, page, pageSize),
+            SearchClassDivisionsAsync(response, normalizedKeyword, page, pageSize),
             SearchExtracurricularsAsync(response, normalizedKeyword, page, pageSize),
             SearchProposalsAsync(response, normalizedKeyword, page, pageSize, userId, userRole),
             SearchDiscussionsAsync(response, normalizedKeyword, page, pageSize),
@@ -40,6 +43,72 @@ public class SearchService : ISearchService
         );
 
         return response;
+    }
+
+    private async Task SearchBooksAsync(SearchResponse response, string keyword, int page, int pageSize)
+    {
+        var results = await _context.Set<Book>()
+            .AsNoTracking()
+            .Where(b => b.IsActive && (b.Title.ToLower().Contains(keyword) || b.Author.ToLower().Contains(keyword) || (b.Category != null && b.Category.ToLower().Contains(keyword))))
+            .OrderBy(b => b.Title)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(b => new SearchResult
+            {
+                Type = "Book",
+                Id = b.Id,
+                Title = b.Title,
+                Description = $"Author: {b.Author}",
+                Metadata = $"Category: {b.Category} - Available: {b.AvailableCopies}/{b.TotalCopies}",
+                CreatedAt = b.CreatedAt
+            })
+            .ToListAsync();
+
+        response.Books = results;
+    }
+
+    private async Task SearchCommunityGroupsAsync(SearchResponse response, string keyword, int page, int pageSize)
+    {
+        var results = await _context.Set<CommunityGroup>()
+            .AsNoTracking()
+            .Where(g => g.Name.ToLower().Contains(keyword) || (g.Description != null && g.Description.ToLower().Contains(keyword)))
+            .OrderByDescending(g => g.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(g => new SearchResult
+            {
+                Type = "CommunityGroup",
+                Id = g.Id,
+                Title = g.Name,
+                Description = g.Description ?? string.Empty,
+                Metadata = "Community Group",
+                CreatedAt = g.CreatedAt
+            })
+            .ToListAsync();
+
+        response.CommunityGroups = results;
+    }
+
+    private async Task SearchClassDivisionsAsync(SearchResponse response, string keyword, int page, int pageSize)
+    {
+        var results = await _context.Set<ClassDivision>()
+            .AsNoTracking()
+            .Where(cd => cd.Name.ToLower().Contains(keyword) || (cd.Description != null && cd.Description.ToLower().Contains(keyword)))
+            .OrderBy(cd => cd.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(cd => new SearchResult
+            {
+                Type = "ClassDivision",
+                Id = cd.Id,
+                Title = cd.Name,
+                Description = cd.Description ?? string.Empty,
+                Metadata = "Class Division",
+                CreatedAt = cd.CreatedAt
+            })
+            .ToListAsync();
+
+        response.ClassDivisions = results;
     }
 
     private async Task SearchAnnouncementsAsync(SearchResponse response, string keyword, int page, int pageSize)

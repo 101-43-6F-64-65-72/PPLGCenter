@@ -10,6 +10,34 @@ using StudentCenter.Infrastructure.Data;
 using StudentCenter.Infrastructure.Data.Seeders;
 using StudentCenter.Infrastructure.Services;
 
+// Load local .env environment variables if present
+var possibleEnvPaths = new[]
+{
+    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), "..", ".env")
+};
+foreach (var envPath in possibleEnvPaths)
+{
+    if (File.Exists(envPath))
+    {
+        foreach (var line in File.ReadAllLines(envPath))
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#")) continue;
+            var parts = trimmed.Split('=', 2);
+            if (parts.Length == 2)
+            {
+                var key = parts[0].Trim();
+                var val = parts[1].Trim().Trim('"').Trim('\'');
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                {
+                    Environment.SetEnvironmentVariable(key, val);
+                }
+            }
+        }
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 var rawConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
@@ -82,21 +110,31 @@ builder.Services.AddScoped<IElectionService, ElectionService>();
 builder.Services.AddScoped<ICandidatePairService, CandidatePairService>();
 builder.Services.AddScoped<IOsisRecruitmentService, OsisRecruitmentService>();
 
+// PPLG Center Domain Foundation Services (Phase 4B)
+builder.Services.AddScoped<IStudentProfileService, StudentProfileService>();
+builder.Services.AddScoped<IClassLeadershipService, ClassLeadershipService>();
+builder.Services.AddScoped<IClassDivisionService, ClassDivisionService>();
+builder.Services.AddScoped<IScheduleRotationService, ScheduleRotationService>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<ICommunityGroupService, CommunityGroupService>();
+builder.Services.AddScoped<IGroupMessageService, GroupMessageService>();
+builder.Services.AddScoped<IUserPermissionService, UserPermissionService>();
+
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKeyFile = Environment.GetEnvironmentVariable("JWT_SECRET__FILE");
 var secretKey = !string.IsNullOrWhiteSpace(secretKeyFile) && System.IO.File.Exists(secretKeyFile)
     ? System.IO.File.ReadAllText(secretKeyFile).Trim()
     : Environment.GetEnvironmentVariable("JWT_SECRET")
       ?? jwtSettings["SecretKey"]
-      ?? "StudentCenter2026SuperSecretKeyForJwtAuthenticationMustBe32Bytes!!";
+      ?? throw new InvalidOperationException("JWT_SECRET is required but not configured.");
 
 var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
     ?? jwtSettings["Issuer"]
-    ?? "StudentCenter";
+    ?? "PPLGCenter";
 
 var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
     ?? jwtSettings["Audience"]
-    ?? "StudentCenterApp";
+    ?? "PPLGCenterApp";
 
 builder.Services.AddAuthentication(options =>
 {
@@ -129,7 +167,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "https://studentcenter.vercel.app")
+        policy.WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -142,7 +180,7 @@ builder.Services.AddCors(options =>
             ?? builder.Configuration["AllowedOrigins:Production"]
             ?? Environment.GetEnvironmentVariable("CORS__AllowedOrigins")
             ?? Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
-            ?? "https://studentcenter.vercel.app,https://studentcenter.smkn2surakarta.sch.id,http://localhost:3000";
+            ?? "https://pplgcenter.vercel.app";
 
         var allowedOrigins = rawOrigins
             .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -153,28 +191,8 @@ builder.Services.AddCors(options =>
         policy.SetIsOriginAllowed(origin =>
         {
             if (string.IsNullOrWhiteSpace(origin)) return false;
-
             var normalizedOrigin = origin.TrimEnd('/');
-
-            if (allowedOrigins.Contains(normalizedOrigin, StringComparer.OrdinalIgnoreCase))
-                return true;
-
-            try
-            {
-                var uri = new Uri(origin);
-                var host = uri.Host;
-                if (host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase) ||
-                    host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-            catch
-            {
-                // Invalid URI format
-            }
-
-            return false;
+            return allowedOrigins.Contains(normalizedOrigin, StringComparer.OrdinalIgnoreCase);
         })
         .AllowAnyMethod()
         .AllowAnyHeader()
@@ -185,7 +203,7 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 
@@ -273,6 +291,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();

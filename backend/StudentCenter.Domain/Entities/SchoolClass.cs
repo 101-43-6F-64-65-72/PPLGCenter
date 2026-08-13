@@ -20,4 +20,5 @@ public class SchoolClass
     public DateTime UpdatedAt { get; set; }
 
     public ICollection<User> Students { get; set; } = new List<User>();
+    public ICollection<ClassDivision> Divisions { get; set; } = new List<ClassDivision>();
 }

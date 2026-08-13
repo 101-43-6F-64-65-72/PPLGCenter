@@ -47,7 +47,7 @@ public class FacilityService : IFacilityService
         if (pageSize < 1) pageSize = 10;
         if (pageSize > 100) pageSize = 100;
 
-        var query = _context.Set<Facility>()
+        var query = _context.Facilities
             .Include(f => f.ManagerTeacher)
             .AsNoTracking()
             .AsQueryable();
@@ -76,7 +76,7 @@ public class FacilityService : IFacilityService
 
     public async Task<FacilityResponse?> GetFacilityByIdAsync(Guid id)
     {
-        var f = await _context.Set<Facility>()
+        var f = await _context.Facilities
             .Include(f => f.ManagerTeacher)
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.Id == id);
@@ -103,11 +103,22 @@ public class FacilityService : IFacilityService
             UpdatedAt = DateTime.UtcNow
         };
 
-        _context.Set<Facility>().Add(facility);
+        _context.Facilities.Add(facility);
+
+        if (request.ManagerTeacherId.HasValue)
+        {
+            _context.FacilityManagers.Add(new FacilityManager
+            {
+                Id = Guid.NewGuid(),
+                FacilityId = facility.Id,
+                ManagerUserId = request.ManagerTeacherId.Value,
+                AssignedAt = DateTime.UtcNow
+            });
+        }
+
         await _context.SaveChangesAsync();
 
-        // Reload with navigation property
-        var created = await _context.Set<Facility>()
+        var created = await _context.Facilities
             .Include(f => f.ManagerTeacher)
             .AsNoTracking()
             .FirstAsync(f => f.Id == facility.Id);
@@ -119,7 +130,7 @@ public class FacilityService : IFacilityService
 
     public async Task<FacilityResponse?> UpdateFacilityAsync(Guid id, UpdateFacilityRequest request)
     {
-        var facility = await _context.Set<Facility>()
+        var facility = await _context.Facilities
             .FirstOrDefaultAsync(f => f.Id == id);
 
         if (facility is null)
@@ -135,10 +146,26 @@ public class FacilityService : IFacilityService
         facility.ManagerTeacherId = request.ManagerTeacherId;
         facility.UpdatedAt = DateTime.UtcNow;
 
+        if (request.ManagerTeacherId.HasValue)
+        {
+            var exists = await _context.FacilityManagers
+                .AnyAsync(fm => fm.FacilityId == id && fm.ManagerUserId == request.ManagerTeacherId.Value);
+
+            if (!exists)
+            {
+                _context.FacilityManagers.Add(new FacilityManager
+                {
+                    Id = Guid.NewGuid(),
+                    FacilityId = id,
+                    ManagerUserId = request.ManagerTeacherId.Value,
+                    AssignedAt = DateTime.UtcNow
+                });
+            }
+        }
+
         await _context.SaveChangesAsync();
 
-        // Reload with navigation property
-        var updated = await _context.Set<Facility>()
+        var updated = await _context.Facilities
             .Include(f => f.ManagerTeacher)
             .AsNoTracking()
             .FirstAsync(f => f.Id == id);
@@ -150,32 +177,39 @@ public class FacilityService : IFacilityService
 
     public async Task<bool> DeleteFacilityAsync(Guid id)
     {
-        var facility = await _context.Set<Facility>()
+        var facility = await _context.Facilities
             .FirstOrDefaultAsync(f => f.Id == id);
 
         if (facility is null)
             return false;
 
-        _context.Set<Facility>().Remove(facility);
+        _context.Facilities.Remove(facility);
         await _context.SaveChangesAsync();
         return true;
     }
 
-    // ─── Get Managed Facilities (for teacher) ─────────────────────────────────
+    // ─── Get Managed Facilities (Multi-Manager + Legacy Fallback) ─────────────
 
     public async Task<List<FacilityResponse>> GetManagedFacilitiesAsync(Guid teacherId)
     {
-        var facilities = await _context.Set<Facility>()
+        // Query FacilityManagers table as primary authoritative source
+        var managerFacilityIds = await _context.FacilityManagers
+            .AsNoTracking()
+            .Where(fm => fm.ManagerUserId == teacherId)
+            .Select(fm => fm.FacilityId)
+            .ToListAsync();
+
+        var facilities = await _context.Facilities
             .Include(f => f.ManagerTeacher)
             .AsNoTracking()
-            .Where(f => f.ManagerTeacherId == teacherId && !f.IsDeleted)
+            .Where(f => (managerFacilityIds.Contains(f.Id) || f.ManagerTeacherId == teacherId) && !f.IsDeleted)
             .OrderBy(f => f.Name)
             .ToListAsync();
 
         return facilities.Select(MapFacility).ToList();
     }
 
-    // ─── Get Managed Bookings (for teacher) ───────────────────────────────────
+    // ─── Get Managed Bookings (Multi-Manager) ─────────────────────────────────
 
     public async Task<PagedResult<BookingResponse>> GetManagedBookingsAsync(Guid teacherId, int page, int pageSize)
     {
@@ -183,19 +217,26 @@ public class FacilityService : IFacilityService
         if (pageSize < 1) pageSize = 20;
         if (pageSize > 200) pageSize = 200;
 
-        // Get facility IDs managed by this teacher
-        var managedFacilityIds = await _context.Set<Facility>()
+        var managerFacilityIds = await _context.FacilityManagers
+            .AsNoTracking()
+            .Where(fm => fm.ManagerUserId == teacherId)
+            .Select(fm => fm.FacilityId)
+            .ToListAsync();
+
+        var legacyFacilityIds = await _context.Facilities
             .AsNoTracking()
             .Where(f => f.ManagerTeacherId == teacherId && !f.IsDeleted)
             .Select(f => f.Id)
             .ToListAsync();
 
-        var query = _context.Set<FacilityBooking>()
+        var allManagedIds = managerFacilityIds.Union(legacyFacilityIds).ToList();
+
+        var query = _context.FacilityBookings
             .Include(b => b.Facility)
             .Include(b => b.BookedByUser)
             .Include(b => b.ApprovedOrRejectedByUser)
             .AsNoTracking()
-            .Where(b => managedFacilityIds.Contains(b.FacilityId));
+            .Where(b => allManagedIds.Contains(b.FacilityId));
 
         var totalCount = await query.CountAsync();
 
@@ -231,5 +272,83 @@ public class FacilityService : IFacilityService
             PageSize = pageSize,
             TotalCount = totalCount
         };
+    }
+
+    // ─── Multi-Manager Assignment Operations ──────────────────────────────────
+
+    public async Task<bool> AssignManagerAsync(Guid facilityId, Guid managerUserId)
+    {
+        var facility = await _context.Facilities.FirstOrDefaultAsync(f => f.Id == facilityId);
+        var userExists = await _context.Users.AnyAsync(u => u.Id == managerUserId);
+
+        if (facility is null || !userExists)
+            return false;
+
+        var existing = await _context.FacilityManagers
+            .FirstOrDefaultAsync(fm => fm.FacilityId == facilityId && fm.ManagerUserId == managerUserId);
+
+        if (existing is null)
+        {
+            _context.FacilityManagers.Add(new FacilityManager
+            {
+                Id = Guid.NewGuid(),
+                FacilityId = facilityId,
+                ManagerUserId = managerUserId,
+                AssignedAt = DateTime.UtcNow
+            });
+        }
+
+        // Sync legacy scalar field if empty
+        if (!facility.ManagerTeacherId.HasValue)
+        {
+            facility.ManagerTeacherId = managerUserId;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveManagerAsync(Guid facilityId, Guid managerUserId)
+    {
+        var facility = await _context.Facilities.FirstOrDefaultAsync(f => f.Id == facilityId);
+        var manager = await _context.FacilityManagers
+            .FirstOrDefaultAsync(fm => fm.FacilityId == facilityId && fm.ManagerUserId == managerUserId);
+
+        if (manager is null)
+            return false;
+
+        _context.FacilityManagers.Remove(manager);
+
+        // Sync legacy scalar field if it matches the removed manager
+        if (facility != null && facility.ManagerTeacherId == managerUserId)
+        {
+            var nextManager = await _context.FacilityManagers
+                .Where(fm => fm.FacilityId == facilityId && fm.ManagerUserId != managerUserId)
+                .Select(fm => (Guid?)fm.ManagerUserId)
+                .FirstOrDefaultAsync();
+
+            facility.ManagerTeacherId = nextManager;
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<FacilityManagerResponse>> GetFacilityManagersAsync(Guid facilityId)
+    {
+        return await _context.FacilityManagers
+            .Include(fm => fm.ManagerUser)
+            .AsNoTracking()
+            .Where(fm => fm.FacilityId == facilityId)
+            .Select(fm => new FacilityManagerResponse
+            {
+                Id = fm.Id,
+                FacilityId = fm.FacilityId,
+                ManagerUserId = fm.ManagerUserId,
+                ManagerName = fm.ManagerUser.FullName ?? fm.ManagerUser.Username,
+                ManagerEmail = fm.ManagerUser.Email,
+                AssignedAt = fm.AssignedAt
+            })
+            .ToListAsync();
     }
 }

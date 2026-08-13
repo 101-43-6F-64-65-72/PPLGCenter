@@ -82,6 +82,22 @@ public class AppDbContext : DbContext
     // Password Reset Approval System
     public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
 
+    // ── PPLG Center Domain Foundation (Phase 4A) ─────────────────────────────
+    public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
+    public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
+    public DbSet<StudentProject> StudentProjects => Set<StudentProject>();
+    public DbSet<ClassLeadership> ClassLeadership => Set<ClassLeadership>();
+    public DbSet<ClassDivision> ClassDivisions => Set<ClassDivision>();
+    public DbSet<ScheduleRotationConfig> ScheduleRotationConfigs => Set<ScheduleRotationConfig>();
+    public DbSet<FacilityManager> FacilityManagers => Set<FacilityManager>();
+    public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookManager> BookManagers => Set<BookManager>();
+    public DbSet<BookBorrowRequest> BookBorrowRequests => Set<BookBorrowRequest>();
+    public DbSet<CommunityGroup> CommunityGroups => Set<CommunityGroup>();
+    public DbSet<CommunityGroupMember> CommunityGroupMembers => Set<CommunityGroupMember>();
+    public DbSet<GroupMessage> GroupMessages => Set<GroupMessage>();
+    public DbSet<GroupMessageRecipientEnvelope> GroupMessageRecipientEnvelopes => Set<GroupMessageRecipientEnvelope>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

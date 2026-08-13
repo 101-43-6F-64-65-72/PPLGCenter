@@ -149,6 +149,27 @@ public class UserService : IUserService
                 .ToList();
         }
 
+        // Build granted permissions (capabilities)
+        var userPermissions = await _context.UserPermissions
+            .AsNoTracking()
+            .Where(p => p.UserId == user.Id)
+            .Select(p => p.Capability)
+            .ToListAsync();
+
+        // Build Community Groups memberships
+        var communityGroups = await _context.CommunityGroupMembers
+            .AsNoTracking()
+            .Include(c => c.Group)
+            .Where(c => c.UserId == user.Id && c.Status == Domain.Enums.CommunityMemberStatus.Accepted)
+            .Select(c => new CommunityGroupMembershipInfo
+            {
+                GroupId = c.GroupId,
+                Name = c.Group != null ? c.Group.Name : string.Empty,
+                Role = c.Role.ToString(),
+                Status = c.Status.ToString()
+            })
+            .ToListAsync();
+
         return new LoginResult
         {
             Status = LoginStatus.Success,
@@ -160,6 +181,8 @@ public class UserService : IUserService
                 Role = user.Role.ToString(),
                 UserType = userType,
                 PrimaryIdentifier = primaryIdentifier,
+                Permissions = userPermissions,
+                CommunityGroups = communityGroups,
                 User = new LoginUserInfo
                 {
                     Id = user.Id,
@@ -180,7 +203,8 @@ public class UserService : IUserService
                     Gender = user.Gender,
                     BirthDate = user.BirthDate,
                     Address = user.Address,
-                    Position = user.Position
+                    Position = user.Position,
+                    Permissions = userPermissions
                 },
                 Memberships = memberships,
                 AdvisorFor = advisorFor

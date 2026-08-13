@@ -30,21 +30,28 @@ public class CloudinaryService : ICloudinaryService
     private (string? CloudName, string? ApiKey, string? ApiSecret, string? UploadPreset) GetCredentials()
     {
         var cloudName = Clean(_configuration["Cloudinary:CloudName"]
+            ?? _configuration["CLOUDINARY_CLOUD_NAME"]
             ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")
             ?? Environment.GetEnvironmentVariable("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"));
 
         var apiKey = Clean(_configuration["Cloudinary:ApiKey"]
+            ?? _configuration["CLOUDINARY_API_KEY"]
             ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")
             ?? Environment.GetEnvironmentVariable("NEXT_PUBLIC_CLOUDINARY_API_KEY"));
 
         var apiSecret = Clean(_configuration["Cloudinary:ApiSecret"]
+            ?? _configuration["CLOUDINARY_API_SECRET"]
             ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET"));
 
         var uploadPreset = Clean(_configuration["Cloudinary:UploadPreset"]
+            ?? _configuration["CLOUDINARY_UPLOAD_PRESET"]
             ?? Environment.GetEnvironmentVariable("CLOUDINARY_UPLOAD_PRESET"));
 
-        // Support CLOUDINARY_URL (e.g. cloudinary://361676817915771:HdLS3Zkb971WfCXlIPOBuB54_fE@vzq8p7ot)
-        var cloudinaryUrl = Clean(_configuration["Cloudinary:Url"] ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+        // Support CLOUDINARY_URL (e.g. cloudinary://API_KEY:API_SECRET@CLOUD_NAME)
+        var cloudinaryUrl = Clean(_configuration["Cloudinary:Url"]
+            ?? _configuration["CLOUDINARY_URL"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+
         if (!string.IsNullOrWhiteSpace(cloudinaryUrl))
         {
             try
@@ -62,7 +69,7 @@ public class CloudinaryService : ICloudinaryService
                         if (string.IsNullOrWhiteSpace(apiKey)) apiKey = credParts[0];
                         if (string.IsNullOrWhiteSpace(apiSecret)) apiSecret = credParts[1];
                     }
-                    if (string.IsNullOrWhiteSpace(cloudName) || string.Equals(cloudName, "StudentCenter", StringComparison.OrdinalIgnoreCase))
+                    if (string.IsNullOrWhiteSpace(cloudName))
                     {
                         cloudName = parsedCloudName;
                     }
@@ -73,17 +80,6 @@ public class CloudinaryService : ICloudinaryService
                 _logger.LogWarning(ex, "Failed to parse CLOUDINARY_URL");
             }
         }
-
-        // If cloudName was mistaken as display name 'StudentCenter' instead of actual cloud name 'vzq8p7ot', fix it
-        if (string.Equals(cloudName, "StudentCenter", StringComparison.OrdinalIgnoreCase))
-        {
-            cloudName = "vzq8p7ot";
-        }
-
-        // Fallback default configuration values if missing
-        cloudName ??= "vzq8p7ot";
-        apiKey ??= "361676817915771";
-        apiSecret ??= "HdLS3Zkb971WfCXlIPOBuB54_fE";
 
         return (cloudName, apiKey, apiSecret, uploadPreset);
     }

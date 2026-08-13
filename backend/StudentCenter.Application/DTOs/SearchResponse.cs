@@ -17,11 +17,14 @@ public class SearchResponse
     public List<SearchResult> Assignments { get; set; } = new();
     public List<SearchResult> CalendarEvents { get; set; } = new();
     public List<SearchResult> Facilities { get; set; } = new();
+    public List<SearchResult> Books { get; set; } = new();
+    public List<SearchResult> CommunityGroups { get; set; } = new();
+    public List<SearchResult> ClassDivisions { get; set; } = new();
     public List<SearchResult> Extracurriculars { get; set; } = new();
     public List<SearchResult> Proposals { get; set; } = new();
     public List<SearchResult> Discussions { get; set; } = new();
     public List<SearchResult> Messages { get; set; } = new();
     public List<SearchResult> Elections { get; set; } = new();
     public List<SearchResult> Candidates { get; set; } = new();
-    public int TotalCount => Announcements.Count + Materials.Count + Assignments.Count + CalendarEvents.Count + Facilities.Count + Extracurriculars.Count + Proposals.Count + Discussions.Count + Messages.Count + Elections.Count + Candidates.Count;
+    public int TotalCount => Announcements.Count + Materials.Count + Assignments.Count + CalendarEvents.Count + Facilities.Count + Books.Count + CommunityGroups.Count + ClassDivisions.Count + Extracurriculars.Count + Proposals.Count + Discussions.Count + Messages.Count + Elections.Count + Candidates.Count;
 }

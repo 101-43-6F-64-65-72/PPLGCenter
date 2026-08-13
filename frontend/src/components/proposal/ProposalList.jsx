@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import ProposalCard from "./ProposalCard";
 import { FileText, Pin, ChevronDown, PlusCircle, Search, X } from "lucide-react";
 
-const PIN_STORAGE_KEY = "studentcenter:pinned-proposals";
+const PIN_STORAGE_KEY = "pplgcenter:pinned-proposals";
 const INITIAL_LIMIT = 6;
 
 export default function ProposalList({

@@ -1,9 +1,10 @@
 # Render Infrastructure as Code Blueprint
-# Render Deployment Specification for StudentCenter (.NET Backend + PostgreSQL + Persistent Disk)
+# Render Deployment Specification for PPLGCenter (.NET Backend + PostgreSQL + Persistent Disk)
+# NOTE: Set all envVars marked 'sync: false' or with empty 'value' via the Render dashboard before deploying.
 
 services:
   - type: web
-    name: studentcenter-backend
+    name: pplgcenter-backend
     env: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
@@ -15,16 +16,16 @@ services:
         value: Production
       - key: DATABASE_URL
         fromDatabase:
-          name: studentcenter-db
+          name: pplgcenter-db
           property: connectionString
       - key: JWT_SECRET
         sync: false
       - key: JWT_ISSUER
-        value: StudentCenter
+        value: PPLGCenter
       - key: JWT_AUDIENCE
-        value: StudentCenterApp
+        value: PPLGCenterApp
       - key: CORS__AllowedOrigins
-        value: https://studentcenter.vercel.app,https://studentcenter.smkn2surakarta.sch.id
+        sync: false   # Set via Render dashboard once PPLGCenter domain is known
       - key: UPLOAD_PATH
         value: /app/wwwroot/uploads
     disk:
@@ -33,8 +34,8 @@ services:
       sizeGB: 1
 
 databases:
-  - name: studentcenter-db
-    databaseName: studentcenter
-    user: studentcenter_user
+  - name: pplgcenter-db
+    databaseName: pplgcenter
+    user: pplgcenter_user
     region: singapore
     plan: starter
