@@ -1,0 +1,29 @@
+name: Deploy Backend (.NET API)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  build-and-deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore backend/StudentCenter.slnx
+
+      - name: Build Backend
+        run: dotnet build backend/StudentCenter.slnx --configuration Release --no-restore
+
+      # Add deployment step here (e.g. Docker build & push, SSH deployment to VPS, Railway, etc.)

@@ -1,0 +1,10 @@
+.git
+.github
+.vscode
+.vs
+**/bin
+**/obj
+**/node_modules
+**/.next
+secrets
+*.user

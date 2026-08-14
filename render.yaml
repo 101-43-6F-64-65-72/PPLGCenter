@@ -1,0 +1,39 @@
+# Render Infrastructure as Code Blueprint
+# Render Deployment Specification for PPLGCenter ASP.NET Core Web API
+# NOTE: Set all envVars marked 'sync: false' via the Render dashboard before deploying.
+
+services:
+  - type: web
+    name: pplgcenter-api
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    region: singapore
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        sync: false   # Dedicated PPLG Center Supabase PostgreSQL URL
+      - key: JWT_SECRET
+        sync: false   # HMAC-SHA256 Secret (min 32 chars)
+      - key: JWT_ISSUER
+        value: PPLGCenter
+      - key: JWT_AUDIENCE
+        value: PPLGCenterApp
+      - key: CORS__AllowedOrigins
+        value: https://pplgcenter.vercel.app
+      - key: UPLOAD_PATH
+        value: /app/wwwroot/uploads
+      - key: CLOUDINARY__CLOUDNAME
+        sync: false
+      - key: CLOUDINARY__APIKEY
+        sync: false
+      - key: CLOUDINARY__APISECRET
+        sync: false
+    disk:
+      name: uploads-disk
+      mountPath: /app/wwwroot/uploads
+      sizeGB: 1
+

@@ -1,0 +1,54 @@
+# Build Results & Binaries (.NET)
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+[Bb]in/
+[Oo]bj/
+bin/
+obj/
+**/bin/
+**/obj/
+*.dll
+*.exe
+*.pdb
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+
+# Node / Next.js Outputs
+node_modules/
+.next/
+out/
+build/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# MSTest & Playwright Test Results
+[Tt]est[Rr]esult*/
+pw-results/
+playwright-report/
+test-results/
+frontend/e2e/*.sql
+
+# Local Secrets & Temp Files
+.env
+.env.*
+!.env.example
+*.env
+*.env.*
+secrets/
+*.pem
+*.pfx
+*.log
+status-before-recovery.txt
+~$*
+*~
+CodeCoverage/
+*.binlog
