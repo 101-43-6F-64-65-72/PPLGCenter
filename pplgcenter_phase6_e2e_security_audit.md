@@ -12,7 +12,7 @@
 |---|---|---|---|---|
 | **Frontend (Next.js 16)** | Vercel CDN Singleton | `http://localhost:3000` (Dev) / `https://*.vercel.app` (Prod) | **NONE** | **VERIFIED** |
 | **Backend (.NET 10 API)** | Render Web Service | `http://localhost:5051` (Dev) / `https://*.onrender.com` (Prod) | **NONE** | **VERIFIED** |
-| **Database (PostgreSQL)** | Supabase PostgreSQL | `Host=db.ryskvrqcrytmdsorviie.supabase.co` | **NONE** (Git-ignored) | **VERIFIED** |
+| **Database (PostgreSQL)** | Supabase PostgreSQL | `Host=db.rwopazhqgvvrosdizmvt.supabase.co` | **NONE** (Git-ignored) | **VERIFIED** |
 | **Media Storage** | Cloudinary CDN Gateway | Backend `POST /api/upload` Gateway | **NONE** (Zero client secrets) | **VERIFIED** |
 
 ---
@@ -138,7 +138,7 @@ PPLG CENTER E2E & SECURITY AUDIT TEST MATRIX
 ### Render Environment Variables (Backend Web API)
 ```env
 PORT=5051
-DATABASE_URL=Host=db.ryskvrqcrytmdsorviie.supabase.co;Port=5432;Database=postgres;Username=postgres.ryskvrqcrytmdsorviie;Password=<PASSWORD>;SSL Mode=Require;Trust Server Certificate=true
+DATABASE_URL=Host=db.rwopazhqgvvrosdizmvt.supabase.co;Port=5432;Database=postgres;Username=postgres.rwopazhqgvvrosdizmvt;Password=<PASSWORD>;SSL Mode=Require;Trust Server Certificate=true
 JWT_SECRET=<PRODUCTION_HMAC_SHA256_JWT_SECRET>
 JWT_ISSUER=PPLGCenter
 JWT_AUDIENCE=PPLGCenterApp

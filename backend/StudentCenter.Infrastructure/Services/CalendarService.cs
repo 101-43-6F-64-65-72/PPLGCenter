@@ -22,8 +22,7 @@ public class CalendarService : ICalendarService
         if (pageSize > 100) pageSize = 100;
 
         var query = _context.Set<CalendarEvent>()
-            .AsNoTracking()
-            .Where(c => c.DeletedAt == null);
+            .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(category))
         {
@@ -57,7 +56,7 @@ public class CalendarService : ICalendarService
 
         return await _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.DeletedAt == null && c.StartDate >= now)
+            .Where(c => c.StartDate >= now)
             .OrderBy(c => c.StartDate)
             .Take(count)
             .Select(c => MapToResponse(c))
@@ -71,16 +70,7 @@ public class CalendarService : ICalendarService
 
         var query = _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.DeletedAt == null && c.StartDate <= endOfMonth && c.EndDate >= startOfMonth);
-
-        if (userRole == "Student")
-        {
-            query = query.Where(c => c.Visibility == "Public");
-        }
-        else if (userRole == "Teacher")
-        {
-            query = query.Where(c => c.Visibility == "Public" || c.Visibility == "TeacherOnly");
-        }
+            .Where(c => c.StartDate <= endOfMonth && c.EndDate >= startOfMonth);
 
         return await query
             .OrderBy(c => c.StartDate)
@@ -95,16 +85,7 @@ public class CalendarService : ICalendarService
 
         var query = _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.DeletedAt == null && c.StartDate <= endOfDay && c.EndDate >= startOfDay);
-
-        if (userRole == "Student")
-        {
-            query = query.Where(c => c.Visibility == "Public");
-        }
-        else if (userRole == "Teacher")
-        {
-            query = query.Where(c => c.Visibility == "Public" || c.Visibility == "TeacherOnly");
-        }
+            .Where(c => c.StartDate <= endOfDay && c.EndDate >= startOfDay);
 
         return await query
             .OrderBy(c => c.StartDate)
@@ -117,7 +98,7 @@ public class CalendarService : ICalendarService
         var calendarEvent = await _context.Set<CalendarEvent>()
             .AsNoTracking()
             .Include(c => c.CreatedByUser)
-            .FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null);
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (calendarEvent is null) return null;
 
@@ -158,7 +139,7 @@ public class CalendarService : ICalendarService
     {
         var calendarEvent = await _context.Set<CalendarEvent>()
             .Include(c => c.CreatedByUser)
-            .FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null);
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (calendarEvent is null)
             return null;
@@ -187,7 +168,7 @@ public class CalendarService : ICalendarService
     public async Task<bool> DeleteEventAsync(Guid id, Guid userId, string userRole)
     {
         var calendarEvent = await _context.Set<CalendarEvent>()
-            .FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null);
+            .FirstOrDefaultAsync(c => c.Id == id);
 
         if (calendarEvent is null)
             return false;
@@ -195,7 +176,7 @@ public class CalendarService : ICalendarService
         if (userRole != "Admin" && calendarEvent.CreatedByUserId != userId)
             throw new UnauthorizedAccessException("You can only delete your own calendar events.");
 
-        calendarEvent.DeletedAt = DateTime.UtcNow;
+        _context.Set<CalendarEvent>().Remove(calendarEvent);
         await _context.SaveChangesAsync();
 
         return true;

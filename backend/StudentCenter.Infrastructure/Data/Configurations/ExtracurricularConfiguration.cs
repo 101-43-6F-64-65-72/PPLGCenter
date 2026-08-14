@@ -84,5 +84,14 @@ public class ExtracurricularConfiguration : IEntityTypeConfiguration<Extracurric
         builder.HasIndex(e => e.ManagedByUserId);
         builder.HasIndex(e => e.SupervisorTeacherId);
         builder.HasIndex(e => e.CreatedAt);
+
+        // Alias and non-database properties ignored for frozen Supabase schema compatibility
+        builder.Ignore(e => e.MaximumMembers);
+        builder.Ignore(e => e.Day);
+        builder.Ignore(e => e.StartTime);
+        builder.Ignore(e => e.EndTime);
+        builder.Ignore(e => e.CoachName);
+        builder.Ignore(e => e.CoachPhoneNumber);
+        builder.Ignore(e => e.RegistrationOpen);
     }
 }

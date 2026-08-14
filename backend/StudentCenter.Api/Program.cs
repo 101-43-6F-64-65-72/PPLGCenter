@@ -50,7 +50,15 @@ var port = Environment.GetEnvironmentVariable("PORT") ?? "5051";
 builder.WebHost.UseUrls($"http://*:{port}");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    options.UseNpgsql(connectionString);
+    // Suppressed: CalendarEventConfiguration intentionally ignores properties that do not
+    // exist in the PPLG Center database schema (Color, Visibility, StartTime, EndTime, DeletedAt).
+    // These are legacy entity fields absent from the frozen PPLG Supabase schema.
+    // No migration is required for ignored properties.
+    options.ConfigureWarnings(w =>
+        w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+});
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IFileStorageService, SupabaseStorageService>();

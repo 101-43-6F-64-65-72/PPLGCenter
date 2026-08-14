@@ -180,7 +180,7 @@ public class SearchService : ISearchService
     {
         var results = await _context.Set<CalendarEvent>()
             .AsNoTracking()
-            .Where(c => c.DeletedAt == null && (c.Title.ToLower().Contains(keyword) || (c.Description != null && c.Description.ToLower().Contains(keyword))))
+            .Where(c => c.Title.ToLower().Contains(keyword) || (c.Description != null && c.Description.ToLower().Contains(keyword)))
             .OrderByDescending(c => c.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

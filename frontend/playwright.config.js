@@ -28,9 +28,9 @@ export default defineConfig({
       cwd: '..',
       env: {
         ...process.env,
-        DATABASE_URL: process.env.DATABASE_URL || 'Host=db.ryskvrqcrytmdsorviie.supabase.co;Port=5432;Database=postgres;Username=postgres.ryskvrqcrytmdsorviie;SSL Mode=Require;Trust Server Certificate=true',
-        JWT_SECRET: process.env.JWT_SECRET || 'akjhgfdrtyjnmnbytghytfvbnjykbrcr',
-        DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || 'Admin123!',
+        ...(process.env.DATABASE_URL ? { DATABASE_URL: process.env.DATABASE_URL } : {}),
+        JWT_ISSUER: process.env.JWT_ISSUER || 'PPLGCenter',
+        JWT_AUDIENCE: process.env.JWT_AUDIENCE || 'PPLGCenterApp',
       },
     },
     {

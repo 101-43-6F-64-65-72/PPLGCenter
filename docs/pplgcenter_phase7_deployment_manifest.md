@@ -46,7 +46,7 @@ PORT=5051
 ASPNETCORE_ENVIRONMENT=Production
 
 # Database (Supabase Dedicated PPLG Instance)
-DATABASE_URL=Host=db.ryskvrqcrytmdsorviie.supabase.co;Port=5432;Database=postgres;Username=postgres.ryskvrqcrytmdsorviie;Password=<SUPABASE_DB_PASSWORD>;SSL Mode=Require;Trust Server Certificate=true
+DATABASE_URL=Host=db.rwopazhqgvvrosdizmvt.supabase.co;Port=5432;Database=postgres;Username=postgres.rwopazhqgvvrosdizmvt;Password=<SUPABASE_DB_PASSWORD>;SSL Mode=Require;Trust Server Certificate=true
 
 # Authentication (HMAC-SHA256 JWT)
 JWT_SECRET=<STRONG_RANDOM_64_CHAR_JWT_SECRET>

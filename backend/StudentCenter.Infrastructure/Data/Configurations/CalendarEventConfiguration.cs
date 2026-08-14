@@ -59,5 +59,16 @@ public class CalendarEventConfiguration : IEntityTypeConfiguration<CalendarEvent
         builder.HasIndex(c => c.EndDate);
         builder.HasIndex(c => c.Category);
         builder.HasIndex(c => c.CreatedByUserId);
+
+        // The following properties exist on the C# entity but do NOT exist in the
+        // PPLG Center Supabase database schema. Explicitly ignored to prevent
+        // DbUpdateException at startup. DO NOT create a migration for these.
+        builder.Ignore(c => c.Color);
+        builder.Ignore(c => c.Visibility);
+        builder.Ignore(c => c.StartTime);
+        builder.Ignore(c => c.EndTime);
+        builder.Ignore(c => c.DeletedAt);
+        // EventDate is a computed C# alias for StartDate — not a real DB column.
+        builder.Ignore(c => c.EventDate);
     }
 }
