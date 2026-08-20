@@ -38,12 +38,22 @@ public class ProposalController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetProposal(Guid id)
     {
-        var result = await _proposalService.GetProposalByIdAsync(id);
+        var requestingUserId = _currentUserService.UserId;
+        var requestingUserRole = _currentUserService.Role;
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Proposal not found."));
+        try
+        {
+            var result = await _proposalService.GetProposalByIdAsync(id, requestingUserId, requestingUserRole);
 
-        return Ok(ApiResponse<ProposalResponse>.Ok("Proposal retrieved successfully", result));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Proposal not found."));
+
+            return Ok(ApiResponse<ProposalResponse>.Ok("Proposal retrieved successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Student,OSIS")]
@@ -54,11 +64,30 @@ public class ProposalController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _proposalService.CreateProposalAsync(request, userId.Value);
-        return Ok(ApiResponse<ProposalResponse>.Ok("Proposal created successfully", result));
+        try
+        {
+            var result = await _proposalService.CreateProposalAsync(request, userId.Value);
+            return Ok(ApiResponse<ProposalResponse>.Ok("Proposal created successfully", result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
-    [Authorize(Roles = "Student,Teacher,Admin")]
+    [Authorize(Roles = "Student,OSIS,Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateProposal(Guid id, [FromBody] UpdateProposalRequest request)
     {
@@ -66,12 +95,29 @@ public class ProposalController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _proposalService.UpdateProposalAsync(id, request, userId.Value);
+        var userRole = _currentUserService.Role;
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Proposal not found."));
+        try
+        {
+            var result = await _proposalService.UpdateProposalAsync(id, request, userId.Value, userRole);
 
-        return Ok(ApiResponse<ProposalResponse>.Ok("Proposal updated successfully", result));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Proposal not found."));
+
+            return Ok(ApiResponse<ProposalResponse>.Ok("Proposal updated successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Student,Teacher,Admin")]
@@ -82,12 +128,29 @@ public class ProposalController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _proposalService.DeleteProposalAsync(id, userId.Value);
+        var userRole = _currentUserService.Role;
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Proposal not found."));
+        try
+        {
+            var result = await _proposalService.DeleteProposalAsync(id, userId.Value, userRole);
 
-        return Ok(ApiResponse<object>.Ok("Proposal deleted successfully"));
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Proposal not found."));
+
+            return Ok(ApiResponse<object>.Ok("Proposal deleted successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
@@ -98,11 +161,30 @@ public class ProposalController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _proposalService.ReviewProposalAsync(id, request, userId.Value);
+        try
+        {
+            var result = await _proposalService.ReviewProposalAsync(id, request, userId.Value);
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Proposal not found."));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Proposal not found."));
 
-        return Ok(ApiResponse<ProposalResponse>.Ok("Proposal reviewed successfully", result));
+            return Ok(ApiResponse<ProposalResponse>.Ok("Proposal reviewed successfully", result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }

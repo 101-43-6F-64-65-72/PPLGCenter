@@ -6,7 +6,7 @@ using StudentCenter.Application.Services;
 
 namespace StudentCenter.Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 [ApiController]
 [Route("api/departments")]
 public class DepartmentsController : ControllerBase
@@ -35,6 +35,7 @@ public class DepartmentsController : ControllerBase
         return Ok(ApiResponse<DepartmentResponse>.Ok("Department retrieved successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateDepartmentRequest request)
     {
@@ -43,6 +44,7 @@ public class DepartmentsController : ControllerBase
             ApiResponse<DepartmentResponse>.Ok("Department created successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateDepartmentRequest request)
     {
@@ -53,6 +55,7 @@ public class DepartmentsController : ControllerBase
         return Ok(ApiResponse<DepartmentResponse>.Ok("Department updated successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

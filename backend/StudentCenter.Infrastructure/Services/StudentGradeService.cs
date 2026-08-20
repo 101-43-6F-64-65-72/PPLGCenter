@@ -6,6 +6,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Infrastructure.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -25,10 +26,34 @@ public class StudentGradeService : IStudentGradeService
         _notificationService = notificationService ?? new NotificationService(context);
     }
 
-    public async Task<StudentGradeResponse?> GetGradeByIdAsync(Guid id)
+    public async Task<StudentGradeResponse?> GetGradeByIdAsync(Guid id, Guid? requestingUserId = null, string? requestingUserRole = null)
     {
         var grade = await BuildGradeQuery().FirstOrDefaultAsync(g => g.Id == id);
-        return grade == null ? null : MapToGradeResponse(grade);
+        if (grade == null) return null;
+
+        if (requestingUserId.HasValue && requestingUserRole != "Admin")
+        {
+            if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+            {
+                if (grade.StudentId != requestingUserId.Value || !grade.IsPublished)
+                {
+                    throw new UnauthorizedAccessException("Student is not authorized to access this grade record.");
+                }
+            }
+            else if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                var isAuthorized = grade.GradedBy == requestingUserId.Value ||
+                    grade.Assessment?.TeacherId == requestingUserId.Value ||
+                    (grade.Assessment?.ClassSubject?.TeacherSubject != null && grade.Assessment.ClassSubject.TeacherSubject.TeacherId == requestingUserId.Value);
+
+                if (!isAuthorized)
+                {
+                    throw new UnauthorizedAccessException("Teacher is not authorized to access this grade record.");
+                }
+            }
+        }
+
+        return MapToGradeResponse(grade);
     }
 
     public async Task<StudentGradeResponse> UpsertGradeAsync(Guid teacherId, Guid assessmentId, GradeItemRequest request, bool publish = false)
@@ -40,13 +65,9 @@ public class StudentGradeService : IStudentGradeService
 
         if (assessment == null) throw new ValidationException("Assessment not found.");
 
-        if (assessment.TeacherId != teacherId && assessment.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        if (assessment.TeacherId != teacherId && !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, assessment.ClassSubject.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized for this assessment.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized for this assessment.");
         }
 
         if (request.RawScore < 0 || request.RawScore > assessment.MaxScore)
@@ -58,6 +79,12 @@ public class StudentGradeService : IStudentGradeService
         if (student == null || student.Role != UserRole.Student)
         {
             throw new ValidationException("Student not found.");
+        }
+
+        // Cross-class student grade injection check
+        if (student.ClassId == null || (assessment.ClassSubject != null && student.ClassId != assessment.ClassSubject.ClassId))
+        {
+            throw new ValidationException("Student does not belong to the class assigned to this assessment.");
         }
 
         // Calculate normalized final score (0 - 100) & letter grade
@@ -162,13 +189,9 @@ public class StudentGradeService : IStudentGradeService
 
         if (assessment == null) return false;
 
-        if (assessment.TeacherId != teacherId && assessment.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        if (assessment.TeacherId != teacherId && !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, assessment.ClassSubject.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized for this assessment.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized for this assessment.");
         }
 
         var query = _context.StudentGrades
@@ -198,7 +221,7 @@ public class StudentGradeService : IStudentGradeService
             await _notificationService.NotifyUserAsync(
                 g.StudentId,
                 $"Nilai Dipublikasikan: {assessment.Title}",
-                $"Nilai Anda untuk '{assessment.Title}' adalah {g.RawScore}/{assessment.MaxScore} ({g.LetterGrade} - {g.Predicate}).",
+                $"Nilai Anda untuk '{assessment.Title}' telah dipublikasikan.",
                 NotificationType.GradePublished,
                 NotificationPriority.High,
                 g.Id.ToString(),
@@ -222,6 +245,11 @@ public class StudentGradeService : IStudentGradeService
             .FirstOrDefaultAsync(c => c.Id == classSubjectId);
 
         if (cs == null) throw new ValidationException("ClassSubject not found.");
+
+        if (cs.TeacherSubject != null && !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, cs.TeacherSubject.TeacherId))
+        {
+            throw new UnauthorizedAccessException("Teacher is not authorized for this class subject gradebook.");
+        }
 
         var assessments = await _context.Assessments
             .AsNoTracking()
@@ -373,6 +401,22 @@ public class StudentGradeService : IStudentGradeService
             .Where(cs => cs.ClassId == classId)
             .ToListAsync();
 
+        var classSubjectIds = classSubjects.Select(cs => cs.Id).ToList();
+
+        var assessments = await _context.Assessments
+            .AsNoTracking()
+            .Where(a => classSubjectIds.Contains(a.ClassSubjectId))
+            .ToListAsync();
+
+        var assessmentIds = assessments.Select(a => a.Id).ToList();
+
+        var studentGrades = await _context.StudentGrades
+            .AsNoTracking()
+            .Include(g => g.Assessment)
+            .Include(g => g.GradedByUser)
+            .Where(g => g.StudentId == studentId && assessmentIds.Contains(g.AssessmentId) && g.IsPublished)
+            .ToListAsync();
+
         var categories = await _context.GradeCategories.AsNoTracking().Where(c => c.IsActive).ToListAsync();
         var scales = await _context.GradeScales.AsNoTracking().Where(s => s.IsActive).ToListAsync();
 
@@ -382,25 +426,28 @@ public class StudentGradeService : IStudentGradeService
         {
             if (cs.TeacherSubject == null) continue;
 
-            var teacherbook = await GetTeacherGradebookAsync(cs.TeacherSubject.TeacherId, cs.Id);
-            var studentRow = teacherbook.StudentRows.FirstOrDefault(r => r.StudentId == studentId);
+            var csAssessments = assessments.Where(a => a.ClassSubjectId == cs.Id).ToList();
+            var csGrades = studentGrades.Where(g => csAssessments.Select(a => a.Id).Contains(g.AssessmentId)).ToList();
 
-            if (studentRow != null)
+            if (!csGrades.Any() && !csAssessments.Any()) continue;
+
+            decimal finalScore = _gradeEngine.CalculateWeightedSubjectScore(csGrades, csAssessments, categories);
+            var (letter, predicate) = _gradeEngine.MatchGradeScale(finalScore, scales);
+            bool isPassed = _gradeEngine.DeterminePassStatus(finalScore);
+
+            subjectSummaries.Add(new SubjectGradeSummary
             {
-                subjectSummaries.Add(new SubjectGradeSummary
-                {
-                    ClassSubjectId = cs.Id,
-                    SubjectCode = cs.TeacherSubject?.Subject?.Code ?? string.Empty,
-                    SubjectName = cs.TeacherSubject?.Subject?.Name ?? string.Empty,
-                    TeacherName = cs.TeacherSubject?.Teacher?.FullName ?? string.Empty,
-                    FinalScore = studentRow.FinalSubjectScore,
-                    LetterGrade = studentRow.FinalLetterGrade,
-                    Predicate = studentRow.FinalPredicate,
-                    RankInClass = studentRow.ClassRank,
-                    IsPassed = studentRow.IsPassed,
-                    Grades = studentRow.AssessmentGrades.Values.Where(g => g.IsPublished).ToList()
-                });
-            }
+                ClassSubjectId = cs.Id,
+                SubjectCode = cs.TeacherSubject?.Subject?.Code ?? string.Empty,
+                SubjectName = cs.TeacherSubject?.Subject?.Name ?? string.Empty,
+                TeacherName = cs.TeacherSubject?.Teacher?.FullName ?? string.Empty,
+                FinalScore = finalScore,
+                LetterGrade = letter,
+                Predicate = predicate,
+                RankInClass = 0,
+                IsPassed = isPassed,
+                Grades = csGrades.Select(MapToGradeResponse).ToList()
+            });
         }
 
         decimal overallAvg = subjectSummaries.Any() ? Math.Round(subjectSummaries.Average(s => s.FinalScore), 2) : 0m;
@@ -425,8 +472,21 @@ public class StudentGradeService : IStudentGradeService
 
     public async Task<(int ImportedCount, List<string> Errors)> ImportGradesCsvAsync(Guid teacherId, Guid assessmentId, string csvContent)
     {
-        var assessment = await _context.Assessments.FindAsync(assessmentId);
+        var assessment = await _context.Assessments
+            .Include(a => a.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(a => a.Id == assessmentId);
+
         if (assessment == null) throw new ValidationException("Assessment not found.");
+
+        if (assessment.TeacherId != teacherId && assessment.ClassSubject?.TeacherSubject?.TeacherId != teacherId)
+        {
+            var user = await _context.Users.FindAsync(teacherId);
+            if (user?.Role != UserRole.Admin)
+            {
+                throw new UnauthorizedAccessException("Teacher is not authorized for this assessment.");
+            }
+        }
 
         var lines = csvContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
         if (lines.Length <= 1)
@@ -485,9 +545,19 @@ public class StudentGradeService : IStudentGradeService
         var assessment = await _context.Assessments
             .AsNoTracking()
             .Include(a => a.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
             .FirstOrDefaultAsync(a => a.Id == assessmentId);
 
         if (assessment == null) throw new ValidationException("Assessment not found.");
+
+        if (assessment.TeacherId != teacherId && assessment.ClassSubject?.TeacherSubject?.TeacherId != teacherId)
+        {
+            var user = await _context.Users.FindAsync(teacherId);
+            if (user?.Role != UserRole.Admin)
+            {
+                throw new UnauthorizedAccessException("Teacher is not authorized for this assessment.");
+            }
+        }
 
         var classId = assessment.ClassSubject?.ClassId;
         if (classId == null) return "NIS,Nama,RawScore,MaxScore,LetterGrade,Predicate,Remarks";

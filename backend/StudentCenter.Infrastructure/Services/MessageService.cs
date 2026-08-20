@@ -196,20 +196,48 @@ public class MessageService : IMessageService
 
         if (request.Attachments != null && request.Attachments.Count > 0)
         {
+            var prohibitedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".exe", ".dll", ".sh", ".php", ".asp", ".aspx", ".js", ".bat", ".cmd", ".py", ".rb", ".cgi", ".pl", ".vbs", ".ps1"
+            };
+
             foreach (var att in request.Attachments)
             {
+                if (string.IsNullOrWhiteSpace(att.Url))
+                    throw new ValidationException("URL lampiran tidak boleh kosong.");
+
+                if (!Uri.TryCreate(att.Url, UriKind.RelativeOrAbsolute, out _) ||
+                    (!att.Url.StartsWith("/") && !att.Url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !att.Url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new ValidationException("Format URL lampiran tidak valid.");
+                }
+
+                var rawFileName = att.FileName ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(rawFileName) || rawFileName.Contains("..") || rawFileName.Contains('/') || rawFileName.Contains('\\'))
+                {
+                    throw new ValidationException("Nama file lampiran tidak valid.");
+                }
+
+                var fileName = Path.GetFileName(rawFileName);
+
+                var ext = Path.GetExtension(fileName);
+                if (prohibitedExtensions.Contains(ext))
+                {
+                    throw new ValidationException($"Tipe file '{ext}' dilarang untuk diunggah sebagai lampiran.");
+                }
+
                 if (att.FileSize > 10 * 1024 * 1024)
-                    throw new ValidationException($"Ukuran lampiran '{att.FileName}' melebihi batas 10MB.");
+                    throw new ValidationException($"Ukuran lampiran '{fileName}' melebihi batas 10MB.");
 
                 message.Attachments.Add(new MessageAttachment
                 {
                     Id = Guid.NewGuid(),
                     MessageId = message.Id,
-                    FileName = att.FileName,
-                    ContentType = att.ContentType,
+                    FileName = fileName,
+                    ContentType = string.IsNullOrWhiteSpace(att.ContentType) ? "application/octet-stream" : att.ContentType.Trim(),
                     FileSize = att.FileSize,
-                    StorageProvider = att.StorageProvider ?? "Local",
-                    Url = att.Url,
+                    StorageProvider = string.IsNullOrWhiteSpace(att.StorageProvider) ? "Local" : att.StorageProvider.Trim(),
+                    Url = att.Url.Trim(),
                     CreatedAt = DateTime.UtcNow
                 });
             }
@@ -321,24 +349,15 @@ public class MessageService : IMessageService
 
     public async Task<int> GetTotalUnreadMessagesCountAsync(Guid userId)
     {
-        var memberConvs = await _context.ConversationMembers
+        return await _context.ConversationMembers
             .AsNoTracking()
             .Where(cm => cm.UserId == userId && cm.Conversation.DeletedAt == null)
-            .ToListAsync();
-
-        int totalUnread = 0;
-        foreach (var mc in memberConvs)
-        {
-            var unread = await _context.Messages
-                .AsNoTracking()
-                .Where(m => m.ConversationId == mc.ConversationId && m.SenderId != userId && m.DeletedAt == null)
-                .Where(m => mc.LastReadAt == null || m.CreatedAt > mc.LastReadAt.Value)
-                .CountAsync();
-
-            totalUnread += unread;
-        }
-
-        return totalUnread;
+            .SelectMany(cm => _context.Messages.Where(m =>
+                m.ConversationId == cm.ConversationId &&
+                m.SenderId != userId &&
+                m.DeletedAt == null &&
+                (cm.LastReadAt == null || m.CreatedAt > cm.LastReadAt.Value)))
+            .CountAsync();
     }
 
     private async Task<ConversationResponse> MapConversationResponseAsync(Conversation c, Guid currentUserId)

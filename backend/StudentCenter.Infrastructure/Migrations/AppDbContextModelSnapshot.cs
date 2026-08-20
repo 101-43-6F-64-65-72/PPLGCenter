@@ -662,9 +662,6 @@ namespace StudentCenter.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Color")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -673,20 +670,11 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("EndTime")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("EventDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsAllDay")
@@ -701,9 +689,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("StartTime")
-                        .HasColumnType("text");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -713,10 +698,6 @@ namespace StudentCenter.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Visibility")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -731,102 +712,64 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.ToTable("CalendarEvents", (string)null);
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.CandidatePair", b =>
+            modelBuilder.Entity("StudentCenter.Domain.Entities.CctvCamera", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("CandidateNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ChairmanUserId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ElectionId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
 
-                    b.Property<string>("Mission")
+                    b.Property<string>("EncryptedPassword")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("PhotoUrl")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Programs")
+                    b.Property<string>("EncryptedUsername")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("RejectionReason")
+                    b.Property<string>("EncryptionIV")
+                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Host")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ViceMission")
-                        .HasColumnType("text");
-
-                    b.Property<string>("VicePhotoUrl")
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("ViceUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ViceVision")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Vision")
+                    b.Property<string>("StreamPath")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChairmanUserId");
-
-                    b.HasIndex("ElectionId");
-
-                    b.HasIndex("ViceUserId");
-
-                    b.ToTable("CandidatePairs");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.CandidatePairVote", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CandidatePairId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ElectionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("VoterUserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidatePairId");
-
-                    b.HasIndex("VoterUserId");
-
-                    b.HasIndex("ElectionId", "VoterUserId")
-                        .IsUnique();
-
-                    b.ToTable("CandidatePairVotes");
+                    b.ToTable("CctvCameras");
                 });
 
             modelBuilder.Entity("StudentCenter.Domain.Entities.ClassDivision", b =>
@@ -1267,93 +1210,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.ToTable("DiscussionThreads", (string)null);
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.Election", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CabinetStructureJson")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedByUserId");
-
-                    b.ToTable("Elections");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.ElectionCandidate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("CandidateNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ElectionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Mission")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
-
-                    b.Property<string>("PhotoUrl")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Vision")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ElectionId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("ElectionCandidates");
-                });
-
             modelBuilder.Entity("StudentCenter.Domain.Entities.Extracurricular", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1374,27 +1230,15 @@ namespace StudentCenter.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("CoachName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CoachPhoneNumber")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<string>("Day")
-                        .HasColumnType("text");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("EndTime")
-                        .HasColumnType("text");
 
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(500)
@@ -1415,16 +1259,10 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Property<int>("MaxMembers")
                         .HasColumnType("integer");
 
-                    b.Property<int>("MaximumMembers")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.Property<bool>("RegistrationOpen")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("ScheduleDay")
                         .HasMaxLength(50)
@@ -1433,9 +1271,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Property<string>("ScheduleTime")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<string>("StartTime")
-                        .HasColumnType("text");
 
                     b.Property<Guid?>("SupervisorTeacherId")
                         .HasColumnType("uuid");
@@ -2143,133 +1978,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.ToTable("Notifications", (string)null);
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.OsisApplication", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AdminNotes")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ApplicantStudentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ChairmanNotes")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Motivation")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("OsisPositionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PortfolioUrl")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("TeacherReviewNotes")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicantStudentId");
-
-                    b.HasIndex("OsisPositionId");
-
-                    b.ToTable("OsisApplications");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.OsisCabinetHistory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AcademicYearId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("PhotoUrl")
-                        .HasColumnType("text");
-
-                    b.Property<string>("PositionTitle")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AcademicYearId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("OsisCabinetHistories");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.OsisPosition", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AcademicYearId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Capacity")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Department")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsOpenForRecruitment")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AcademicYearId");
-
-                    b.ToTable("OsisPositions");
-                });
-
             modelBuilder.Entity("StudentCenter.Domain.Entities.PasswordResetRequest", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2345,6 +2053,9 @@ namespace StudentCenter.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<Guid?>("ExtracurricularId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("FileUrl")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -2388,6 +2099,8 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
+
+                    b.HasIndex("ExtracurricularId");
 
                     b.HasIndex("ReviewedByUserId");
 
@@ -3014,36 +2727,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.ToTable("UserPermissions");
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.Vote", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CandidateId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("ElectionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("VoterUserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CandidateId");
-
-                    b.HasIndex("VoterUserId");
-
-                    b.HasIndex("ElectionId", "VoterUserId")
-                        .IsUnique();
-
-                    b.ToTable("Votes");
-                });
-
             modelBuilder.Entity("StudentCenter.Domain.Entities.AcademicEvent", b =>
                 {
                     b.HasOne("StudentCenter.Domain.Entities.SchoolClass", "TargetClass")
@@ -3286,59 +2969,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Navigation("CreatedByUser");
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.CandidatePair", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.User", "ChairmanUser")
-                        .WithMany()
-                        .HasForeignKey("ChairmanUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.Election", "Election")
-                        .WithMany()
-                        .HasForeignKey("ElectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.User", "ViceUser")
-                        .WithMany()
-                        .HasForeignKey("ViceUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ChairmanUser");
-
-                    b.Navigation("Election");
-
-                    b.Navigation("ViceUser");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.CandidatePairVote", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.CandidatePair", "CandidatePair")
-                        .WithMany("Votes")
-                        .HasForeignKey("CandidatePairId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.Election", "Election")
-                        .WithMany()
-                        .HasForeignKey("ElectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.User", "VoterUser")
-                        .WithMany()
-                        .HasForeignKey("VoterUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CandidatePair");
-
-                    b.Navigation("Election");
-
-                    b.Navigation("VoterUser");
-                });
-
             modelBuilder.Entity("StudentCenter.Domain.Entities.ClassDivision", b =>
                 {
                     b.HasOne("StudentCenter.Domain.Entities.User", "LeaderStudent")
@@ -3528,36 +3158,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Navigation("ClassSubject");
 
                     b.Navigation("CreatedByUser");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.Election", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CreatedByUser");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.ElectionCandidate", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.Election", "Election")
-                        .WithMany("Candidates")
-                        .HasForeignKey("ElectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.User", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Election");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("StudentCenter.Domain.Entities.Extracurricular", b =>
@@ -3771,55 +3371,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.OsisApplication", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.User", "ApplicantStudent")
-                        .WithMany()
-                        .HasForeignKey("ApplicantStudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.OsisPosition", "OsisPosition")
-                        .WithMany("Applications")
-                        .HasForeignKey("OsisPositionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApplicantStudent");
-
-                    b.Navigation("OsisPosition");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.OsisCabinetHistory", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.AcademicYear", "AcademicYear")
-                        .WithMany()
-                        .HasForeignKey("AcademicYearId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.User", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AcademicYear");
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.OsisPosition", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.AcademicYear", "AcademicYear")
-                        .WithMany()
-                        .HasForeignKey("AcademicYearId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AcademicYear");
-                });
-
             modelBuilder.Entity("StudentCenter.Domain.Entities.PasswordResetRequest", b =>
                 {
                     b.HasOne("StudentCenter.Domain.Entities.User", "ReviewedByUser")
@@ -3840,6 +3391,11 @@ namespace StudentCenter.Infrastructure.Migrations
 
             modelBuilder.Entity("StudentCenter.Domain.Entities.Proposal", b =>
                 {
+                    b.HasOne("StudentCenter.Domain.Entities.Extracurricular", "Extracurricular")
+                        .WithMany()
+                        .HasForeignKey("ExtracurricularId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("StudentCenter.Domain.Entities.User", "ReviewedByUser")
                         .WithMany()
                         .HasForeignKey("ReviewedByUserId")
@@ -3850,6 +3406,8 @@ namespace StudentCenter.Infrastructure.Migrations
                         .HasForeignKey("SubmittedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Extracurricular");
 
                     b.Navigation("ReviewedByUser");
 
@@ -4042,33 +3600,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.Vote", b =>
-                {
-                    b.HasOne("StudentCenter.Domain.Entities.ElectionCandidate", "Candidate")
-                        .WithMany("Votes")
-                        .HasForeignKey("CandidateId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.Election", "Election")
-                        .WithMany("Votes")
-                        .HasForeignKey("ElectionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StudentCenter.Domain.Entities.User", "VoterUser")
-                        .WithMany()
-                        .HasForeignKey("VoterUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Candidate");
-
-                    b.Navigation("Election");
-
-                    b.Navigation("VoterUser");
-                });
-
             modelBuilder.Entity("StudentCenter.Domain.Entities.AcademicYear", b =>
                 {
                     b.Navigation("Classes");
@@ -4106,11 +3637,6 @@ namespace StudentCenter.Infrastructure.Migrations
             modelBuilder.Entity("StudentCenter.Domain.Entities.Book", b =>
                 {
                     b.Navigation("BorrowRequests");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.CandidatePair", b =>
-                {
-                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("StudentCenter.Domain.Entities.ClassDivision", b =>
@@ -4152,18 +3678,6 @@ namespace StudentCenter.Infrastructure.Migrations
                     b.Navigation("Replies");
                 });
 
-            modelBuilder.Entity("StudentCenter.Domain.Entities.Election", b =>
-                {
-                    b.Navigation("Candidates");
-
-                    b.Navigation("Votes");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.ElectionCandidate", b =>
-                {
-                    b.Navigation("Votes");
-                });
-
             modelBuilder.Entity("StudentCenter.Domain.Entities.Extracurricular", b =>
                 {
                     b.Navigation("Advisors");
@@ -4184,11 +3698,6 @@ namespace StudentCenter.Infrastructure.Migrations
             modelBuilder.Entity("StudentCenter.Domain.Entities.Message", b =>
                 {
                     b.Navigation("Attachments");
-                });
-
-            modelBuilder.Entity("StudentCenter.Domain.Entities.OsisPosition", b =>
-                {
-                    b.Navigation("Applications");
                 });
 
             modelBuilder.Entity("StudentCenter.Domain.Entities.SchoolClass", b =>

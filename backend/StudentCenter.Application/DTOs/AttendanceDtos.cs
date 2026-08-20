@@ -36,6 +36,11 @@ public class AttendanceRecordResponse
     public Guid StudentId { get; set; }
     public string StudentName { get; set; } = string.Empty;
     public string StudentNis { get; set; } = string.Empty;
+    public string ClassName { get; set; } = string.Empty;
+    public string SubjectName { get; set; } = string.Empty;
+    public string SubjectCode { get; set; } = string.Empty;
+    public string TeacherName { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime? CheckInTime { get; set; }
     public string? Notes { get; set; }

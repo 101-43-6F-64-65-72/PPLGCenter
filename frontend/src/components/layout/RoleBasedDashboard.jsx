@@ -14,12 +14,10 @@ export default function RoleBasedDashboard() {
   const { user, role, memberships, advisorFor } = useAuth();
 
   const normalizedRole = (role || user?.role || "Student").toLowerCase();
+  const position = (user?.position || "").toLowerCase();
+  const isPplgTeacher = normalizedRole === "teacher" && (position.includes("pengembangan perangkat lunak dan gim") || position.includes("pplg"));
 
-  if (normalizedRole === "admin") return null; // Admin uses /admin page
-
-  if (normalizedRole === "teacher") {
-    return <TeacherDashboard user={user} advisorFor={advisorFor} />;
-  }
+  if (normalizedRole === "admin" || isPplgTeacher) return null; // Admin & PPLG Teachers use /admin page
 
   return <StudentDashboard user={user} memberships={memberships} />;
 }
@@ -30,6 +28,7 @@ export default function RoleBasedDashboard() {
 function StudentDashboard({ user, memberships }) {
   const displayName = user?.fullName || user?.name || "Siswa";
   const [todaySchedules, setTodaySchedules] = useState([]);
+  const [scheduleMeta, setScheduleMeta] = useState({ activeCategory: "MPU", isKkUnavailable: false, className: "" });
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [studentDash, setStudentDash] = useState(null);
   const [loadingSchedule, setLoadingSchedule] = useState(true);
@@ -42,7 +41,19 @@ function StudentDashboard({ user, memberships }) {
           academicEventService.getUpcoming(3),
           dashboardService.getStudentDashboard(),
         ]);
-        if (schRes?.data) setTodaySchedules(schRes.data);
+        if (schRes?.data) {
+          const payload = schRes.data;
+          if (Array.isArray(payload)) {
+            setTodaySchedules(payload);
+          } else if (payload && typeof payload === "object") {
+            setTodaySchedules(payload.items || []);
+            setScheduleMeta({
+              activeCategory: payload.activeCategory || "MPU",
+              isKkUnavailable: !!payload.isKkUnavailable,
+              className: payload.className || "",
+            });
+          }
+        }
         if (evRes?.data) setUpcomingEvents(evRes.data);
         if (dashRes?.data) setStudentDash(dashRes.data);
       } catch (err) {
@@ -54,8 +65,10 @@ function StudentDashboard({ user, memberships }) {
     loadData();
   }, []);
 
+
   const menuItems = [
-    { name: "Mading", desc: "Pengumuman & Berita", path: "/mading", icon: Newspaper },
+    { name: "Pengumuman", desc: "Pengumuman Resmi Jurusan", path: "/pengumuman", icon: Bell },
+    { name: "Mading", desc: "Berita & Mading Sekolah", path: "/mading", icon: Newspaper },
     { name: "Kalender", desc: "Jadwal Kegiatan", path: "/kalender", icon: Calendar },
     { name: "Ekstrakurikuler", desc: "Katalog & Pendaftaran", path: "/ekstrakurikuler", icon: Award },
     { name: "Proposal", desc: "Pengajuan Proposal", path: "/proposal", icon: FileText },
@@ -153,11 +166,21 @@ function StudentDashboard({ user, memberships }) {
               <Clock className="w-4 h-4 text-[#2c1ee8]" />
               Jadwal Hari Ini ({new Date().toLocaleDateString("id-ID", { weekday: "long" })})
             </h2>
-            <span className="text-xs text-slate-400 font-medium">{todaySchedules.length} Kelas</span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-50 text-[#2c1ee8] text-[10px] font-bold border border-blue-200 uppercase">
+                {scheduleMeta.activeCategory || "MPU"}
+              </span>
+              <span className="text-xs text-slate-400 font-medium">{todaySchedules.length} Kelas</span>
+            </div>
           </div>
 
           {loadingSchedule ? (
             <p className="text-xs text-slate-400 py-3 text-center">Memuat jadwal...</p>
+          ) : scheduleMeta.isKkUnavailable ? (
+            <div className="bg-amber-50 rounded-md p-4 text-center text-xs font-bold text-amber-800 border border-amber-200 space-y-1">
+              <p className="font-extrabold uppercase tracking-wider text-[11px] text-amber-900">Blok Konsentrasi Keahlian (KK)</p>
+              <p className="text-amber-700">Jadwal KK belum tersedia</p>
+            </div>
           ) : todaySchedules.length === 0 ? (
             <div className="bg-slate-50 rounded-md p-4 text-center text-xs text-slate-500 border border-slate-100">
               Tidak ada jadwal belajar kelas hari ini.
@@ -183,6 +206,7 @@ function StudentDashboard({ user, memberships }) {
             </div>
           )}
         </div>
+
 
         {/* Upcoming Academic Events Widget */}
         <div className="lg:col-span-5 bg-white p-5 rounded-lg border border-slate-200 space-y-3">

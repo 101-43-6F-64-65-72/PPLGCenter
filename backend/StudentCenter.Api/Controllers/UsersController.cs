@@ -24,16 +24,18 @@ public class UsersController : ControllerBase
         _currentUserService = currentUserService;
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [HttpGet]
     public async Task<IActionResult> GetUsers(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
+        [FromQuery] int pageSize = 100,
         [FromQuery] string? search = null,
         [FromQuery] UserRole? role = null,
-        [FromQuery] bool? isActive = null)
+        [FromQuery] bool? isActive = null,
+        [FromQuery] Guid? classId = null,
+        [FromQuery] Guid? departmentId = null)
     {
-        var result = await _userService.GetUsersAsync(page, pageSize, search, role, isActive);
+        var result = await _userService.GetUsersAsync(page, pageSize, search, role, isActive, classId, departmentId);
         return Ok(ApiResponse<PagedResult<UserResponse>>.Ok("Users retrieved successfully", result));
     }
 
@@ -48,7 +50,9 @@ public class UsersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetUser(Guid id)
     {
-        var result = await _userService.GetUserByIdAsync(id);
+        var currentUserId = _currentUserService.UserId;
+        var currentUserRole = _currentUserService.Role;
+        var result = await _userService.GetUserByIdAsync(id, currentUserId, currentUserRole);
         if (result is null)
             return NotFound(ApiResponse<object>.Fail("User not found"));
 
@@ -71,6 +75,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
     {
         var currentUserId = _currentUserService.UserId;
+        var currentUserRole = _currentUserService.Role;
         var isSelf = currentUserId.HasValue && currentUserId.Value == id;
         var isAdmin = User.IsInRole("Admin");
 
@@ -79,27 +84,22 @@ public class UsersController : ControllerBase
             return StatusCode(403, ApiResponse<object>.Fail("Forbidden. You do not have permission to access this resource."));
         }
 
-        // For non-admin self-updates, protect administrative fields
-        if (!isAdmin)
+        try
         {
-            var existingUser = await _userService.GetUserByIdAsync(id);
-            if (existingUser != null)
-            {
-                if (Enum.TryParse<UserRole>(existingUser.Role, true, out var parsedRole))
-                {
-                    request.Role = parsedRole;
-                }
-                request.NIS = existingUser.NIS;
-                request.NISN = existingUser.NISN;
-                request.NIP = existingUser.NIP;
-            }
+            var result = await _userService.UpdateUserAsync(id, request, currentUserId, currentUserRole);
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("User not found"));
+
+            return Ok(ApiResponse<UserResponse>.Ok("User updated successfully", result));
         }
-
-        var result = await _userService.UpdateUserAsync(id, request);
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("User not found"));
-
-        return Ok(ApiResponse<UserResponse>.Ok("User updated successfully", result));
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin")]

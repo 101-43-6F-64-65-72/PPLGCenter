@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Newspaper,
@@ -25,33 +25,28 @@ import {
   KeyRound
 } from "lucide-react";
 
+import useAuth from "@/hooks/useAuth";
+
 export default function Sidebar({ role, activeTab, onTabChange }) {
   const pathname = usePathname();
-  const userRole = (role || "").toLowerCase();
+  const router = useRouter();
+  const { user } = useAuth();
+
+  const userRole = (role || user?.role || "").toLowerCase();
+  const position = (user?.position || "").toLowerCase();
+  const isPplgTeacher = userRole === "teacher" && (position.includes("pengembangan perangkat lunak dan gim") || position.includes("pplg"));
+  const isAdminOrPplgTeacher = userRole === "admin" || isPplgTeacher;
 
   // Menu lists
   const studentMenu = [
     { name: "Home", path: "/", icon: Home },
+    { name: "Pengumuman", path: "/pengumuman", icon: Bell },
+    { name: "Mading", path: "/mading", icon: Newspaper },
     { name: "Notifikasi", path: "/notifications", icon: Bell },
     { name: "Pesan & Chat", path: "/chat", icon: FileText },
     { name: "Nilai Saya", path: "/nilai", icon: Award },
-    { name: "Mading", path: "/mading", icon: Newspaper },
     { name: "Kalender", path: "/kalender", icon: Calendar },
-    { name: "Ekstrakurikuler", path: "/ekstrakurikuler", icon: Award },
-    { name: "Proposal", path: "/proposal", icon: FileText },
     { name: "Booking", path: "/fasilitas", icon: Building2 },
-    { name: "Profile", path: "/profile", icon: User },
-  ];
-
-  const teacherMenu = [
-    { name: "Home", path: "/", icon: Home },
-    { name: "Notifikasi", path: "/notifications", icon: Bell },
-    { name: "Pesan & Chat", path: "/chat", icon: FileText },
-    { name: "Buku Nilai", path: "/guru", queryTab: "gradebook", icon: Award },
-    { name: "Approval Proposal", path: "/proposal", icon: FileCheck },
-    { name: "Approval Booking", path: "/guru", queryTab: "bookings", icon: CheckSquare },
-    { name: "Ekstrakurikuler", path: "/ekstrakurikuler", icon: Award },
-    { name: "Kalender", path: "/kalender", icon: Calendar },
     { name: "Profile", path: "/profile", icon: User },
   ];
 
@@ -77,14 +72,13 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
     { name: "Skala & Predikat", tabId: "grade-scales", icon: Award, category: "AKADEMIK" },
 
     { name: "Kelola User", tabId: "users", icon: Users, category: "MANAJEMEN" },
-    { name: "Ekstrakurikuler", tabId: "extracurriculars", icon: Award, category: "MANAJEMEN" },
-    { name: "Proposal", tabId: "proposals", icon: FileText, category: "MANAJEMEN" },
     { name: "Booking Facilities", tabId: "facilities", icon: Building2, category: "MANAJEMEN" },
-    { name: "Mading Digital", tabId: "announcements", icon: Newspaper, category: "MANAJEMEN" },
+    { name: "Pengumuman Resmi", tabId: "pengumuman-link", path: "/pengumuman", icon: Bell, category: "MANAJEMEN" },
+    { name: "Mading Digital", tabId: "mading-link", path: "/mading", icon: Newspaper, category: "MANAJEMEN" },
     { name: "Reset Password", tabId: "password-reset", icon: KeyRound, category: "MANAJEMEN" },
   ];
 
-  if (userRole === "admin") {
+  if (isAdminOrPplgTeacher) {
     // Group admin menu items by category
     const categories = ["OVERVIEW", "DATA MASTER", "AKADEMIK", "MANAJEMEN"];
     const groupedItems = categories.map((cat) => ({
@@ -102,7 +96,7 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
           <div>
             <h2 className="text-xs font-black text-slate-900 leading-none">Student Center</h2>
             <span className="text-[9px] text-[#2c1ee8] font-extrabold block mt-1.5 uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
-              {role || "Admin"}
+              {isPplgTeacher ? "Admin PPLG" : (role || "Admin")}
             </span>
           </div>
         </div>
@@ -116,12 +110,18 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
               </span>
               {group.items.map((item) => {
                 const IconComp = item.icon;
-                const isActive = activeTab === item.tabId;
+                const isActive = item.tabId ? activeTab === item.tabId : pathname.startsWith(item.path || "");
                 return (
                   <button
-                    key={item.tabId}
+                    key={item.tabId || item.path || item.name}
                     suppressHydrationWarning={true}
-                    onClick={() => onTabChange && onTabChange(item.tabId)}
+                    onClick={() => {
+                      if (item.path) {
+                        router.push(item.path);
+                      } else if (onTabChange && item.tabId) {
+                        onTabChange(item.tabId);
+                      }
+                    }}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer group ${
                       isActive
                         ? "bg-[#2c1ee8] text-white shadow-xs"
@@ -140,8 +140,8 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
     );
   }
 
-  // Teacher / Student flat sidebar layout
-  const menuItems = userRole === "teacher" ? teacherMenu : studentMenu;
+  // Student / Non-PPLG Teacher flat sidebar layout
+  const menuItems = studentMenu;
 
   return (
     <aside className="w-64 bg-white border-r border-slate-200/60 flex flex-col h-full shrink-0 shadow-xs">

@@ -25,7 +25,12 @@ public class LessonMaterialService : ILessonMaterialService
         _fileStorageService = fileStorageService ?? new SupabaseStorageService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
     }
 
-    public async Task<List<LessonMaterialResponse>> GetAllAsync(Guid? classSubjectId = null, string? visibility = null, bool includeDeleted = false)
+    public async Task<List<LessonMaterialResponse>> GetAllAsync(
+        Guid? classSubjectId = null,
+        string? visibility = null,
+        bool includeDeleted = false,
+        Guid? requestingUserId = null,
+        string? userRole = null)
     {
         var query = BuildMaterialQuery();
 
@@ -35,26 +40,74 @@ public class LessonMaterialService : ILessonMaterialService
         if (classSubjectId.HasValue)
             query = query.Where(m => m.ClassSubjectId == classSubjectId.Value);
 
-        if (!string.IsNullOrWhiteSpace(visibility))
-            query = query.Where(m => m.Visibility.ToLower() == visibility.Trim().ToLower());
+        var actualVisibility = userRole == "Student" ? "Published" : visibility;
+
+        if (!includeDeleted)
+            query = query.Where(m => !m.IsDeleted);
+
+        if (classSubjectId.HasValue)
+            query = query.Where(m => m.ClassSubjectId == classSubjectId.Value);
+
+        if (!string.IsNullOrWhiteSpace(actualVisibility))
+            query = query.Where(m => m.Visibility.ToLower() == actualVisibility.Trim().ToLower());
+
+        if (requestingUserId.HasValue)
+        {
+            if (userRole == "Student")
+            {
+                var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+                if (student?.ClassId != null)
+                {
+                    query = query.Where(m => m.ClassSubject.ClassId == student.ClassId);
+                }
+                else
+                {
+                    return new List<LessonMaterialResponse>();
+                }
+            }
+            else if (userRole == "Teacher")
+            {
+                query = query.Where(m => m.ClassSubject.TeacherSubject.TeacherId == requestingUserId.Value);
+            }
+        }
 
         var list = await query.OrderBy(m => m.Order).ThenByDescending(m => m.CreatedAt).ToListAsync();
-        var result = new List<LessonMaterialResponse>();
-        foreach (var m in list)
-        {
-            result.Add(await MapToResponseAsync(m));
-        }
-        return result;
+        var responses = await Task.WhenAll(list.Select(m => MapToResponseAsync(m)));
+        return responses.ToList();
     }
 
-    public async Task<LessonMaterialResponse?> GetByIdAsync(Guid id, bool isStudent = false)
+    public async Task<LessonMaterialResponse?> GetByIdAsync(
+        Guid id,
+        bool isStudent = false,
+        Guid? requestingUserId = null,
+        string? userRole = null)
     {
         var material = await BuildMaterialQuery().FirstOrDefaultAsync(m => m.Id == id && !m.IsDeleted);
         if (material == null) return null;
 
-        if (isStudent && !material.Visibility.Equals("Published", StringComparison.OrdinalIgnoreCase))
+        if (isStudent || userRole == "Student")
         {
-            throw new ValidationException("Students can only view published lesson materials.");
+            if (!material.Visibility.Equals("Published", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidationException("Students can only view published lesson materials.");
+            }
+
+            if (requestingUserId.HasValue)
+            {
+                var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+                if (student?.ClassId != material.ClassSubject.ClassId)
+                {
+                    throw new UnauthorizedAccessException("Student is not authorized to view materials for this class.");
+                }
+            }
+        }
+        else if (userRole == "Teacher" && requestingUserId.HasValue)
+        {
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+            if (user?.Role != UserRole.Admin && material.ClassSubject.TeacherSubject.TeacherId != requestingUserId.Value)
+            {
+                throw new UnauthorizedAccessException("Teacher is not authorized to view materials outside their assigned scope.");
+            }
         }
 
         return await MapToResponseAsync(material);
@@ -62,6 +115,8 @@ public class LessonMaterialService : ILessonMaterialService
 
     public async Task<LessonMaterialResponse> CreateAsync(Guid teacherId, CreateLessonMaterialRequest request)
     {
+        ValidateMediaUrls(request.FileUrl, request.YoutubeUrl);
+
         var cs = await _context.ClassSubjects
             .AsNoTracking()
             .Include(c => c.TeacherSubject)
@@ -74,7 +129,7 @@ public class LessonMaterialService : ILessonMaterialService
             var user = await _context.Users.FindAsync(teacherId);
             if (user?.Role != UserRole.Admin)
             {
-                throw new ValidationException("Teacher is not authorized for this ClassSubject.");
+                throw new UnauthorizedAccessException("Teacher is not authorized for this ClassSubject.");
             }
         }
 
@@ -130,6 +185,8 @@ public class LessonMaterialService : ILessonMaterialService
 
     public async Task<LessonMaterialResponse?> UpdateAsync(Guid id, Guid teacherId, UpdateLessonMaterialRequest request)
     {
+        ValidateMediaUrls(request.FileUrl, request.YoutubeUrl);
+
         var material = await _context.LessonMaterials
             .Include(m => m.ClassSubject)
                 .ThenInclude(cs => cs.TeacherSubject)
@@ -142,7 +199,7 @@ public class LessonMaterialService : ILessonMaterialService
             var user = await _context.Users.FindAsync(teacherId);
             if (user?.Role != UserRole.Admin)
             {
-                throw new ValidationException("Teacher is not authorized for this ClassSubject.");
+                throw new UnauthorizedAccessException("Teacher is not authorized for this ClassSubject.");
             }
         }
 
@@ -205,7 +262,7 @@ public class LessonMaterialService : ILessonMaterialService
             var user = await _context.Users.FindAsync(teacherId);
             if (user?.Role != UserRole.Admin)
             {
-                throw new ValidationException("Teacher is not authorized for this ClassSubject.");
+                throw new UnauthorizedAccessException("Teacher is not authorized for this ClassSubject.");
             }
         }
 
@@ -227,12 +284,8 @@ public class LessonMaterialService : ILessonMaterialService
             .Where(m => !m.IsDeleted && m.Visibility.ToLower() == "published" && m.ClassSubject.ClassId == student.ClassId);
 
         var list = await query.OrderBy(m => m.Order).ThenByDescending(m => m.CreatedAt).ToListAsync();
-        var result = new List<LessonMaterialResponse>();
-        foreach (var m in list)
-        {
-            result.Add(await MapToResponseAsync(m));
-        }
-        return result;
+        var responses = await Task.WhenAll(list.Select(m => MapToResponseAsync(m)));
+        return responses.ToList();
     }
 
     public async Task<List<LessonMaterialResponse>> GetTeacherMaterialsAsync(Guid teacherId)
@@ -241,12 +294,49 @@ public class LessonMaterialService : ILessonMaterialService
             .Where(m => !m.IsDeleted && m.ClassSubject.TeacherSubject.TeacherId == teacherId);
 
         var list = await query.OrderByDescending(m => m.CreatedAt).ToListAsync();
-        var result = new List<LessonMaterialResponse>();
-        foreach (var m in list)
+        var responses = await Task.WhenAll(list.Select(m => MapToResponseAsync(m)));
+        return responses.ToList();
+    }
+
+    private static void ValidateMediaUrls(string? fileUrl, string? youtubeUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(fileUrl))
         {
-            result.Add(await MapToResponseAsync(m));
+            var trimmed = fileUrl.Trim();
+            if (trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidationException("Invalid or prohibited file URL protocol.");
+            }
+
+            if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            {
+                if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                {
+                    throw new ValidationException("File URL must use http or https scheme.");
+                }
+            }
         }
-        return result;
+
+        if (!string.IsNullOrWhiteSpace(youtubeUrl))
+        {
+            var trimmed = youtubeUrl.Trim();
+            if (trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ValidationException("Invalid or prohibited YouTube URL protocol.");
+            }
+
+            if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+            {
+                if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                {
+                    throw new ValidationException("YouTube URL must use http or https scheme.");
+                }
+            }
+        }
     }
 
     private IQueryable<LessonMaterial> BuildMaterialQuery()

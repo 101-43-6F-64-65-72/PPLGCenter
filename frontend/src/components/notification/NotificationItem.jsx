@@ -265,7 +265,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
       } else if (isAnnouncement) {
         url = refId ? `/mading/${refId}` : "/mading";
       } else if (isElection) {
-        url = "/pemilos";
+        url = "/dashboard";
       } else if (isGrade) {
         url = "/nilai";
       } else if (isFacility) {

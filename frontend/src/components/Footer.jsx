@@ -6,10 +6,9 @@ import Image from "next/image";
 
 const quickLinks = [
   { label: "Beranda", href: "/" },
+  { label: "Pengumuman Resmi", href: "/pengumuman" },
+  { label: "Mading Digital", href: "/mading" },
   { label: "Fasilitas", href: "/fasilitas" },
-  { label: "Ekstrakurikuler", href: "/ekstrakurikuler" },
-  { label: "Mading", href: "/mading" },
-  { label: "Proposal", href: "/proposal" },
   { label: "Kalender Akademik", href: "/kalender" },
 ];
 

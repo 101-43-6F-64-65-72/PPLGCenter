@@ -6,6 +6,9 @@ public class AnnouncementResponse
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
+    public string? TargetClasses { get; set; }
+    public DateTime? PublishStart { get; set; }
+    public DateTime? PublishEnd { get; set; }
     public string? CoverImageUrl { get; set; }
     public bool IsPinned { get; set; }
     public DateTime CreatedAt { get; set; }

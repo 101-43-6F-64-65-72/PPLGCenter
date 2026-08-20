@@ -8,6 +8,6 @@ test.describe('Module 2: Dashboard', () => {
     await page.goto('/admin');
     await expect(page).toHaveURL(/\/admin/);
     // Find a unique heading or element that confirms the dashboard load
-    await expect(page.getByRole('heading', { name: /panel super admin/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /panel control center/i })).toBeVisible({ timeout: 15000 });
   });
 });

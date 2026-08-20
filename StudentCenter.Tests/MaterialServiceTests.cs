@@ -119,4 +119,72 @@ public class MaterialServiceTests
         var getResult = await _service.GetByIdAsync(material.Id);
         getResult.Should().BeNull();
     }
+
+    [Fact]
+    public async Task LessonMaterial_AuthorizationBoundaries_EnforcedForTeacherAndStudent()
+    {
+        var (teacher1, cs1) = await SeedTeacherAndClassSubjectAsync();
+
+        // Teacher 2 and Class 2 setup
+        var teacher2 = new User { Id = Guid.NewGuid(), FullName = "Prof. Jane", Email = "jane@test.com", Role = UserRole.Teacher, IsActive = true };
+        var cls2 = new SchoolClass { Id = Guid.NewGuid(), Name = "XI RPL 1", Grade = "XI" };
+        var subject2 = new Subject { Id = Guid.NewGuid(), Code = "MTK", Name = "Matematika" };
+        var ts2 = new TeacherSubject { Id = Guid.NewGuid(), TeacherId = teacher2.Id, SubjectId = subject2.Id };
+        var cs2 = new ClassSubject { Id = Guid.NewGuid(), ClassId = cls2.Id, TeacherSubjectId = ts2.Id };
+
+        // Student 1 (in Class 1) & Student 2 (in Class 2)
+        var student1 = new User { Id = Guid.NewGuid(), FullName = "Student One", Email = "s1@test.com", Role = UserRole.Student, ClassId = cs1.ClassId, IsActive = true };
+        var student2 = new User { Id = Guid.NewGuid(), FullName = "Student Two", Email = "s2@test.com", Role = UserRole.Student, ClassId = cls2.Id, IsActive = true };
+        var admin = new User { Id = Guid.NewGuid(), FullName = "Admin User", Email = "admin@test.com", Role = UserRole.Admin, IsActive = true };
+
+        _context.Users.AddRange(teacher2, student1, student2, admin);
+        _context.SchoolClasses.Add(cls2);
+        _context.Subjects.Add(subject2);
+        _context.TeacherSubjects.Add(ts2);
+        _context.ClassSubjects.Add(cs2);
+        await _context.SaveChangesAsync();
+
+        // 1. Teacher 1 creates material for cs1
+        var material1 = await _service.CreateAsync(teacher1.Id, new CreateLessonMaterialRequest
+        {
+            ClassSubjectId = cs1.Id,
+            Title = "Web Dev Basics",
+            Visibility = "Published"
+        });
+
+        // 2. Teacher 2 cannot publish material to unauthorized cs1
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _service.CreateAsync(teacher2.Id, new CreateLessonMaterialRequest
+            {
+                ClassSubjectId = cs1.Id,
+                Title = "Unauthorized Publish",
+                Visibility = "Published"
+            }));
+
+        // 3. Teacher 2 cannot update Teacher 1's material1
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _service.UpdateAsync(material1.Id, teacher2.Id, new UpdateLessonMaterialRequest
+            {
+                Title = "Hacked Title",
+                Visibility = "Published"
+            }));
+
+        // 4. Student 1 (in Class 1) can read material1
+        var resStudent1 = await _service.GetByIdAsync(material1.Id, isStudent: true, requestingUserId: student1.Id, userRole: "Student");
+        resStudent1.Should().NotBeNull();
+        resStudent1!.Title.Should().Be("Web Dev Basics");
+
+        // 5. Student 2 (in Class 2) cannot read material1 (belongs to Class 1)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            _service.GetByIdAsync(material1.Id, isStudent: true, requestingUserId: student2.Id, userRole: "Student"));
+
+        // 6. Admin can update material1
+        var adminUpdated = await _service.UpdateAsync(material1.Id, admin.Id, new UpdateLessonMaterialRequest
+        {
+            Title = "Admin Updated Title",
+            Visibility = "Published"
+        });
+        adminUpdated.Should().NotBeNull();
+        adminUpdated!.Title.Should().Be("Admin Updated Title");
+    }
 }

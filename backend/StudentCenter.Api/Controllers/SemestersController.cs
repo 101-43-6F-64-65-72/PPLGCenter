@@ -6,7 +6,7 @@ using StudentCenter.Application.Services;
 
 namespace StudentCenter.Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 [ApiController]
 [Route("api/semesters")]
 public class SemestersController : ControllerBase
@@ -35,6 +35,7 @@ public class SemestersController : ControllerBase
         return Ok(ApiResponse<SemesterResponse>.Ok("Semester retrieved successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateSemesterRequest request)
     {
@@ -43,6 +44,7 @@ public class SemestersController : ControllerBase
             ApiResponse<SemesterResponse>.Ok("Semester created successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSemesterRequest request)
     {
@@ -53,6 +55,7 @@ public class SemestersController : ControllerBase
         return Ok(ApiResponse<SemesterResponse>.Ok("Semester updated successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -63,6 +66,7 @@ public class SemestersController : ControllerBase
         return Ok(ApiResponse<object>.Ok("Semester deleted successfully"));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPatch("{id:guid}/set-active")]
     public async Task<IActionResult> SetActive(Guid id)
     {

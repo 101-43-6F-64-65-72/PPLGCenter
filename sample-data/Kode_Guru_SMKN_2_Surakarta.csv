@@ -1,0 +1,140 @@
+﻿Kode Guru,Nama Lengkap,NIP,Mata Pelajaran
+1,"Sugiyono, S.Pd, M.Si.",19751211 200501 1 005,Kepala Sekolah
+2,"Rumu Hartini,S.Ag.M.Pd.I.",19700915 201001 2 003,Pendidikan Agama Islam dan Budi Pekerti
+3,"Anharurrohman El Muhammadi, S.Ag, M.Pd.",19750121 201001 1 008,Pendidikan Agama Islam dan Budi Pekerti
+4,"Sri Sutrisni, S.Pd.I.",19850818 202321 2 015,Pendidikan Agama Islam dan Budi Pekerti
+5,"Syahrun Mubarok, S.Pd.",19820626 202321 1 002,Pendidikan Agama Islam dan Budi Pekerti
+6,"Nur Roshid Ali Suseno, S.Pd.",-,Pendidikan Agama Islam dan Budi Pekerti
+7,"Igo Krisna Putra, S.Pd.",-,Pendidikan Agama Kristen dan Budi Pekerti
+8,"Fransisca Nadia Restu Damayanti, S.Pd",-,Pendidikan Agama Katholik dan Budi Pekerti
+9,"Sriyanto, S. Ag.",19780806 200312 1 001,Pendidikan Agama Hindu dan Budi Pekerti
+10,"Widyo Angkoso Sektiono, S.Pd. B",-,Pendidikan Agama Budha dan Budi Pekerti
+11,"Dra. Sri Hanani, M.Pd.",19700220 200801 2 009,Pendidikan Pancasila
+12,"Umi Barokah, S.Pd.",19741005 200801 2 012,Pendidikan Pancasila
+13,"Budi Yuli Esti, S.Pd.",19680702 200604 2 009,Pendidikan Pancasila
+14,"Purwani, S.Pd, M.Pd.",19710522 200801 2 006,Pendidikan Pancasila
+15,Abdul Qodir S.Pd.,19721005 202121 1 000,Pendidikan Pancasila
+16,"Martanti,S.Pd.",19711207 200701 2 007,Bahasa Indonesia
+17,Dra. Ani Nugroho,19680424 200801 2 010,Bahasa Indonesia
+18,"Marsiti Laily Qodariyah, S.Pd.",19711113 200801 2 003,Bahasa Indonesia
+19,"Dewi Puspita Cahyaningsih, S.Pd.",19790929 202421 2 005,Bahasa Indonesia
+20,"Mei Sulistyaningsih, M.Pd.",19820527 202421 2 005,Bahasa Indonesia
+21,"Eeng Taufan Nirwana, S.Pd.",19891028 202521 1 027,Bahasa Indonesia
+22,"Anita Ramadhani Permatasari, S.Pd.",19920329 202521 2 098,Bahasa Indonesia
+23,"Lusiana Pujiastuti, S. Pd., M. Pd.",19850920 202521 2 046,Bahasa Indonesia
+24,"Sunarto, S.Pd.",19671027 199003 1 007,Matematika
+25,Drs. Suharto,19660728 199702 1 001,Matematika
+26,"Septriana Handajani, S.Pd, M.Pd.",19690923 200801 2 006,Matematika
+27,"Sri Suraji, S.Pd.",19680403 200604 1 012,Matematika
+28,"Mudrig Triyanto,S.Pd.",19760531 200701 1 007,Matematika
+29,"Dwi Prastomo, S.Pd",19700316 200701 1 016,Matematika
+30,"Kusnul Khotimah,S.Pd.",19790306 201406 2 002,Matematika
+31,"Wiwiek Eko Rini,S.Pd.",19791010 201406 2 002,Matematika
+32,"Kustyaningrum, S. Pd.",19740716 202521 2 008,Matematika
+33,"Sabto Wibowo, S.Si",19760205 202521 1 041,Matematika
+34,"Sukarmi, S.Pd.",19720706 200312 2 003,Sejarah Indonesia
+35,"Nunuk Sri Haryanti, S.Pd.",19750904 200701 2 010,Sejarah Indonesia
+36,"Endang Lusi Supartini,S.Pd.",19680422 199802 2 003,Bahasa Inggris
+37,"Hindriati, S. Pd.",19711225 200604 2 015,Bahasa Inggris
+38,"Any Purwaningsih, S.Pd.",19710814 200604 2 016,Bahasa Inggris
+39,"Suhartini, S.Pd.",19710814 200604 2 016,Bahasa Inggris
+40,"Mini Sudaryanti, S.Pd.",19751126 200902 2 003,Bahasa Inggris
+41,"Wening Handayani, S.Pd.",19780622 200312 2 004,Bahasa Inggris
+42,"Emi Kusumawati, S.Pd.",19760812 201101 2 008,Bahasa Inggris
+43,"Sasmitoadi, S.Pd.",19701011 200801 1 006,Bahasa Inggris
+44,"Atikah, S.Pd.",19800306 201406 2 001,Bahasa Inggris
+45,"A. Razak Walad Purwadina, S.Pd.",19840101 202521 1 056,Bahasa Inggris
+46,"Ikhwan Mahfud Hidayat, S.Pd",19851118 202521 1 066,Bahasa Inggris
+47,"Andi Mustofa, S.Pd.",19850507 201001 1 013,"Pendidikan Jasmani, Olahraga dan Kesehatan"
+48,"Fajar Adi Nugroho, S.Pd.",19931222 202321 1 010,"Pendidikan Jasmani, Olahraga dan Kesehatan"
+49,"Nanang Jatmiko, S.Pd.",19860101 202321 1 020,"Pendidikan Jasmani, Olahraga dan Kesehatan"
+50,"Muhammad Haris Setiawan, S.Pd.",19860815 202521 1 026,"Pendidikan Jasmani, Olahraga dan Kesehatan"
+51,"Arif Widodo, S.Pd.",19880917 202521 1 023,"Pendidikan Jasmani, Olahraga dan Kesehatan"
+52,"Sri Rohmad Dwi Kadarsih, S.Pd.",19800717 201001 2 012,Muatan Lokal (Bahasa Daerah)
+53,"Titis Setyowati, S.S.",19880109 202521 2 018,Muatan Lokal (Bahasa Daerah)
+54,"Arnia Widya Sari, S.Pd",20000618 202521 2 023,Muatan Lokal (Bahasa Daerah)
+55,"Agus Santoso, S.Pd.",19730818 202521 1 058,Muatan Lokal (Bahasa Daerah)
+56,"Agus Widiyanto, SS, M.Pd.",-,Muatan Lokal (Bahasa Daerah)
+57,"Rizqyana Saraswati, S.Pd.",19920822 202221 2 008,MPP (Bahasa Jepang)
+58,"Budi Santoso, S.Pd.",19701028 202221 1 003,Seni Budaya
+59,"Novia Dhian Ekayani, S.Sn.",19871110 202321 2 025,Seni Budaya
+60,Suryantoro Sunu Indro S.Pd.,19670309 199003 1 003,Seni Budaya
+61,"Sapto Joko Purwadi, S.Pd., M.Pd.",19760529 201001 1 007,Seni Budaya
+62,"Sudarwati, S.Pd.",19821126 200902 2 004,Seni Budaya
+63,"Niswatun Khasanah, S.Pd.",19770113 201406 2 001,Seni Budaya
+64,"Endah Rahmawati, S.Pd.",19760810 201406 2 001,Seni Budaya
+65,"Erna Widayati, S.Kom.",19800215 202221 2 011,Teknik Informatika
+66,"Sutarji, S.Kom.",19810811 202221 1 006,Teknik Informatika
+67,Dra. Indah Kris Setyorini.,19680825 200501 2 006,Teknik Informatika
+68,"Teguh Novisad Isnaeni Rahayu, S.Psi.",19781106 200902 2 000,Teknik Informatika
+69,"Harjo, S.Pd.",19800922 200902 1 002,Teknik Informatika
+70,"Fajar Budi Darmawan, S.Pd.",19821018 201001 1 019,Teknik Informatika
+71,"Heny Susilowati, S.Pd.",19850109 201101 2 015,Teknik Informatika
+72,"Wiwik Wahyuningsih, S.Psi.",19670428 202221 2 003,Teknik Informatika
+73,Catur Budi Prasetyo S.Sos.,19921123 202221 1 004,Teknik Informatika
+74,"Melisa Phuby Ardianasari, S.Sos, M.Pd.",19940531 202521 2 023,Teknik Informatika
+75,"Abdullah Wahid Hasan, S.Pd.",19840812 201001 1 017,Mata Pelajaran Kejuruan
+76,"Niajeng Pramesti, S.T.",19861215 202221 2 017,Mata Pelajaran Kejuruan
+77,"Sudarsono, S. Pd.T.",19790722 200902 1 004,Mata Pelajaran Kejuruan
+78,"Hanang Yulianto Nugroho, S.Pd.",19800725 200902 1 006,Mata Pelajaran Kejuruan
+79,"Nur Khotibul Umam, S.Pd. Gr",-,Mata Pelajaran Kejuruan
+80,"M. Sri Kuswardani, S.T.",19720810 200701 2 014,Mata Pelajaran Kejuruan
+81,"Muhammad Apriliana Fajar, S.Pd.",19950411 202012 1 002,Mata Pelajaran Kejuruan
+82,"Ready Tata Surya, S. Pd.",19790811 202521 1 008,Desain Pemodelan dan Informasi Bangunan
+83,"Yurike Delvia Handayani, S.Pd. Gr",-,Desain Pemodelan dan Informasi Bangunan
+84,"Alkayyis Nur Ramadhan, S.Pd.",-,Desain Pemodelan dan Informasi Bangunan
+85,"Suratmi, S.ST.",19660902 199003 2 004,Teknik Elektronika
+86,"Muji Rahayu, S.T.",19661207 199003 2 003,Teknik Elektronika
+87,"Anong Wahyu Widodo, S.T.",19671120 199003 1014,Teknik Elektronika
+88,"Nurlia,S.T.",19670705 199203 2 103,Teknik Elektronika
+89,"Mohamad Baedowi, S.Pd, M.Pd.",19750214 200801 1 007,Teknik Elektronika
+90,"Padmo Waluyo, S.Pd.T.",19770927 200604 1 009,Teknik Elektronika
+91,"Heru Dwi Sasongko, S.T.",19800926 202521 1 018,Teknik Elektronika
+92,"Rodi Sardjanto, S.T.",19740118 202521 1 024,Teknik Elektronika
+93,"Alpha Limas Widjaya, S.Pd",19820823 202521 1 104,Teknik Elektronika
+94,"Seti Sayoga, S.Pd., M.Pd.",19740706 200604 1 012,Teknik Ketenagalistrikan
+95,"Drs. Hanjar Santoso, MPd.",19670716 200801 1 006,Teknik Ketenagalistrikan
+96,"Nitha Noer Sulistyani, S.T., M.Pd",19840511 202221 2 025,Teknik Ketenagalistrikan
+97,"Roni Nunuk Sugiyanto, S.T.",19820705 202221 1 022,Teknik Ketenagalistrikan
+98,"Tommi Setiawan Putra, S.T.",-,Teknik Ketenagalistrikan
+99,"Muh. Rusyad Nurdin, S.Pd.",19691102 199512 1 003,Teknik Otomotif
+100,"Nurgiyanto, S. Pd.",19750417 200701 1 006,Teknik Otomotif
+101,"Sutrisno, S.Pd.T.",19790726 200604 1 005,Teknik Otomotif
+102,"Sriyono, S.Pd.,M.Pd.",19780421 201001 1 015,Teknik Otomotif
+103,"Nur Alam Windu Kuncoro, S.Pd., M.Pd.",19790130 200903 1 002,Teknik Otomotif
+104,"Ali Mashudi, S.Pd.",19770222 200902 1 002,Teknik Otomotif
+105,"Ari Yulianto, S.Pd.",19880718 201902 1 005,Teknik Otomotif
+106,"Budi Santoso, S.T.",19821006 202421 1 008,Teknik Otomotif
+107,"Mohamad Hardiyanto, S.T.",19671013 202421 1 001,Teknik Otomotif
+108,"Baroto Wibowo, S.T.",19830420 202421 1 008,Teknik Otomotif
+109,Drs. Syarif Ananto,19680122 200012 1 001,Teknik Mesin
+110,"Sarmanto, S.Pd.",19690311 199412 1 002,Teknik Mesin
+111,"Sunarto, S.Pd.",19670306 200501 1 003,Teknik Mesin
+112,Drs. Agustiono Rusmardianto,19670825 200501 1 005,Teknik Mesin
+113,"Tugiyatno, S Pd., S.T.",19660703 199402 1 001,Teknik Mesin
+114,"Joko Darmanto, S.Pd.",19690914 200801 1 008,Teknik Mesin
+115,"Catur Raharjanto, S.Pd.",19690121 200801 1 007,Teknik Mesin
+116,"Rudy Hantoko, S.Pd., M.T.",19731127 200801 1 004,Teknik Mesin
+117,"Bernadus Ari Murdono, S.Pd.T.",19760426 200902 1 002,Teknik Mesin
+118,"Rusdi Anwar,S.T.",19770412 201406 1 002,Teknik Mesin
+119,"Heri Supomo, S.Pd.",19790516 201402 1 001,Teknik Mesin
+120,"Tri Ma'rufiati, S.Pd.",19800310 201402 2 001,Teknik Mesin
+121,"Ali Ahmadi Soleh, S.Pd.",19850720 201001 1 016,Teknik Pengelasan Dan Fabrikasi Logam
+122,"Muffasir, S.Pd.",19740802 200801 1 004,Teknik Pengelasan Dan Fabrikasi Logam
+123,"Bayu Anggara, S.Pd.",19940510 202321 1 007,Teknik Pengelasan Dan Fabrikasi Logam
+124,"Anung Joko Susanto, S.T.",19860314 202421 1 004,Teknik Pengelasan Dan Fabrikasi Logam
+125,"Yusuf Sugiyarto, S.T.",19790815 202421 1 007,Teknik Pengelasan Dan Fabrikasi Logam
+126,"Sutarno, S.Pd, M.T.",19670212 199203 1 013,Teknik Jaringan Komputer Dan Telekomunikasi
+127,"Andi Novianto,S.Kom.,M.H.,M.Kom",19821112 201001 1 024,Teknik Jaringan Komputer Dan Telekomunikasi
+128,"Joko Widodo, S. Si.",19720710 200501 1 009,Teknik Jaringan Komputer Dan Telekomunikasi
+129,"Dwi Retno Widyastuti, S.Pd, S.Kom.",19750815 200604 2 022,Teknik Jaringan Komputer Dan Telekomunikasi
+130,"Heri Sujatmiko, S.Kom.",19840724 201101 1 005,Teknik Jaringan Komputer Dan Telekomunikasi
+131,"Uswatun Choiriyah, S.Pd.",19881212 201402 2 001,Teknik Jaringan Komputer Dan Telekomunikasi
+132,"Deddy Rois, S.Kom.",19840905 202221 1 006,Teknik Jaringan Komputer Dan Telekomunikasi
+133,"Setyawan Harjanto, S.Kom.",19870126 202221 1 003,Teknik Jaringan Komputer Dan Telekomunikasi
+134,Dra. Mar'atus Sholikhah,19670502 199403 2 010,Pengembangan Perangkat Lunak Dan Gim
+135,"Sidik Pramono,S.Kom.",19770222 200902 1 002,Pengembangan Perangkat Lunak Dan Gim
+136,"Wiji Khurniawati, S.Kom",19780611 200902 2 005,Pengembangan Perangkat Lunak Dan Gim
+137,"Arika Prihastanti Sutami, S.Pd.",19900918 201402 2 003,Pengembangan Perangkat Lunak Dan Gim
+138,"Wahyudi, S.Kom.",19850517 202221 1 013,Pengembangan Perangkat Lunak Dan Gim
+139,"Isna Aldila Kusuma Putra, S.Kom.",19950829 202221 1 006,Pengembangan Perangkat Lunak Dan Gim

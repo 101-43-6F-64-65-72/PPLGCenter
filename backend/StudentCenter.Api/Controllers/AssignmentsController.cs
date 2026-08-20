@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,18 +25,31 @@ public class AssignmentsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] Guid? classSubjectId, [FromQuery] Guid? teacherId)
     {
-        var assignments = await _assignmentService.GetAllAsync(classSubjectId, teacherId);
+        var isStudent = User.IsInRole("Student");
+        var userRole = isStudent ? "Student" : (User.IsInRole("Teacher") ? "Teacher" : "Admin");
+        var userId = GetCurrentUserId();
+        var assignments = await _assignmentService.GetAllAsync(classSubjectId, teacherId, false, userId, userRole);
         return Ok(ApiResponse<List<AssignmentResponse>>.SuccessResponse(assignments));
     }
 
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var assignment = await _assignmentService.GetByIdAsync(id);
-        if (assignment == null)
-            return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found."));
+        var isStudent = User.IsInRole("Student");
+        var userRole = isStudent ? "Student" : (User.IsInRole("Teacher") ? "Teacher" : "Admin");
+        var userId = GetCurrentUserId();
+        try
+        {
+            var assignment = await _assignmentService.GetByIdAsync(id, userId, userRole);
+            if (assignment == null)
+                return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found."));
 
-        return Ok(ApiResponse<AssignmentResponse>.SuccessResponse(assignment));
+            return Ok(ApiResponse<AssignmentResponse>.SuccessResponse(assignment));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     [HttpPost]
@@ -43,8 +57,19 @@ public class AssignmentsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateAssignmentRequest request)
     {
         var teacherId = GetCurrentUserId();
-        var assignment = await _assignmentService.CreateAsync(teacherId, request);
-        return CreatedAtAction(nameof(GetById), new { id = assignment.Id }, ApiResponse<AssignmentResponse>.SuccessResponse(assignment, "Assignment created successfully."));
+        try
+        {
+            var assignment = await _assignmentService.CreateAsync(teacherId, request);
+            return CreatedAtAction(nameof(GetById), new { id = assignment.Id }, ApiResponse<AssignmentResponse>.SuccessResponse(assignment, "Assignment created successfully."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     [HttpPut("{id:guid}")]
@@ -52,11 +77,22 @@ public class AssignmentsController : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAssignmentRequest request)
     {
         var teacherId = GetCurrentUserId();
-        var assignment = await _assignmentService.UpdateAsync(id, teacherId, request);
-        if (assignment == null)
-            return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found."));
+        try
+        {
+            var assignment = await _assignmentService.UpdateAsync(id, teacherId, request);
+            if (assignment == null)
+                return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found."));
 
-        return Ok(ApiResponse<AssignmentResponse>.SuccessResponse(assignment, "Assignment updated successfully."));
+            return Ok(ApiResponse<AssignmentResponse>.SuccessResponse(assignment, "Assignment updated successfully."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     [HttpDelete("{id:guid}")]
@@ -64,11 +100,22 @@ public class AssignmentsController : ControllerBase
     public async Task<IActionResult> Delete(Guid id)
     {
         var teacherId = GetCurrentUserId();
-        var success = await _assignmentService.SoftDeleteAsync(id, teacherId);
-        if (!success)
-            return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found or unauthorized."));
+        try
+        {
+            var success = await _assignmentService.SoftDeleteAsync(id, teacherId);
+            if (!success)
+                return NotFound(ApiResponse<object>.ErrorResponse("Assignment not found or unauthorized."));
 
-        return Ok(ApiResponse<object>.SuccessResponse(null!, "Assignment deleted successfully."));
+            return Ok(ApiResponse<object>.SuccessResponse(null!, "Assignment deleted successfully."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     [HttpGet("my")]
@@ -91,8 +138,17 @@ public class AssignmentsController : ControllerBase
     [Authorize(Roles = "Teacher,Admin")]
     public async Task<IActionResult> GetAssignmentSubmissions(Guid id)
     {
-        var submissions = await _submissionService.GetSubmissionsByAssignmentAsync(id);
-        return Ok(ApiResponse<List<SubmissionResponse>>.SuccessResponse(submissions));
+        var teacherId = GetCurrentUserId();
+        var userRole = User.IsInRole("Admin") ? "Admin" : "Teacher";
+        try
+        {
+            var submissions = await _submissionService.GetSubmissionsByAssignmentAsync(id, teacherId, userRole);
+            return Ok(ApiResponse<List<SubmissionResponse>>.SuccessResponse(submissions));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     private Guid GetCurrentUserId()

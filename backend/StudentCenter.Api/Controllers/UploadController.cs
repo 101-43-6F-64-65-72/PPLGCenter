@@ -1,11 +1,15 @@
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentCenter.Api.Models.Responses;
 using StudentCenter.Application.Interfaces;
+using StudentCenter.Domain.Enums;
+using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Api.Controllers;
 
@@ -60,17 +64,31 @@ public class UploadController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly IFileStorageService _fileStorageService;
     private readonly ICloudinaryService _cloudinaryService;
+    private readonly AppDbContext _context;
 
     public UploadController(
         IWebHostEnvironment environment,
         IConfiguration configuration,
         IFileStorageService fileStorageService,
-        ICloudinaryService cloudinaryService)
+        ICloudinaryService cloudinaryService,
+        AppDbContext context)
     {
         _environment = environment;
         _configuration = configuration;
         _fileStorageService = fileStorageService;
         _cloudinaryService = cloudinaryService;
+        _context = context;
+    }
+
+    private Guid GetUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(claim, out var id) ? id : Guid.Empty;
+    }
+
+    private string? GetUserRole()
+    {
+        return User.FindFirst(ClaimTypes.Role)?.Value;
     }
 
     /// <summary>
@@ -235,7 +253,7 @@ public class UploadController : ControllerBase
     }
 
     /// <summary>
-    /// Generates a signed URL for a private file object path.
+    /// Generates a signed URL for a private file object path after verifying user authorization.
     /// </summary>
     [HttpGet("signed-url")]
     [Authorize]
@@ -244,6 +262,50 @@ public class UploadController : ControllerBase
         if (string.IsNullOrWhiteSpace(path))
         {
             return BadRequest(ApiResponse<object>.Fail("Path file is required."));
+        }
+
+        var userId = GetUserId();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("User is not authenticated."));
+        }
+
+        var role = GetUserRole();
+        bool isAdmin = string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+        if (!isAdmin)
+        {
+            var normalizedPath = path.Trim();
+
+            // Verify access across entities matching this path
+            bool isProposalAccess = await _context.Proposals.AsNoTracking().AnyAsync(p =>
+                (p.FileUrl == normalizedPath || (p.FileUrl != null && p.FileUrl.EndsWith(normalizedPath))) &&
+                (p.SubmittedByUserId == userId || p.ReviewedByUserId == userId));
+
+            bool isSubmissionAccess = await _context.Submissions.AsNoTracking().AnyAsync(s =>
+                (s.FileUrl == normalizedPath || (s.FileUrl != null && s.FileUrl.EndsWith(normalizedPath))) &&
+                (s.StudentId == userId || (s.Assignment != null && s.Assignment.CreatedByUserId == userId)));
+
+            bool isMessageAttachmentAccess = await _context.MessageAttachments.AsNoTracking().AnyAsync(m =>
+                (m.Url == normalizedPath || (m.Url != null && m.Url.EndsWith(normalizedPath))) &&
+                m.Message.Conversation.Members.Any(cm => cm.UserId == userId));
+
+            bool isDiscussionReplyAccess = await _context.DiscussionReplies.AsNoTracking().AnyAsync(r =>
+                (r.AttachmentUrl == normalizedPath || (r.AttachmentUrl != null && r.AttachmentUrl.EndsWith(normalizedPath))) &&
+                (r.CreatedByUserId == userId ||
+                 _context.Users.Any(u => u.Id == userId && u.ClassId.HasValue && u.ClassId == r.Thread.ClassSubject.ClassId) ||
+                 r.Thread.ClassSubject.TeacherSubject.TeacherId == userId));
+
+            bool isLessonMaterialAccess = await _context.LessonMaterials.AsNoTracking().AnyAsync(m =>
+                (m.FileUrl == normalizedPath || (m.FileUrl != null && m.FileUrl.EndsWith(normalizedPath))) &&
+                (m.CreatedBy == userId ||
+                 m.ClassSubject.TeacherSubject.TeacherId == userId ||
+                 _context.Users.Any(u => u.Id == userId && u.ClassId.HasValue && u.ClassId == m.ClassSubject.ClassId)));
+
+            if (!isProposalAccess && !isSubmissionAccess && !isMessageAttachmentAccess && !isDiscussionReplyAccess && !isLessonMaterialAccess)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail("Anda tidak memiliki izin untuk mengakses file ini."));
+            }
         }
 
         var signedUrl = await _fileStorageService.CreateSignedUrlAsync(path);

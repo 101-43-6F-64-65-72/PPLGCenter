@@ -100,7 +100,7 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-10">
-            <PrimaryButton text="Jelajahi Portal" href="/ekstrakurikuler" />
+            <PrimaryButton text="Jelajahi Portal" href="/jadwal" />
             <Link
               href="/fasilitas"
               className="inline-flex items-center justify-center font-semibold text-sm sm:text-base px-6 py-3.5 rounded-2xl border border-slate-200/90 text-slate-800 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 cursor-pointer shadow-2xs active:scale-[0.97] select-none"

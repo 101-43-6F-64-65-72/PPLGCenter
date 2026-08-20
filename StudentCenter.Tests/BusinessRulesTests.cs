@@ -33,25 +33,29 @@ public class BusinessRulesTests
     public async Task Submission_CannotBeSubmittedAfterDeadline_IfLateNotAllowed()
     {
         var teacher = new User { Id = Guid.NewGuid(), FullName = "Guru", Role = UserRole.Teacher };
-        var cs = new ClassSubject { Id = Guid.NewGuid() };
+        var cls = new SchoolClass { Id = Guid.NewGuid(), Name = "X RPL 1" };
+        var student = new User { Id = Guid.NewGuid(), FullName = "Siswa", Role = UserRole.Student, ClassId = cls.Id };
+        var cs = new ClassSubject { Id = Guid.NewGuid(), ClassId = cls.Id };
         var assignment = new Assignment
         {
             Id = Guid.NewGuid(),
             ClassSubjectId = cs.Id,
             TeacherId = teacher.Id,
+            PublishAt = DateTime.UtcNow.AddDays(-2),
             DueDate = DateTime.UtcNow.AddDays(-1),
             AllowLateSubmission = false,
             MaxScore = 100
         };
 
-        _context.Users.Add(teacher);
+        _context.Users.AddRange(teacher, student);
+        _context.SchoolClasses.Add(cls);
         _context.ClassSubjects.Add(cs);
         _context.Assignments.Add(assignment);
         await _context.SaveChangesAsync();
 
         var service = new SubmissionService(_context);
 
-        var act = async () => await service.SubmitAssignmentAsync(Guid.NewGuid(), new CreateSubmissionRequest
+        var act = async () => await service.SubmitAssignmentAsync(student.Id, new CreateSubmissionRequest
         {
             AssignmentId = assignment.Id,
             SubmissionType = "FILE",

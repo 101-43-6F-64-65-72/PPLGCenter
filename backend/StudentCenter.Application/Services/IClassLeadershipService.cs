@@ -6,5 +6,5 @@ public interface IClassLeadershipService
 {
     Task<ClassLeadershipResponse?> GetActiveLeadershipAsync(Guid schoolClassId);
     Task<List<ClassLeadershipResponse>> GetLeadershipHistoryAsync(Guid schoolClassId);
-    Task<ClassLeadershipResponse> AppointLeadershipAsync(AppointLeadershipRequest request, Guid appointedByUserId);
+    Task<ClassLeadershipResponse> AppointLeadershipAsync(AppointLeadershipRequest request, Guid appointedByUserId, string requestingUserRole = "Admin");
 }

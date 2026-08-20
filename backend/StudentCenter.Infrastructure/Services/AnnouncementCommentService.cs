@@ -125,11 +125,17 @@ public class AnnouncementCommentService : IAnnouncementCommentService
 
     public async Task<bool> DeleteCommentAsync(Guid commentId, Guid userId, string userRole)
     {
-        var comment = await _context.AnnouncementComments.FirstOrDefaultAsync(c => c.Id == commentId && c.DeletedAt == null);
+        var comment = await _context.AnnouncementComments
+            .Include(c => c.Announcement)
+            .FirstOrDefaultAsync(c => c.Id == commentId && c.DeletedAt == null);
         if (comment == null) return false;
 
-        if (userRole != "Admin" && comment.UserId != userId)
-            throw new UnauthorizedAccessException("Anda hanya dapat menghapus komentar milik sendiri.");
+        bool isOwner = comment.UserId == userId;
+        bool isAdmin = string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase);
+        bool isAnnouncementOwner = comment.Announcement != null && comment.Announcement.CreatedByUserId == userId;
+
+        if (!isAdmin && !isOwner && !isAnnouncementOwner)
+            throw new UnauthorizedAccessException("Anda hanya dapat menghapus komentar milik sendiri atau pengumuman Anda.");
 
         comment.DeletedAt = DateTime.UtcNow;
         comment.DeletedByUserId = userId;

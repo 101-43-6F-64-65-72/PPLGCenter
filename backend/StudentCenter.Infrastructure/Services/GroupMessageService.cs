@@ -63,6 +63,21 @@ public class GroupMessageService : IGroupMessageService
         if (!isMember)
             throw new UnauthorizedAccessException("Only accepted group members can send group messages.");
 
+        // Fetch active member user IDs in group to validate envelope recipients
+        var activeMemberUserIds = await _context.CommunityGroupMembers
+            .AsNoTracking()
+            .Where(m => m.GroupId == request.GroupId && m.Status == CommunityMemberStatus.Accepted)
+            .Select(m => m.UserId)
+            .ToListAsync();
+
+        foreach (var envReq in request.RecipientEnvelopes)
+        {
+            if (!activeMemberUserIds.Contains(envReq.RecipientUserId))
+            {
+                throw new UnauthorizedAccessException("Salah satu penerima amplop pesan bukan merupakan anggota aktif grup ini.");
+            }
+        }
+
         using var transaction = _context.Database.IsRelational() ? await _context.Database.BeginTransactionAsync() : null;
 
         var message = new GroupMessage

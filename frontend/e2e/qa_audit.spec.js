@@ -17,20 +17,20 @@ test.describe('Production Release Manual QA Audit - All Pages', () => {
 
   test('2. Login (/login) audit: form inputs, error handling, and login execution', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.locator('select')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Admin', exact: true })).toBeVisible();
     await expect(page.locator('input[name="identifier"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
 
     // Test invalid login error state
-    await page.locator('select').selectOption('Admin');
-    await page.locator('input[name="identifier"]').fill('invalid@studentcenter.id');
+    await page.getByRole('button', { name: 'Admin', exact: true }).click();
+    await page.locator('input[name="identifier"]').fill('invalid@pplgcenter.id');
     await page.locator('input[name="password"]').fill('invalidpassword');
     await page.locator('button[type="submit"]').click();
     await expect(page.locator('[role="alert"]').first()).toBeVisible({ timeout: 10000 });
 
     // Test valid login
     await login(page, TEST_ADMIN);
-    await expect(page).toHaveURL(/\/profile/);
+    await expect(page).toHaveURL(/\/(profile|admin)/);
   });
 
   test('3. Profile (/profile) audit: user profile info and logout action', async ({ page }) => {
@@ -38,7 +38,7 @@ test.describe('Production Release Manual QA Audit - All Pages', () => {
     await page.goto('/profile');
 
     await expect(page.locator('h1').first()).toBeVisible();
-    await expect(page.locator('text=admin@studentcenter.id').first()).toBeVisible();
+    await expect(page.locator('text=admin@pplgcenter.id').first()).toBeVisible();
     await expect(page.getByRole('button', { name: /keluar sesi/i }).first()).toBeVisible();
   });
 
@@ -80,10 +80,8 @@ test.describe('Production Release Manual QA Audit - All Pages', () => {
     await login(page, TEST_ADMIN);
     await page.goto('/admin');
 
-    await expect(page.getByRole('heading', { name: /panel super admin/i })).toBeVisible();
-    // Admin uses a <select> dropdown for navigation instead of buttons
-    await expect(page.locator('select option[value="overview"]').first()).toBeDefined();
-    await expect(page.locator('text=Super Admin').first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /panel control center/i })).toBeVisible();
+    await expect(page.locator('text=Admin System').first()).toBeVisible();
   });
 
   test('9. Guru Panel (/guru) audit: teacher tabs and overview stats', async ({ page }) => {

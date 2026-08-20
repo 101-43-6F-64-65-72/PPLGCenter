@@ -13,7 +13,12 @@ try {
 
 export const getStoredToken = () => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("token") || getCookie("auth_token");
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("sc_jwt_token") ||
+    localStorage.getItem("jwt_token") ||
+    getCookie("auth_token")
+  );
 };
 
 export const setStoredToken = (token) => {

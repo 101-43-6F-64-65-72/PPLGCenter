@@ -3,8 +3,13 @@ import apiClient from "@/lib/api";
 export const classTreeService = {
   // Class Divisions Tree
   getDivisionTree: async (schoolClassId) => {
-    const res = await apiClient.get(`/api/ClassDivisions/class/${schoolClassId}`);
-    return res;
+    try {
+      const res = await apiClient.get(`/api/ClassDivisions/class/${schoolClassId}`);
+      return res;
+    } catch (err) {
+      if (err?.response?.status === 404 || err?.statusCode === 404) return [];
+      return [];
+    }
   },
 
   createDivision: async (data) => {
@@ -24,13 +29,23 @@ export const classTreeService = {
 
   // Class Leadership
   getActiveLeadership: async (schoolClassId) => {
-    const res = await apiClient.get(`/api/ClassLeadership/class/${schoolClassId}/active`);
-    return res;
+    try {
+      const res = await apiClient.get(`/api/ClassLeadership/class/${schoolClassId}/active`);
+      return res;
+    } catch (err) {
+      if (err?.response?.status === 404 || err?.statusCode === 404) return null;
+      return null;
+    }
   },
 
   getLeadershipHistory: async (schoolClassId) => {
-    const res = await apiClient.get(`/api/ClassLeadership/class/${schoolClassId}/history`);
-    return res;
+    try {
+      const res = await apiClient.get(`/api/ClassLeadership/class/${schoolClassId}/history`);
+      return res;
+    } catch (err) {
+      if (err?.response?.status === 404 || err?.statusCode === 404) return [];
+      return [];
+    }
   },
 
   appointLeadership: async (data) => {
@@ -40,8 +55,13 @@ export const classTreeService = {
 
   // Schedule Rotation Config
   getRotationConfig: async (schoolClassId) => {
-    const res = await apiClient.get(`/api/ScheduleRotation/class/${schoolClassId}`);
-    return res;
+    try {
+      const res = await apiClient.get(`/api/ScheduleRotation/class/${schoolClassId}`);
+      return res;
+    } catch (err) {
+      if (err?.response?.status === 404 || err?.statusCode === 404) return null;
+      return null;
+    }
   },
 
   saveRotationConfig: async (data) => {

@@ -93,7 +93,7 @@ public class DashboardAggregationService : IDashboardAggregationService
         var totalChatCount = await _context.Conversations.CountAsync(c => c.DeletedAt == null);
         var activeUsersTodayCount = await _context.Messages.Where(m => m.CreatedAt >= today).Select(m => m.SenderId).Distinct().CountAsync();
 
-        var totalFacilitiesCount = await _context.Facilities.CountAsync(f => f.IsActive && !f.IsDeleted);
+        var totalFacilitiesCount = await _context.Facilities.CountAsync(f => f.IsActive);
         var totalExtracurricularsCount = await _context.Extracurriculars.CountAsync(e => e.IsActive);
         var totalProposalsCount = await _context.Proposals.CountAsync();
         var pendingProposalsCount = await _context.Proposals.CountAsync(p => p.Status == ProposalStatus.Pending);
@@ -298,7 +298,9 @@ public class DashboardAggregationService : IDashboardAggregationService
             .Include(u => u.Class)
             .FirstOrDefaultAsync(u => u.Id == studentId);
 
-        var todaySchedules = await _scheduleService.GetTodaySchedulesForStudentAsync(studentId);
+        var studentTodaySchedule = await _scheduleService.GetTodaySchedulesForStudentAsync(studentId);
+        var todaySchedules = studentTodaySchedule.Items;
+
 
         var today = DateTime.UtcNow.Date;
         var rawAttendances = await _context.Attendances
@@ -344,7 +346,7 @@ public class DashboardAggregationService : IDashboardAggregationService
 
         var materials = await _materialService.GetStudentMaterialsAsync(studentId);
         var assignments = await _assignmentService.GetStudentAssignmentsAsync(studentId);
-        var upcomingEvents = await _academicEventService.GetUpcomingEventsAsync(5);
+        var upcomingEvents = await _academicEventService.GetUpcomingEventsAsync(5, studentId, "Student");
 
         int recentDiscussionsCount = student?.ClassId != null
             ? await _context.DiscussionThreads.CountAsync(t => t.DeletedAt == null && t.ClassSubject.ClassId == student.ClassId)

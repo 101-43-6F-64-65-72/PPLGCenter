@@ -82,7 +82,7 @@ public class CommunicationFoundationTests
 
         Assert.NotNull(reply1);
 
-        var updatedThread = await discussionService.GetThreadByIdAsync(thread.Id);
+        var updatedThread = await discussionService.GetThreadByIdAsync(thread.Id, teacher.Id);
         Assert.Equal(1, updatedThread.ReplyCount);
         Assert.NotNull(updatedThread.LastReplyAt);
     }
@@ -107,7 +107,7 @@ public class CommunicationFoundationTests
 
         await discussionService.ToggleLockThreadAsync(teacher.Id, thread.Id);
 
-        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(async () =>
+        await Assert.ThrowsAsync<System.UnauthorizedAccessException>(async () =>
         {
             await discussionService.CreateReplyAsync(teacher.Id, new CreateDiscussionReplyRequest
             {

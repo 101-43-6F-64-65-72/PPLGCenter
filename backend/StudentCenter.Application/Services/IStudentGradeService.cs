@@ -4,7 +4,7 @@ namespace StudentCenter.Application.Services;
 
 public interface IStudentGradeService
 {
-    Task<StudentGradeResponse?> GetGradeByIdAsync(Guid id);
+    Task<StudentGradeResponse?> GetGradeByIdAsync(Guid id, Guid? requestingUserId = null, string? requestingUserRole = null);
     Task<StudentGradeResponse> UpsertGradeAsync(Guid teacherId, Guid assessmentId, GradeItemRequest request, bool publish = false);
     Task<List<StudentGradeResponse>> BulkGradeAsync(Guid teacherId, BulkGradeRequest request);
     Task<bool> PublishGradesAsync(Guid teacherId, Guid assessmentId, List<Guid>? studentIds = null);

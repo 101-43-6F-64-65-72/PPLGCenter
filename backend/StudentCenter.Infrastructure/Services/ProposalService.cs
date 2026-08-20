@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
@@ -39,21 +40,19 @@ public class ProposalService : IProposalService
         if (requestingUserRole == "Teacher" && requestingUserId.HasValue)
         {
             var teacherId = requestingUserId.Value;
+            var supervisedEkskulIds = await _context.Extracurriculars
+                .AsNoTracking()
+                .Where(e => (e.SupervisorTeacherId == teacherId || _context.ExtracurricularAdvisors.Any(a => a.TeacherId == teacherId && a.ExtracurricularId == e.Id)) && e.IsActive)
+                .Select(e => e.Id)
+                .ToListAsync();
+
             var supervisedEkskulNames = await _context.Extracurriculars
                 .AsNoTracking()
-                .Where(e => e.SupervisorTeacherId == teacherId && e.IsActive)
+                .Where(e => (e.SupervisorTeacherId == teacherId || _context.ExtracurricularAdvisors.Any(a => a.TeacherId == teacherId && a.ExtracurricularId == e.Id)) && e.IsActive)
                 .Select(e => e.Name.ToLower())
                 .ToListAsync();
 
-            var advisorEkskulNames = await _context.ExtracurricularAdvisors
-                .AsNoTracking()
-                .Where(a => a.TeacherId == teacherId && a.Extracurricular.IsActive)
-                .Select(a => a.Extracurricular.Name.ToLower())
-                .ToListAsync();
-
-            var allSupervisedNames = supervisedEkskulNames.Concat(advisorEkskulNames).Distinct().ToList();
-
-            if (!allSupervisedNames.Any())
+            if (!supervisedEkskulIds.Any() && !supervisedEkskulNames.Any())
             {
                 return new PagedResult<ProposalResponse>
                 {
@@ -64,25 +63,19 @@ public class ProposalService : IProposalService
                 };
             }
 
-            var candidateProposals = await _context.Proposals
-                .AsNoTracking()
-                .Select(p => new { p.Id, Category = p.Category ?? string.Empty, Title = p.Title ?? string.Empty })
-                .ToListAsync();
-
-            var matchingIds = candidateProposals
-                .Where(p => allSupervisedNames.Any(name =>
-                    p.Category.ToLower().Contains(name) || p.Title.ToLower().Contains(name)))
-                .Select(p => p.Id)
-                .ToList();
-
-            query = query.Where(p => matchingIds.Contains(p.Id));
+            query = query.Where(p => (p.ExtracurricularId.HasValue && supervisedEkskulIds.Contains(p.ExtracurricularId.Value)) ||
+                supervisedEkskulNames.Any(name =>
+                (p.Category != null && p.Category.ToLower().Contains(name)) ||
+                (p.Title != null && p.Title.ToLower().Contains(name))));
         }
         else if (requestingUserRole == "Student" && requestingUserId.HasValue)
         {
+            // For students, strictly force query to proposals submitted by current student
             query = query.Where(p => p.SubmittedByUserId == requestingUserId.Value);
+            userId = requestingUserId.Value;
         }
 
-        if (userId.HasValue)
+        if (userId.HasValue && requestingUserRole != "Student")
         {
             query = query.Where(p => p.SubmittedByUserId == userId.Value);
         }
@@ -104,13 +97,15 @@ public class ProposalService : IProposalService
                 Title = p.Title,
                 Description = p.Description,
                 Category = p.Category,
+                ExtracurricularId = p.ExtracurricularId,
+                ExtracurricularName = p.Extracurricular != null ? p.Extracurricular.Name : p.Category,
                 FileUrl = p.FileUrl,
                 Status = p.Status,
                 TeacherComment = p.TeacherComment,
                 AdminComment = p.AdminComment,
                 RejectionReason = p.RejectionReason,
                 SubmittedByUserId = p.SubmittedByUserId,
-                SubmittedByUserName = p.SubmittedByUser.FullName,
+                SubmittedByUserName = p.SubmittedByUser != null ? p.SubmittedByUser.FullName : string.Empty,
                 ReviewedByUserId = p.ReviewedByUserId,
                 ReviewedByUserName = p.ReviewedByUser != null ? p.ReviewedByUser.FullName : null,
                 CreatedAt = p.CreatedAt,
@@ -119,13 +114,13 @@ public class ProposalService : IProposalService
             })
             .ToListAsync();
 
-        foreach (var item in items)
-        {
-            if (!string.IsNullOrWhiteSpace(item.FileUrl))
+        var tasks = items
+            .Where(item => !string.IsNullOrWhiteSpace(item.FileUrl))
+            .Select(async item =>
             {
                 item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
-            }
-        }
+            });
+        await Task.WhenAll(tasks);
 
         return new PagedResult<ProposalResponse>
         {
@@ -136,7 +131,7 @@ public class ProposalService : IProposalService
         };
     }
 
-    public async Task<ProposalResponse?> GetProposalByIdAsync(Guid id)
+    public async Task<ProposalResponse?> GetProposalByIdAsync(Guid id, Guid? requestingUserId = null, string? requestingUserRole = null)
     {
         var item = await _context.Proposals
             .AsNoTracking()
@@ -147,13 +142,15 @@ public class ProposalService : IProposalService
                 Title = p.Title,
                 Description = p.Description,
                 Category = p.Category,
+                ExtracurricularId = p.ExtracurricularId,
+                ExtracurricularName = p.Extracurricular != null ? p.Extracurricular.Name : p.Category,
                 FileUrl = p.FileUrl,
                 Status = p.Status,
                 TeacherComment = p.TeacherComment,
                 AdminComment = p.AdminComment,
                 RejectionReason = p.RejectionReason,
                 SubmittedByUserId = p.SubmittedByUserId,
-                SubmittedByUserName = p.SubmittedByUser.FullName,
+                SubmittedByUserName = p.SubmittedByUser != null ? p.SubmittedByUser.FullName : string.Empty,
                 ReviewedByUserId = p.ReviewedByUserId,
                 ReviewedByUserName = p.ReviewedByUser != null ? p.ReviewedByUser.FullName : null,
                 CreatedAt = p.CreatedAt,
@@ -162,7 +159,47 @@ public class ProposalService : IProposalService
             })
             .FirstOrDefaultAsync();
 
-        if (item != null && !string.IsNullOrWhiteSpace(item.FileUrl))
+        if (item == null)
+            return null;
+
+        // IDOR Enforcement: Students can only view their own proposal
+        if (requestingUserRole == "Student" && requestingUserId.HasValue && item.SubmittedByUserId != requestingUserId.Value)
+        {
+            throw new UnauthorizedAccessException("You cannot access another student's proposal.");
+        }
+
+        // IDOR Enforcement: Teachers can only view proposals for extracurriculars they supervise
+        if (requestingUserRole == "Teacher" && requestingUserId.HasValue)
+        {
+            var teacherId = requestingUserId.Value;
+            var supervisedEkskulIds = await _context.Extracurriculars
+                .AsNoTracking()
+                .Where(e => (e.SupervisorTeacherId == teacherId || _context.ExtracurricularAdvisors.Any(a => a.TeacherId == teacherId && a.ExtracurricularId == e.Id)) && e.IsActive)
+                .Select(e => e.Id)
+                .ToListAsync();
+
+            var supervisedEkskulNames = await _context.Extracurriculars
+                .AsNoTracking()
+                .Where(e => (e.SupervisorTeacherId == teacherId || _context.ExtracurricularAdvisors.Any(a => a.TeacherId == teacherId && a.ExtracurricularId == e.Id)) && e.IsActive)
+                .Select(e => e.Name.ToLower())
+                .ToListAsync();
+
+            var propCat = (item.Category ?? string.Empty).ToLower();
+            var propTitle = (item.Title ?? string.Empty).ToLower();
+
+            bool isSupervisor = (item.ExtracurricularId.HasValue && supervisedEkskulIds.Contains(item.ExtracurricularId.Value)) ||
+                supervisedEkskulNames.Any(name =>
+                (!string.IsNullOrEmpty(propCat) && (propCat == name || propCat.Contains(name))) ||
+                (!string.IsNullOrEmpty(propTitle) && propTitle.Contains(name))
+            );
+
+            if (!isSupervisor)
+            {
+                throw new UnauthorizedAccessException("Anda hanya dapat melihat proposal untuk ekstrakurikuler/organisasi yang Anda bina.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(item.FileUrl))
         {
             item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
         }
@@ -172,6 +209,32 @@ public class ProposalService : IProposalService
 
     public async Task<ProposalResponse> CreateProposalAsync(CreateProposalRequest request, Guid userId)
     {
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            throw new ValidationException("Title is required and cannot be empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            throw new ValidationException("Description is required and cannot be empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FileUrl))
+        {
+            throw new ValidationException("FileUrl (Proposal document) is required.");
+        }
+
+        if (request.ExtracurricularId.HasValue)
+        {
+            var ekskulExists = await _context.Extracurriculars
+                .AsNoTracking()
+                .AnyAsync(e => e.Id == request.ExtracurricularId.Value && e.IsActive);
+            if (!ekskulExists)
+            {
+                throw new ValidationException("Extracurricular specified in proposal was not found or is inactive.");
+            }
+        }
+
         var user = await _context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == userId);
@@ -188,7 +251,8 @@ public class ProposalService : IProposalService
             Title = request.Title.Trim(),
             Description = request.Description.Trim(),
             Category = request.Category?.Trim(),
-            FileUrl = request.FileUrl,
+            ExtracurricularId = request.ExtracurricularId,
+            FileUrl = request.FileUrl ?? string.Empty,
             Status = ProposalStatus.Pending,
             SubmittedByUserId = userId,
             CreatedAt = DateTime.UtcNow,
@@ -245,6 +309,8 @@ public class ProposalService : IProposalService
             Title = proposal.Title,
             Description = proposal.Description,
             Category = proposal.Category,
+            ExtracurricularId = proposal.ExtracurricularId,
+            ExtracurricularName = proposal.Category,
             FileUrl = signedUrl,
             Status = proposal.Status,
             SubmittedByUserId = proposal.SubmittedByUserId,
@@ -254,8 +320,18 @@ public class ProposalService : IProposalService
         };
     }
 
-    public async Task<ProposalResponse?> UpdateProposalAsync(Guid id, UpdateProposalRequest request, Guid userId)
+    public async Task<ProposalResponse?> UpdateProposalAsync(Guid id, UpdateProposalRequest request, Guid userId, string? userRole = null)
     {
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            throw new ValidationException("Title is required and cannot be empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Description))
+        {
+            throw new ValidationException("Description is required and cannot be empty.");
+        }
+
         var proposal = await _context.Proposals
             .Include(p => p.SubmittedByUser)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -263,7 +339,17 @@ public class ProposalService : IProposalService
         if (proposal is null)
             return null;
 
-        if (proposal.SubmittedByUserId != userId)
+        bool isAdmin = string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase);
+        if (!isAdmin)
+        {
+            var requestingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            if (requestingUser != null && requestingUser.Role == UserRole.Admin)
+            {
+                isAdmin = true;
+            }
+        }
+
+        if (proposal.SubmittedByUserId != userId && !isAdmin)
             throw new UnauthorizedAccessException("You can only update your own proposals.");
 
         if (proposal.Status != ProposalStatus.Pending && proposal.Status != ProposalStatus.RevisionRequired)
@@ -294,13 +380,13 @@ public class ProposalService : IProposalService
             FileUrl = updatedSignedUrl,
             Status = proposal.Status,
             SubmittedByUserId = proposal.SubmittedByUserId,
-            SubmittedByUserName = proposal.SubmittedByUser.FullName,
+            SubmittedByUserName = proposal.SubmittedByUser != null ? proposal.SubmittedByUser.FullName : string.Empty,
             CreatedAt = proposal.CreatedAt,
             UpdatedAt = proposal.UpdatedAt
         };
     }
 
-    public async Task<bool> DeleteProposalAsync(Guid id, Guid userId)
+    public async Task<bool> DeleteProposalAsync(Guid id, Guid userId, string? userRole = null)
     {
         var proposal = await _context.Proposals
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -308,7 +394,17 @@ public class ProposalService : IProposalService
         if (proposal is null)
             return false;
 
-        if (proposal.SubmittedByUserId != userId)
+        bool isAdmin = string.Equals(userRole, "Admin", StringComparison.OrdinalIgnoreCase);
+        if (!isAdmin)
+        {
+            var requestingUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+            if (requestingUser != null && requestingUser.Role == UserRole.Admin)
+            {
+                isAdmin = true;
+            }
+        }
+
+        if (proposal.SubmittedByUserId != userId && !isAdmin)
             throw new UnauthorizedAccessException("You can only delete your own proposals.");
 
         if (proposal.Status != ProposalStatus.Pending && proposal.Status != ProposalStatus.RevisionRequired)
@@ -337,7 +433,13 @@ public class ProposalService : IProposalService
             throw new KeyNotFoundException("Reviewer not found.");
 
         if (reviewer.Role != UserRole.Admin && reviewer.Role != UserRole.Teacher)
-            throw new InvalidOperationException("Only Admin and Teacher can review proposals.");
+            throw new UnauthorizedAccessException("Only Admin and Teacher can review proposals.");
+
+        if ((request.Status == ProposalStatus.Rejected || request.Status == ProposalStatus.RevisionRequired)
+            && string.IsNullOrWhiteSpace(request.RejectionReason))
+        {
+            throw new ValidationException("A reason is required when rejecting or requesting revisions for a proposal.");
+        }
 
         if (reviewer.Role == UserRole.Teacher)
         {
@@ -358,7 +460,6 @@ public class ProposalService : IProposalService
             if (!isSupervisorForThisProposal)
                 throw new UnauthorizedAccessException("Anda hanya dapat me-review proposal untuk ekstrakurikuler/organisasi yang Anda bina.");
         }
-
 
         proposal.Status = request.Status;
         if (reviewer.Role == UserRole.Teacher)
@@ -428,7 +529,7 @@ public class ProposalService : IProposalService
             AdminComment = proposal.AdminComment,
             RejectionReason = proposal.RejectionReason,
             SubmittedByUserId = proposal.SubmittedByUserId,
-            SubmittedByUserName = proposal.SubmittedByUser.FullName,
+            SubmittedByUserName = proposal.SubmittedByUser != null ? proposal.SubmittedByUser.FullName : string.Empty,
             ReviewedByUserId = proposal.ReviewedByUserId,
             ReviewedByUserName = reviewer.FullName,
             CreatedAt = proposal.CreatedAt,

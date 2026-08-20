@@ -9,7 +9,7 @@ test.describe('Module 8: Profile', () => {
     await expect(page.locator('h1').first()).toBeVisible();
 
     // User details verification
-    await expect(page.locator('text=admin@studentcenter.id').first()).toBeVisible();
+    await expect(page.locator('text=admin@pplgcenter.id').first()).toBeVisible();
     await expect(page.getByRole('button', { name: /keluar sesi/i }).first()).toBeVisible();
   });
 });

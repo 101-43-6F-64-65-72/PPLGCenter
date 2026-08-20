@@ -670,7 +670,7 @@ export default function AdminUsersTab() {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="samuel@studentcenter.id"
+                    placeholder="samuel@pplgcenter.id"
                     className="w-full rounded-2xl border border-gray-200 bg-gray-50/50 py-3 pl-10 pr-4 text-xs sm:text-sm text-gray-900 focus:bg-white focus:border-[#2c1ee8] outline-none"
                   />
                 </div>

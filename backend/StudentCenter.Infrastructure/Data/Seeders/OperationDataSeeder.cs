@@ -25,7 +25,7 @@ public static class OperationDataSeeder
         // ── 1. Subjects (14 Mapel SMK Realistis) ─────────────────────────────
         var defaultSubjects = new List<(string Code, string Name, string Description)>
         {
-            ("RPL-KDD", "Pemrograman Dasar", "Dasar logika pemrograman, variabel, dan algoritma"),
+            ("DPK", "DPK", "Dasar-Dasar Program Keahlian"),
             ("RPL-WEB", "Pemrograman Web & Perangkat Bergerak", "Pengembangan aplikasi web modern & mobile"),
             ("RPL-BDAT", "Sistem Basis Data", "Manajemen Sistem Basis Data Relasional & SQL"),
             ("RPL-PBO", "Pemrograman Berbasis Objek", "Pemrograman Berorientasi Objek (C# & Java)"),
@@ -133,118 +133,8 @@ public static class OperationDataSeeder
         }
         await context.SaveChangesAsync();
 
-        // ── 4. Students (42 Siswa Realistis across Classes) ─────────────────
+        // ── 4. Real PPLG Students & Class Subjects (Seeded from CSV) ─────────
         var targetClasses = await context.SchoolClasses.ToListAsync();
-        var defaultClass = targetClasses.FirstOrDefault(c => c.Name == "X RPL 1") ?? targetClasses.FirstOrDefault();
-
-        if (defaultClass != null)
-        {
-            var rpl1 = targetClasses.FirstOrDefault(c => c.Name == "X RPL 1") ?? defaultClass;
-            var rpl2 = targetClasses.FirstOrDefault(c => c.Name == "X RPL 2") ?? defaultClass;
-            var xiRpl1 = targetClasses.FirstOrDefault(c => c.Name == "XI RPL 1") ?? defaultClass;
-            var xiiRpl1 = targetClasses.FirstOrDefault(c => c.Name == "XII RPL 1") ?? defaultClass;
-            var tkj1 = targetClasses.FirstOrDefault(c => c.Name == "X TKJ 1") ?? defaultClass;
-            var akl1 = targetClasses.FirstOrDefault(c => c.Name == "X AKL 1") ?? defaultClass;
-
-            var studentSeedData = new List<(string NIS, string NISN, string Name, string Email, SchoolClass Class, int Absen)>
-            {
-                ("2310001", "0081234567", "Budi Santoso", "budi.santoso@student.smkn2surakarta.sch.id", rpl1, 1),
-                ("2310002", "0082345678", "Anisa Rahmawati", "anisa.rahmawati@student.smkn2surakarta.sch.id", rpl1, 2),
-                ("2310003", "0083456789", "Candra Wijaya", "candra.wijaya@student.smkn2surakarta.sch.id", rpl1, 3),
-                ("2310004", "0084567890", "Dian Kusuma", "dian.kusuma@student.smkn2surakarta.sch.id", rpl1, 4),
-                ("2310005", "0085678901", "Eka Pratama", "eka.pratama@student.smkn2surakarta.sch.id", rpl1, 5),
-                ("2310006", "0086789012", "Fani Febrianti", "fani.febrianti@student.smkn2surakarta.sch.id", rpl1, 6),
-                ("2310007", "0087890123", "Gilang Ramadhan", "gilang.ramadhan@student.smkn2surakarta.sch.id", rpl1, 7),
-                ("2310008", "0088901234", "Hendra Setiawan", "hendra.setiawan@student.smkn2surakarta.sch.id", rpl1, 8),
-                ("2310009", "0089012345", "Indah Permata", "indah.permata@student.smkn2surakarta.sch.id", rpl1, 9),
-                ("2310010", "0080123456", "Jefri Kurniawan", "jefri.kurniawan@student.smkn2surakarta.sch.id", rpl1, 10),
-
-                ("2310011", "0081112223", "Kiki Amelia", "kiki.amelia@student.smkn2surakarta.sch.id", rpl2, 1),
-                ("2310012", "0082223334", "Lukman Hakim", "lukman.hakim@student.smkn2surakarta.sch.id", rpl2, 2),
-                ("2310013", "0083334445", "Maya Safitri", "maya.safitri@student.smkn2surakarta.sch.id", rpl2, 3),
-                ("2310014", "0084445556", "Naufal Rizky", "naufal.rizky@student.smkn2surakarta.sch.id", rpl2, 4),
-                ("2310015", "0085556667", "Olivia Putri", "olivia.putri@student.smkn2surakarta.sch.id", rpl2, 5),
-                ("2310016", "0086667778", "Panji Utomo", "panji.utomo@student.smkn2surakarta.sch.id", rpl2, 6),
-                ("2310017", "0087778889", "Qori Maharani", "qori.maharani@student.smkn2surakarta.sch.id", rpl2, 7),
-                ("2310018", "0088889990", "Rian Hidayat", "rian.hidayat@student.smkn2surakarta.sch.id", rpl2, 8),
-
-                ("2210001", "0071234567", "Siska Wardani", "siska.wardani@student.smkn2surakarta.sch.id", xiRpl1, 1),
-                ("2210002", "0072345678", "Tegar Prasetya", "tegar.prasetya@student.smkn2surakarta.sch.id", xiRpl1, 2),
-                ("2210003", "0073456789", "Umar Faruq", "umar.faruq@student.smkn2surakarta.sch.id", xiRpl1, 3),
-                ("2210004", "0074567890", "Vina Melati", "vina.melati@student.smkn2surakarta.sch.id", xiRpl1, 4),
-                ("2210005", "0075678901", "Wahyu Nugroho", "wahyu.nugroho@student.smkn2surakarta.sch.id", xiRpl1, 5),
-                ("2210006", "0076789012", "Xena Gabriel", "xena.gabriel@student.smkn2surakarta.sch.id", xiRpl1, 6),
-                ("2210007", "0077890123", "Yusuf Habibie", "yusuf.habibie@student.smkn2surakarta.sch.id", xiRpl1, 7),
-                ("2210008", "0078901234", "Zahra Aulia", "zahra.aulia@student.smkn2surakarta.sch.id", xiRpl1, 8),
-
-                ("2110001", "0061234567", "Agus Setiawan", "agus.setiawan@student.smkn2surakarta.sch.id", xiiRpl1, 1),
-                ("2110002", "0062345678", "Bella Bella", "bella.bella@student.smkn2surakarta.sch.id", xiiRpl1, 2),
-                ("2110003", "0063456789", "Citra Lestari", "citra.lestari@student.smkn2surakarta.sch.id", xiiRpl1, 3),
-                ("2110004", "0064567890", "David Saputra", "david.saputra@student.smkn2surakarta.sch.id", xiiRpl1, 4),
-                ("2110005", "0065678901", "Erwin Susanto", "erwin.susanto@student.smkn2surakarta.sch.id", xiiRpl1, 5),
-                ("2110006", "0066789012", "Farah Nabila", "farah.nabila@student.smkn2surakarta.sch.id", xiiRpl1, 6),
-                ("2110007", "0067890123", "Gita Gutawa", "gita.gutawa@student.smkn2surakarta.sch.id", xiiRpl1, 7),
-                ("2110008", "0068901234", "Hafiz Mahendra", "hafiz.mahendra@student.smkn2surakarta.sch.id", xiiRpl1, 8),
-
-                ("2320001", "0089991111", "Irfan Hakim", "irfan.hakim@student.smkn2surakarta.sch.id", tkj1, 1),
-                ("2320002", "0089992222", "Jessica Iskandar", "jessica.iskandar@student.smkn2surakarta.sch.id", tkj1, 2),
-                ("2320003", "0089993333", "Kevin Sanjaya", "kevin.sanjaya@student.smkn2surakarta.sch.id", tkj1, 3),
-                ("2320004", "0089994444", "Lia Waode", "lia.waode@student.smkn2surakarta.sch.id", tkj1, 4),
-
-                ("2330001", "0088881111", "Mita The Virgin", "mita.tv@student.smkn2surakarta.sch.id", akl1, 1),
-                ("2330002", "0088882222", "Nino Fernandez", "nino.fernandez@student.smkn2surakarta.sch.id", akl1, 2),
-                ("2330003", "0088883333", "Olla Ramlan", "olla.ramlan@student.smkn2surakarta.sch.id", akl1, 3),
-                ("2330004", "0088884444", "Prilly Latuconsina", "prilly.latuconsina@student.smkn2surakarta.sch.id", akl1, 4)
-            };
-
-            foreach (var st in studentSeedData)
-            {
-                var student = await context.Users.FirstOrDefaultAsync(u => u.NIS == st.NIS || u.Email.ToLower() == st.Email.ToLower());
-                if (student is null)
-                {
-                    student = new User
-                    {
-                        Id = Guid.NewGuid(),
-                        FullName = st.Name,
-                        NIS = st.NIS,
-                        NISN = st.NISN,
-                        Email = st.Email,
-                        Username = st.Email.Split('@')[0],
-                        Role = UserRole.Student,
-                        ClassId = st.Class.Id,
-                        StudentNumber = st.Absen,
-                        Gender = st.Absen % 2 == 0 ? "Female" : "Male",
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-                    student.PasswordHash = PasswordHasher.HashPassword(student, "Siswa123!");
-                    context.Users.Add(student);
-                }
-                else
-                {
-                    if (student.ClassId == null)
-                    {
-                        student.ClassId = st.Class.Id;
-                    }
-                }
-            }
-            await context.SaveChangesAsync();
-        }
-
-        // Ensure all students in DB are assigned to default class if ClassId is null
-        var unassignedStudentsList = await context.Users
-            .Where(u => u.Role == UserRole.Student && u.ClassId == null)
-            .ToListAsync();
-
-        if (unassignedStudentsList.Any() && defaultClass != null)
-        {
-            foreach (var s in unassignedStudentsList)
-            {
-                s.ClassId = defaultClass.Id;
-            }
-            await context.SaveChangesAsync();
-        }
 
         // ── 5. ClassSubjects Mapping ──────────────────────────────────────────
         var teacherSubjectList = await context.TeacherSubjects

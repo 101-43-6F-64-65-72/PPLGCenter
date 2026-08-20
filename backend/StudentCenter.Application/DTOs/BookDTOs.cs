@@ -1,3 +1,4 @@
+using System;
 using StudentCenter.Domain.Enums;
 
 namespace StudentCenter.Application.DTOs;
@@ -9,9 +10,17 @@ public class BookResponse
     public string Author { get; set; } = string.Empty;
     public string? ISBN { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string? Publisher { get; set; }
+    public int? PublicationYear { get; set; }
+    public string? Synopsis { get; set; }
     public int TotalCopies { get; set; }
     public int AvailableCopies { get; set; }
     public string? CoverImageUrl { get; set; }
+    public string LocationType { get; set; } = "Offline";
+    public string? LocationDetails { get; set; }
+    public Guid? FolderId { get; set; }
+    public Guid? CreatedByUserId { get; set; }
+    public string? CreatorName { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
 }
@@ -22,8 +31,14 @@ public class CreateBookRequest
     public string Author { get; set; } = string.Empty;
     public string? ISBN { get; set; }
     public string Category { get; set; } = string.Empty;
+    public string? Publisher { get; set; }
+    public int? PublicationYear { get; set; }
+    public string? Synopsis { get; set; }
     public int TotalCopies { get; set; } = 1;
     public string? CoverImageUrl { get; set; }
+    public string LocationType { get; set; } = "Offline"; // "Offline", "Digital"
+    public string? LocationDetails { get; set; }
+    public Guid? FolderId { get; set; }
 }
 
 public class UpdateBookRequest
@@ -64,4 +79,10 @@ public class ProcessBorrowRequest
 {
     public bool Approve { get; set; }
     public string? RejectionReason { get; set; }
+}
+
+public class AssignBookManagerRequest
+{
+    public string Category { get; set; } = string.Empty;
+    public Guid ManagerUserId { get; set; }
 }

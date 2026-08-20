@@ -67,18 +67,6 @@ public class AppDbContext : DbContext
     public DbSet<Message> Messages => Set<Message>();
     public DbSet<MessageAttachment> MessageAttachments => Set<MessageAttachment>();
 
-    // Phase 22 OSIS Election
-    public DbSet<Election> Elections => Set<Election>();
-    public DbSet<ElectionCandidate> ElectionCandidates => Set<ElectionCandidate>();
-    public DbSet<Vote> Votes => Set<Vote>();
-
-    // Phase 6 Dedicated Pemilos Pair & OSIS Recruitment
-    public DbSet<CandidatePair> CandidatePairs => Set<CandidatePair>();
-    public DbSet<CandidatePairVote> CandidatePairVotes => Set<CandidatePairVote>();
-    public DbSet<OsisPosition> OsisPositions => Set<OsisPosition>();
-    public DbSet<OsisApplication> OsisApplications => Set<OsisApplication>();
-    public DbSet<OsisCabinetHistory> OsisCabinetHistories => Set<OsisCabinetHistory>();
-
     // Password Reset Approval System
     public DbSet<PasswordResetRequest> PasswordResetRequests => Set<PasswordResetRequest>();
 
@@ -93,10 +81,15 @@ public class AppDbContext : DbContext
     public DbSet<Book> Books => Set<Book>();
     public DbSet<BookManager> BookManagers => Set<BookManager>();
     public DbSet<BookBorrowRequest> BookBorrowRequests => Set<BookBorrowRequest>();
+    public DbSet<LibraryFolder> LibraryFolders => Set<LibraryFolder>();
     public DbSet<CommunityGroup> CommunityGroups => Set<CommunityGroup>();
     public DbSet<CommunityGroupMember> CommunityGroupMembers => Set<CommunityGroupMember>();
     public DbSet<GroupMessage> GroupMessages => Set<GroupMessage>();
     public DbSet<GroupMessageRecipientEnvelope> GroupMessageRecipientEnvelopes => Set<GroupMessageRecipientEnvelope>();
+
+    // CCTV Subsystem (Phase 22)
+    public DbSet<CctvCamera> CctvCameras => Set<CctvCamera>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
+using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Infrastructure.Services;
@@ -43,42 +44,105 @@ public class ClassLeadershipService : IClassLeadershipService
         return history.Select(MapResponse).ToList();
     }
 
-    public async Task<ClassLeadershipResponse> AppointLeadershipAsync(AppointLeadershipRequest request, Guid appointedByUserId)
+    public async Task<ClassLeadershipResponse> AppointLeadershipAsync(AppointLeadershipRequest request, Guid appointedByUserId, string requestingUserRole = "Admin")
     {
-        var now = DateTime.UtcNow;
+        // 1. Verify Target Class Existence & Authorization (SEC-04 / SEC-05)
+        var targetClass = await _context.SchoolClasses
+            .FirstOrDefaultAsync(c => c.Id == request.SchoolClassId);
 
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        if (targetClass is null)
+            throw new KeyNotFoundException("Target school class not found.");
 
-        // 1. Deactivate existing active leadership for this class & academic year
-        var currentActive = await _context.ClassLeadership
-            .FirstOrDefaultAsync(cl => cl.SchoolClassId == request.SchoolClassId 
-                                    && cl.AcademicYearId == request.AcademicYearId 
-                                    && cl.IsActive);
+        bool isAdmin = string.Equals(requestingUserRole, "Admin", StringComparison.OrdinalIgnoreCase);
+        bool isWaliKelas = targetClass.HomeroomTeacherId.HasValue && targetClass.HomeroomTeacherId.Value == appointedByUserId;
 
-        if (currentActive is not null)
+        if (!isAdmin && !isWaliKelas)
         {
-            currentActive.IsActive = false;
-            currentActive.EndDate = now;
+            throw new UnauthorizedAccessException("Only Admin or the assigned Wali Kelas (Homeroom Teacher) of this class can appoint class leadership.");
         }
 
-        // 2. Create new active appointment record
-        var newLeadership = new ClassLeadership
-        {
-            Id = Guid.NewGuid(),
-            SchoolClassId = request.SchoolClassId,
-            HomeroomTeacherId = request.HomeroomTeacherId,
-            ClassLeaderStudentId = request.ClassLeaderStudentId,
-            AcademicYearId = request.AcademicYearId,
-            AppointedByUserId = appointedByUserId,
-            AppointedAt = now,
-            IsActive = true,
-            EffectiveDate = now,
-            EndDate = null
-        };
+        // 2. Validate Student Class Enrollment (SEC-03)
+        var student = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == request.ClassLeaderStudentId);
 
-        _context.ClassLeadership.Add(newLeadership);
-        await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
+        if (student is null || student.Role != UserRole.Student || student.ClassId != request.SchoolClassId)
+        {
+            throw new System.ComponentModel.DataAnnotations.ValidationException("Target class leader student must be an active student enrolled in this class.");
+        }
+
+        var teacher = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == request.HomeroomTeacherId);
+
+        if (teacher is null || teacher.Role != UserRole.Teacher)
+        {
+            throw new System.ComponentModel.DataAnnotations.ValidationException("Assigned homeroom teacher must be a valid teacher.");
+        }
+
+        // 3. Concurrency Protection & Dual-State Homeroom Synchronization (SEC-10 & SEC-11)
+        var now = DateTime.UtcNow;
+        Guid createdId = Guid.Empty;
+        int retries = 3;
+
+        while (retries > 0)
+        {
+            try
+            {
+                using var transaction = _context.Database.IsRelational()
+                    ? await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable)
+                    : null;
+
+                // Deactivate existing active leadership for this class & academic year
+                var currentActive = await _context.ClassLeadership
+                    .FirstOrDefaultAsync(cl => cl.SchoolClassId == request.SchoolClassId 
+                                            && cl.AcademicYearId == request.AcademicYearId 
+                                            && cl.IsActive);
+
+                if (currentActive is not null)
+                {
+                    currentActive.IsActive = false;
+                    currentActive.EndDate = now;
+                }
+
+                // Synchronize dual-state model: Update SchoolClass.HomeroomTeacherId
+                targetClass.HomeroomTeacherId = request.HomeroomTeacherId;
+                targetClass.UpdatedAt = now;
+
+                var newLeadership = new ClassLeadership
+                {
+                    Id = Guid.NewGuid(),
+                    SchoolClassId = request.SchoolClassId,
+                    HomeroomTeacherId = request.HomeroomTeacherId,
+                    ClassLeaderStudentId = request.ClassLeaderStudentId,
+                    AcademicYearId = request.AcademicYearId,
+                    AppointedByUserId = appointedByUserId,
+                    AppointedAt = now,
+                    IsActive = true,
+                    EffectiveDate = now,
+                    EndDate = null
+                };
+
+                _context.ClassLeadership.Add(newLeadership);
+                await _context.SaveChangesAsync();
+
+                if (transaction != null)
+                    await transaction.CommitAsync();
+
+                createdId = newLeadership.Id;
+                break;
+            }
+            catch (DbUpdateException) when (retries > 1)
+            {
+                _context.ChangeTracker.Clear();
+                retries--;
+                await Task.Delay(50);
+            }
+            catch
+            {
+                throw;
+            }
+        }
 
         var created = await _context.ClassLeadership
             .Include(cl => cl.SchoolClass)
@@ -86,7 +150,7 @@ public class ClassLeadershipService : IClassLeadershipService
             .Include(cl => cl.ClassLeaderStudent)
             .Include(cl => cl.AcademicYear)
             .AsNoTracking()
-            .FirstAsync(cl => cl.Id == newLeadership.Id);
+            .FirstAsync(cl => cl.Id == createdId);
 
         return MapResponse(created);
     }

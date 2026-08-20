@@ -12,8 +12,8 @@ public interface IAssessmentService
     Task<bool> DeleteCategoryAsync(Guid id);
 
     // Assessment CRUD
-    Task<List<AssessmentResponse>> GetAssessmentsAsync(Guid? classSubjectId = null, Guid? teacherId = null, Guid? categoryId = null);
-    Task<AssessmentResponse?> GetAssessmentByIdAsync(Guid id);
+    Task<List<AssessmentResponse>> GetAssessmentsAsync(Guid? classSubjectId = null, Guid? teacherId = null, Guid? categoryId = null, Guid? requestingUserId = null, string? requestingUserRole = null);
+    Task<AssessmentResponse?> GetAssessmentByIdAsync(Guid id, Guid? requestingUserId = null, string? requestingUserRole = null);
     Task<AssessmentResponse> CreateAssessmentAsync(Guid teacherId, CreateAssessmentRequest request);
     Task<AssessmentResponse?> UpdateAssessmentAsync(Guid id, Guid teacherId, UpdateAssessmentRequest request);
     Task<bool> DeleteAssessmentAsync(Guid id, Guid teacherId);

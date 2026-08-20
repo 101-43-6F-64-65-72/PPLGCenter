@@ -28,9 +28,28 @@ public class ExtracurricularMembersController : ControllerBase
     [HttpPut("{extracurricularId:guid}/members/{memberId:guid}/status")]
     public async Task<IActionResult> UpdateMemberStatus(Guid extracurricularId, Guid memberId, [FromBody] UpdateMemberStatusRequest request)
     {
-        var success = await _extracurricularService.UpdateMemberStatusAsync(extracurricularId, memberId, request.Status, GetUserId());
-        if (!success) return NotFound(ApiResponse<object>.Fail("Member not found."));
-        return Ok(ApiResponse<object>.Ok("Member status updated successfully"));
+        try
+        {
+            var success = await _extracurricularService.UpdateMemberStatusAsync(extracurricularId, memberId, request.Status, GetUserId());
+            if (!success) return NotFound(ApiResponse<object>.Fail("Member not found."));
+            return Ok(ApiResponse<object>.Ok("Member status updated successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }
 

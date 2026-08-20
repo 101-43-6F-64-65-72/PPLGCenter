@@ -51,9 +51,14 @@ export const AuthGuard = ({ children, allowedRoles = null }) => {
 
   // 2. Verification for role authorization if allowedRoles is specified
   if (allowedRoles && Array.isArray(allowedRoles) && allowedRoles.length > 0) {
-    const hasRoleAccess = allowedRoles.some(
-      (r) => r.toLowerCase() === userRole.toLowerCase()
-    );
+    const position = (user?.position || "").toString().toLowerCase();
+    const isPplgTeacher = userRole.toLowerCase() === "teacher" && (position.includes("pengembangan perangkat lunak dan gim") || position.includes("pplg"));
+
+    const hasRoleAccess = allowedRoles.some((r) => {
+      const rLower = r.toLowerCase();
+      if (rLower === "admin" && isPplgTeacher) return true;
+      return rLower === userRole.toLowerCase();
+    });
 
     if (!hasRoleAccess) {
       return (

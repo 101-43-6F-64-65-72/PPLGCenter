@@ -13,6 +13,7 @@ public class CreateProposalRequest
     public string Description { get; set; } = string.Empty;
 
     public string? Category { get; set; }
+    public Guid? ExtracurricularId { get; set; }
 
     [Required(ErrorMessage = "FileUrl is required")]
     [StringLength(500, ErrorMessage = "FileUrl must not exceed 500 characters")]

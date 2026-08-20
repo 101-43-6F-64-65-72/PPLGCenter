@@ -22,7 +22,7 @@ export default function FloatingBadge({
       animate={{
         opacity: 1,
         scale: 1,
-        y: [0, -6, 0],
+        y: [0, -6],
       }}
       transition={{
         opacity: { duration: 0.5, delay },

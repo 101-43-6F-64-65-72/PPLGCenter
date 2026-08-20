@@ -13,22 +13,31 @@ public class ClassSubjectsController : ControllerBase
 {
     private readonly IClassSubjectService _service;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserService _userService;
 
-    public ClassSubjectsController(IClassSubjectService service, ICurrentUserService currentUserService)
+    public ClassSubjectsController(IClassSubjectService service, ICurrentUserService currentUserService, IUserService userService)
     {
         _service = service;
         _currentUserService = currentUserService;
+        _userService = userService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] Guid? classId = null, [FromQuery] Guid? teacherId = null, [FromQuery] Guid? subjectId = null)
     {
-        // For Teacher role, ALWAYS enforce authenticated teacher identity from JWT principal
         var userRole = _currentUserService.Role;
         var currentUserId = _currentUserService.UserId;
         if (userRole == "Teacher" && currentUserId.HasValue)
         {
             teacherId = currentUserId.Value;
+        }
+        else if (userRole == "Student" && currentUserId.HasValue)
+        {
+            var studentUser = await _userService.GetUserByIdAsync(currentUserId.Value);
+            if (studentUser?.ClassId != null)
+            {
+                classId = studentUser.ClassId.Value;
+            }
         }
 
         var list = await _service.GetAllAsync(classId, teacherId, subjectId);

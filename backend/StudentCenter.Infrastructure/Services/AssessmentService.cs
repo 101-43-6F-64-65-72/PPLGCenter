@@ -5,6 +5,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Infrastructure.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -107,7 +108,12 @@ public class AssessmentService : IAssessmentService
 
     #region Assessment CRUD
 
-    public async Task<List<AssessmentResponse>> GetAssessmentsAsync(Guid? classSubjectId = null, Guid? teacherId = null, Guid? categoryId = null)
+    public async Task<List<AssessmentResponse>> GetAssessmentsAsync(
+        Guid? classSubjectId = null,
+        Guid? teacherId = null,
+        Guid? categoryId = null,
+        Guid? requestingUserId = null,
+        string? requestingUserRole = null)
     {
         var query = BuildAssessmentQuery();
 
@@ -120,18 +126,80 @@ public class AssessmentService : IAssessmentService
         if (categoryId.HasValue)
             query = query.Where(a => a.GradeCategoryId == categoryId.Value);
 
+        if (requestingUserId.HasValue)
+        {
+            if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+            {
+                var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+                if (student?.ClassId != null)
+                {
+                    query = query.Where(a => a.IsPublished && a.ClassSubject.ClassId == student.ClassId);
+                }
+                else
+                {
+                    return new List<AssessmentResponse>();
+                }
+            }
+            else if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.TeacherId == requestingUserId.Value || a.ClassSubject.TeacherSubject.TeacherId == requestingUserId.Value);
+            }
+        }
+
         var list = await query.OrderByDescending(a => a.CreatedAt).ToListAsync();
         return list.Select(MapToAssessmentResponse).ToList();
     }
 
-    public async Task<AssessmentResponse?> GetAssessmentByIdAsync(Guid id)
+    public async Task<AssessmentResponse?> GetAssessmentByIdAsync(
+        Guid id,
+        Guid? requestingUserId = null,
+        string? requestingUserRole = null)
     {
         var entity = await BuildAssessmentQuery().FirstOrDefaultAsync(a => a.Id == id);
-        return entity == null ? null : MapToAssessmentResponse(entity);
+        if (entity == null) return null;
+
+        if (requestingUserId.HasValue && !string.Equals(requestingUserRole, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!entity.IsPublished)
+                {
+                    throw new UnauthorizedAccessException("Student cannot access unpublished assessments.");
+                }
+
+                var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+                if (student?.ClassId != entity.ClassSubject?.ClassId)
+                {
+                    throw new UnauthorizedAccessException("Student is not authorized to access assessments from another class.");
+                }
+            }
+            else if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                var isAuthorized = entity.TeacherId == requestingUserId.Value ||
+                    (entity.ClassSubject?.TeacherSubject != null && entity.ClassSubject.TeacherSubject.TeacherId == requestingUserId.Value);
+
+                if (!isAuthorized)
+                {
+                    throw new UnauthorizedAccessException("Teacher is not authorized to access assessments outside their assigned scope.");
+                }
+            }
+        }
+
+        return MapToAssessmentResponse(entity);
     }
 
     public async Task<AssessmentResponse> CreateAssessmentAsync(Guid teacherId, CreateAssessmentRequest request)
     {
+        if (request.MaxScore <= 0)
+        {
+            throw new ValidationException("MaxScore must be greater than 0.");
+        }
+
+        if (request.DueDate <= request.PublishAt)
+        {
+            throw new ValidationException("DueDate must be after PublishAt.");
+        }
+
         var cs = await _context.ClassSubjects
             .AsNoTracking()
             .Include(c => c.TeacherSubject)
@@ -140,22 +208,13 @@ public class AssessmentService : IAssessmentService
 
         if (cs == null) throw new ValidationException("ClassSubject not found.");
 
-        if (cs.TeacherSubject.TeacherId != teacherId)
+        if (!await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, cs.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized for this ClassSubject.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized for this ClassSubject.");
         }
 
         var cat = await _context.GradeCategories.FindAsync(request.GradeCategoryId);
         if (cat == null) throw new ValidationException("GradeCategory not found.");
-
-        if (request.DueDate <= request.PublishAt)
-        {
-            throw new ValidationException("DueDate must be after PublishAt.");
-        }
 
         var entity = new Assessment
         {
@@ -167,7 +226,7 @@ public class AssessmentService : IAssessmentService
             Title = request.Title.Trim(),
             Description = request.Description?.Trim(),
             AssessmentType = request.AssessmentType,
-            MaxScore = request.MaxScore > 0 ? request.MaxScore : 100.0m,
+            MaxScore = request.MaxScore,
             WeightOverride = request.WeightOverride,
             PublishAt = request.PublishAt,
             DueDate = request.DueDate,
@@ -198,13 +257,17 @@ public class AssessmentService : IAssessmentService
 
         if (entity == null) return null;
 
-        if (entity.TeacherId != teacherId && entity.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        if (entity.TeacherId != teacherId && !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, entity.ClassSubject.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized to update this assessment.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized to update this assessment.");
+        }
+
+        var publishAt = request.PublishAt != default ? request.PublishAt : entity.PublishAt;
+        var dueDate = request.DueDate != default ? request.DueDate : entity.DueDate;
+
+        if (dueDate <= publishAt)
+        {
+            throw new ValidationException("DueDate must be after PublishAt.");
         }
 
         var wasPublished = entity.IsPublished;
@@ -214,10 +277,10 @@ public class AssessmentService : IAssessmentService
         entity.Title = request.Title.Trim();
         entity.Description = request.Description?.Trim();
         entity.AssessmentType = request.AssessmentType;
-        entity.MaxScore = request.MaxScore > 0 ? request.MaxScore : 100.0m;
+        entity.MaxScore = request.MaxScore;
         entity.WeightOverride = request.WeightOverride;
-        entity.PublishAt = request.PublishAt;
-        entity.DueDate = request.DueDate;
+        entity.PublishAt = publishAt;
+        entity.DueDate = dueDate;
         entity.IsPublished = request.IsPublished;
         entity.UpdatedAt = DateTime.UtcNow;
 
@@ -240,13 +303,9 @@ public class AssessmentService : IAssessmentService
 
         if (entity == null) return false;
 
-        if (entity.TeacherId != teacherId && entity.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        if (entity.TeacherId != teacherId && !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, entity.ClassSubject.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized to delete this assessment.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized to delete this assessment.");
         }
 
         _context.Assessments.Remove(entity);
@@ -264,6 +323,15 @@ public class AssessmentService : IAssessmentService
             .FirstOrDefaultAsync(a => a.Id == id);
 
         if (entity == null) return null;
+
+        if (entity.TeacherId != teacherId && entity.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        {
+            var user = await _context.Users.FindAsync(teacherId);
+            if (user?.Role != UserRole.Admin)
+            {
+                throw new UnauthorizedAccessException("Teacher is not authorized to publish this assessment.");
+            }
+        }
 
         if (!entity.IsPublished)
         {

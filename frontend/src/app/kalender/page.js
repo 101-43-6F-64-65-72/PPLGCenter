@@ -221,7 +221,6 @@ export default function KalenderPage() {
         setEvents(SEED_CALENDAR_EVENTS);
       }
     } catch (err) {
-      console.error("Gagal memuat data kegiatan kalender:", err);
       const checkUnauth =
         err?.statusCode === 401 ||
         err?.response?.status === 401 ||

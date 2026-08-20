@@ -14,33 +14,22 @@ public static class MasterDataSeeder
     // ── Departments ───────────────────────────────────────────────────────────
     private static readonly (string Code, string Name)[] DefaultDepartments =
     [
+        ("PPLG", "Pengembangan Perangkat Lunak dan Gim"),
         ("RPL",  "Rekayasa Perangkat Lunak"),
         ("TKJ",  "Teknik Komputer dan Jaringan"),
         ("AKL",  "Akuntansi dan Keuangan Lembaga"),
-        ("DKV",  "Desain Komunikasi Visual"),
-        ("MPLB", "Manajemen Perkantoran dan Layanan Bisnis"),
-        ("TKRO", "Teknik Kendaraan Ringan Otomotif"),
-        ("TBSM", "Teknik Bisnis Sepeda Motor")
+        ("DKV",  "Desain Komunikasi Visual")
     ];
 
-    // ── Classes to seed for academic year 2026/2027 ───────────────────────────
+    // ── PPLG Master Classes for Academic Year 2026/2027 ───────────────────────
     private static readonly (string Grade, string DeptCode, string Suffix)[] DefaultClasses =
     [
-        ("X",   "RPL",  "1"),
-        ("X",   "RPL",  "2"),
-        ("XI",  "RPL",  "1"),
-        ("XI",  "RPL",  "2"),
-        ("XII", "RPL",  "1"),
-        ("XII", "RPL",  "2"),
-        ("X",   "TKJ",  "1"),
-        ("XI",  "TKJ",  "1"),
-        ("XII", "TKJ",  "1"),
-        ("X",   "AKL",  "1"),
-        ("XI",  "AKL",  "1"),
-        ("XII", "AKL",  "1"),
-        ("X",   "DKV",  "1"),
-        ("XI",  "DKV",  "1"),
-        ("XII", "DKV",  "1"),
+        ("X",   "PPLG", "A"),
+        ("X",   "PPLG", "B"),
+        ("XI",  "PPLG", "A"),
+        ("XI",  "PPLG", "B"),
+        ("XII", "PPLG", "A"),
+        ("XII", "PPLG", "B")
     ];
 
     public static async Task SeedAsync(IServiceProvider serviceProvider)
@@ -48,11 +37,6 @@ public static class MasterDataSeeder
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
-
-        if (await context.SchoolClasses.AnyAsync())
-        {
-            return;
-        }
 
         // ── 1. Academic Year 2026/2027 ────────────────────────────────────────
         var ay = await context.AcademicYears

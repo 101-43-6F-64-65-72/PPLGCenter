@@ -53,7 +53,7 @@ export function hasRole(userRole, targetRole) {
  */
 export function canManageClass(user, schoolClassId, activeLeadership = null) {
   if (!user) return false;
-  if (hasRole(user.role, "Admin") || hasRole(user.role, "Teacher")) return true;
+  if (isAdminOrPplgTeacher(user, user.role)) return true;
   
   if (hasRole(user.role, "Student") && activeLeadership && schoolClassId) {
     return (
@@ -62,4 +62,23 @@ export function canManageClass(user, schoolClassId, activeLeadership = null) {
     );
   }
   return false;
+}
+
+/**
+ * Helper to verify whether user is a teacher of PPLG department.
+ */
+export function isPplgTeacher(user) {
+  if (!user) return false;
+  const userRole = (user.role || "").toString().toLowerCase();
+  const position = (user.position || "").toString().toLowerCase();
+  return userRole === "teacher" && (position.includes("pengembangan perangkat lunak dan gim") || position.includes("pplg"));
+}
+
+/**
+ * Helper to verify whether user is an Admin or PPLG Teacher.
+ */
+export function isAdminOrPplgTeacher(user, role) {
+  const userRole = (role || user?.role || "").toString().toLowerCase();
+  if (userRole === "admin") return true;
+  return isPplgTeacher(user);
 }

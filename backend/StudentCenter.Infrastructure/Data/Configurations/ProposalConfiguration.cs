@@ -59,9 +59,15 @@ public class ProposalConfiguration : IEntityTypeConfiguration<Proposal>
             .HasForeignKey(p => p.ReviewedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(p => p.Extracurricular)
+            .WithMany()
+            .HasForeignKey(p => p.ExtracurricularId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(p => p.SubmittedByUserId);
         builder.HasIndex(p => p.Status);
         builder.HasIndex(p => p.CreatedAt);
         builder.HasIndex(p => p.ReviewedByUserId);
+        builder.HasIndex(p => p.ExtracurricularId);
     }
 }

@@ -25,8 +25,40 @@ public class SubmissionService : ISubmissionService
         _fileStorageService = fileStorageService ?? new SupabaseStorageService(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
     }
 
-    public async Task<List<SubmissionResponse>> GetSubmissionsByAssignmentAsync(Guid assignmentId)
+    public async Task<List<SubmissionResponse>> GetSubmissionsByAssignmentAsync(
+        Guid assignmentId,
+        Guid? requestingUserId = null,
+        string? requestingUserRole = null)
     {
+        var assignment = await _context.Assignments
+            .AsNoTracking()
+            .Include(a => a.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(a => a.Id == assignmentId && !a.IsDeleted);
+
+        if (assignment == null)
+        {
+            return new List<SubmissionResponse>();
+        }
+
+        if (requestingUserId.HasValue && requestingUserRole != "Admin")
+        {
+            if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                var isAuthorized = assignment.TeacherId == requestingUserId.Value ||
+                    (assignment.ClassSubject?.TeacherSubject != null && assignment.ClassSubject.TeacherSubject.TeacherId == requestingUserId.Value);
+
+                if (!isAuthorized)
+                {
+                    throw new UnauthorizedAccessException("Guru tidak memiliki akses ke pengumpulan tugas kelas ini.");
+                }
+            }
+            else if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Siswa tidak memiliki akses ke seluruh daftar pengumpulan.");
+            }
+        }
+
         var list = await BuildSubmissionQuery()
             .Where(s => s.AssignmentId == assignmentId)
             .OrderByDescending(s => s.SubmittedAt)
@@ -40,10 +72,32 @@ public class SubmissionService : ISubmissionService
         return result;
     }
 
-    public async Task<SubmissionResponse?> GetSubmissionByIdAsync(Guid id)
+    public async Task<SubmissionResponse?> GetSubmissionByIdAsync(Guid id, Guid? requestingUserId = null, string? requestingUserRole = null)
     {
         var sub = await BuildSubmissionQuery().FirstOrDefaultAsync(s => s.Id == id);
         if (sub == null) return null;
+
+        if (requestingUserId.HasValue && requestingUserRole != "Admin")
+        {
+            var userId = requestingUserId.Value;
+            if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase) && sub.StudentId != userId)
+            {
+                throw new UnauthorizedAccessException("Anda tidak memiliki akses ke pengumpulan tugas ini.");
+            }
+
+            if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                var isAssignedTeacher = sub.Assignment != null && (
+                    sub.Assignment.TeacherId == userId ||
+                    (sub.Assignment.ClassSubject != null && sub.Assignment.ClassSubject.TeacherSubject != null && sub.Assignment.ClassSubject.TeacherSubject.TeacherId == userId)
+                );
+                if (!isAssignedTeacher)
+                {
+                    throw new UnauthorizedAccessException("Guru tidak memiliki akses ke pengumpulan tugas kelas ini.");
+                }
+            }
+        }
+
         return await MapToResponseAsync(sub);
     }
 
@@ -58,11 +112,23 @@ public class SubmissionService : ISubmissionService
 
     public async Task<SubmissionResponse> SubmitAssignmentAsync(Guid studentId, CreateSubmissionRequest request)
     {
+        var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == studentId);
+        if (student == null || student.Role != UserRole.Student)
+        {
+            throw new UnauthorizedAccessException("Invalid student account.");
+        }
+
         var assignment = await _context.Assignments
             .AsNoTracking()
+            .Include(a => a.ClassSubject)
             .FirstOrDefaultAsync(a => a.Id == request.AssignmentId && !a.IsDeleted);
 
         if (assignment == null) throw new ValidationException("Assignment not found.");
+
+        if (student.ClassId == null || student.ClassId != assignment.ClassSubject?.ClassId)
+        {
+            throw new UnauthorizedAccessException("Siswa tidak dapat mengumpulkan tugas untuk kelas lain.");
+        }
 
         var now = DateTime.UtcNow;
 
@@ -158,7 +224,7 @@ public class SubmissionService : ISubmissionService
             var user = await _context.Users.FindAsync(teacherId);
             if (user?.Role != UserRole.Admin)
             {
-                throw new ValidationException("Teacher is not authorized to grade this submission.");
+                throw new UnauthorizedAccessException("Teacher is not authorized to grade this submission.");
             }
         }
 

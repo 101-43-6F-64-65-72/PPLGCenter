@@ -7,13 +7,11 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import { USER_ROLES } from "@/constants/userRoles";
 import Sidebar from "@/components/layout/Sidebar";
 import AdminStatCards from "@/components/admin/AdminStatCards";
-import AdminProposalTab from "@/components/admin/AdminProposalTab";
 import AdminFacilityTab from "@/components/admin/AdminFacilityTab";
 import AdminAnnouncementsTab from "@/components/admin/AdminAnnouncementsTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminDepartmentsTab from "@/components/admin/AdminDepartmentsTab";
 import AdminClassesTab from "@/components/admin/AdminClassesTab";
-import AdminExtracurricularsTab from "@/components/admin/AdminExtracurricularsTab";
 import AdminStudentsTab from "@/components/admin/AdminStudentsTab";
 import AdminTeachersTab from "@/components/admin/AdminTeachersTab";
 import AdminAcademicYearsTab from "@/components/admin/AdminAcademicYearsTab";
@@ -111,10 +109,8 @@ function AdminPanelContent() {
                 <option value="academic-years">Tahun Akademik</option>
                 <option value="semesters">Master Semester</option>
                 <option value="users">Kelola User</option>
-                <option value="extracurriculars">Kelola Ekstrakurikuler</option>
-                <option value="proposals">Kelola Proposal</option>
                 <option value="facilities">Kelola Booking</option>
-                <option value="announcements">Kelola Mading</option>
+                <option value="announcements">Mading & Pengumuman</option>
                 <option value="password-reset">Reset Password</option>
               </select>
             </div>
@@ -185,14 +181,9 @@ function AdminPanelContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Proposal Quick Section */}
-                <div className="lg:col-span-7">
-                  <AdminProposalTab isQuickView={true} onViewAll={() => setActiveTab("proposals")} />
-                </div>
-
+              <div className="grid grid-cols-1 gap-8">
                 {/* Facility Quick Section */}
-                <div className="lg:col-span-5">
+                <div>
                   <AdminFacilityTab isQuickView={true} onViewAll={() => setActiveTab("facilities")} />
                 </div>
               </div>
@@ -217,8 +208,6 @@ function AdminPanelContent() {
           {activeTab === "academic-years" && <AdminAcademicYearsTab />}
           {activeTab === "semesters" && <AdminSemestersTab />}
           {activeTab === "users" && <AdminUsersTab />}
-          {activeTab === "extracurriculars" && <AdminExtracurricularsTab />}
-          {activeTab === "proposals" && <AdminProposalTab />}
           {activeTab === "facilities" && <AdminFacilityTab />}
           {activeTab === "announcements" && <AdminAnnouncementsTab />}
           {activeTab === "password-reset" && <PasswordResetAdminTab />}

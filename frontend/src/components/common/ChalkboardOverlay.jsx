@@ -9,7 +9,7 @@ export default function ChalkboardOverlay() {
       {/* 1. Top-Left Mathematical Formula: Integration & Exponential */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: [0, -8, 0] }}
+        animate={{ opacity: 1, y: [0, -8] }}
         transition={{
           opacity: { duration: 1.2, delay: 0.2 },
           y: { duration: 6, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
@@ -29,7 +29,7 @@ export default function ChalkboardOverlay() {
       {/* 2. Top-Right Chalk Sine Wave Oscillator Graph */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, y: [0, 8, 0] }}
+        animate={{ opacity: 1, y: [0, 8] }}
         transition={{
           opacity: { duration: 1.4, delay: 0.4 },
           y: { duration: 7, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
@@ -60,7 +60,7 @@ export default function ChalkboardOverlay() {
       {/* 3. Middle-Right Parabola Graph & Vector Diagram */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, y: [0, -10, 0] }}
+        animate={{ opacity: 1, y: [0, -10] }}
         transition={{
           opacity: { duration: 1.5, delay: 0.6 },
           y: { duration: 8, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
@@ -86,7 +86,7 @@ export default function ChalkboardOverlay() {
       {/* 4. Bottom-Left Geometry Right Triangle & Trigonometry Formula */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: [0, 9, 0] }}
+        animate={{ opacity: 1, y: [0, 9] }}
         transition={{
           opacity: { duration: 1.3, delay: 0.5 },
           y: { duration: 6.5, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },
@@ -114,7 +114,7 @@ export default function ChalkboardOverlay() {
       {/* 5. Center-Left Quantum Energy & Limit Formula */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, y: [0, -7, 0] }}
+        animate={{ opacity: 1, y: [0, -7] }}
         transition={{
           opacity: { duration: 1.6, delay: 0.7 },
           y: { duration: 7.5, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" },

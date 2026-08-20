@@ -6,6 +6,9 @@ public class Announcement
     public string Title { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
+    public string? TargetClasses { get; set; } // Comma-separated class names e.g. "X PPLG A, XI PPLG A" or "Semua Kelas"
+    public DateTime? PublishStart { get; set; }
+    public DateTime? PublishEnd { get; set; }
     public string? CoverImageUrl { get; set; }
     public bool IsPinned { get; set; }
     public bool IsCommentsLocked { get; set; }

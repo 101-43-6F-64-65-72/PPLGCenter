@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Moq;
 using FluentAssertions;
 using StudentCenter.Application.DTOs;
@@ -164,8 +165,8 @@ public class ProposalServiceTests
     {
         var owner = Guid.NewGuid();
         var other = Guid.NewGuid();
-        var user1 = new User { Id = owner, FullName = "OSIS 1", Email = "osis1@test.com" };
-        var user2 = new User { Id = other, FullName = "OSIS 2", Email = "osis2@test.com" };
+        var user1 = new User { Id = owner, FullName = "OSIS 1", Email = "osis1@test.com", Role = UserRole.Student };
+        var user2 = new User { Id = other, FullName = "OSIS 2", Email = "osis2@test.com", Role = UserRole.Student };
         var proposal = new Proposal
         {
             Id = Guid.NewGuid(),
@@ -259,8 +260,8 @@ public class ProposalServiceTests
     {
         var owner = Guid.NewGuid();
         var other = Guid.NewGuid();
-        var user1 = new User { Id = owner, FullName = "OSIS 1", Email = "osis1@test.com" };
-        var user2 = new User { Id = other, FullName = "OSIS 2", Email = "osis2@test.com" };
+        var user1 = new User { Id = owner, FullName = "OSIS 1", Email = "osis1@test.com", Role = UserRole.Student };
+        var user2 = new User { Id = other, FullName = "OSIS 2", Email = "osis2@test.com", Role = UserRole.Student };
         var proposal = new Proposal
         {
             Id = Guid.NewGuid(),
@@ -396,7 +397,7 @@ public class ProposalServiceTests
 
         var act = async () => await _service.ReviewProposalAsync(proposal.Id, request, student);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
             .WithMessage("Only Admin and Teacher can review proposals.");
     }
 
@@ -464,5 +465,94 @@ public class ProposalServiceTests
         var savedInDb = await _context.Proposals.FirstOrDefaultAsync(p => p.Title == request.Title);
         savedInDb.Should().NotBeNull();
         savedInDb!.SubmittedByUserId.Should().Be(userId);
+    }
+
+    [Fact]
+    public async Task GetProposalByIdAsync_StudentAccessingAnotherStudentsProposal_ThrowsUnauthorizedException()
+    {
+        var student1Id = Guid.NewGuid();
+        var student2Id = Guid.NewGuid();
+        var user1 = new User { Id = student1Id, FullName = "Student 1", Email = "s1@test.com", Role = UserRole.Student };
+        var user2 = new User { Id = student2Id, FullName = "Student 2", Email = "s2@test.com", Role = UserRole.Student };
+        var proposal = new Proposal
+        {
+            Id = Guid.NewGuid(),
+            Title = "Private Proposal",
+            Description = "Secret",
+            FileUrl = "https://example.com/secret.pdf",
+            Status = ProposalStatus.Pending,
+            SubmittedByUserId = student1Id,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context.Users.AddRange(user1, user2);
+        _context.Proposals.Add(proposal);
+        await _context.SaveChangesAsync();
+
+        var act = async () => await _service.GetProposalByIdAsync(proposal.Id, student2Id, "Student");
+
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("You cannot access another student's proposal.");
+    }
+
+    [Fact]
+    public async Task CreateProposalAsync_EmptyTitleOrDescriptionOrFileUrl_ThrowsValidationException()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User { Id = userId, FullName = "Student", Email = "s@test.com", Role = UserRole.Student };
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+
+        // Empty Title
+        var actEmptyTitle = async () => await _service.CreateProposalAsync(new CreateProposalRequest
+        {
+            Title = "   ",
+            Description = "Valid desc",
+            FileUrl = "https://example.com/file.pdf"
+        }, userId);
+        await actEmptyTitle.Should().ThrowAsync<ValidationException>();
+
+        // Empty Description
+        var actEmptyDesc = async () => await _service.CreateProposalAsync(new CreateProposalRequest
+        {
+            Title = "Valid Title",
+            Description = "   ",
+            FileUrl = "https://example.com/file.pdf"
+        }, userId);
+        await actEmptyDesc.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task ReviewProposalAsync_RejectedWithoutReason_ThrowsValidationException()
+    {
+        var submitter = Guid.NewGuid();
+        var admin = Guid.NewGuid();
+        var user1 = new User { Id = submitter, FullName = "OSIS", Email = "osis@test.com", Role = UserRole.Student };
+        var user2 = new User { Id = admin, FullName = "Admin", Email = "admin@test.com", Role = UserRole.Admin };
+        var proposal = new Proposal
+        {
+            Id = Guid.NewGuid(),
+            Title = "Event",
+            Description = "Desc",
+            FileUrl = "https://example.com/file.pdf",
+            Status = ProposalStatus.Pending,
+            SubmittedByUserId = submitter,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context.Users.AddRange(user1, user2);
+        _context.Proposals.Add(proposal);
+        await _context.SaveChangesAsync();
+
+        var request = new ReviewProposalRequest
+        {
+            Status = ProposalStatus.Rejected,
+            RejectionReason = "   " // Empty rejection reason
+        };
+
+        var act = async () => await _service.ReviewProposalAsync(proposal.Id, request, admin);
+
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("A reason is required when rejecting or requesting revisions for a proposal.");
     }
 }

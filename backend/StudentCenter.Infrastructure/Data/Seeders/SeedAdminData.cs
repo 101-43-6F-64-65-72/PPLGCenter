@@ -28,15 +28,15 @@ public static class SeedAdminData
         }
 
         // 1. Seed Admin
-        var admin = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@studentcenter.id" || u.Role == UserRole.Admin);
+        var admin = await context.Users.FirstOrDefaultAsync(u => u.Email == "admin@smkn2surakarta.sch.id" || u.Email == "admin@pplgcenter.id" || u.Email == "admin@studentcenter.id");
         if (admin is null)
         {
             admin = new User
             {
                 Id = Guid.NewGuid(),
-                FullName = "Administrator",
-                Email = "admin@studentcenter.id",
-                Username = "admin",
+                FullName = "Administrator PPLG Center",
+                Email = "admin@smkn2surakarta.sch.id",
+                Username = "admin_pplg",
                 PhoneNumber = "+6281234567890",
                 Role = UserRole.Admin,
                 IsActive = true,
@@ -45,25 +45,26 @@ public static class SeedAdminData
             };
             context.Users.Add(admin);
         }
-        admin.FullName = "Administrator";
-        admin.Email = "admin@studentcenter.id";
-        admin.Username = "admin";
         admin.Role = UserRole.Admin;
         admin.IsActive = true;
-        admin.PasswordHash = passwordHasher.HashPassword(admin, defaultPassword);
+        admin.PasswordHash = passwordHasher.HashPassword(admin, "AdminPPLGCenter2026!");
         admin.UpdatedAt = DateTime.UtcNow;
 
+        // Fetch PPLG classes for student assignment
+        var classXPplgA = await context.SchoolClasses.FirstOrDefaultAsync(c => c.Name == "X PPLG A");
+        var classXiPplgA = await context.SchoolClasses.FirstOrDefaultAsync(c => c.Name == "XI PPLG A");
+
         // 2. Seed Teacher
-        var teacher = await context.Users.FirstOrDefaultAsync(u => u.Email == "budi.teacher@studentcenter.id" || u.Username == "teacher.budi");
+        var teacher = await context.Users.FirstOrDefaultAsync(u => u.Email == "guru_1_sugiyono@teacher.smkn2surakarta.sch.id" || u.Email == "guru.pplg@pplgcenter.id" || u.Email == "budi.teacher@studentcenter.id" || u.Username == "teacher.budi");
         if (teacher is null)
         {
             teacher = new User
             {
                 Id = Guid.NewGuid(),
-                FullName = "Budi Santoso, M.Pd.",
-                Email = "budi.teacher@studentcenter.id",
-                Username = "teacher.budi",
-                NIP = "198501012010011001",
+                FullName = "Sugiyono, S.Pd.",
+                Email = "guru_1_sugiyono@teacher.smkn2surakarta.sch.id",
+                Username = "guru_1",
+                NIP = "197001012026011001",
                 PhoneNumber = "+6281987654321",
                 Role = UserRole.Teacher,
                 IsActive = true,
@@ -72,27 +73,24 @@ public static class SeedAdminData
             };
             context.Users.Add(teacher);
         }
-        teacher.FullName = "Budi Santoso, M.Pd.";
-        teacher.Email = "budi.teacher@studentcenter.id";
-        teacher.Username = "teacher.budi";
-        teacher.NIP = "198501012010011001";
         teacher.Role = UserRole.Teacher;
         teacher.IsActive = true;
-        teacher.PasswordHash = passwordHasher.HashPassword(teacher, "Teacher123!");
+        teacher.PasswordHash = passwordHasher.HashPassword(teacher, "GuruPPLG2026!");
         teacher.UpdatedAt = DateTime.UtcNow;
 
-        // 3. Seed Student
-        var student = await context.Users.FirstOrDefaultAsync(u => u.Email == "ahmad.student@studentcenter.id" || u.Username == "student.ahmad" || u.NIS == "54321");
+        // 3. Seed Student (Regular)
+        var student = await context.Users.FirstOrDefaultAsync(u => u.NIS == "24.012472" || u.Email == "siswa_26014072@student.smkn2surakarta.sch.id" || u.Email == "siswa.pplg@pplgcenter.id" || u.NIS == "54321");
         if (student is null)
         {
             student = new User
             {
                 Id = Guid.NewGuid(),
-                FullName = "Ahmad Rizky Pratama",
-                Email = "ahmad.student@studentcenter.id",
-                Username = "student.ahmad",
-                NIS = "54321",
-                NISN = "0051234567",
+                FullName = "Ahmad Syahputra",
+                Email = "siswa_26014072@student.smkn2surakarta.sch.id",
+                Username = "siswa_26014072",
+                NIS = "24.012472",
+                NISN = "0071234567",
+                ClassId = classXPplgA?.Id,
                 PhoneNumber = "+6285678901234",
                 Role = UserRole.Student,
                 IsActive = true,
@@ -101,17 +99,16 @@ public static class SeedAdminData
             };
             context.Users.Add(student);
         }
-        student.FullName = "Ahmad Rizky Pratama";
-        student.Email = "ahmad.student@studentcenter.id";
-        student.Username = "student.ahmad";
-        student.NIS = "54321";
-        student.NISN = "0051234567";
         student.Role = UserRole.Student;
         student.IsActive = true;
-        student.PasswordHash = passwordHasher.HashPassword(student, "Student123!");
+        student.PasswordHash = passwordHasher.HashPassword(student, "SiswaPPLG2026!");
         student.UpdatedAt = DateTime.UtcNow;
 
-        // 4. Seed GradeScales
+
+
+        await context.SaveChangesAsync();
+
+        // 5. Seed GradeScales
         if (!await context.GradeScales.AnyAsync())
         {
             var defaultScales = new[]
@@ -125,7 +122,7 @@ public static class SeedAdminData
             context.GradeScales.AddRange(defaultScales);
         }
 
-        // 5. Seed Default GradeCategories
+        // 6. Seed Default GradeCategories
         if (!await context.GradeCategories.AnyAsync())
         {
             var defaultCategories = new[]

@@ -119,7 +119,7 @@ export const Input = React.forwardRef(
             <MotionDiv
               animate={{
                 scale: isFocused || hasValue ? 1.15 : 1,
-                rotate: isFocused ? [0, -6, 0] : 0,
+                rotate: isFocused ? -6 : 0,
               }}
               transition={{ type: "spring", stiffness: 350, damping: 20 }}
               className="absolute left-3.5 z-20 flex items-center justify-center text-slate-400 pointer-events-none"

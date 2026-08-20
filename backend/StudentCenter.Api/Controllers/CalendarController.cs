@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using StudentCenter.Api.Models.Responses;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
-using StudentCenter.Api.Models.Responses;
 
 namespace StudentCenter.Api.Controllers;
 
@@ -26,7 +28,8 @@ public class CalendarController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] string? category = null)
     {
-        var result = await _calendarService.GetEventsAsync(page, pageSize, category);
+        var userRole = _currentUserService.Role;
+        var result = await _calendarService.GetEventsAsync(page, pageSize, category, userRole);
         return Ok(ApiResponse<PagedResult<CalendarEventResponse>>.Ok("Calendar events retrieved successfully", result));
     }
 
@@ -56,7 +59,8 @@ public class CalendarController : ControllerBase
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcomingEvents([FromQuery] int count = 5)
     {
-        var result = await _calendarService.GetUpcomingEventsAsync(count);
+        var userRole = _currentUserService.Role;
+        var result = await _calendarService.GetUpcomingEventsAsync(count, userRole);
         return Ok(ApiResponse<List<CalendarEventResponse>>.Ok("Upcoming events retrieved successfully", result));
     }
 
@@ -64,12 +68,20 @@ public class CalendarController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetEvent(Guid id)
     {
-        var result = await _calendarService.GetEventByIdAsync(id);
+        var userRole = _currentUserService.Role;
+        try
+        {
+            var result = await _calendarService.GetEventByIdAsync(id, userRole);
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Calendar event not found"));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Calendar event not found"));
 
-        return Ok(ApiResponse<CalendarEventResponse>.Ok("Calendar event retrieved successfully", result));
+            return Ok(ApiResponse<CalendarEventResponse>.Ok("Calendar event retrieved successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
@@ -80,9 +92,22 @@ public class CalendarController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _calendarService.CreateEventAsync(request, userId.Value);
-        return CreatedAtAction(nameof(GetEvent), new { id = result.Id },
-            ApiResponse<CalendarEventResponse>.Ok("Calendar event created successfully", result));
+        var userRole = _currentUserService.Role ?? string.Empty;
+
+        try
+        {
+            var result = await _calendarService.CreateEventAsync(request, userId.Value, userRole);
+            return CreatedAtAction(nameof(GetEvent), new { id = result.Id },
+                ApiResponse<CalendarEventResponse>.Ok("Calendar event created successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
@@ -95,12 +120,23 @@ public class CalendarController : ControllerBase
 
         var userRole = _currentUserService.Role ?? string.Empty;
 
-        var result = await _calendarService.UpdateEventAsync(id, request, userId.Value, userRole);
+        try
+        {
+            var result = await _calendarService.UpdateEventAsync(id, request, userId.Value, userRole);
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Calendar event not found"));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Calendar event not found"));
 
-        return Ok(ApiResponse<CalendarEventResponse>.Ok("Calendar event updated successfully", result));
+            return Ok(ApiResponse<CalendarEventResponse>.Ok("Calendar event updated successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
@@ -113,11 +149,18 @@ public class CalendarController : ControllerBase
 
         var userRole = _currentUserService.Role ?? string.Empty;
 
-        var result = await _calendarService.DeleteEventAsync(id, userId.Value, userRole);
+        try
+        {
+            var result = await _calendarService.DeleteEventAsync(id, userId.Value, userRole);
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Calendar event not found"));
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Calendar event not found"));
 
-        return Ok(ApiResponse<object>.Ok("Calendar event deleted successfully"));
+            return Ok(ApiResponse<object>.Ok("Calendar event deleted successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }

@@ -1,0 +1,161 @@
+Kelas,Semester,Bulan,Minggu_ke,Tanggal,Kode,Keterangan
+XI PPLG A,Ganjil,Juli,1,13-17,KK,
+XI PPLG A,Ganjil,Juli,2,20-24,MPU,
+XI PPLG A,Ganjil,Juli,3,27-31,KK,
+XI PPLG A,Ganjil,Agustus,4,03-07,MPU,
+XI PPLG A,Ganjil,Agustus,5,10-14,KK,
+XI PPLG A,Ganjil,Agustus,6,17-21,MPU,
+XI PPLG A,Ganjil,Agustus,7,24-28,KK,
+XI PPLG A,Ganjil,Agustus/September,8,31-04,MPU,
+XI PPLG A,Ganjil,September,9,07-11,KK,
+XI PPLG A,Ganjil,September,10,14-18,MPU,
+XI PPLG A,Ganjil,September,11,21-25,KK,
+XI PPLG A,Ganjil,September/Oktober,12,28-02,MPU,
+XI PPLG A,Ganjil,Oktober,13,05-09,KK,
+XI PPLG A,Ganjil,Oktober,14,12-16,MPU,
+XI PPLG A,Ganjil,Oktober,15,19-23,KK,
+XI PPLG A,Ganjil,Oktober,16,26-30,MPU,
+XI PPLG A,Ganjil,Oktober/November,17,02-06,KK,
+XI PPLG A,Ganjil,November,18,09-13,MPU,
+XI PPLG A,Ganjil,November,19,16-20,KK,
+XI PPLG A,Ganjil,November/Desember,20,23-27,ASAS,Asesmen Sumatif Akhir Semester
+XI PPLG A,Ganjil,Desember,21,30-04,ASAS,Asesmen Sumatif Akhir Semester
+XI PPLG A,Ganjil,Desember,22,07-11,LIBUR,Libur akhir semester (perkiraan)
+XI PPLG A,Genap,Januari,1,04-08,MPU,
+XI PPLG A,Genap,Januari,2,11-15,KK,
+XI PPLG A,Genap,Januari,3,18-22,MPU,
+XI PPLG A,Genap,Januari,4,25-29,KK,
+XI PPLG A,Genap,Februari,5,01-05,LBID,Libur Idulfitri/Bersama
+XI PPLG A,Genap,Februari,6,08-12,LBID,Libur Idulfitri/Bersama
+XI PPLG A,Genap,Februari,7,15-19,KK,
+XI PPLG A,Genap,Februari,8,22-26,MPU,
+XI PPLG A,Genap,Maret,9,01-05,KK,
+XI PPLG A,Genap,Maret,10,08-12,MPU,
+XI PPLG A,Genap,Maret,11,15-19,KK,
+XI PPLG A,Genap,Maret,12,22-26,MPU,
+XI PPLG A,Genap,Maret/April,13,29-02,KK,
+XI PPLG A,Genap,April,14,05-09,MPU,
+XI PPLG A,Genap,April,15,12-16,KK,
+XI PPLG A,Genap,April,16,19-23,MPU,
+XI PPLG A,Genap,April/Mei,17,26-30,KK,
+XI PPLG A,Genap,Mei,18,03-07,MPU,
+XI PPLG A,Genap,Mei,19,10-14,KK,
+XI PPLG A,Genap,Mei,20,17-21,MPU,
+XI PPLG A,Genap,Mei/Juni,21,24-28,ASAT,Asesmen Sumatif Akhir Tahun
+XI PPLG A,Genap,Juni,22,31-04,ASAT,Asesmen Sumatif Akhir Tahun
+XI PPLG B,Ganjil,Juli,1,13-17,MPU,
+XI PPLG B,Ganjil,Juli,2,20-24,KK,
+XI PPLG B,Ganjil,Juli,3,27-31,MPU,
+XI PPLG B,Ganjil,Agustus,4,03-07,KK,
+XI PPLG B,Ganjil,Agustus,5,10-14,MPU,
+XI PPLG B,Ganjil,Agustus,6,17-21,KK,
+XI PPLG B,Ganjil,Agustus,7,24-28,MPU,
+XI PPLG B,Ganjil,Agustus/September,8,31-04,KK,
+XI PPLG B,Ganjil,September,9,07-11,MPU,
+XI PPLG B,Ganjil,September,10,14-18,KK,
+XI PPLG B,Ganjil,September,11,21-25,MPU,
+XI PPLG B,Ganjil,September/Oktober,12,28-02,KK,
+XI PPLG B,Ganjil,Oktober,13,05-09,MPU,
+XI PPLG B,Ganjil,Oktober,14,12-16,KK,
+XI PPLG B,Ganjil,Oktober,15,19-23,MPU,
+XI PPLG B,Ganjil,Oktober,16,26-30,KK,
+XI PPLG B,Ganjil,Oktober/November,17,02-06,MPU,
+XI PPLG B,Ganjil,November,18,09-13,KK,
+XI PPLG B,Ganjil,November,19,16-20,MPU,
+XI PPLG B,Ganjil,November/Desember,20,23-27,ASAS,Asesmen Sumatif Akhir Semester
+XI PPLG B,Ganjil,Desember,21,30-04,ASAS,Asesmen Sumatif Akhir Semester
+XI PPLG B,Ganjil,Desember,22,07-11,LIBUR,Libur akhir semester (perkiraan)
+XI PPLG B,Genap,Januari,1,04-08,KK,
+XI PPLG B,Genap,Januari,2,11-15,MPU,
+XI PPLG B,Genap,Januari,3,18-22,KK,
+XI PPLG B,Genap,Januari,4,25-29,MPU,
+XI PPLG B,Genap,Februari,5,01-05,LBID,Libur Idulfitri/Bersama
+XI PPLG B,Genap,Februari,6,08-12,LBID,Libur Idulfitri/Bersama
+XI PPLG B,Genap,Februari,7,15-19,MPU,
+XI PPLG B,Genap,Februari,8,22-26,KK,
+XI PPLG B,Genap,Maret,9,01-05,MPU,
+XI PPLG B,Genap,Maret,10,08-12,KK,
+XI PPLG B,Genap,Maret,11,15-19,MPU,
+XI PPLG B,Genap,Maret,12,22-26,KK,
+XI PPLG B,Genap,Maret/April,13,29-02,MPU,
+XI PPLG B,Genap,April,14,05-09,KK,
+XI PPLG B,Genap,April,15,12-16,MPU,
+XI PPLG B,Genap,April,16,19-23,KK,
+XI PPLG B,Genap,April/Mei,17,26-30,MPU,
+XI PPLG B,Genap,Mei,18,03-07,KK,
+XI PPLG B,Genap,Mei,19,10-14,MPU,
+XI PPLG B,Genap,Mei,20,17-21,KK,
+XI PPLG B,Genap,Mei/Juni,21,24-28,ASAT,Asesmen Sumatif Akhir Tahun
+XI PPLG B,Genap,Juni,22,31-04,ASAT,Asesmen Sumatif Akhir Tahun
+XII PPLG A,Ganjil,Juli,1,13-17,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Juli,2,20-24,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Juli,3,27-31,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Agustus,4,03-07,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Agustus,5,10-14,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Agustus,6,17-21,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Agustus,7,24-28,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Agustus/September,8,31-04,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,September,9,07-11,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,September,10,14-18,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,September,11,21-25,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,September/Oktober,12,28-02,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Oktober,13,05-09,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Oktober,14,12-16,BIMBEL TKA,Bimbingan Belajar TKA
+XII PPLG A,Ganjil,Oktober,15,19-23,TKA,Tes Kemampuan Akademik
+XII PPLG A,Ganjil,Oktober,16,26-30,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,Oktober/November,17,02-06,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,November,18,09-13,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,November,19,16-20,PKL,Praktik Kerja Lapangan
+XII PPLG A,Ganjil,November/Desember,20,23-27,PSAS,Penilaian Susulan Akhir Semester
+XII PPLG A,Ganjil,Desember,21,30-04,PSAS,Penilaian Susulan Akhir Semester
+XII PPLG A,Ganjil,Desember,22,07-11,LIBUR,Libur akhir semester (perkiraan)
+XII PPLG A,Genap,Januari,1,04-08,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Januari,2,11-15,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Januari,3,18-22,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Januari,4,25-29,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Februari,5,01-05,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Februari,6,08-12,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Februari,7,15-19,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Februari,8,22-26,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Maret,9,01-05,PKL,Praktik Kerja Lapangan
+XII PPLG A,Genap,Maret,10,08-12,LBID,Libur Idulfitri/Bersama
+XII PPLG A,Genap,Maret,11,15-19,LBID,Libur Idulfitri/Bersama
+XII PPLG A,Genap,Maret,12,22-26,ASAJ,Asesmen Sumatif Akhir Jenjang
+XII PPLG A,Genap,Maret/April,13,29-02,ASAJ,Asesmen Sumatif Akhir Jenjang
+XII PPLG A,Genap,April,14,05-09,SELESAI,Setelah ASAJ (jadwal kelas XII berakhir di sini per dokumen)
+XII PPLG B,Ganjil,Juli,1,13-17,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Juli,2,20-24,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Juli,3,27-31,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Agustus,4,03-07,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Agustus,5,10-14,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Agustus,6,17-21,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Agustus,7,24-28,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Agustus/September,8,31-04,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,September,9,07-11,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,September,10,14-18,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,September,11,21-25,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,September/Oktober,12,28-02,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Oktober,13,05-09,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Oktober,14,12-16,BIMBEL TKA,Bimbingan Belajar TKA
+XII PPLG B,Ganjil,Oktober,15,19-23,TKA,Tes Kemampuan Akademik
+XII PPLG B,Ganjil,Oktober,16,26-30,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,Oktober/November,17,02-06,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,November,18,09-13,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,November,19,16-20,PKL,Praktik Kerja Lapangan
+XII PPLG B,Ganjil,November/Desember,20,23-27,PSAS,Penilaian Susulan Akhir Semester
+XII PPLG B,Ganjil,Desember,21,30-04,PSAS,Penilaian Susulan Akhir Semester
+XII PPLG B,Ganjil,Desember,22,07-11,LIBUR,Libur akhir semester (perkiraan)
+XII PPLG B,Genap,Januari,1,04-08,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Januari,2,11-15,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Januari,3,18-22,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Januari,4,25-29,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Februari,5,01-05,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Februari,6,08-12,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Februari,7,15-19,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Februari,8,22-26,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Maret,9,01-05,PKL,Praktik Kerja Lapangan
+XII PPLG B,Genap,Maret,10,08-12,LBID,Libur Idulfitri/Bersama
+XII PPLG B,Genap,Maret,11,15-19,LBID,Libur Idulfitri/Bersama
+XII PPLG B,Genap,Maret,12,22-26,ASAJ,Asesmen Sumatif Akhir Jenjang
+XII PPLG B,Genap,Maret/April,13,29-02,ASAJ,Asesmen Sumatif Akhir Jenjang
+XII PPLG B,Genap,April,14,05-09,SELESAI,Setelah ASAJ (jadwal kelas XII berakhir di sini per dokumen)

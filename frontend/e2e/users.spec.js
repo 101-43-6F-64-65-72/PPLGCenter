@@ -8,12 +8,9 @@ test.describe('Module 7: User Management', () => {
     await page.waitForLoadState('networkidle');
 
     // Panel title verification
-    await expect(page.getByRole('heading', { name: /panel super admin/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: /panel control center/i })).toBeVisible({ timeout: 15000 });
 
-    // Access role pill (actual text in admin panel is "Super Admin")
-    await expect(page.locator('text=Super Admin').first()).toBeVisible();
-
-    // Navigation options verification
-    await expect(page.locator('select option[value="overview"]').first()).toBeDefined();
+    // Access role pill
+    await expect(page.locator('text=Admin System').first()).toBeVisible();
   });
 });

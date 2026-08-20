@@ -5,6 +5,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Infrastructure.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -19,7 +20,12 @@ public class AssignmentService : IAssignmentService
         _notificationService = notificationService ?? new NotificationService(context);
     }
 
-    public async Task<List<AssignmentResponse>> GetAllAsync(Guid? classSubjectId = null, Guid? teacherId = null, bool includeDeleted = false)
+    public async Task<List<AssignmentResponse>> GetAllAsync(
+        Guid? classSubjectId = null,
+        Guid? teacherId = null,
+        bool includeDeleted = false,
+        Guid? requestingUserId = null,
+        string? userRole = null)
     {
         var query = BuildAssignmentQuery();
 
@@ -32,14 +38,65 @@ public class AssignmentService : IAssignmentService
         if (teacherId.HasValue)
             query = query.Where(a => a.TeacherId == teacherId.Value);
 
+        if (requestingUserId.HasValue)
+        {
+            if (userRole == "Student")
+            {
+                var now = DateTime.UtcNow;
+                var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+                if (student?.ClassId != null)
+                {
+                    query = query.Where(a => a.PublishAt <= now && a.ClassSubject.ClassId == student.ClassId);
+                }
+                else
+                {
+                    return new List<AssignmentResponse>();
+                }
+            }
+            else if (userRole == "Teacher")
+            {
+                query = query.Where(a => a.TeacherId == requestingUserId.Value || a.ClassSubject.TeacherSubject.TeacherId == requestingUserId.Value);
+            }
+        }
+
         var list = await query.OrderByDescending(a => a.DueDate).ToListAsync();
         return list.Select(MapToResponse).ToList();
     }
 
-    public async Task<AssignmentResponse?> GetByIdAsync(Guid id)
+    public async Task<AssignmentResponse?> GetByIdAsync(
+        Guid id,
+        Guid? requestingUserId = null,
+        string? userRole = null)
     {
         var assignment = await BuildAssignmentQuery().FirstOrDefaultAsync(a => a.Id == id && !a.IsDeleted);
         if (assignment == null) return null;
+
+        if (userRole == "Student")
+        {
+            var now = DateTime.UtcNow;
+            if (assignment.PublishAt > now)
+            {
+                throw new UnauthorizedAccessException("Student cannot access draft or unpublished assignments.");
+            }
+
+            if (requestingUserId.HasValue)
+            {
+                var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+                if (student?.ClassId != assignment.ClassSubject.ClassId)
+                {
+                    throw new UnauthorizedAccessException("Student is not authorized to access assignments from another class.");
+                }
+            }
+        }
+        else if (userRole == "Teacher" && requestingUserId.HasValue)
+        {
+            var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+            if (user?.Role != UserRole.Admin && assignment.TeacherId != requestingUserId.Value && assignment.ClassSubject.TeacherSubject.TeacherId != requestingUserId.Value)
+            {
+                throw new UnauthorizedAccessException("Teacher is not authorized to view assignments outside their assigned scope.");
+            }
+        }
+
         return MapToResponse(assignment);
     }
 
@@ -62,13 +119,9 @@ public class AssignmentService : IAssignmentService
 
         if (cs == null) throw new ValidationException("ClassSubject not found.");
 
-        if (cs.TeacherSubject.TeacherId != teacherId)
+        if (!await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, cs.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized for this ClassSubject.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized for this ClassSubject.");
         }
 
         var assignment = new Assignment
@@ -131,13 +184,9 @@ public class AssignmentService : IAssignmentService
 
         if (assignment == null) return null;
 
-        if (assignment.TeacherId != teacherId && assignment.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        if (assignment.TeacherId != teacherId && !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, assignment.ClassSubject.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized to edit this assignment.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized to edit this assignment.");
         }
 
         if (request.MaxScore <= 0)
@@ -175,13 +224,9 @@ public class AssignmentService : IAssignmentService
 
         if (assignment == null) return false;
 
-        if (assignment.TeacherId != teacherId && assignment.ClassSubject.TeacherSubject.TeacherId != teacherId)
+        if (assignment.TeacherId != teacherId && !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, assignment.ClassSubject.TeacherSubject.TeacherId))
         {
-            var user = await _context.Users.FindAsync(teacherId);
-            if (user?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Teacher is not authorized to delete this assignment.");
-            }
+            throw new UnauthorizedAccessException("Teacher is not authorized to delete this assignment.");
         }
 
         assignment.IsDeleted = true;

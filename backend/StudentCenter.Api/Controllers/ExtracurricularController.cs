@@ -81,9 +81,28 @@ public class ExtracurricularController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _extracurricularService.CreateExtracurricularAsync(request, userId.Value);
-        return CreatedAtAction(nameof(GetExtracurricular), new { id = result.Id },
-            ApiResponse<ExtracurricularResponse>.Ok("Extracurricular created successfully", result));
+        try
+        {
+            var result = await _extracurricularService.CreateExtracurricularAsync(request, userId.Value);
+            return CreatedAtAction(nameof(GetExtracurricular), new { id = result.Id },
+                ApiResponse<ExtracurricularResponse>.Ok("Extracurricular created successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
@@ -94,12 +113,31 @@ public class ExtracurricularController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _extracurricularService.UpdateExtracurricularAsync(id, request, userId.Value);
+        try
+        {
+            var result = await _extracurricularService.UpdateExtracurricularAsync(id, request, userId.Value);
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Extracurricular not found."));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Extracurricular not found."));
 
-        return Ok(ApiResponse<ExtracurricularResponse>.Ok("Extracurricular updated successfully", result));
+            return Ok(ApiResponse<ExtracurricularResponse>.Ok("Extracurricular updated successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
@@ -110,12 +148,31 @@ public class ExtracurricularController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _extracurricularService.DeleteExtracurricularAsync(id, userId.Value);
+        try
+        {
+            var result = await _extracurricularService.DeleteExtracurricularAsync(id, userId.Value);
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Extracurricular not found."));
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Extracurricular not found."));
 
-        return Ok(ApiResponse<object>.Ok("Extracurricular deleted successfully"));
+            return Ok(ApiResponse<object>.Ok("Extracurricular deleted successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Student")]
@@ -126,8 +183,27 @@ public class ExtracurricularController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _extracurricularService.JoinExtracurricularAsync(id, userId.Value);
-        return Ok(ApiResponse<ExtracurricularMemberResponse>.Ok("Successfully joined extracurricular", result));
+        try
+        {
+            var result = await _extracurricularService.JoinExtracurricularAsync(id, userId.Value);
+            return Ok(ApiResponse<ExtracurricularMemberResponse>.Ok("Successfully joined extracurricular", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Student")]
@@ -138,12 +214,31 @@ public class ExtracurricularController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _extracurricularService.LeaveExtracurricularAsync(id, userId.Value);
+        try
+        {
+            var result = await _extracurricularService.LeaveExtracurricularAsync(id, userId.Value);
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Membership not found."));
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Membership not found."));
 
-        return Ok(ApiResponse<object>.Ok("Successfully left extracurricular"));
+            return Ok(ApiResponse<object>.Ok("Successfully left extracurricular"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize]
@@ -153,7 +248,14 @@ public class ExtracurricularController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var result = await _extracurricularService.GetExtracurricularMembersAsync(id, page, pageSize);
-        return Ok(ApiResponse<PagedResult<ExtracurricularMemberResponse>>.Ok("Members retrieved successfully", result));
+        try
+        {
+            var result = await _extracurricularService.GetExtracurricularMembersAsync(id, page, pageSize);
+            return Ok(ApiResponse<PagedResult<ExtracurricularMemberResponse>>.Ok("Members retrieved successfully", result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }

@@ -6,7 +6,7 @@ using StudentCenter.Application.Services;
 
 namespace StudentCenter.Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 [ApiController]
 [Route("api/academic-years")]
 public class AcademicYearsController : ControllerBase
@@ -35,6 +35,7 @@ public class AcademicYearsController : ControllerBase
         return Ok(ApiResponse<AcademicYearResponse>.Ok("Academic year retrieved successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateAcademicYearRequest request)
     {
@@ -43,6 +44,7 @@ public class AcademicYearsController : ControllerBase
             ApiResponse<AcademicYearResponse>.Ok("Academic year created successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateAcademicYearRequest request)
     {
@@ -53,6 +55,7 @@ public class AcademicYearsController : ControllerBase
         return Ok(ApiResponse<AcademicYearResponse>.Ok("Academic year updated successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -63,6 +66,7 @@ public class AcademicYearsController : ControllerBase
         return Ok(ApiResponse<object>.Ok("Academic year deleted successfully"));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPatch("{id:guid}/set-active")]
     public async Task<IActionResult> SetActive(Guid id)
     {

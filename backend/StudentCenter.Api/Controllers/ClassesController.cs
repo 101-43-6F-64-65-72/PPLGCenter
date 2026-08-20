@@ -6,7 +6,7 @@ using StudentCenter.Application.Services;
 
 namespace StudentCenter.Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize]
 [ApiController]
 [Route("api/classes")]
 public class ClassesController : ControllerBase
@@ -35,6 +35,7 @@ public class ClassesController : ControllerBase
         return Ok(ApiResponse<SchoolClassResponse>.Ok("Class retrieved successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateSchoolClassRequest request)
     {
@@ -43,6 +44,7 @@ public class ClassesController : ControllerBase
             ApiResponse<SchoolClassResponse>.Ok("Class created successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSchoolClassRequest request)
     {
@@ -53,6 +55,7 @@ public class ClassesController : ControllerBase
         return Ok(ApiResponse<SchoolClassResponse>.Ok("Class updated successfully", result));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

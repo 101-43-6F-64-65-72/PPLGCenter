@@ -28,11 +28,11 @@ test('auth flow capture', async ({ page }) => {
   });
 
   await page.goto('/login');
-  await page.locator('select').selectOption('Admin');
-  await page.locator('input[name="identifier"]').fill('admin@studentcenter.id');
+  await page.getByRole('button', { name: 'Admin', exact: true }).click();
+  await page.locator('input[name="identifier"]').fill('admin@pplgcenter.id');
   await page.locator('input[name="password"]').fill('Admin123!');
   await page.locator('button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/profile/);
+  await expect(page).toHaveURL(/\/(profile|admin)/);
 
   const storage = await page.evaluate(() => ({
     url: location.href,

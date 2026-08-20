@@ -202,7 +202,7 @@ public class FacilityService : IFacilityService
         var facilities = await _context.Facilities
             .Include(f => f.ManagerTeacher)
             .AsNoTracking()
-            .Where(f => (managerFacilityIds.Contains(f.Id) || f.ManagerTeacherId == teacherId) && !f.IsDeleted)
+            .Where(f => managerFacilityIds.Contains(f.Id) || f.ManagerTeacherId == teacherId)
             .OrderBy(f => f.Name)
             .ToListAsync();
 
@@ -225,7 +225,7 @@ public class FacilityService : IFacilityService
 
         var legacyFacilityIds = await _context.Facilities
             .AsNoTracking()
-            .Where(f => f.ManagerTeacherId == teacherId && !f.IsDeleted)
+            .Where(f => f.ManagerTeacherId == teacherId)
             .Select(f => f.Id)
             .ToListAsync();
 
@@ -248,9 +248,9 @@ public class FacilityService : IFacilityService
             {
                 Id = b.Id,
                 FacilityId = b.FacilityId,
-                FacilityName = b.Facility.Name,
+                FacilityName = b.Facility != null ? b.Facility.Name : string.Empty,
                 BookedByUserId = b.BookedByUserId,
-                BookedByUserName = b.BookedByUser.FullName ?? b.BookedByUser.Username,
+                BookedByUserName = b.BookedByUser != null ? (b.BookedByUser.FullName ?? b.BookedByUser.Username) : string.Empty,
                 Purpose = b.Purpose,
                 StartTime = b.StartTime,
                 EndTime = b.EndTime,
@@ -345,8 +345,8 @@ public class FacilityService : IFacilityService
                 Id = fm.Id,
                 FacilityId = fm.FacilityId,
                 ManagerUserId = fm.ManagerUserId,
-                ManagerName = fm.ManagerUser.FullName ?? fm.ManagerUser.Username,
-                ManagerEmail = fm.ManagerUser.Email,
+                ManagerName = fm.ManagerUser != null ? (fm.ManagerUser.FullName ?? fm.ManagerUser.Username) : string.Empty,
+                ManagerEmail = fm.ManagerUser != null ? fm.ManagerUser.Email : string.Empty,
                 AssignedAt = fm.AssignedAt
             })
             .ToListAsync();

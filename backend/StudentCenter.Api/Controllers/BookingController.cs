@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Api.Models.Responses;
@@ -34,12 +35,8 @@ public class BookingController : ControllerBase
     {
         var currentUserId = _currentUserService.UserId;
         var userRole = _currentUserService.Role;
-        if (userRole == "Student" && !userId.HasValue && currentUserId.HasValue && !isPublic)
-        {
-            userId = currentUserId.Value;
-        }
 
-        var result = await _bookingService.GetBookingsAsync(page, pageSize, facilityId, userId, status);
+        var result = await _bookingService.GetBookingsAsync(page, pageSize, facilityId, userId, status, currentUserId, userRole);
         return Ok(ApiResponse<PagedResult<BookingResponse>>.Ok("Bookings retrieved successfully", result));
     }
 
@@ -47,12 +44,22 @@ public class BookingController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetBooking(Guid id)
     {
-        var result = await _bookingService.GetBookingByIdAsync(id);
+        var currentUserId = _currentUserService.UserId;
+        var userRole = _currentUserService.Role;
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Booking not found."));
+        try
+        {
+            var result = await _bookingService.GetBookingByIdAsync(id, currentUserId, userRole);
 
-        return Ok(ApiResponse<BookingResponse>.Ok("Booking retrieved successfully", result));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Booking not found."));
+
+            return Ok(ApiResponse<BookingResponse>.Ok("Booking retrieved successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Student,Teacher,Admin")]
@@ -63,9 +70,32 @@ public class BookingController : ControllerBase
         if (userId is null)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _bookingService.CreateBookingAsync(request, userId.Value);
-        return CreatedAtAction(nameof(GetBooking), new { id = result.Id },
-            ApiResponse<BookingResponse>.Ok("Booking created successfully", result));
+        try
+        {
+            var result = await _bookingService.CreateBookingAsync(request, userId.Value);
+            return CreatedAtAction(nameof(GetBooking), new { id = result.Id },
+                ApiResponse<BookingResponse>.Ok("Booking created successfully", result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(409, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (DbUpdateException)
+        {
+            return StatusCode(409, ApiResponse<object>.Fail("A concurrency conflict occurred while processing your booking. Please try again."));
+        }
     }
 
     [Authorize(Roles = "Admin,Teacher")]
@@ -78,28 +108,28 @@ public class BookingController : ControllerBase
 
         var userRole = _currentUserService.Role ?? string.Empty;
 
-        // For teachers: verify they are the ManagerTeacher of the booking's facility
-        if (userRole == "Teacher")
+        try
         {
-            var booking = await _bookingService.GetBookingByIdAsync(id);
-            if (booking is null)
+            var result = await _bookingService.UpdateStatusAsync(id, request, userId.Value, userRole);
+
+            if (result is null)
                 return NotFound(ApiResponse<object>.Fail("Booking not found."));
 
-            var managedFacilities = await _facilityService.GetManagedFacilitiesAsync(userId.Value);
-            var isFacilityManager = managedFacilities.Any(f => f.Id == booking.FacilityId);
-
-            if (!isFacilityManager)
-                return Forbid();
+            return Ok(ApiResponse<BookingResponse>.Ok("Booking status updated successfully", result));
         }
-
-        var result = await _bookingService.UpdateStatusAsync(id, request, userId.Value);
-
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Booking not found."));
-
-        return Ok(ApiResponse<BookingResponse>.Ok("Booking status updated successfully", result));
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(409, ApiResponse<object>.Fail(ex.Message));
+        }
     }
-
 
     [Authorize]
     [HttpDelete("{id:guid}")]
@@ -111,11 +141,26 @@ public class BookingController : ControllerBase
 
         var userRole = _currentUserService.Role ?? string.Empty;
 
-        var result = await _bookingService.CancelBookingAsync(id, userId.Value, userRole);
+        try
+        {
+            var result = await _bookingService.CancelBookingAsync(id, userId.Value, userRole);
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Booking not found."));
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Booking not found."));
 
-        return Ok(ApiResponse<object>.Ok("Booking cancelled successfully"));
+            return Ok(ApiResponse<object>.Ok("Booking cancelled successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(409, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }

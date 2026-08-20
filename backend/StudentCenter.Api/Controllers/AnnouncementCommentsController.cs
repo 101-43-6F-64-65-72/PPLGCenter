@@ -33,8 +33,23 @@ public class AnnouncementCommentsController : ControllerBase
     public async Task<IActionResult> AddComment(Guid announcementId, [FromBody] CreateAnnouncementCommentRequest request)
     {
         var commentReq = new CommentRequest { Content = request.Content };
-        var result = await _commentService.AddCommentAsync(announcementId, commentReq, GetUserId(), request.ParentCommentId);
-        return Ok(result);
+        try
+        {
+            var result = await _commentService.AddCommentAsync(announcementId, commentReq, GetUserId(), request.ParentCommentId);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { error = ex.Message });
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     [HttpGet]
@@ -47,9 +62,16 @@ public class AnnouncementCommentsController : ControllerBase
     [HttpDelete("{commentId}")]
     public async Task<IActionResult> DeleteComment(Guid announcementId, Guid commentId)
     {
-        var success = await _commentService.DeleteCommentAsync(commentId, GetUserId(), GetUserRole());
-        if (!success) return NotFound();
-        return NoContent();
+        try
+        {
+            var success = await _commentService.DeleteCommentAsync(commentId, GetUserId(), GetUserRole());
+            if (!success) return NotFound();
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { error = ex.Message });
+        }
     }
 
     [HttpPost("toggle-lock")]

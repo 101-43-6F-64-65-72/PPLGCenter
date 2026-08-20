@@ -1,0 +1,10 @@
+-- PPLG CENTER POST-LAUNCH PRODUCTION SNAPSHOT
+-- Target Database: db.rwopazhqgvvrosdizmvt.supabase.co:5432/postgres
+-- Timestamp: 2026-08-19T23:57:00+07:00
+-- Status: VERIFIED LIVE & READ-ONLY
+-- Users: 356 (Admin=1, Teachers=139, Students=216)
+-- Classes: 6 (X PPLG A/B, XI PPLG A/B, XII PPLG A/B - 36 students/class)
+-- Schedules: 520 items
+-- Rotation Configs: 2
+-- Orphan FKs: 0
+-- Duplicate NIS / Emails: 0

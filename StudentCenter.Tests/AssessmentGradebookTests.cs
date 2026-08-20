@@ -254,4 +254,225 @@ public class AssessmentGradebookTests
         Assert.Equal(100.0, reportCard.AttendancePercentage);
         Assert.NotEmpty(reportCard.TeacherRemarks);
     }
+
+    [Fact]
+    public async Task AssessmentService_AuthorizationAndValidationBoundaries_Enforced()
+    {
+        using var context = GetInMemoryDbContext();
+        var assessmentService = new AssessmentService(context);
+
+        var dept = new Department { Id = Guid.NewGuid(), Name = "TKJ", Code = "TKJ" };
+        var cls1 = await context.SchoolClasses.FirstAsync();
+        var cls2 = new SchoolClass { Id = Guid.NewGuid(), Name = "X TKJ 1", DepartmentId = dept.Id };
+        var subject = await context.Subjects.FirstAsync();
+        var category = await context.GradeCategories.FirstAsync();
+
+        var teacher1 = await context.Users.FirstAsync(u => u.Role == UserRole.Teacher);
+        var teacher2 = new User { Id = Guid.NewGuid(), FullName = "Guru 2", Email = "g2@test.id", Role = UserRole.Teacher };
+        var student1 = await context.Users.FirstAsync(u => u.Role == UserRole.Student && u.NIS == "1001");
+        var student2 = new User { Id = Guid.NewGuid(), FullName = "Siswa Class 2", Email = "s2_cls2@test.id", Role = UserRole.Student, ClassId = cls2.Id };
+        var admin = new User { Id = Guid.NewGuid(), FullName = "Admin User", Email = "admin@test.id", Role = UserRole.Admin };
+
+        var classSubject1 = await context.ClassSubjects.FirstAsync();
+
+        context.Departments.Add(dept);
+        context.SchoolClasses.Add(cls2);
+        context.Users.AddRange(teacher2, student2, admin);
+        await context.SaveChangesAsync();
+
+        // 1. Invalid MaxScore <= 0 throws ValidationException
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            assessmentService.CreateAssessmentAsync(teacher1.Id, new CreateAssessmentRequest
+            {
+                ClassSubjectId = classSubject1.Id,
+                GradeCategoryId = category.Id,
+                Title = "MaxScore Invalid",
+                MaxScore = 0.0m
+            }));
+
+        // 2. Invalid DueDate <= PublishAt throws ValidationException
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            assessmentService.CreateAssessmentAsync(teacher1.Id, new CreateAssessmentRequest
+            {
+                ClassSubjectId = classSubject1.Id,
+                GradeCategoryId = category.Id,
+                Title = "Dates Invalid",
+                MaxScore = 100.0m,
+                PublishAt = DateTime.UtcNow.AddDays(5),
+                DueDate = DateTime.UtcNow.AddDays(2)
+            }));
+
+        // 3. Authorized Teacher 1 creates published assessment for classSubject1
+        var ass1 = await assessmentService.CreateAssessmentAsync(teacher1.Id, new CreateAssessmentRequest
+        {
+            ClassSubjectId = classSubject1.Id,
+            GradeCategoryId = category.Id,
+            Title = "Kuis 1",
+            MaxScore = 100.0m,
+            PublishAt = DateTime.UtcNow.AddHours(-1),
+            DueDate = DateTime.UtcNow.AddDays(3),
+            IsPublished = true
+        });
+        Assert.NotNull(ass1);
+
+        // 4. Authorized Teacher 1 creates draft (unpublished) assessment
+        var draftAss = await assessmentService.CreateAssessmentAsync(teacher1.Id, new CreateAssessmentRequest
+        {
+            ClassSubjectId = classSubject1.Id,
+            GradeCategoryId = category.Id,
+            Title = "Draft Exam",
+            MaxScore = 100.0m,
+            PublishAt = DateTime.UtcNow,
+            DueDate = DateTime.UtcNow.AddDays(5),
+            IsPublished = false
+        });
+
+        // 5. Unauthorized Teacher 2 cannot create assessment for ClassSubject 1
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            assessmentService.CreateAssessmentAsync(teacher2.Id, new CreateAssessmentRequest
+            {
+                ClassSubjectId = classSubject1.Id,
+                GradeCategoryId = category.Id,
+                Title = "Hacked Assessment",
+                MaxScore = 100.0m
+            }));
+
+        // 6. Unauthorized Teacher 2 cannot update Teacher 1's assessment
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            assessmentService.UpdateAssessmentAsync(ass1.Id, teacher2.Id, new UpdateAssessmentRequest
+            {
+                GradeCategoryId = category.Id,
+                Title = "Hacked Update",
+                MaxScore = 100.0m
+            }));
+
+        // 7. Unauthorized Teacher 2 cannot delete Teacher 1's assessment
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            assessmentService.DeleteAssessmentAsync(ass1.Id, teacher2.Id));
+
+        // 8. Student 1 (Class 1) can read published ass1
+        var studentView = await assessmentService.GetAssessmentByIdAsync(ass1.Id, student1.Id, "Student");
+        Assert.NotNull(studentView);
+
+        // 9. Student 1 cannot read draftAss (unpublished)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            assessmentService.GetAssessmentByIdAsync(draftAss.Id, student1.Id, "Student"));
+
+        // 10. Student 2 (Class 2) cannot read ass1 (belongs to Class 1)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            assessmentService.GetAssessmentByIdAsync(ass1.Id, student2.Id, "Student"));
+
+        // 11. Admin can update ass1
+        var adminUpdated = await assessmentService.UpdateAssessmentAsync(ass1.Id, admin.Id, new UpdateAssessmentRequest
+        {
+            GradeCategoryId = category.Id,
+            Title = "Admin Updated Title",
+            MaxScore = 100.0m
+        });
+        Assert.NotNull(adminUpdated);
+        Assert.Equal("Admin Updated Title", adminUpdated!.Title);
+    }
+
+    [Fact]
+    public async Task StudentGradeService_SecurityAndBoundaryRules_Enforced()
+    {
+        using var context = GetInMemoryDbContext();
+        var engine = new GradeCalculationService(context);
+        var gradeService = new StudentGradeService(context, engine);
+        var assessmentService = new AssessmentService(context);
+
+        var teacher1 = await context.Users.FirstAsync(u => u.Role == UserRole.Teacher);
+        var teacher2 = new User { Id = Guid.NewGuid(), FullName = "Guru 2", Email = "g2_grade@test.id", Role = UserRole.Teacher };
+        var student1 = await context.Users.FirstAsync(u => u.Role == UserRole.Student && u.NIS == "1001");
+        var student2 = await context.Users.FirstAsync(u => u.Role == UserRole.Student && u.NIS == "1002");
+        var admin = new User { Id = Guid.NewGuid(), FullName = "Admin Grade", Email = "admin_grade@test.id", Role = UserRole.Admin };
+
+        var classSubject1 = await context.ClassSubjects.FirstAsync();
+        var category = await context.GradeCategories.FirstAsync();
+
+        context.Users.AddRange(teacher2, admin);
+        await context.SaveChangesAsync();
+
+        var ass = await assessmentService.CreateAssessmentAsync(teacher1.Id, new CreateAssessmentRequest
+        {
+            ClassSubjectId = classSubject1.Id,
+            GradeCategoryId = category.Id,
+            Title = "Kuis Matematika",
+            MaxScore = 100.0m,
+            IsPublished = true
+        });
+
+        // 1. Assigned Teacher 1 can read gradebook
+        var gb1 = await gradeService.GetTeacherGradebookAsync(teacher1.Id, classSubject1.Id);
+        Assert.NotNull(gb1);
+
+        // 2. Unassigned Teacher 2 cannot read Class 1 gradebook (throws UnauthorizedAccessException)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            gradeService.GetTeacherGradebookAsync(teacher2.Id, classSubject1.Id));
+
+        // 3. Assigned Teacher 1 upserts grade for Student 1
+        var g1 = await gradeService.UpsertGradeAsync(teacher1.Id, ass.Id, new GradeItemRequest
+        {
+            StudentId = student1.Id,
+            RawScore = 85.0m,
+            Remarks = "Bagus"
+        }, publish: true);
+        Assert.NotNull(g1);
+        Assert.Equal(85.0m, g1.RawScore);
+
+        // 4. Repeated upsert updates existing record without creating duplicates
+        var g1Updated = await gradeService.UpsertGradeAsync(teacher1.Id, ass.Id, new GradeItemRequest
+        {
+            StudentId = student1.Id,
+            RawScore = 90.0m,
+            Remarks = "Sangat Bagus"
+        }, publish: true);
+        Assert.Equal(g1.Id, g1Updated.Id);
+        Assert.Equal(90.0m, g1Updated.RawScore);
+        var totalGradesForStudent1 = await context.StudentGrades.CountAsync(g => g.AssessmentId == ass.Id && g.StudentId == student1.Id);
+        Assert.Equal(1, totalGradesForStudent1);
+
+        // 5. Unassigned Teacher 2 cannot modify Student 1's grade (throws UnauthorizedAccessException)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            gradeService.UpsertGradeAsync(teacher2.Id, ass.Id, new GradeItemRequest
+            {
+                StudentId = student1.Id,
+                RawScore = 50.0m
+            }));
+
+        // 6. Negative score < 0 rejected (ValidationException)
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            gradeService.UpsertGradeAsync(teacher1.Id, ass.Id, new GradeItemRequest
+            {
+                StudentId = student1.Id,
+                RawScore = -10.0m
+            }));
+
+        // 7. Score > MaxScore (100) rejected (ValidationException)
+        await Assert.ThrowsAsync<System.ComponentModel.DataAnnotations.ValidationException>(() =>
+            gradeService.UpsertGradeAsync(teacher1.Id, ass.Id, new GradeItemRequest
+            {
+                StudentId = student1.Id,
+                RawScore = 105.0m
+            }));
+
+        // 8. Student 1 can read own published grade record
+        var student1GradeView = await gradeService.GetGradeByIdAsync(g1.Id, student1.Id, "Student");
+        Assert.NotNull(student1GradeView);
+        Assert.Equal(90.0m, student1GradeView!.RawScore);
+
+        // 9. Student 2 cannot read Student 1's grade record (throws UnauthorizedAccessException)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            gradeService.GetGradeByIdAsync(g1.Id, student2.Id, "Student"));
+
+        // 10. Admin can read gradebook and upsert grade
+        var adminGb = await gradeService.GetTeacherGradebookAsync(admin.Id, classSubject1.Id);
+        Assert.NotNull(adminGb);
+        var adminGrade = await gradeService.UpsertGradeAsync(admin.Id, ass.Id, new GradeItemRequest
+        {
+            StudentId = student2.Id,
+            RawScore = 75.0m
+        }, publish: true);
+        Assert.NotNull(adminGrade);
+    }
 }

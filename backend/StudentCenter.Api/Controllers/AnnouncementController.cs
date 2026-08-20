@@ -27,6 +27,13 @@ public class AnnouncementController : ControllerBase
         _currentUserService = currentUserService;
     }
 
+    private (Guid UserId, string Role) GetCurrentIdentity()
+    {
+        var userId = _currentUserService.UserId ?? Guid.Empty;
+        var role = _currentUserService.Role ?? string.Empty;
+        return (userId, role);
+    }
+
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAnnouncements(
@@ -34,7 +41,8 @@ public class AnnouncementController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] string? category = null)
     {
-        var result = await _announcementService.GetAnnouncementsAsync(page, pageSize, category);
+        var (userId, userRole) = GetCurrentIdentity();
+        var result = await _announcementService.GetAnnouncementsAsync(page, pageSize, category, userId, userRole);
         return Ok(ApiResponse<PagedResult<AnnouncementResponse>>.Ok("Announcements retrieved successfully", result));
     }
 
@@ -42,51 +50,104 @@ public class AnnouncementController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetAnnouncement(Guid id)
     {
-        var result = await _announcementService.GetAnnouncementByIdAsync(id);
+        var (userId, userRole) = GetCurrentIdentity();
+        try
+        {
+            var result = await _announcementService.GetAnnouncementByIdAsync(id, userId, userRole);
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Announcement not found"));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Announcement not found"));
 
-        return Ok(ApiResponse<AnnouncementResponse>.Ok("Announcement retrieved successfully", result));
+            return Ok(ApiResponse<AnnouncementResponse>.Ok("Announcement retrieved successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
-    [Authorize(Roles = "Admin,Teacher,Student")]
+    [Authorize(Roles = "Admin,Teacher")]
     [HttpPost]
     public async Task<IActionResult> CreateAnnouncement([FromBody] CreateAnnouncementRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
+        var (userId, userRole) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
         {
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
         }
 
-        var result = await _announcementService.CreateAnnouncementAsync(request, userId.Value);
-        return CreatedAtAction(nameof(GetAnnouncement), new { id = result.Id },
-            ApiResponse<AnnouncementResponse>.Ok("Announcement created successfully", result));
+        try
+        {
+            var result = await _announcementService.CreateAnnouncementAsync(request, userId, userRole);
+            return CreatedAtAction(nameof(GetAnnouncement), new { id = result.Id },
+                ApiResponse<AnnouncementResponse>.Ok("Announcement created successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
-    [Authorize(Roles = "Admin,Teacher,Student")]
+    [Authorize(Roles = "Admin,Teacher")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateAnnouncement(Guid id, [FromBody] UpdateAnnouncementRequest request)
     {
-        var result = await _announcementService.UpdateAnnouncementAsync(id, request);
+        var (userId, userRole) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+        }
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Announcement not found"));
+        try
+        {
+            var result = await _announcementService.UpdateAnnouncementAsync(id, request, userId, userRole);
 
-        return Ok(ApiResponse<AnnouncementResponse>.Ok("Announcement updated successfully", result));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Announcement not found"));
+
+            return Ok(ApiResponse<AnnouncementResponse>.Ok("Announcement updated successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
-    [Authorize(Roles = "Admin,Teacher,Student")]
+    [Authorize(Roles = "Admin,Teacher")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteAnnouncement(Guid id)
     {
-        var result = await _announcementService.DeleteAnnouncementAsync(id);
+        var (userId, userRole) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+        }
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Announcement not found"));
+        try
+        {
+            var result = await _announcementService.DeleteAnnouncementAsync(id, userId, userRole);
 
-        return Ok(ApiResponse<object>.Ok("Announcement deleted successfully"));
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Announcement not found"));
+
+            return Ok(ApiResponse<object>.Ok("Announcement deleted successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize]
@@ -96,7 +157,8 @@ public class AnnouncementController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] string? category = null)
     {
-        var result = await _announcementService.GetFeedAsync(page, pageSize, category);
+        var (userId, userRole) = GetCurrentIdentity();
+        var result = await _announcementService.GetFeedAsync(page, pageSize, category, userId, userRole);
         return Ok(ApiResponse<PagedResult<AnnouncementFeedResponse>>.Ok("Feed retrieved successfully", result));
     }
 
@@ -104,12 +166,27 @@ public class AnnouncementController : ControllerBase
     [HttpPost("{id:guid}/comments")]
     public async Task<IActionResult> AddComment(Guid id, [FromBody] CommentRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
+        var (userId, _) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _commentService.AddCommentAsync(id, request, userId.Value, request.ParentCommentId);
-        return Ok(ApiResponse<CommentResponse>.Ok("Comment added successfully", result));
+        try
+        {
+            var result = await _commentService.AddCommentAsync(id, request, userId, request.ParentCommentId);
+            return Ok(ApiResponse<CommentResponse>.Ok("Comment added successfully", result));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize]
@@ -127,29 +204,38 @@ public class AnnouncementController : ControllerBase
     [HttpDelete("~/api/comments/{id:guid}")]
     public async Task<IActionResult> DeleteComment(Guid id)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
+        var (userId, userRole) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var userRole = _currentUserService.Role ?? string.Empty;
+        try
+        {
+            var result = await _commentService.DeleteCommentAsync(id, userId, userRole);
 
-        var result = await _commentService.DeleteCommentAsync(id, userId.Value, userRole);
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Comment not found"));
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Comment not found"));
-
-        return Ok(ApiResponse<object>.Ok("Comment deleted successfully"));
+            return Ok(ApiResponse<object>.Ok("Comment deleted successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize]
     [HttpPost("{id:guid}/reactions")]
     public async Task<IActionResult> React(Guid id, [FromBody] ReactionRequest request)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
+        var (userId, _) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        await _reactionService.ToggleReactionAsync(id, request.Type, userId.Value);
+        await _reactionService.ToggleReactionAsync(id, request.Type, userId);
         return Ok(ApiResponse<object>.Ok("Reaction registered successfully"));
     }
 
@@ -157,11 +243,11 @@ public class AnnouncementController : ControllerBase
     [HttpDelete("{id:guid}/reactions")]
     public async Task<IActionResult> RemoveReaction(Guid id)
     {
-        var userId = _currentUserService.UserId;
-        if (userId is null)
+        var (userId, _) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
             return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
 
-        var result = await _reactionService.RemoveReactionAsync(id, userId.Value);
+        var result = await _reactionService.RemoveReactionAsync(id, userId);
 
         if (!result)
             return NotFound(ApiResponse<object>.Fail("Reaction not found"));

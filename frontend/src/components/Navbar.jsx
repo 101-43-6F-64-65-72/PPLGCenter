@@ -18,27 +18,25 @@ export default function Navbar() {
   const { isAuthenticated, user, role, logout } = useAuth();
 
   const userRole = (role || user?.role || "").toLowerCase();
+  const position = (user?.position || "").toLowerCase();
+  const isPplgTeacher = userRole === "teacher" && (position.includes("pengembangan perangkat lunak dan gim") || position.includes("pplg"));
+  const isAdminOrPplgTeacher = userRole === "admin" || isPplgTeacher;
 
   const baseNavItems = [
     { name: "Beranda", path: "/" },
     { name: "Kelas & Jadwal", path: "/kelas" },
+    { name: "Pengumuman", path: "/pengumuman" },
+    { name: "Mading", path: "/mading" },
     { name: "Fasilitas", path: "/fasilitas" },
     { name: "Perpustakaan", path: "/perpustakaan" },
     { name: "Komunitas PPLG", path: "/komunitas" },
-    { name: "Mading", path: "/mading" },
     { name: "Kalender", path: "/kalender" },
   ];
 
-  // Add Proposal menu only for authenticated users
   if (isAuthenticated) {
-    baseNavItems.push({ name: "Proposal", path: "/proposal" });
-  }
-
-  if (isAuthenticated) {
-    if (userRole === "admin") {
+    if (isAdminOrPplgTeacher) {
+      baseNavItems.push({ name: "CCTV", path: "/cctv" });
       baseNavItems.push({ name: "Panel Admin", path: "/admin" });
-    } else if (userRole === "teacher") {
-      baseNavItems.push({ name: "Panel Guru", path: "/guru" });
     }
   }
 

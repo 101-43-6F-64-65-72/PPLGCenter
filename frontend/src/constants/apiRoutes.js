@@ -82,17 +82,6 @@ export const API_ROUTES = {
     UPCOMING: "/api/calendar/upcoming",
     DETAIL: (id) => `/api/calendar/${id}`,
   },
-  ELECTIONS: {
-    LIST: "/api/elections",
-    DETAIL: (id) => `/api/elections/${id}`,
-    CANDIDATES: (id) => `/api/elections/${id}/candidates`,
-    OPEN: (id) => `/api/elections/${id}/open`,
-    CLOSE: (id) => `/api/elections/${id}/close`,
-    PUBLISH: (id) => `/api/elections/${id}/publish`,
-    VOTE: (id) => `/api/elections/${id}/vote`,
-    RESULT: (id) => `/api/elections/${id}/result`,
-    PARTICIPATION: (id) => `/api/elections/${id}/participation`,
-  },
   USERS: {
     LIST: "/api/users",
     DETAIL: (id) => `/api/users/${id}`,

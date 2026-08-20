@@ -80,32 +80,53 @@ public class FacilitiesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateFacility([FromBody] CreateFacilityRequest request)
     {
-        var result = await _facilityService.CreateFacilityAsync(request);
-        return CreatedAtAction(nameof(GetFacility), new { id = result.Id },
-            ApiResponse<FacilityResponse>.Ok("Facility created successfully", result));
+        try
+        {
+            var result = await _facilityService.CreateFacilityAsync(request);
+            return CreatedAtAction(nameof(GetFacility), new { id = result.Id },
+                ApiResponse<FacilityResponse>.Ok("Facility created successfully", result));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> UpdateFacility(Guid id, [FromBody] UpdateFacilityRequest request)
     {
-        var result = await _facilityService.UpdateFacilityAsync(id, request);
+        try
+        {
+            var result = await _facilityService.UpdateFacilityAsync(id, request);
 
-        if (result is null)
-            return NotFound(ApiResponse<object>.Fail("Facility not found."));
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Facility not found."));
 
-        return Ok(ApiResponse<FacilityResponse>.Ok("Facility updated successfully", result));
+            return Ok(ApiResponse<FacilityResponse>.Ok("Facility updated successfully", result));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
     }
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteFacility(Guid id)
     {
-        var result = await _facilityService.DeleteFacilityAsync(id);
+        try
+        {
+            var result = await _facilityService.DeleteFacilityAsync(id);
 
-        if (!result)
-            return NotFound(ApiResponse<object>.Fail("Facility not found."));
+            if (!result)
+                return NotFound(ApiResponse<object>.Fail("Facility not found."));
 
-        return Ok(ApiResponse<object>.Ok("Facility deleted successfully"));
+            return Ok(ApiResponse<object>.Ok("Facility deleted successfully"));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
     }
 }

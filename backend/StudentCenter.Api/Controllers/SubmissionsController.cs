@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,11 +23,21 @@ public class SubmissionsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var submission = await _submissionService.GetSubmissionByIdAsync(id);
-        if (submission == null)
-            return NotFound(ApiResponse<object>.ErrorResponse("Submission not found."));
+        var currentUserId = GetCurrentUserId();
+        var currentUserRole = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
 
-        return Ok(ApiResponse<SubmissionResponse>.SuccessResponse(submission));
+        try
+        {
+            var submission = await _submissionService.GetSubmissionByIdAsync(id, currentUserId, currentUserRole);
+            if (submission == null)
+                return NotFound(ApiResponse<object>.ErrorResponse("Submission not found."));
+
+            return Ok(ApiResponse<SubmissionResponse>.SuccessResponse(submission));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     [HttpGet("assignment/{assignmentId:guid}/my")]
@@ -46,8 +57,19 @@ public class SubmissionsController : ControllerBase
     public async Task<IActionResult> Submit([FromBody] CreateSubmissionRequest request)
     {
         var studentId = GetCurrentUserId();
-        var submission = await _submissionService.SubmitAssignmentAsync(studentId, request);
-        return CreatedAtAction(nameof(GetById), new { id = submission.Id }, ApiResponse<SubmissionResponse>.SuccessResponse(submission, "Assignment submitted successfully."));
+        try
+        {
+            var submission = await _submissionService.SubmitAssignmentAsync(studentId, request);
+            return CreatedAtAction(nameof(GetById), new { id = submission.Id }, ApiResponse<SubmissionResponse>.SuccessResponse(submission, "Assignment submitted successfully."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     [HttpPost("{id:guid}/grade")]
@@ -55,11 +77,22 @@ public class SubmissionsController : ControllerBase
     public async Task<IActionResult> Grade(Guid id, [FromBody] GradeSubmissionRequest request)
     {
         var teacherId = GetCurrentUserId();
-        var submission = await _submissionService.GradeSubmissionAsync(id, teacherId, request);
-        if (submission == null)
-            return NotFound(ApiResponse<object>.ErrorResponse("Submission not found."));
+        try
+        {
+            var submission = await _submissionService.GradeSubmissionAsync(id, teacherId, request);
+            if (submission == null)
+                return NotFound(ApiResponse<object>.ErrorResponse("Submission not found."));
 
-        return Ok(ApiResponse<SubmissionResponse>.SuccessResponse(submission, "Submission graded successfully."));
+            return Ok(ApiResponse<SubmissionResponse>.SuccessResponse(submission, "Submission graded successfully."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.ErrorResponse(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
+        }
     }
 
     private Guid GetCurrentUserId()

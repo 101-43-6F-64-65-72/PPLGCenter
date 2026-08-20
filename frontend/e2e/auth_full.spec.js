@@ -5,7 +5,8 @@ test.describe('Module 1: Authentication', () => {
   test('Login, JWT persistence, and Logout', async ({ page }) => {
     // Login
     await login(page, TEST_ADMIN);
-    await expect(page).toHaveURL(/\/profile/);
+    await expect(page).toHaveURL(/\/(profile|admin)/);
+    await page.goto('/profile');
     
     // JWT persistence
     const token = await page.evaluate(() => localStorage.getItem('token'));

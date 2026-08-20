@@ -56,18 +56,23 @@ public class BookService : IBookService
         return book is null ? null : MapBook(book);
     }
 
-    public async Task<BookResponse> CreateBookAsync(CreateBookRequest request)
+    public async Task<BookResponse> CreateBookAsync(CreateBookRequest request, Guid? requestingUserId = null, string? userRole = null)
     {
+        if (requestingUserId.HasValue && userRole != null)
+        {
+            await EnsureManagerAuthorizationAsync(requestingUserId.Value, userRole, request.Category);
+        }
+
         var book = new Book
         {
             Id = Guid.NewGuid(),
-            Title = request.Title,
-            Author = request.Author,
-            ISBN = request.ISBN,
-            Category = request.Category,
+            Title = request.Title.Trim(),
+            Author = request.Author.Trim(),
+            ISBN = request.ISBN?.Trim(),
+            Category = request.Category.Trim(),
             TotalCopies = Math.Max(1, request.TotalCopies),
             AvailableCopies = Math.Max(1, request.TotalCopies),
-            CoverImageUrl = request.CoverImageUrl,
+            CoverImageUrl = request.CoverImageUrl?.Trim(),
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -79,20 +84,25 @@ public class BookService : IBookService
         return MapBook(book);
     }
 
-    public async Task<BookResponse?> UpdateBookAsync(Guid id, UpdateBookRequest request)
+    public async Task<BookResponse?> UpdateBookAsync(Guid id, UpdateBookRequest request, Guid? requestingUserId = null, string? userRole = null)
     {
         var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == id);
         if (book is null) return null;
 
+        if (requestingUserId.HasValue && userRole != null)
+        {
+            await EnsureManagerAuthorizationAsync(requestingUserId.Value, userRole, book.Category);
+        }
+
         var copyDiff = request.TotalCopies - book.TotalCopies;
 
-        book.Title = request.Title;
-        book.Author = request.Author;
-        book.ISBN = request.ISBN;
-        book.Category = request.Category;
+        book.Title = request.Title.Trim();
+        book.Author = request.Author.Trim();
+        book.ISBN = request.ISBN?.Trim();
+        book.Category = request.Category.Trim();
         book.TotalCopies = Math.Max(0, request.TotalCopies);
         book.AvailableCopies = Math.Max(0, book.AvailableCopies + copyDiff);
-        book.CoverImageUrl = request.CoverImageUrl;
+        book.CoverImageUrl = request.CoverImageUrl?.Trim();
         book.IsActive = request.IsActive;
         book.UpdatedAt = DateTime.UtcNow;
 
@@ -100,10 +110,15 @@ public class BookService : IBookService
         return MapBook(book);
     }
 
-    public async Task<bool> DeleteBookAsync(Guid id)
+    public async Task<bool> DeleteBookAsync(Guid id, Guid? requestingUserId = null, string? userRole = null)
     {
         var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == id);
         if (book is null) return false;
+
+        if (requestingUserId.HasValue && userRole != null)
+        {
+            await EnsureManagerAuthorizationAsync(requestingUserId.Value, userRole, book.Category);
+        }
 
         book.IsActive = false;
         await _context.SaveChangesAsync();
@@ -183,10 +198,35 @@ public class BookService : IBookService
         return MapBorrowResponse(created);
     }
 
+    public async Task<BookBorrowRequestResponse?> GetBorrowRequestByIdAsync(Guid requestId, Guid requestingUserId, string userRole)
+    {
+        var request = await _context.BookBorrowRequests
+            .Include(r => r.Book)
+            .Include(r => r.BorrowerStudent)
+            .Include(r => r.ApprovedByUser)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null) return null;
+
+        if (userRole == "Student" && request.BorrowerStudentId != requestingUserId)
+        {
+            throw new UnauthorizedAccessException("Students cannot view borrowing records of other users.");
+        }
+
+        if (userRole == "Teacher")
+        {
+            await EnsureManagerAuthorizationAsync(requestingUserId, userRole, request.Book.Category);
+        }
+
+        return MapBorrowResponse(request);
+    }
+
     public async Task<PagedResult<BookBorrowRequestResponse>> GetMyBorrowRequestsAsync(Guid studentId, int page, int pageSize)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100;
 
         var query = _context.BookBorrowRequests
             .Include(r => r.Book)
@@ -212,10 +252,16 @@ public class BookService : IBookService
         };
     }
 
-    public async Task<PagedResult<BookBorrowRequestResponse>> GetPendingBorrowRequestsAsync(int page, int pageSize)
+    public async Task<PagedResult<BookBorrowRequestResponse>> GetPendingBorrowRequestsAsync(int page, int pageSize, Guid? requestingUserId = null, string? userRole = null)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
+        if (pageSize > 100) pageSize = 100;
+
+        if (requestingUserId.HasValue && userRole != null)
+        {
+            await EnsureManagerAuthorizationAsync(requestingUserId.Value, userRole);
+        }
 
         var query = _context.BookBorrowRequests
             .Include(r => r.Book)
@@ -240,16 +286,29 @@ public class BookService : IBookService
         };
     }
 
-    public async Task<BookBorrowRequestResponse?> ProcessBorrowRequestAsync(Guid requestId, ProcessBorrowRequest request, Guid approverUserId)
+    public async Task<BookBorrowRequestResponse?> ProcessBorrowRequestAsync(
+        Guid requestId,
+        ProcessBorrowRequest request,
+        Guid approverUserId,
+        string? userRole = null)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
         var borrowReq = await _context.BookBorrowRequests
             .Include(r => r.Book)
             .FirstOrDefaultAsync(r => r.Id == requestId);
 
-        if (borrowReq is null || borrowReq.Status != BookBorrowStatus.Pending)
-            return null;
+        if (borrowReq is null) return null;
+
+        if (borrowReq.Status != BookBorrowStatus.Pending)
+        {
+            throw new InvalidOperationException($"Cannot process request in status '{borrowReq.Status}'. Only Pending requests can be processed.");
+        }
+
+        if (userRole != null)
+        {
+            await EnsureManagerAuthorizationAsync(approverUserId, userRole, borrowReq.Book.Category);
+        }
+
+        using var transaction = _context.Database.IsRelational() ? await _context.Database.BeginTransactionAsync() : null;
 
         if (request.Approve)
         {
@@ -269,7 +328,9 @@ public class BookService : IBookService
 
         borrowReq.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
+
+        if (transaction != null)
+            await transaction.CommitAsync();
 
         var updated = await _context.BookBorrowRequests
             .Include(r => r.Book)
@@ -281,16 +342,29 @@ public class BookService : IBookService
         return MapBorrowResponse(updated);
     }
 
-    public async Task<BookBorrowRequestResponse?> MarkBookReturnedAsync(Guid requestId, Guid approverUserId)
+    public async Task<BookBorrowRequestResponse?> MarkBookReturnedAsync(
+        Guid requestId,
+        Guid approverUserId,
+        string? userRole = null)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
-
         var borrowReq = await _context.BookBorrowRequests
             .Include(r => r.Book)
             .FirstOrDefaultAsync(r => r.Id == requestId);
 
-        if (borrowReq is null || borrowReq.Status != BookBorrowStatus.Approved)
-            return null;
+        if (borrowReq is null) return null;
+
+        // SEC-02 Fix: Allow returning both Approved AND Overdue books!
+        if (borrowReq.Status != BookBorrowStatus.Approved && borrowReq.Status != BookBorrowStatus.Overdue)
+        {
+            throw new InvalidOperationException($"Cannot return book request in status '{borrowReq.Status}'. Only Approved or Overdue books can be returned.");
+        }
+
+        if (userRole != null)
+        {
+            await EnsureManagerAuthorizationAsync(approverUserId, userRole, borrowReq.Book.Category);
+        }
+
+        using var transaction = _context.Database.IsRelational() ? await _context.Database.BeginTransactionAsync() : null;
 
         borrowReq.Status = BookBorrowStatus.Returned;
         borrowReq.ReturnDate = DateTime.UtcNow;
@@ -298,7 +372,9 @@ public class BookService : IBookService
         borrowReq.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        await transaction.CommitAsync();
+
+        if (transaction != null)
+            await transaction.CommitAsync();
 
         var updated = await _context.BookBorrowRequests
             .Include(r => r.Book)
@@ -308,6 +384,38 @@ public class BookService : IBookService
             .FirstAsync(r => r.Id == requestId);
 
         return MapBorrowResponse(updated);
+    }
+
+    private async Task EnsureManagerAuthorizationAsync(Guid userId, string userRole, string? bookCategory = null)
+    {
+        if (userRole == "Admin") return;
+
+        if (userRole == "Teacher")
+        {
+            var isManager = await _context.BookManagers.AsNoTracking()
+                .AnyAsync(bm => bm.ManagerUserId == userId &&
+                    (bm.BookCategory == null || bookCategory == null || bm.BookCategory.ToLower() == bookCategory.ToLower()));
+
+            if (isManager) return;
+
+            var hasAnyManagers = await _context.BookManagers.AsNoTracking()
+                .AnyAsync(bm => bm.BookCategory == null || bookCategory == null || bm.BookCategory.ToLower() == bookCategory.ToLower());
+
+            if (hasAnyManagers)
+            {
+                throw new UnauthorizedAccessException("Teacher is not an assigned BookManager for this category.");
+            }
+
+            var hasSystemManagers = await _context.BookManagers.AsNoTracking().AnyAsync();
+            if (hasSystemManagers)
+            {
+                throw new UnauthorizedAccessException("Teacher is not an assigned BookManager.");
+            }
+
+            return;
+        }
+
+        throw new UnauthorizedAccessException("User is not authorized for library management.");
     }
 
     private static BookResponse MapBook(Book b) => new()

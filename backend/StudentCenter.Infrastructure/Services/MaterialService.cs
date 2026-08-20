@@ -12,96 +12,93 @@ public class MaterialService : IMaterialService
     private readonly AppDbContext _context;
     private readonly IFileStorageService _fileStorageService;
 
-    public MaterialService(AppDbContext context, IFileStorageService fileStorageService)
+    private readonly ILessonMaterialService _lessonMaterialService;
+
+    public MaterialService(AppDbContext context, IFileStorageService fileStorageService, ILessonMaterialService? lessonMaterialService = null)
     {
         _context = context;
         _fileStorageService = fileStorageService;
+        _lessonMaterialService = lessonMaterialService ?? new LessonMaterialService(context, fileStorageService: fileStorageService);
     }
 
-    public async Task<PagedResult<MaterialResponse>> GetMaterialsAsync(int page, int pageSize, string? subject, string? grade)
+    public async Task<PagedResult<MaterialResponse>> GetMaterialsAsync(
+        int page,
+        int pageSize,
+        string? subject,
+        string? grade,
+        Guid? requestingUserId = null,
+        string? userRole = null)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
         if (pageSize > 100) pageSize = 100;
 
-        var query = _context.Set<Material>()
-            .AsNoTracking()
-            .AsQueryable();
+        // Unified authoritative query through LessonMaterialService
+        var lessonMaterials = await _lessonMaterialService.GetAllAsync(null, null, false, requestingUserId, userRole);
 
         if (!string.IsNullOrWhiteSpace(subject))
         {
-            query = query.Where(m => m.Subject == subject);
+            lessonMaterials = lessonMaterials.Where(m =>
+                string.Equals(m.SubjectName, subject, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(m.SubjectCode, subject, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         if (!string.IsNullOrWhiteSpace(grade))
         {
-            query = query.Where(m => m.Grade == grade);
+            lessonMaterials = lessonMaterials.Where(m =>
+                string.Equals(m.ClassName, grade, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        var totalCount = await query.CountAsync();
-
-        var items = await query
-            .OrderByDescending(m => m.UploadedAt)
+        var totalCount = lessonMaterials.Count;
+        var pagedItems = lessonMaterials
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(m => new MaterialResponse
+            .Select(lm => new MaterialResponse
             {
-                Id = m.Id,
-                Title = m.Title,
-                Description = m.Description,
-                FileUrl = m.FileUrl,
-                Subject = m.Subject,
-                Grade = m.Grade,
-                UploadedAt = m.UploadedAt,
-                UpdatedAt = m.UpdatedAt,
-                UploadedByUserId = m.UploadedByUserId,
-                UploadedByUserName = m.UploadedByUser.FullName
+                Id = lm.Id,
+                Title = lm.Title,
+                Description = lm.Description,
+                FileUrl = lm.FileUrl ?? string.Empty,
+                Subject = lm.SubjectName,
+                Grade = lm.ClassName,
+                UploadedAt = lm.CreatedAt,
+                UpdatedAt = lm.UpdatedAt,
+                UploadedByUserId = lm.TeacherId,
+                UploadedByUserName = lm.TeacherName
             })
-            .ToListAsync();
-
-        foreach (var item in items)
-        {
-            if (!string.IsNullOrWhiteSpace(item.FileUrl))
-            {
-                item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
-            }
-        }
+            .ToList();
 
         return new PagedResult<MaterialResponse>
         {
-            Items = items,
+            Items = pagedItems,
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount
         };
     }
 
-    public async Task<MaterialResponse?> GetMaterialByIdAsync(Guid id)
+    public async Task<MaterialResponse?> GetMaterialByIdAsync(
+        Guid id,
+        Guid? requestingUserId = null,
+        string? userRole = null)
     {
-        var item = await _context.Set<Material>()
-            .AsNoTracking()
-            .Where(m => m.Id == id)
-            .Select(m => new MaterialResponse
-            {
-                Id = m.Id,
-                Title = m.Title,
-                Description = m.Description,
-                FileUrl = m.FileUrl,
-                Subject = m.Subject,
-                Grade = m.Grade,
-                UploadedAt = m.UploadedAt,
-                UpdatedAt = m.UpdatedAt,
-                UploadedByUserId = m.UploadedByUserId,
-                UploadedByUserName = m.UploadedByUser.FullName
-            })
-            .FirstOrDefaultAsync();
+        var isStudent = string.Equals(userRole, "Student", StringComparison.OrdinalIgnoreCase);
+        var lm = await _lessonMaterialService.GetByIdAsync(id, isStudent, requestingUserId, userRole);
+        if (lm == null) return null;
 
-        if (item != null && !string.IsNullOrWhiteSpace(item.FileUrl))
+        return new MaterialResponse
         {
-            item.FileUrl = await _fileStorageService.CreateSignedUrlAsync(item.FileUrl);
-        }
-
-        return item;
+            Id = lm.Id,
+            Title = lm.Title,
+            Description = lm.Description,
+            FileUrl = lm.FileUrl ?? string.Empty,
+            Subject = lm.SubjectName,
+            Grade = lm.ClassName,
+            UploadedAt = lm.CreatedAt,
+            UpdatedAt = lm.UpdatedAt,
+            UploadedByUserId = lm.TeacherId,
+            UploadedByUserName = lm.TeacherName
+        };
     }
 
     public async Task<MaterialResponse> CreateMaterialAsync(CreateMaterialRequest request, Guid userId)

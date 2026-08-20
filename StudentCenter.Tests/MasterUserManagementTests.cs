@@ -71,7 +71,7 @@ public class MasterUserManagementTests
             Role = UserRole.Student
         };
 
-        var updated = await userService.UpdateUserAsync(created.Id, updateReq);
+        var updated = await userService.UpdateUserAsync(created.Id, updateReq, created.Id, "Admin");
 
         Assert.NotNull(updated);
         Assert.Equal("Budi Updated", updated.FullName);

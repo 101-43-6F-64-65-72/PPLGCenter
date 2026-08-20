@@ -4,8 +4,8 @@ namespace StudentCenter.Application.Services;
 
 public interface IMaterialService
 {
-    Task<PagedResult<MaterialResponse>> GetMaterialsAsync(int page, int pageSize, string? subject, string? grade);
-    Task<MaterialResponse?> GetMaterialByIdAsync(Guid id);
+    Task<PagedResult<MaterialResponse>> GetMaterialsAsync(int page, int pageSize, string? subject, string? grade, Guid? requestingUserId = null, string? userRole = null);
+    Task<MaterialResponse?> GetMaterialByIdAsync(Guid id, Guid? requestingUserId = null, string? userRole = null);
     Task<MaterialResponse> CreateMaterialAsync(CreateMaterialRequest request, Guid userId);
     Task<MaterialResponse?> UpdateMaterialAsync(Guid id, UpdateMaterialRequest request, Guid userId, string userRole);
     Task<bool> DeleteMaterialAsync(Guid id, Guid userId, string userRole);

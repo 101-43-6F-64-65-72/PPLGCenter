@@ -47,6 +47,8 @@ public class FacilityConfiguration : IEntityTypeConfiguration<Facility>
             .IsRequired()
             .HasDefaultValueSql("now()");
 
+        builder.Ignore(f => f.IsDeleted);
+
         builder.HasIndex(f => f.Name);
         builder.HasIndex(f => f.IsActive);
     }

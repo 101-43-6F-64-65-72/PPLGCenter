@@ -37,9 +37,7 @@ public class SearchService : ISearchService
             SearchExtracurricularsAsync(response, normalizedKeyword, page, pageSize),
             SearchProposalsAsync(response, normalizedKeyword, page, pageSize, userId, userRole),
             SearchDiscussionsAsync(response, normalizedKeyword, page, pageSize),
-            SearchMessagesAsync(response, normalizedKeyword, page, pageSize, userId),
-            SearchElectionsAsync(response, normalizedKeyword, page, pageSize),
-            SearchCandidatesAsync(response, normalizedKeyword, page, pageSize)
+            SearchMessagesAsync(response, normalizedKeyword, page, pageSize, userId)
         );
 
         return response;
@@ -330,50 +328,5 @@ public class SearchService : ISearchService
             .ToListAsync();
 
         response.Messages = results;
-    }
-
-    private async Task SearchElectionsAsync(SearchResponse response, string keyword, int page, int pageSize)
-    {
-        var results = await _context.Set<Election>()
-            .AsNoTracking()
-            .Where(e => e.DeletedAt == null && (e.Title.ToLower().Contains(keyword) || e.Description.ToLower().Contains(keyword)))
-            .OrderByDescending(e => e.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(e => new SearchResult
-            {
-                Type = "Election",
-                Id = e.Id,
-                Title = e.Title,
-                Description = e.Description,
-                Metadata = $"Status: {e.Status}",
-                CreatedAt = e.CreatedAt
-            })
-            .ToListAsync();
-
-        response.Elections = results;
-    }
-
-    private async Task SearchCandidatesAsync(SearchResponse response, string keyword, int page, int pageSize)
-    {
-        var results = await _context.Set<ElectionCandidate>()
-            .AsNoTracking()
-            .Include(c => c.Student)
-            .Where(c => c.Vision.ToLower().Contains(keyword) || c.Mission.ToLower().Contains(keyword) || c.Student.FullName.ToLower().Contains(keyword))
-            .OrderBy(c => c.CandidateNumber)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(c => new SearchResult
-            {
-                Type = "Candidate",
-                Id = c.Id,
-                Title = $"No. {c.CandidateNumber} - {c.Student.FullName}",
-                Description = $"Visi: {c.Vision}",
-                Metadata = $"Mission: {c.Mission}",
-                CreatedAt = c.CreatedAt
-            })
-            .ToListAsync();
-
-        response.Candidates = results;
     }
 }

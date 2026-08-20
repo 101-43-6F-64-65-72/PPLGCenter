@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
+using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Infrastructure.Services;
@@ -11,18 +12,53 @@ namespace StudentCenter.Infrastructure.Services;
 public class ScheduleService : IScheduleService
 {
     private readonly AppDbContext _context;
+    private readonly IScheduleRotationService _rotationService;
 
-    public ScheduleService(AppDbContext context)
+    private static readonly TimeZoneInfo WibTimeZone = GetWibTimeZone();
+
+    public ScheduleService(AppDbContext context) : this(context, new ScheduleRotationService(context))
     {
-        _context = context;
     }
 
-    public async Task<List<ScheduleResponse>> GetAllAsync(Guid? semesterId = null, Guid? classId = null, Guid? teacherId = null, int? dayOfWeek = null)
+    public ScheduleService(AppDbContext context, IScheduleRotationService rotationService)
+    {
+        _context = context;
+        _rotationService = rotationService;
+    }
+
+
+    private static TimeZoneInfo GetWibTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Asia/Jakarta");
+        }
+    }
+
+    public static DateTime GetWibNow()
+    {
+        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, WibTimeZone);
+    }
+
+
+    public async Task<List<ScheduleResponse>> GetAllAsync(
+        Guid? semesterId = null,
+        Guid? classId = null,
+        Guid? teacherId = null,
+        int? dayOfWeek = null,
+        Guid? requestingUserId = null,
+        string? requestingUserRole = null)
     {
         var query = BuildScheduleQuery();
 
         if (semesterId.HasValue)
+        {
             query = query.Where(s => s.SemesterId == semesterId.Value);
+        }
 
         if (classId.HasValue)
             query = query.Where(s => s.ClassSubject.ClassId == classId.Value);
@@ -31,22 +67,62 @@ public class ScheduleService : IScheduleService
             query = query.Where(s => s.ClassSubject.TeacherSubject.TeacherId == teacherId.Value);
 
         if (dayOfWeek.HasValue)
-            query = query.Where(s => (int)s.DayOfWeek == dayOfWeek.Value);
+        {
+            DayOfWeek targetDay = (dayOfWeek.Value == 7) ? DayOfWeek.Sunday : (DayOfWeek)(dayOfWeek.Value % 7);
+            query = query.Where(s => s.DayOfWeek == targetDay);
+        }
+
+
+
 
         var list = await query.OrderBy(s => s.DayOfWeek).ThenBy(s => s.StartTime).ToListAsync();
 
         return list.Select(MapToResponse).ToList();
     }
 
-    public async Task<ScheduleResponse?> GetByIdAsync(Guid id)
+    public async Task<ScheduleResponse?> GetByIdAsync(
+        Guid id,
+        Guid? requestingUserId = null,
+        string? requestingUserRole = null)
     {
         var s = await BuildScheduleQuery().FirstOrDefaultAsync(s => s.Id == id);
         if (s == null) return null;
+
+        if (requestingUserId.HasValue && requestingUserRole != "Admin")
+        {
+            if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+            {
+                var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId.Value);
+                if (student?.ClassId != s.ClassSubject.ClassId)
+                {
+                    throw new UnauthorizedAccessException("Student is not authorized to view schedules outside their class.");
+                }
+            }
+            else if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+            {
+                if (s.ClassSubject.TeacherSubject.TeacherId != requestingUserId.Value)
+                {
+                    throw new UnauthorizedAccessException("Teacher is not authorized to view schedules outside their teaching scope.");
+                }
+            }
+        }
+
         return MapToResponse(s);
     }
 
-    public async Task<ScheduleResponse> CreateAsync(CreateScheduleRequest request)
+    public async Task<ScheduleResponse> CreateAsync(CreateScheduleRequest request, Guid? requestingUserId = null, string? requestingUserRole = null)
     {
+        var classSubject = await _context.ClassSubjects
+            .Include(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(cs => cs.Id == request.ClassSubjectId);
+
+        if (classSubject == null)
+            throw new ValidationException("ClassSubject assignment not found.");
+
+        VerifyMutationAuthorization(classSubject, requestingUserId, requestingUserRole);
+
+        using var transaction = _context.Database.IsRelational() ? await _context.Database.BeginTransactionAsync() : null;
+
         var (startTs, endTs) = ParseTimes(request.StartTime, request.EndTime);
         var dayEnum = (DayOfWeek)(request.DayOfWeek % 7); // convert 1=Mon..7=Sun to DayOfWeek
 
@@ -60,11 +136,15 @@ public class ScheduleService : IScheduleService
             endTime: endTs,
             room: request.Room);
 
+        var semester = await _context.Semesters.FindAsync(request.SemesterId);
+
         var schedule = new Schedule
         {
             Id = Guid.NewGuid(),
             ClassSubjectId = request.ClassSubjectId,
+            ClassSubject = classSubject,
             SemesterId = request.SemesterId,
+            Semester = semester!,
             DayOfWeek = dayEnum,
             StartTime = startTs,
             EndTime = endTs,
@@ -78,13 +158,24 @@ public class ScheduleService : IScheduleService
         _context.Schedules.Add(schedule);
         await _context.SaveChangesAsync();
 
-        return (await GetByIdAsync(schedule.Id))!;
+        if (transaction != null)
+            await transaction.CommitAsync();
+
+        return (await GetByIdAsync(schedule.Id, requestingUserId, requestingUserRole)) ?? MapToResponse(schedule);
     }
 
-    public async Task<ScheduleResponse?> UpdateAsync(Guid id, UpdateScheduleRequest request)
+    public async Task<ScheduleResponse?> UpdateAsync(Guid id, UpdateScheduleRequest request, Guid? requestingUserId = null, string? requestingUserRole = null)
     {
-        var schedule = await _context.Schedules.FindAsync(id);
+        var schedule = await _context.Schedules
+            .Include(s => s.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(s => s.Id == id);
+
         if (schedule == null) return null;
+
+        VerifyMutationAuthorization(schedule.ClassSubject, requestingUserId, requestingUserRole);
+
+        using var transaction = _context.Database.IsRelational() ? await _context.Database.BeginTransactionAsync() : null;
 
         var (startTs, endTs) = ParseTimes(request.StartTime, request.EndTime);
         var dayEnum = (DayOfWeek)(request.DayOfWeek % 7);
@@ -110,32 +201,88 @@ public class ScheduleService : IScheduleService
         schedule.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        return await GetByIdAsync(id);
+
+        if (transaction != null)
+            await transaction.CommitAsync();
+
+        return (await GetByIdAsync(id, requestingUserId, requestingUserRole)) ?? MapToResponse(schedule);
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, Guid? requestingUserId = null, string? requestingUserRole = null)
     {
-        var schedule = await _context.Schedules.FindAsync(id);
+        var schedule = await _context.Schedules
+            .Include(s => s.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(s => s.Id == id);
+
         if (schedule == null) return false;
+
+        VerifyMutationAuthorization(schedule.ClassSubject, requestingUserId, requestingUserRole);
 
         _context.Schedules.Remove(schedule);
         await _context.SaveChangesAsync();
         return true;
     }
 
-    public async Task<List<ScheduleResponse>> GetTodaySchedulesForStudentAsync(Guid studentId)
+    private static void VerifyMutationAuthorization(ClassSubject classSubject, Guid? requestingUserId, string? requestingUserRole)
     {
-        var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == studentId);
-        if (student == null || !student.ClassId.HasValue) return new List<ScheduleResponse>();
+        if (string.Equals(requestingUserRole, "Admin", StringComparison.OrdinalIgnoreCase))
+            return;
 
-        var todayDay = DateTime.UtcNow.DayOfWeek;
+        if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+        {
+            if (requestingUserId.HasValue && classSubject?.TeacherSubject?.TeacherId == requestingUserId.Value)
+                return;
+
+            throw new UnauthorizedAccessException("Teacher is only authorized to manage schedules for their assigned class subjects.");
+        }
+
+        if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new UnauthorizedAccessException("Student is not authorized to create, update, or delete schedules.");
+        }
+    }
+
+    public async Task<StudentTodayScheduleResponse> GetTodaySchedulesForStudentAsync(Guid studentId)
+    {
+        var student = await _context.Users
+            .AsNoTracking()
+            .Include(u => u.Class)
+            .FirstOrDefaultAsync(u => u.Id == studentId);
+
+        if (student == null || !student.ClassId.HasValue)
+        {
+            return new StudentTodayScheduleResponse
+            {
+                ClassName = string.Empty,
+                ActiveCategory = SubjectCategory.MPU,
+                IsKkUnavailable = false,
+                Items = new List<ScheduleResponse>()
+            };
+        }
+
+        var className = student.Class?.Name ?? string.Empty;
+
+        var wibNow = GetWibNow();
+        var todayDay = wibNow.DayOfWeek;
+
+        var activeCategory = await _rotationService.GetCurrentCategoryForClassAsync(student.ClassId.Value, wibNow);
 
         var activeSemester = await _context.Semesters
             .AsNoTracking()
             .Include(s => s.AcademicYear)
             .FirstOrDefaultAsync(s => s.IsActive && s.AcademicYear.IsActive);
 
-        if (activeSemester == null) return new List<ScheduleResponse>();
+        if (activeSemester == null)
+        {
+            return new StudentTodayScheduleResponse
+            {
+                ClassName = className,
+                ActiveCategory = activeCategory,
+                IsKkUnavailable = (activeCategory == SubjectCategory.KK),
+                Items = new List<ScheduleResponse>()
+            };
+        }
 
         var list = await BuildScheduleQuery()
             .Where(s => s.SemesterId == activeSemester.Id &&
@@ -145,12 +292,22 @@ public class ScheduleService : IScheduleService
             .OrderBy(s => s.StartTime)
             .ToListAsync();
 
-        return list.Select(MapToResponse).ToList();
+        var items = list.Select(MapToResponse).ToList();
+        var isKkUnavailable = (activeCategory == SubjectCategory.KK && items.Count == 0);
+
+        return new StudentTodayScheduleResponse
+        {
+            ClassName = className,
+            ActiveCategory = activeCategory,
+            IsKkUnavailable = isKkUnavailable,
+            Items = items
+        };
     }
 
     public async Task<List<ScheduleResponse>> GetTodaySchedulesForTeacherAsync(Guid teacherId)
     {
-        var todayDay = DateTime.UtcNow.DayOfWeek;
+        var wibNow = GetWibNow();
+        var todayDay = wibNow.DayOfWeek;
 
         var activeSemester = await _context.Semesters
             .AsNoTracking()
@@ -170,6 +327,7 @@ public class ScheduleService : IScheduleService
         return list.Select(MapToResponse).ToList();
     }
 
+
     // ─────────────────────────────────────────────────────────────────────────
     // Private Helpers & Conflict Detection Engine
     // ─────────────────────────────────────────────────────────────────────────
@@ -182,7 +340,6 @@ public class ScheduleService : IScheduleService
                 .ThenInclude(sem => sem.AcademicYear)
             .Include(s => s.ClassSubject)
                 .ThenInclude(cs => cs.Class)
-                    .ThenInclude(c => c.Department)
             .Include(s => s.ClassSubject)
                 .ThenInclude(cs => cs.TeacherSubject)
                     .ThenInclude(ts => ts.Teacher)
@@ -262,47 +419,83 @@ public class ScheduleService : IScheduleService
         var classId = classSubject.ClassId;
         var roomLower = room.Trim().ToLower();
 
-        // Query existing schedules in the same semester and day
-        var query = _context.Schedules
+        // Query overlapping existing schedules in the same semester and day
+        var baseQuery = _context.Schedules
             .AsNoTracking()
-            .Include(s => s.ClassSubject)
-                .ThenInclude(cs => cs.TeacherSubject)
-            .Where(s => s.SemesterId == semesterId && s.DayOfWeek == dayOfWeek && s.IsActive);
+            .Where(s => s.SemesterId == semesterId &&
+                        s.DayOfWeek == dayOfWeek &&
+                        s.IsActive &&
+                        s.StartTime < endTime &&
+                        startTime < s.EndTime);
 
         if (scheduleId.HasValue)
         {
-            query = query.Where(s => s.Id != scheduleId.Value);
+            baseQuery = baseQuery.Where(s => s.Id != scheduleId.Value);
         }
 
-        var existingSchedules = await query.ToListAsync();
+        // A. Teacher Conflict Check
+        var teacherConflict = await baseQuery
+            .Where(s => s.ClassSubject.TeacherSubject.TeacherId == teacherId)
+            .Select(s => new { s.StartTime, s.EndTime })
+            .FirstOrDefaultAsync();
 
-        foreach (var existing in existingSchedules)
+        if (teacherConflict != null)
         {
-            // Time interval overlap test: newStart < existingEnd && newEnd > existingStart
-            bool overlaps = startTime < existing.EndTime && endTime > existing.StartTime;
-            if (!overlaps) continue; // Adjacent or non-overlapping time ranges are allowed
+            var teacherName = classSubject.TeacherSubject.Teacher.FullName;
+            throw new ValidationException(
+                $"Bentrok Guru: Guru '{teacherName}' sudah memiliki jadwal mengajar pada jam {teacherConflict.StartTime:hh\\:mm}-{teacherConflict.EndTime:hh\\:mm}.");
+        }
 
-            // A. Teacher Conflict Check
-            if (existing.ClassSubject.TeacherSubject.TeacherId == teacherId)
-            {
-                var teacherName = classSubject.TeacherSubject.Teacher.FullName;
-                throw new ValidationException(
-                    $"Bentrok Guru: Guru '{teacherName}' sudah memiliki jadwal mengajar pada jam {existing.StartTime:hh\\:mm}-{existing.EndTime:hh\\:mm}.");
-            }
+        // B. Class Conflict Check
+        var classConflict = await baseQuery
+            .Where(s => s.ClassSubject.ClassId == classId)
+            .Select(s => new { s.StartTime, s.EndTime })
+            .FirstOrDefaultAsync();
 
-            // B. Class Conflict Check
-            if (existing.ClassSubject.ClassId == classId)
-            {
-                var className = classSubject.Class.Name;
-                throw new ValidationException(
-                    $"Bentrok Kelas: Kelas '{className}' sudah memiliki pelajaran pada jam {existing.StartTime:hh\\:mm}-{existing.EndTime:hh\\:mm}.");
-            }
+        if (classConflict != null)
+        {
+            var className = classSubject.Class.Name;
+            throw new ValidationException(
+                $"Bentrok Kelas: Kelas '{className}' sudah memiliki pelajaran pada jam {classConflict.StartTime:hh\\:mm}-{classConflict.EndTime:hh\\:mm}.");
+        }
 
-            // C. Room Conflict Check
-            if (existing.Room.Trim().ToLower() == roomLower)
+        // C. Room Conflict Check
+        var roomConflict = await baseQuery
+            .Where(s => s.Room.Trim().ToLower() == roomLower)
+            .Select(s => new { s.StartTime, s.EndTime })
+            .FirstOrDefaultAsync();
+
+        if (roomConflict != null)
+        {
+            throw new ValidationException(
+                $"Bentrok Ruangan: Ruangan '{room}' sudah digunakan pada jam {roomConflict.StartTime:hh\\:mm}-{roomConflict.EndTime:hh\\:mm}.");
+        }
+
+        // 3. Reverse Facility Booking Integration Check
+        var matchedFacility = await _context.Facilities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Name.ToLower() == roomLower);
+
+        if (matchedFacility != null)
+        {
+            var approvedBookings = await _context.FacilityBookings
+                .AsNoTracking()
+                .Where(b => b.FacilityId == matchedFacility.Id && b.Status == BookingStatus.Approved && b.EndTime > DateTime.UtcNow)
+                .ToListAsync();
+
+            foreach (var booking in approvedBookings)
             {
-                throw new ValidationException(
-                    $"Bentrok Ruangan: Ruangan '{room}' sudah digunakan pada jam {existing.StartTime:hh\\:mm}-{existing.EndTime:hh\\:mm}.");
+                if (booking.StartTime.DayOfWeek == dayOfWeek)
+                {
+                    var bStart = booking.StartTime.TimeOfDay;
+                    var bEnd = booking.EndTime.TimeOfDay;
+
+                    if (startTime < bEnd && endTime > bStart)
+                    {
+                        throw new InvalidOperationException(
+                            $"Bentrok Fasilitas: Ruangan '{room}' telah dibooking oleh pengguna pada jam {bStart:hh\\:mm}-{bEnd:hh\\:mm}.");
+                    }
+                }
             }
         }
     }

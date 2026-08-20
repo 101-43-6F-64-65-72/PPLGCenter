@@ -5,6 +5,7 @@ using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Infrastructure.Helpers;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -19,7 +20,13 @@ public class AttendanceService : IAttendanceService
         _notificationService = notificationService ?? new NotificationService(context);
     }
 
-    public async Task<List<AttendanceSessionResponse>> GetAllSessionsAsync(Guid? scheduleId = null, Guid? classSubjectId = null, DateTime? date = null, string? status = null)
+    public async Task<List<AttendanceSessionResponse>> GetAllSessionsAsync(
+        Guid requestingUserId,
+        string requestingUserRole,
+        Guid? scheduleId = null,
+        Guid? classSubjectId = null,
+        DateTime? date = null,
+        string? status = null)
     {
         var query = BuildSessionQuery();
 
@@ -38,16 +45,54 @@ public class AttendanceService : IAttendanceService
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(s => s.Status.ToLower() == status.Trim().ToLower());
 
+        if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+        {
+            var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId);
+            if (student?.ClassId != null)
+            {
+                query = query.Where(s => s.ClassSubject.ClassId == student.ClassId.Value);
+            }
+            else
+            {
+                return new List<AttendanceSessionResponse>();
+            }
+        }
+        else if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(s => s.TeacherId == requestingUserId || s.ClassSubject.TeacherSubject.TeacherId == requestingUserId);
+        }
+
         var list = await query.OrderByDescending(s => s.Date).ThenByDescending(s => s.CreatedAt).ToListAsync();
 
-        return list.Select(MapToSessionResponse).ToList();
+        return list.Select(s => MapToSessionResponse(s, requestingUserId, requestingUserRole)).ToList();
     }
 
-    public async Task<AttendanceSessionResponse?> GetSessionByIdAsync(Guid sessionId)
+    public async Task<AttendanceSessionResponse?> GetSessionByIdAsync(
+        Guid sessionId,
+        Guid requestingUserId,
+        string requestingUserRole)
     {
         var session = await BuildSessionQuery().FirstOrDefaultAsync(s => s.Id == sessionId);
         if (session == null) return null;
-        return MapToSessionResponse(session);
+
+        if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+        {
+            var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == requestingUserId);
+            if (student?.ClassId != session.ClassSubject.ClassId)
+            {
+                throw new UnauthorizedAccessException("Student is not authorized to view attendance sessions outside their class.");
+            }
+        }
+        else if (string.Equals(requestingUserRole, "Teacher", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!await _context.IsTeacherOrAdminAuthorizedAsync(requestingUserId, session.TeacherId) &&
+                !await _context.IsTeacherOrAdminAuthorizedAsync(requestingUserId, session.ClassSubject.TeacherSubject.TeacherId))
+            {
+                throw new UnauthorizedAccessException("Teacher is not authorized to view attendance sessions outside their assigned scope.");
+            }
+        }
+
+        return MapToSessionResponse(session, requestingUserId, requestingUserRole);
     }
 
     public async Task<AttendanceSessionResponse> CreateSessionAsync(Guid teacherId, CreateAttendanceSessionRequest request)
@@ -63,20 +108,21 @@ public class AttendanceService : IAttendanceService
         if (schedule == null) throw new ValidationException("Schedule not found.");
 
         var scheduleTeacherId = schedule.ClassSubject.TeacherSubject.TeacherId;
-        if (teacherId != scheduleTeacherId)
+        if (!await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, scheduleTeacherId))
         {
-            var requestingUser = await _context.Users.FindAsync(teacherId);
-            if (requestingUser?.Role != UserRole.Admin)
-            {
-                throw new ValidationException("Only the designated teacher for this schedule can open an attendance session.");
-            }
+            throw new UnauthorizedAccessException("Only the designated teacher for this schedule can open an attendance session.");
         }
 
         var sessionDate = request.Date.Date;
 
+        if (schedule.DayOfWeek != sessionDate.DayOfWeek)
+        {
+            throw new ValidationException($"Schedule is configured for {schedule.DayOfWeek}, but the provided session date is a {sessionDate.DayOfWeek}.");
+        }
+
         if (await _context.AttendanceSessions.AnyAsync(s => s.ScheduleId == request.ScheduleId && s.Date == sessionDate))
         {
-            throw new ValidationException($"Attendance session for this schedule on {sessionDate:yyyy-MM-dd} already exists.");
+            throw new InvalidOperationException($"Attendance session for this schedule on {sessionDate:yyyy-MM-dd} already exists.");
         }
 
         var classId = schedule.ClassSubject.ClassId;
@@ -118,7 +164,14 @@ public class AttendanceService : IAttendanceService
             });
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new InvalidOperationException("Attendance session for this schedule on this date already exists or is being created concurrently.", ex);
+        }
 
         var subjectName = schedule.ClassSubject?.TeacherSubject?.Subject?.Name ?? "Mata Pelajaran";
         var className = schedule.ClassSubject?.Class?.Name ?? "Kelas";
@@ -140,17 +193,39 @@ public class AttendanceService : IAttendanceService
             );
         }
 
-        return (await GetSessionByIdAsync(session.Id))!;
+        var userRole = (await _context.Users.FindAsync(teacherId))?.Role.ToString() ?? "Teacher";
+        return (await GetSessionByIdAsync(session.Id, teacherId, userRole))!;
     }
 
     public async Task<AttendanceSessionResponse?> UpdateStudentStatusAsync(Guid sessionId, Guid teacherId, UpdateAttendanceStatusRequest request)
     {
-        var session = await _context.AttendanceSessions.FindAsync(sessionId);
+        var session = await _context.AttendanceSessions
+            .Include(s => s.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
         if (session == null) return null;
+
+        if (!await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, session.TeacherId) &&
+            !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, session.ClassSubject.TeacherSubject.TeacherId))
+        {
+            throw new UnauthorizedAccessException("Teacher is not authorized to modify attendance for this session.");
+        }
 
         if (session.Status.Equals("Closed", StringComparison.OrdinalIgnoreCase))
         {
             throw new ValidationException("Closed attendance session is immutable and cannot be modified.");
+        }
+
+        var student = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == request.StudentId);
+        if (student == null || student.Role != UserRole.Student)
+        {
+            throw new ValidationException("Target student not found.");
+        }
+
+        if (student.ClassId == null || student.ClassId != session.ClassSubject.ClassId)
+        {
+            throw new ValidationException("Student does not belong to the class associated with this attendance session.");
         }
 
         var attendance = await _context.Attendances
@@ -168,17 +243,39 @@ public class AttendanceService : IAttendanceService
         attendance.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        return await GetSessionByIdAsync(sessionId);
+        var userRole = (await _context.Users.FindAsync(teacherId))?.Role.ToString() ?? "Teacher";
+        return await GetSessionByIdAsync(sessionId, teacherId, userRole);
     }
 
     public async Task<AttendanceSessionResponse?> BulkUpdateAttendanceAsync(Guid sessionId, Guid teacherId, BulkUpdateAttendanceRequest request)
     {
-        var session = await _context.AttendanceSessions.FindAsync(sessionId);
+        var session = await _context.AttendanceSessions
+            .Include(s => s.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
         if (session == null) return null;
+
+        if (!await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, session.TeacherId) &&
+            !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, session.ClassSubject.TeacherSubject.TeacherId))
+        {
+            throw new UnauthorizedAccessException("Teacher is not authorized to modify attendance for this session.");
+        }
 
         if (session.Status.Equals("Closed", StringComparison.OrdinalIgnoreCase))
         {
             throw new ValidationException("Closed attendance session is immutable and cannot be modified.");
+        }
+
+        var requestStudentIds = request.Records.Select(r => r.StudentId).Distinct().ToList();
+        var enrolledStudentCount = await _context.Users
+            .AsNoTracking()
+            .Where(u => u.ClassId == session.ClassSubject.ClassId && u.Role == UserRole.Student && requestStudentIds.Contains(u.Id))
+            .CountAsync();
+
+        if (enrolledStudentCount != requestStudentIds.Count)
+        {
+            throw new ValidationException("One or more students in the bulk update request do not belong to the class associated with this attendance session.");
         }
 
         var attendances = await _context.Attendances
@@ -199,13 +296,24 @@ public class AttendanceService : IAttendanceService
         }
 
         await _context.SaveChangesAsync();
-        return await GetSessionByIdAsync(sessionId);
+        var userRole = (await _context.Users.FindAsync(teacherId))?.Role.ToString() ?? "Teacher";
+        return await GetSessionByIdAsync(sessionId, teacherId, userRole);
     }
 
     public async Task<AttendanceSessionResponse?> CloseSessionAsync(Guid sessionId, Guid teacherId)
     {
-        var session = await _context.AttendanceSessions.FindAsync(sessionId);
+        var session = await _context.AttendanceSessions
+            .Include(s => s.ClassSubject)
+                .ThenInclude(cs => cs.TeacherSubject)
+            .FirstOrDefaultAsync(s => s.Id == sessionId);
+
         if (session == null) return null;
+
+        if (!await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, session.TeacherId) &&
+            !await _context.IsTeacherOrAdminAuthorizedAsync(teacherId, session.ClassSubject.TeacherSubject.TeacherId))
+        {
+            throw new UnauthorizedAccessException("Teacher is not authorized to close this attendance session.");
+        }
 
         if (session.Status.Equals("Closed", StringComparison.OrdinalIgnoreCase))
         {
@@ -252,7 +360,8 @@ public class AttendanceService : IAttendanceService
             }
         }
 
-        return await GetSessionByIdAsync(sessionId);
+        var userRole = (await _context.Users.FindAsync(teacherId))?.Role.ToString() ?? "Teacher";
+        return await GetSessionByIdAsync(sessionId, teacherId, userRole);
     }
 
     public async Task<List<AttendanceRecordResponse>> GetStudentAttendanceHistoryAsync(Guid studentId)
@@ -260,6 +369,15 @@ public class AttendanceService : IAttendanceService
         var list = await _context.Attendances
             .AsNoTracking()
             .Include(a => a.Student)
+            .Include(a => a.AttendanceSession)
+                .ThenInclude(s => s!.ClassSubject)
+                    .ThenInclude(cs => cs.Class)
+            .Include(a => a.AttendanceSession)
+                .ThenInclude(s => s!.ClassSubject)
+                    .ThenInclude(cs => cs.TeacherSubject)
+                        .ThenInclude(ts => ts.Subject)
+            .Include(a => a.AttendanceSession)
+                .ThenInclude(s => s!.Teacher)
             .Where(a => a.StudentId == studentId && a.AttendanceSessionId != null)
             .OrderByDescending(a => a.AttendanceDate)
             .ToListAsync();
@@ -271,6 +389,11 @@ public class AttendanceService : IAttendanceService
             StudentId = a.StudentId,
             StudentName = a.Student?.FullName ?? string.Empty,
             StudentNis = a.Student?.NIS ?? string.Empty,
+            ClassName = a.AttendanceSession?.ClassSubject?.Class?.Name ?? string.Empty,
+            SubjectName = a.AttendanceSession?.ClassSubject?.TeacherSubject?.Subject?.Name ?? string.Empty,
+            SubjectCode = a.AttendanceSession?.ClassSubject?.TeacherSubject?.Subject?.Code ?? string.Empty,
+            TeacherName = a.AttendanceSession?.Teacher?.FullName ?? string.Empty,
+            Date = a.AttendanceSession?.Date ?? a.AttendanceDate,
             Status = a.Status.ToString(),
             CheckInTime = a.CheckInTime,
             Notes = a.Notes
@@ -292,9 +415,15 @@ public class AttendanceService : IAttendanceService
                 .ThenInclude(a => a.Student);
     }
 
-    private static AttendanceSessionResponse MapToSessionResponse(AttendanceSession s)
+    private static AttendanceSessionResponse MapToSessionResponse(AttendanceSession s, Guid requestingUserId, string requestingUserRole)
     {
-        var attList = s.Attendances.Select(a => new AttendanceRecordResponse
+        var isStudent = string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase);
+
+        var rawAttendances = isStudent
+            ? s.Attendances.Where(a => a.StudentId == requestingUserId).ToList()
+            : s.Attendances.ToList();
+
+        var attList = rawAttendances.Select(a => new AttendanceRecordResponse
         {
             Id = a.Id,
             AttendanceSessionId = s.Id,
@@ -305,6 +434,8 @@ public class AttendanceService : IAttendanceService
             CheckInTime = a.CheckInTime,
             Notes = a.Notes
         }).OrderBy(a => a.StudentName).ToList();
+
+        var allAttendances = s.Attendances.ToList();
 
         return new AttendanceSessionResponse
         {
@@ -322,13 +453,13 @@ public class AttendanceService : IAttendanceService
             OpenedAt = s.OpenedAt,
             ClosedAt = s.ClosedAt,
             Status = s.Status,
-            TotalStudents = attList.Count,
-            PresentCount = attList.Count(a => a.Status == "Present"),
-            LateCount = attList.Count(a => a.Status == "Late"),
-            PermissionCount = attList.Count(a => a.Status == "Permission"),
-            SickCount = attList.Count(a => a.Status == "Sick"),
-            AlphaCount = attList.Count(a => a.Status == "Alpha"),
-            NotMarkedCount = attList.Count(a => a.Status == "NotMarked"),
+            TotalStudents = allAttendances.Count,
+            PresentCount = allAttendances.Count(a => a.Status == AttendanceStatus.Present),
+            LateCount = allAttendances.Count(a => a.Status == AttendanceStatus.Late),
+            PermissionCount = allAttendances.Count(a => a.Status == AttendanceStatus.Permission),
+            SickCount = allAttendances.Count(a => a.Status == AttendanceStatus.Sick),
+            AlphaCount = allAttendances.Count(a => a.Status == AttendanceStatus.Alpha),
+            NotMarkedCount = allAttendances.Count(a => a.Status == AttendanceStatus.NotMarked),
             Attendances = attList
         };
     }

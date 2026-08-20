@@ -8,6 +8,8 @@ public class Proposal
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string? Category { get; set; }
+    public Guid? ExtracurricularId { get; set; }
+    public Extracurricular? Extracurricular { get; set; }
     public string FileUrl { get; set; } = string.Empty;
     
     // Alias for AttachmentUrl

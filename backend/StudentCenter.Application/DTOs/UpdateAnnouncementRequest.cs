@@ -11,9 +11,13 @@ public class UpdateAnnouncementRequest
     [Required(ErrorMessage = "Content is required.")]
     public string Content { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Category is required.")]
-    [MaxLength(100, ErrorMessage = "Category cannot exceed 100 characters.")]
-    public string Category { get; set; } = string.Empty;
+    public string Category { get; set; } = "General";
+
+    public string? TargetClasses { get; set; }
+
+    public DateTime? PublishStart { get; set; }
+
+    public DateTime? PublishEnd { get; set; }
 
     [MaxLength(500, ErrorMessage = "Cover Image URL cannot exceed 500 characters.")]
     public string? CoverImageUrl { get; set; }

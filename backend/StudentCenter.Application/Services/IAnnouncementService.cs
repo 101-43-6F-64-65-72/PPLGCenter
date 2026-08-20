@@ -4,11 +4,11 @@ namespace StudentCenter.Application.Services;
 
 public interface IAnnouncementService
 {
-    Task<PagedResult<AnnouncementResponse>> GetAnnouncementsAsync(int page, int pageSize, string? category);
-    Task<PagedResult<AnnouncementFeedResponse>> GetFeedAsync(int page, int pageSize, string? category);
-    Task<AnnouncementResponse?> GetAnnouncementByIdAsync(Guid id);
-    Task<AnnouncementResponse> CreateAnnouncementAsync(CreateAnnouncementRequest request, Guid userId);
-    Task<AnnouncementResponse?> UpdateAnnouncementAsync(Guid id, UpdateAnnouncementRequest request);
-    Task<bool> DeleteAnnouncementAsync(Guid id);
+    Task<PagedResult<AnnouncementResponse>> GetAnnouncementsAsync(int page, int pageSize, string? category, Guid? requestingUserId = null, string? requestingUserRole = null, Guid? requestingClassId = null);
+    Task<PagedResult<AnnouncementFeedResponse>> GetFeedAsync(int page, int pageSize, string? category, Guid? requestingUserId = null, string? requestingUserRole = null, Guid? requestingClassId = null);
+    Task<AnnouncementResponse?> GetAnnouncementByIdAsync(Guid id, Guid? requestingUserId = null, string? requestingUserRole = null, Guid? requestingClassId = null);
+    Task<AnnouncementResponse> CreateAnnouncementAsync(CreateAnnouncementRequest request, Guid userId, string userRole = "Admin");
+    Task<AnnouncementResponse?> UpdateAnnouncementAsync(Guid id, UpdateAnnouncementRequest request, Guid requestingUserId = default, string requestingUserRole = "Admin");
+    Task<bool> DeleteAnnouncementAsync(Guid id, Guid requestingUserId = default, string requestingUserRole = "Admin");
     Task<PagedResult<AnnouncementResponse>> SearchAsync(int page, int pageSize, string? keyword = null, bool? isPinned = null);
 }

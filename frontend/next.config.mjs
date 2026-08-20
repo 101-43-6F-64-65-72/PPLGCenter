@@ -15,8 +15,10 @@ const backendHostname = (() => {
 const remotePatterns = [
   // localhost (dev)
   { protocol: 'http', hostname: 'localhost', pathname: '/**' },
+  { protocol: 'http', hostname: 'localhost', port: '5051', pathname: '/**' },
   { protocol: 'https', hostname: 'localhost', pathname: '/**' },
   { protocol: 'http', hostname: '127.0.0.1', pathname: '/**' },
+  { protocol: 'http', hostname: '127.0.0.1', port: '5051', pathname: '/**' },
   // Cloudinary
   { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
   { protocol: 'https', hostname: '*.cloudinary.com', pathname: '/**' },

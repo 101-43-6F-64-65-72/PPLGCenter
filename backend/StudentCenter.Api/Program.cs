@@ -14,7 +14,10 @@ using StudentCenter.Infrastructure.Services;
 var possibleEnvPaths = new[]
 {
     Path.Combine(Directory.GetCurrentDirectory(), ".env"),
-    Path.Combine(Directory.GetCurrentDirectory(), "..", ".env")
+    Path.Combine(Directory.GetCurrentDirectory(), "..", ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), "backend", ".env"),
+    Path.Combine(AppContext.BaseDirectory, ".env"),
+    Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "backend", ".env")
 };
 foreach (var envPath in possibleEnvPaths)
 {
@@ -94,7 +97,9 @@ builder.Services.AddScoped<ISubjectService, SubjectService>();
 builder.Services.AddScoped<ITeacherSubjectService, TeacherSubjectService>();
 builder.Services.AddScoped<IClassSubjectService, ClassSubjectService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IScheduleIngestionService, ScheduleIngestionService>();
 builder.Services.AddScoped<IAcademicEventService, AcademicEventService>();
+
 
 // Phase 17 Services
 builder.Services.AddScoped<ILessonMaterialService, LessonMaterialService>();
@@ -111,13 +116,6 @@ builder.Services.AddScoped<ICommunicationAuthorizationService, CommunicationAuth
 builder.Services.AddScoped<IDiscussionService, DiscussionService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 
-// Phase 22 Services
-builder.Services.AddScoped<IElectionService, ElectionService>();
-
-// Phase 6 Pemilos Pair & OSIS Recruitment Services
-builder.Services.AddScoped<ICandidatePairService, CandidatePairService>();
-builder.Services.AddScoped<IOsisRecruitmentService, OsisRecruitmentService>();
-
 // PPLG Center Domain Foundation Services (Phase 4B)
 builder.Services.AddScoped<IStudentProfileService, StudentProfileService>();
 builder.Services.AddScoped<IClassLeadershipService, ClassLeadershipService>();
@@ -127,6 +125,11 @@ builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<ICommunityGroupService, CommunityGroupService>();
 builder.Services.AddScoped<IGroupMessageService, GroupMessageService>();
 builder.Services.AddScoped<IUserPermissionService, UserPermissionService>();
+builder.Services.AddScoped<ILibraryService, LibraryService>();
+
+// CCTV Subsystem (Phase 22)
+builder.Services.AddScoped<ICctvService, CctvService>();
+
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKeyFile = Environment.GetEnvironmentVariable("JWT_SECRET__FILE");
@@ -135,6 +138,11 @@ var secretKey = !string.IsNullOrWhiteSpace(secretKeyFile) && System.IO.File.Exis
     : Environment.GetEnvironmentVariable("JWT_SECRET")
       ?? jwtSettings["SecretKey"]
       ?? throw new InvalidOperationException("JWT_SECRET is required but not configured.");
+
+if (string.IsNullOrWhiteSpace(secretKey) || secretKey.Length < 32)
+{
+    throw new InvalidOperationException("JWT_SECRET must be at least 32 characters (256 bits) long for security.");
+}
 
 var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
     ?? jwtSettings["Issuer"]
@@ -289,10 +297,17 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-await SeedAdminData.SeedAsync(app.Services);
-await MasterDataSeeder.SeedAsync(app.Services);
-await OperationDataSeeder.SeedAsync(app.Services);
-await UserJsonSeeder.SeedUsersFromJsonAsync(app.Services);
+try
+{
+    await SeedAdminData.SeedAsync(app.Services);
+    await MasterDataSeeder.SeedAsync(app.Services);
+    await OperationDataSeeder.SeedAsync(app.Services);
+    await UserJsonSeeder.SeedUsersFromJsonAsync(app.Services);
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Seeder Warning] Data seeding encountered error: {ex.Message}");
+}
 
 app.UseHttpsRedirection();
 

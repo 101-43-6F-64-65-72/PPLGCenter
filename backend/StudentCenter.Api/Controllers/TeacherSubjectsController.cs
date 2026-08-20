@@ -12,15 +12,24 @@ namespace StudentCenter.Api.Controllers;
 public class TeacherSubjectsController : ControllerBase
 {
     private readonly ITeacherSubjectService _service;
+    private readonly ICurrentUserService _currentUserService;
 
-    public TeacherSubjectsController(ITeacherSubjectService service)
+    public TeacherSubjectsController(ITeacherSubjectService service, ICurrentUserService currentUserService)
     {
         _service = service;
+        _currentUserService = currentUserService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] Guid? teacherId = null, [FromQuery] Guid? subjectId = null)
     {
+        var userRole = _currentUserService.Role;
+        var currentUserId = _currentUserService.UserId;
+        if (userRole == "Teacher" && currentUserId.HasValue)
+        {
+            teacherId = currentUserId.Value;
+        }
+
         var list = await _service.GetAllAsync(teacherId, subjectId);
         return Ok(ApiResponse<List<TeacherSubjectResponse>>.Ok("TeacherSubjects retrieved successfully", list));
     }

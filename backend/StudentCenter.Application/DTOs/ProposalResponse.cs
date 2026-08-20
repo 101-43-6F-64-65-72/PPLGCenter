@@ -8,6 +8,8 @@ public class ProposalResponse
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string? Category { get; set; }
+    public Guid? ExtracurricularId { get; set; }
+    public string? ExtracurricularName { get; set; }
     public string FileUrl { get; set; } = string.Empty;
 
     public string AttachmentUrl

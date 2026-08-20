@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using StudentCenter.Domain.Enums;
 
 namespace StudentCenter.Application.DTOs;
 
@@ -25,6 +26,15 @@ public class ScheduleResponse
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
 }
+
+public class StudentTodayScheduleResponse
+{
+    public string ClassName { get; set; } = string.Empty;
+    public SubjectCategory ActiveCategory { get; set; } = SubjectCategory.MPU;
+    public bool IsKkUnavailable { get; set; }
+    public List<ScheduleResponse> Items { get; set; } = new();
+}
+
 
 public class CreateScheduleRequest
 {

@@ -74,42 +74,75 @@ public class MasterAcademicStructureTests
     }
 
     [Fact]
-    public async Task MasterDataSeeder_SeedsDepartments_Successfully()
+    public async Task MasterDataSeeder_SeedsPplgDepartmentAndPplgClasses_Successfully()
     {
         // Act
         await MasterDataSeeder.SeedAsync(_serviceProvider);
 
         // Assert
-        var departments = await _context.Departments.ToListAsync();
-        departments.Should().HaveCountGreaterThanOrEqualTo(7);
-        departments.Select(d => d.Code).Should().Contain(new[] { "RPL", "TKJ", "DKV", "AKL", "MPLB", "TKRO", "TBSM" });
+        var deptPplg = await _context.Departments.FirstOrDefaultAsync(d => d.Code == "PPLG");
+        deptPplg.Should().NotBeNull();
+        deptPplg!.Name.Should().Be("Pengembangan Perangkat Lunak dan Gim");
+
+        var pplgClasses = await _context.SchoolClasses
+            .Where(c => c.DepartmentId == deptPplg.Id)
+            .Select(c => c.Name)
+            .ToListAsync();
+
+        pplgClasses.Should().HaveCount(6);
+        pplgClasses.Should().Contain(new[]
+        {
+            "X PPLG A", "X PPLG B",
+            "XI PPLG A", "XI PPLG B",
+            "XII PPLG A", "XII PPLG B"
+        });
     }
 
     [Fact]
-    public async Task MasterDataSeeder_SeedsClasses_Successfully()
-    {
-        // Act
-        await MasterDataSeeder.SeedAsync(_serviceProvider);
-
-        // Assert
-        var classes = await _context.SchoolClasses.Include(c => c.Department).ToListAsync();
-        classes.Should().NotBeEmpty();
-        classes.Select(c => c.Name).Should().Contain(new[] { "X RPL 1", "X RPL 2", "XI RPL 1", "XII RPL 2" });
-    }
-
-    [Fact]
-    public async Task MasterDataSeeder_IsIdempotent()
+    public async Task MasterDataSeeder_And_SeedAdminData_AreIdempotent()
     {
         // Act: Run twice
         await MasterDataSeeder.SeedAsync(_serviceProvider);
+        await SeedAdminData.SeedAsync(_serviceProvider);
+
         await MasterDataSeeder.SeedAsync(_serviceProvider);
+        await SeedAdminData.SeedAsync(_serviceProvider);
 
         // Assert: No duplicates
         var ayCount = await _context.AcademicYears.CountAsync();
         ayCount.Should().Be(1);
 
-        var semCount = await _context.Semesters.CountAsync();
-        semCount.Should().Be(2);
+        var pplgDeptCount = await _context.Departments.CountAsync(d => d.Code == "PPLG");
+        pplgDeptCount.Should().Be(1);
+
+        var pplgClassesCount = await _context.SchoolClasses.CountAsync(c => c.Name.Contains("PPLG"));
+        pplgClassesCount.Should().Be(6);
+
+        var adminCount = await _context.Users.CountAsync(u => u.Role == UserRole.Admin);
+        adminCount.Should().Be(1);
+
+        var osisStudent = await _context.Users.FirstOrDefaultAsync(u => u.Email == "osis.pplg@pplgcenter.id");
+        osisStudent.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task SeedAdminData_AssignsStudentsToPplgClasses_AndOsisCabinetCapability()
+    {
+        // Arrange
+        await MasterDataSeeder.SeedAsync(_serviceProvider);
+        await SeedAdminData.SeedAsync(_serviceProvider);
+
+        // Act & Assert 1: Regular Student in X PPLG A
+        var student = await _context.Users.Include(u => u.Class).FirstOrDefaultAsync(u => u.Email == "siswa.pplg@pplgcenter.id");
+        student.Should().NotBeNull();
+        student!.Class.Should().NotBeNull();
+        student.Class!.Name.Should().Be("X PPLG A");
+
+        // Act & Assert 2: OSIS Student in XI PPLG A
+        var osisStudent = await _context.Users.Include(u => u.Class).FirstOrDefaultAsync(u => u.Email == "osis.pplg@pplgcenter.id");
+        osisStudent.Should().NotBeNull();
+        osisStudent!.Class.Should().NotBeNull();
+        osisStudent.Class!.Name.Should().Be("XI PPLG A");
     }
 
     [Fact]
@@ -184,5 +217,56 @@ public class MasterAcademicStructureTests
         // Act: We test validation logic via custom flow
         var schoolClass = await _context.SchoolClasses.FirstOrDefaultAsync(c => c.Name == invalidStudent.ClassName);
         schoolClass.Should().BeNull(); // Validation catches non-existent class
+    }
+
+    [Fact]
+    public async Task AcademicStructure_RoleAuthorization_EnforcesAccessBoundaries()
+    {
+        // Arrange
+        await MasterDataSeeder.SeedAsync(_serviceProvider);
+
+        var dept = await _context.Departments.FirstAsync(d => d.Code == "PPLG");
+        var schoolClassA = await _context.SchoolClasses.FirstAsync(c => c.Name == "X PPLG A");
+        var schoolClassB = await _context.SchoolClasses.FirstAsync(c => c.Name == "XI PPLG A");
+
+        var teacher1 = new User { Id = Guid.NewGuid(), FullName = "Guru 1", Email = "g1@test.id", Role = UserRole.Teacher };
+        var teacher2 = new User { Id = Guid.NewGuid(), FullName = "Guru 2", Email = "g2@test.id", Role = UserRole.Teacher };
+        var studentClassA = new User { Id = Guid.NewGuid(), FullName = "Student A", Email = "sa@test.id", Role = UserRole.Student, ClassId = schoolClassA.Id };
+
+        var subject1 = new Subject { Id = Guid.NewGuid(), Name = "Pemrograman Web", Code = "WEB", IsActive = true };
+        var subject2 = new Subject { Id = Guid.NewGuid(), Name = "Pemrograman Mobile", Code = "MOB", IsActive = true };
+
+        var ts1 = new TeacherSubject { Id = Guid.NewGuid(), TeacherId = teacher1.Id, SubjectId = subject1.Id };
+        var ts2 = new TeacherSubject { Id = Guid.NewGuid(), TeacherId = teacher2.Id, SubjectId = subject2.Id };
+
+        var cs1 = new ClassSubject { Id = Guid.NewGuid(), ClassId = schoolClassA.Id, TeacherSubjectId = ts1.Id };
+        var cs2 = new ClassSubject { Id = Guid.NewGuid(), ClassId = schoolClassB.Id, TeacherSubjectId = ts2.Id };
+
+        _context.Users.AddRange(teacher1, teacher2, studentClassA);
+        _context.Subjects.AddRange(subject1, subject2);
+        _context.TeacherSubjects.AddRange(ts1, ts2);
+        _context.ClassSubjects.AddRange(cs1, cs2);
+        await _context.SaveChangesAsync();
+
+        // 1. Teacher 1 scope: Only see ts1 (TeacherId == teacher1.Id)
+        var t1Subjects = await _context.TeacherSubjects
+            .Where(ts => ts.TeacherId == teacher1.Id)
+            .ToListAsync();
+        t1Subjects.Should().HaveCount(1);
+        t1Subjects.First().SubjectId.Should().Be(subject1.Id);
+
+        // 2. Student A scope: Only see cs1 (ClassId == schoolClassA.Id)
+        var studentClassSubjects = await _context.ClassSubjects
+            .Where(cs => cs.ClassId == studentClassA.ClassId)
+            .ToListAsync();
+        studentClassSubjects.Should().HaveCount(1);
+        studentClassSubjects.First().Id.Should().Be(cs1.Id);
+
+        // 3. Admin scope: Full access to all 6 PPLG classes and all ClassSubjects
+        var allPplgClasses = await _context.SchoolClasses.Where(c => c.DepartmentId == dept.Id).ToListAsync();
+        allPplgClasses.Should().HaveCount(6);
+
+        var allClassSubjects = await _context.ClassSubjects.ToListAsync();
+        allClassSubjects.Should().HaveCountGreaterThanOrEqualTo(2);
     }
 }

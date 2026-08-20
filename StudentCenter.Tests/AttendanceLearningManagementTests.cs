@@ -36,7 +36,7 @@ public class AttendanceLearningManagementTests
         var subject = new Subject { Id = Guid.NewGuid(), Code = "PBO", Name = "Pemrograman Berbasis Objek" };
         var ts = new TeacherSubject { Id = Guid.NewGuid(), TeacherId = teacher.Id, SubjectId = subject.Id };
         var cs = new ClassSubject { Id = Guid.NewGuid(), ClassId = cls.Id, TeacherSubjectId = ts.Id };
-        var sched = new Schedule { Id = Guid.NewGuid(), ClassSubjectId = cs.Id, SemesterId = semester.Id, DayOfWeek = DayOfWeek.Monday, StartTime = TimeSpan.Parse("07:00"), EndTime = TimeSpan.Parse("08:30"), Room = "R.101" };
+        var sched = new Schedule { Id = Guid.NewGuid(), ClassSubjectId = cs.Id, SemesterId = semester.Id, DayOfWeek = DateTime.UtcNow.DayOfWeek, StartTime = TimeSpan.Parse("07:00"), EndTime = TimeSpan.Parse("08:30"), Room = "R.101" };
 
         context.Users.AddRange(teacher, student1, student2);
         context.Departments.Add(dept);
@@ -138,8 +138,8 @@ public class AttendanceLearningManagementTests
             Date = date
         });
 
-        // Duplicate session on same schedule and date throws ValidationException
-        await Assert.ThrowsAsync<ValidationException>(async () =>
+        // Duplicate session on same schedule and date throws InvalidOperationException (HTTP 409 Conflict)
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             await service.CreateSessionAsync(teacher.Id, new CreateAttendanceSessionRequest
             {
@@ -160,8 +160,8 @@ public class AttendanceLearningManagementTests
         context.Users.Add(unauthorizedTeacher);
         await context.SaveChangesAsync();
 
-        // 1. Unauthorized teacher creation throws ValidationException
-        await Assert.ThrowsAsync<ValidationException>(async () =>
+        // 1. Unauthorized teacher creation throws UnauthorizedAccessException (HTTP 403 Forbidden)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(async () =>
         {
             await materialService.CreateAsync(unauthorizedTeacher.Id, new CreateLessonMaterialRequest
             {
@@ -337,5 +337,115 @@ public class AttendanceLearningManagementTests
         Assert.NotNull(studentDash);
         Assert.Equal(student1.FullName, studentDash.StudentName);
         Assert.Equal(100.0, studentDash.AttendancePercentage);
+    }
+
+    [Fact]
+    public async Task AttendanceService_SecurityAndBoundaryRules_Enforced()
+    {
+        using var context = GetDbContext(nameof(AttendanceService_SecurityAndBoundaryRules_Enforced));
+        var (teacher1, student1, student2, sched1, cs1) = await SeedAcademicContextAsync(context);
+        var service = new AttendanceService(context);
+
+        // Seed Class 2 with Teacher 2 and Student 3
+        var teacher2 = new User { Id = Guid.NewGuid(), FullName = "Guru 2", Email = "g2_att@test.com", Role = UserRole.Teacher, IsActive = true, PasswordHash = "hash" };
+        var student3 = new User { Id = Guid.NewGuid(), FullName = "Siswa 3", Email = "s3_att@test.com", Role = UserRole.Student, NIS = "1003", IsActive = true, PasswordHash = "hash" };
+        var admin = new User { Id = Guid.NewGuid(), FullName = "Admin Att", Email = "admin_att@test.com", Role = UserRole.Admin, IsActive = true, PasswordHash = "hash" };
+
+        var dept = await context.Departments.FirstAsync();
+        var year = await context.AcademicYears.FirstAsync();
+        var semester = await context.Semesters.FirstAsync();
+        var class2 = new SchoolClass { Id = Guid.NewGuid(), Name = "X RPL 2", Grade = "X", DepartmentId = dept.Id, AcademicYearId = year.Id };
+        student3.ClassId = class2.Id;
+
+        var subject2 = new Subject { Id = Guid.NewGuid(), Code = "MTK", Name = "Matematika" };
+        var ts2 = new TeacherSubject { Id = Guid.NewGuid(), TeacherId = teacher2.Id, SubjectId = subject2.Id };
+        var cs2 = new ClassSubject { Id = Guid.NewGuid(), ClassId = class2.Id, TeacherSubjectId = ts2.Id };
+        var sched2 = new Schedule { Id = Guid.NewGuid(), ClassSubjectId = cs2.Id, SemesterId = semester.Id, DayOfWeek = DateTime.UtcNow.DayOfWeek, StartTime = TimeSpan.Parse("08:30"), EndTime = TimeSpan.Parse("10:00"), Room = "R.102" };
+
+        context.Users.AddRange(teacher2, student3, admin);
+        context.SchoolClasses.Add(class2);
+        context.Subjects.Add(subject2);
+        context.TeacherSubjects.Add(ts2);
+        context.ClassSubjects.Add(cs2);
+        context.Schedules.Add(sched2);
+        await context.SaveChangesAsync();
+
+        // 1. Teacher 1 opens session for Class 1 (sched1)
+        var sess1 = await service.CreateSessionAsync(teacher1.Id, new CreateAttendanceSessionRequest
+        {
+            ScheduleId = sched1.Id,
+            Date = DateTime.UtcNow.Date,
+            SessionNumber = 1
+        });
+
+        // 2. Teacher 2 opens session for Class 2 (sched2)
+        var sess2 = await service.CreateSessionAsync(teacher2.Id, new CreateAttendanceSessionRequest
+        {
+            ScheduleId = sched2.Id,
+            Date = DateTime.UtcNow.Date,
+            SessionNumber = 1
+        });
+
+        // --- STUDENT ISOLATION TESTS ---
+        // Student 1 can list own class sessions
+        var s1List = await service.GetAllSessionsAsync(student1.Id, "Student");
+        Assert.Single(s1List);
+        Assert.Equal(sess1.Id, s1List[0].Id);
+
+        // Student 1 cannot view Class 2 session detail (throws UnauthorizedAccessException)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            service.GetSessionByIdAsync(sess2.Id, student1.Id, "Student"));
+
+        // Student 1 viewing Class 1 session receives ONLY THEIR OWN attendance record
+        var s1Detail = await service.GetSessionByIdAsync(sess1.Id, student1.Id, "Student");
+        Assert.NotNull(s1Detail);
+        Assert.Single(s1Detail.Attendances); // Record-level isolation: 1 record instead of 2!
+        Assert.Equal(student1.Id, s1Detail.Attendances[0].StudentId);
+
+        // --- TEACHER SCOPE & MUTATION TESTS ---
+        // Teacher 1 can list own assigned sessions
+        var t1List = await service.GetAllSessionsAsync(teacher1.Id, "Teacher");
+        Assert.Single(t1List);
+        Assert.Equal(sess1.Id, t1List[0].Id);
+
+        // Teacher 1 viewing Class 1 session receives full class attendance roster
+        var t1Detail = await service.GetSessionByIdAsync(sess1.Id, teacher1.Id, "Teacher");
+        Assert.NotNull(t1Detail);
+        Assert.Equal(2, t1Detail.Attendances.Count); // Full roster (Student 1 & Student 2)
+
+        // Teacher 1 cannot view Teacher 2's session detail (throws UnauthorizedAccessException)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            service.GetSessionByIdAsync(sess2.Id, teacher1.Id, "Teacher"));
+
+        // Unassigned Teacher 1 cannot update student status in Teacher 2's session (throws UnauthorizedAccessException)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            service.UpdateStudentStatusAsync(sess2.Id, teacher1.Id, new UpdateAttendanceStatusRequest
+            {
+                StudentId = student3.Id,
+                Status = AttendanceStatus.Present
+            }));
+
+        // Unassigned Teacher 1 cannot close Teacher 2's session (throws UnauthorizedAccessException)
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            service.CloseSessionAsync(sess2.Id, teacher1.Id));
+
+        // --- ADMIN ACCESS TESTS ---
+        // Admin can list all sessions system-wide
+        var adminList = await service.GetAllSessionsAsync(admin.Id, "Admin");
+        Assert.Equal(2, adminList.Count);
+
+        // Admin can update attendance in any session
+        var adminUpdated = await service.UpdateStudentStatusAsync(sess2.Id, admin.Id, new UpdateAttendanceStatusRequest
+        {
+            StudentId = student3.Id,
+            Status = AttendanceStatus.Present
+        });
+        Assert.NotNull(adminUpdated);
+        Assert.Equal(1, adminUpdated.PresentCount);
+
+        // Admin can close any session
+        var adminClosed = await service.CloseSessionAsync(sess2.Id, admin.Id);
+        Assert.NotNull(adminClosed);
+        Assert.Equal("Closed", adminClosed.Status);
     }
 }

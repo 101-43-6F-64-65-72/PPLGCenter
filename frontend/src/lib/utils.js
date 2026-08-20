@@ -21,7 +21,7 @@ export const resolveImageUrl = (
 
   // Determine production vs dev environment and backend base URL
   const isHttpsProd = typeof window !== "undefined" && window.location.protocol === "https:";
-  let rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || API_CONFIG.BASE_URL || "http://localhost:5000";
+  let rawApiBase = process.env.NEXT_PUBLIC_API_BASE_URL || API_CONFIG.BASE_URL || "http://localhost:5051";
 
   // Strip trailing slash and /api suffix if present
   let backendOrigin = rawApiBase.replace(/\/api\/?$/i, "").replace(/\/$/, "");

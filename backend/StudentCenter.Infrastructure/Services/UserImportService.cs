@@ -64,6 +64,9 @@ public class UserImportService : IUserImportService
             string GetVal(string colName) => colMap.TryGetValue(colName, out var idx) && idx < row.Count ? row[idx].Trim() : string.Empty;
 
             var fullName = GetVal("nama");
+            if (string.IsNullOrWhiteSpace(fullName)) fullName = GetVal("nama siswa");
+            if (string.IsNullOrWhiteSpace(fullName)) fullName = GetVal("nama lengkap");
+
             var nis = GetVal("nis");
             var nisn = GetVal("nisn");
             var deptStr = GetVal("jurusan");
@@ -83,17 +86,6 @@ public class UserImportService : IUserImportService
                 continue;
             }
 
-            // Validate Jurusan exists
-            var dept = departments.FirstOrDefault(d =>
-                d.Code.Equals(deptStr, StringComparison.OrdinalIgnoreCase) ||
-                d.Name.Equals(deptStr, StringComparison.OrdinalIgnoreCase));
-            if (dept == null)
-            {
-                summary.FailedCount++;
-                summary.Errors.Add($"Row {i + 1}: Jurusan '{deptStr}' does not exist in master data.");
-                continue;
-            }
-
             // Validate Kelas exists
             var schoolClass = classes.FirstOrDefault(c =>
                 c.Name.Equals(classStr, StringComparison.OrdinalIgnoreCase));
@@ -101,6 +93,20 @@ public class UserImportService : IUserImportService
             {
                 summary.FailedCount++;
                 summary.Errors.Add($"Row {i + 1}: Kelas '{classStr}' does not exist in master data.");
+                continue;
+            }
+
+            // Validate Jurusan exists
+            var dept = string.IsNullOrWhiteSpace(deptStr)
+                ? departments.FirstOrDefault(d => d.Id == schoolClass.DepartmentId)
+                : departments.FirstOrDefault(d =>
+                    d.Code.Equals(deptStr, StringComparison.OrdinalIgnoreCase) ||
+                    d.Name.Equals(deptStr, StringComparison.OrdinalIgnoreCase));
+
+            if (dept == null)
+            {
+                summary.FailedCount++;
+                summary.Errors.Add($"Row {i + 1}: Jurusan '{deptStr}' does not exist in master data.");
                 continue;
             }
 
@@ -221,7 +227,11 @@ public class UserImportService : IUserImportService
             string GetVal(string colName) => colMap.TryGetValue(colName, out var idx) && idx < row.Count ? row[idx].Trim() : string.Empty;
 
             var fullName = GetVal("nama");
+            if (string.IsNullOrWhiteSpace(fullName)) fullName = GetVal("nama lengkap");
+            if (string.IsNullOrWhiteSpace(fullName)) fullName = GetVal("nama guru");
+
             var nip = GetVal("nip");
+            if (string.IsNullOrWhiteSpace(nip) || nip == "-") nip = GetVal("kode guru");
             var email = GetVal("email");
             var phone = GetVal("hp");
             var address = GetVal("alamat");

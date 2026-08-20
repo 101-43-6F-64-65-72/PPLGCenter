@@ -24,15 +24,27 @@ public class CreateAnnouncementRequest
     /// <summary>
     /// The announcement category.
     /// </summary>
-    [Required(ErrorMessage = "Category is required.")]
-    [MaxLength(100, ErrorMessage = "Category cannot exceed 100 characters.")]
-    public string Category { get; set; } = string.Empty;
+    public string Category { get; set; } = "General";
+
+    /// <summary>
+    /// Target classes comma-separated string e.g. "X PPLG A, XI PPLG A" or "Semua Kelas".
+    /// </summary>
+    public string? TargetClasses { get; set; }
+
+    /// <summary>
+    /// Publish start date and time.
+    /// </summary>
+    public DateTime? PublishStart { get; set; }
+
+    /// <summary>
+    /// Publish end date and time.
+    /// </summary>
+    public DateTime? PublishEnd { get; set; }
 
     /// <summary>
     /// The cover image URL.
     /// </summary>
     [MaxLength(500, ErrorMessage = "Cover Image URL cannot exceed 500 characters.")]
-    [Url(ErrorMessage = "Cover Image URL must be a valid URL.")]
     public string? CoverImageUrl { get; set; }
 
     /// <summary>

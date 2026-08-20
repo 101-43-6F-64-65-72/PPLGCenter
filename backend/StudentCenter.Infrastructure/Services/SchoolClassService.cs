@@ -33,6 +33,13 @@ public class SchoolClassService : ISchoolClassService
 
         var list = await query.OrderBy(c => c.Grade).ThenBy(c => c.Name).ToListAsync();
 
+        var studentCounts = await _context.Users
+            .AsNoTracking()
+            .Where(u => u.ClassId != null && u.Role == Domain.Enums.UserRole.Student)
+            .GroupBy(u => u.ClassId!.Value)
+            .Select(g => new { ClassId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.ClassId, g => g.Count);
+
         var result = new List<SchoolClassResponse>();
         foreach (var c in list)
         {
@@ -49,10 +56,11 @@ public class SchoolClassService : ISchoolClassService
                 HomeroomTeacherName = c.HomeroomTeacher?.FullName,
                 AcademicYearId = c.AcademicYearId,
                 AcademicYearName = c.AcademicYear?.Name ?? string.Empty,
-                StudentCount = await _context.Users.CountAsync(u => u.ClassId == c.Id)
+                StudentCount = studentCounts.TryGetValue(c.Id, out var count) ? count : 0
             });
         }
         return result;
+
     }
 
     public async Task<SchoolClassResponse?> GetByIdAsync(Guid id)

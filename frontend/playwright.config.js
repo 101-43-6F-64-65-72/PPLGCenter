@@ -19,9 +19,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: process.platform === 'win32'
-        ? 'powershell -ExecutionPolicy Bypass -File start_backend.ps1'
-        : 'dotnet run --project backend/StudentCenter.Api --launch-profile http',
+      command: 'dotnet run --project backend/StudentCenter.Api --launch-profile http',
       url: 'http://localhost:5051/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

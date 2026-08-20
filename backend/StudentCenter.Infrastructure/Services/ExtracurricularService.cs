@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
@@ -165,6 +166,13 @@ public class ExtracurricularService : IExtracurricularService
 
     public async Task<ExtracurricularResponse> CreateExtracurricularAsync(CreateExtracurricularRequest request, Guid managerId)
     {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ValidationException("Nama ekstrakurikuler wajib diisi.");
+        if (string.IsNullOrWhiteSpace(request.Category))
+            throw new ValidationException("Kategori ekstrakurikuler wajib diisi.");
+        if (request.MaxMembers <= 0)
+            throw new ValidationException("Maksimum anggota harus lebih besar dari 0.");
+
         var manager = await _context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == managerId);
@@ -178,18 +186,23 @@ public class ExtracurricularService : IExtracurricularService
         User? supervisorTeacher = null;
         if (request.SupervisorTeacherId.HasValue)
         {
-            supervisorTeacher = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.SupervisorTeacherId.Value && u.Role == UserRole.Teacher);
-            if (supervisorTeacher == null)
+            var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.SupervisorTeacherId.Value);
+            if (targetUser == null)
             {
-                throw new KeyNotFoundException("Guru Pembina yang dipilih tidak ditemukan atau bukan ber-role Guru.");
+                throw new KeyNotFoundException("Guru Pembina yang dipilih tidak ditemukan.");
             }
+            if (targetUser.Role != UserRole.Teacher)
+            {
+                throw new ValidationException("Guru Pembina yang dipilih harus ber-role Guru.");
+            }
+            supervisorTeacher = targetUser;
         }
 
         var extracurricular = new Extracurricular
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
-            Description = request.Description.Trim(),
+            Description = request.Description?.Trim() ?? string.Empty,
             ImageUrl = request.ImageUrl?.Trim(),
             Category = request.Category.Trim(),
             MaxMembers = request.MaxMembers,
@@ -229,6 +242,13 @@ public class ExtracurricularService : IExtracurricularService
 
     public async Task<ExtracurricularResponse?> UpdateExtracurricularAsync(Guid id, UpdateExtracurricularRequest request, Guid managerId)
     {
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new ValidationException("Nama ekstrakurikuler wajib diisi.");
+        if (string.IsNullOrWhiteSpace(request.Category))
+            throw new ValidationException("Kategori ekstrakurikuler wajib diisi.");
+        if (request.MaxMembers <= 0)
+            throw new ValidationException("Maksimum anggota harus lebih besar dari 0.");
+
         var extracurricular = await _context.Extracurriculars
             .Include(e => e.ManagedByUser)
             .Include(e => e.SupervisorTeacher)
@@ -238,36 +258,49 @@ public class ExtracurricularService : IExtracurricularService
         if (extracurricular is null)
             return null;
 
-        bool isAuthorized = extracurricular.ManagedByUserId == managerId || extracurricular.SupervisorTeacherId == managerId;
-        if (!isAuthorized)
+        var manager = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == managerId);
+
+        if (manager is not null && manager.Role == UserRole.Student)
         {
-            isAuthorized = await _context.ExtracurricularAdvisors
-                .AsNoTracking()
-                .AnyAsync(a => a.ExtracurricularId == id && a.TeacherId == managerId);
+            throw new UnauthorizedAccessException("Siswa tidak memiliki akses untuk mengubah data ekstrakurikuler.");
         }
 
-        if (!isAuthorized)
+        bool isAdmin = manager?.Role == UserRole.Admin;
+        if (!isAdmin)
         {
-            var manager = await _context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == managerId);
+            bool isAuthorized = extracurricular.ManagedByUserId == managerId || extracurricular.SupervisorTeacherId == managerId;
+            if (!isAuthorized)
+            {
+                isAuthorized = await _context.ExtracurricularAdvisors
+                    .AsNoTracking()
+                    .AnyAsync(a => a.ExtracurricularId == id && a.TeacherId == managerId);
+            }
 
-            if (manager?.Role != UserRole.Admin)
+            if (!isAuthorized)
+            {
                 throw new UnauthorizedAccessException("Anda hanya dapat mengedit ekstrakurikuler yang Anda bina atau kelola.");
+            }
         }
 
         User? supervisorTeacher = null;
         if (request.SupervisorTeacherId.HasValue)
         {
-            supervisorTeacher = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.SupervisorTeacherId.Value && u.Role == UserRole.Teacher);
-            if (supervisorTeacher == null)
+            var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.SupervisorTeacherId.Value);
+            if (targetUser == null)
             {
-                throw new KeyNotFoundException("Guru Pembina yang dipilih tidak ditemukan atau bukan ber-role Guru.");
+                throw new KeyNotFoundException("Guru Pembina yang dipilih tidak ditemukan.");
             }
+            if (targetUser.Role != UserRole.Teacher)
+            {
+                throw new ValidationException("Guru Pembina yang dipilih harus ber-role Guru.");
+            }
+            supervisorTeacher = targetUser;
         }
 
         extracurricular.Name = request.Name.Trim();
-        extracurricular.Description = request.Description.Trim();
+        extracurricular.Description = request.Description?.Trim() ?? string.Empty;
         extracurricular.ImageUrl = request.ImageUrl?.Trim();
         extracurricular.Category = request.Category.Trim();
         extracurricular.MaxMembers = request.MaxMembers;
@@ -329,106 +362,127 @@ public class ExtracurricularService : IExtracurricularService
 
     public async Task<ExtracurricularMemberResponse> JoinExtracurricularAsync(Guid extracurricularId, Guid studentId)
     {
-        var extracurricular = await _context.Extracurriculars
-            .FirstOrDefaultAsync(e => e.Id == extracurricularId);
-
-        if (extracurricular is null)
-            throw new KeyNotFoundException("Ekstrakurikuler tidak ditemukan.");
-
-        if (!extracurricular.IsActive)
-            throw new InvalidOperationException("Ekstrakurikuler ini tidak aktif.");
-
-        if (!extracurricular.RegistrationOpen)
-            throw new InvalidOperationException("Pendaftaran ekstrakurikuler ini sedang ditutup.");
-
-        var student = await _context.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == studentId);
-
-        if (student is null)
-            throw new KeyNotFoundException("Siswa tidak ditemukan.");
-
-        if (student.Role != UserRole.Student)
-            throw new InvalidOperationException("Hanya siswa yang dapat mendaftar ekstrakurikuler.");
-
-        var existingMembership = await _context.ExtracurricularMembers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.ExtracurricularId == extracurricularId && m.StudentId == studentId);
-
-        if (existingMembership is not null && existingMembership.Status != "Removed")
-            throw new InvalidOperationException("Siswa sudah terdaftar pada ekstrakurikuler ini.");
-
-        var memberCount = await _context.ExtracurricularMembers
-            .AsNoTracking()
-            .CountAsync(m => m.ExtracurricularId == extracurricularId && m.Status != "Removed");
-
-        if (memberCount >= extracurricular.MaxMembers)
-            throw new InvalidOperationException("Ekstrakurikuler ini sudah mencapai batas maksimum kuota anggota.");
-
-        ExtracurricularMember member;
-        if (existingMembership != null)
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+        if (_context.Database.ProviderName != "Microsoft.EntityFrameworkCore.InMemory")
         {
-            member = existingMembership;
-            member.Status = "Pending";
-            member.JoinedAt = DateTime.UtcNow;
-            _context.ExtracurricularMembers.Update(member);
+            transaction = await _context.Database.BeginTransactionAsync();
         }
-        else
+
+        try
         {
-            member = new ExtracurricularMember
+            var extracurricular = await _context.Extracurriculars
+                .FirstOrDefaultAsync(e => e.Id == extracurricularId);
+
+            if (extracurricular is null)
+                throw new KeyNotFoundException("Ekstrakurikuler tidak ditemukan.");
+
+            if (!extracurricular.IsActive)
+                throw new InvalidOperationException("Ekstrakurikuler ini tidak aktif.");
+
+            if (!extracurricular.RegistrationOpen)
+                throw new InvalidOperationException("Pendaftaran ekstrakurikuler ini sedang ditutup.");
+
+            var student = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == studentId);
+
+            if (student is null)
+                throw new KeyNotFoundException("Siswa tidak ditemukan.");
+
+            if (student.Role != UserRole.Student)
+                throw new InvalidOperationException("Hanya siswa yang dapat mendaftar ekstrakurikuler.");
+
+            var existingMembership = await _context.ExtracurricularMembers
+                .FirstOrDefaultAsync(m => m.ExtracurricularId == extracurricularId && m.StudentId == studentId);
+
+            if (existingMembership is not null && existingMembership.Status != "Removed")
+                throw new InvalidOperationException("Siswa sudah terdaftar pada ekstrakurikuler ini.");
+
+            var memberCount = await _context.ExtracurricularMembers
+                .CountAsync(m => m.ExtracurricularId == extracurricularId && m.Status != "Removed");
+
+            if (memberCount >= extracurricular.MaxMembers)
+                throw new InvalidOperationException("Ekstrakurikuler ini sudah mencapai batas maksimum kuota anggota.");
+
+            ExtracurricularMember member;
+            if (existingMembership != null)
             {
-                Id = Guid.NewGuid(),
-                ExtracurricularId = extracurricularId,
-                StudentId = studentId,
-                Status = "Pending",
-                JoinedAt = DateTime.UtcNow
-            };
-            _context.ExtracurricularMembers.Add(member);
-        }
+                member = existingMembership;
+                member.Status = "Pending";
+                member.Position = ExtracurricularMemberPosition.Member; // Reset position on rejoin
+                member.JoinedAt = DateTime.UtcNow;
+                _context.ExtracurricularMembers.Update(member);
+            }
+            else
+            {
+                member = new ExtracurricularMember
+                {
+                    Id = Guid.NewGuid(),
+                    ExtracurricularId = extracurricularId,
+                    StudentId = studentId,
+                    Status = "Pending",
+                    Position = ExtracurricularMemberPosition.Member,
+                    JoinedAt = DateTime.UtcNow
+                };
+                _context.ExtracurricularMembers.Add(member);
+            }
 
-        await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
 
-        await _notificationService.NotifyUserAsync(
-            extracurricular.ManagedByUserId,
-            "Pengajuan Pendaftaran Ekskul",
-            $"{student.FullName} mengajukan pendaftaran ke {extracurricular.Name}. Membutuhkan persetujuan Guru Pembina.",
-            NotificationType.ExtracurricularRegistrationApproved,
-            NotificationPriority.Normal,
-            extracurricular.Id.ToString(),
-            NotificationReferenceType.Extracurricular,
-            actionUrl: $"/ekstrakurikuler/{extracurricular.Id}"
-        );
-
-        if (extracurricular.SupervisorTeacherId.HasValue && extracurricular.SupervisorTeacherId.Value != extracurricular.ManagedByUserId)
-        {
             await _notificationService.NotifyUserAsync(
-                extracurricular.SupervisorTeacherId.Value,
+                extracurricular.ManagedByUserId,
                 "Pengajuan Pendaftaran Ekskul",
-                $"{student.FullName} mengajukan pendaftaran ke {extracurricular.Name}. Membutuhkan persetujuan Anda.",
+                $"{student.FullName} mengajukan pendaftaran ke {extracurricular.Name}. Membutuhkan persetujuan Guru Pembina.",
                 NotificationType.ExtracurricularRegistrationApproved,
                 NotificationPriority.Normal,
                 extracurricular.Id.ToString(),
                 NotificationReferenceType.Extracurricular,
                 actionUrl: $"/ekstrakurikuler/{extracurricular.Id}"
             );
-        }
 
-        return new ExtracurricularMemberResponse
+            if (extracurricular.SupervisorTeacherId.HasValue && extracurricular.SupervisorTeacherId.Value != extracurricular.ManagedByUserId)
+            {
+                await _notificationService.NotifyUserAsync(
+                    extracurricular.SupervisorTeacherId.Value,
+                    "Pengajuan Pendaftaran Ekskul",
+                    $"{student.FullName} mengajukan pendaftaran ke {extracurricular.Name}. Membutuhkan persetujuan Anda.",
+                    NotificationType.ExtracurricularRegistrationApproved,
+                    NotificationPriority.Normal,
+                    extracurricular.Id.ToString(),
+                    NotificationReferenceType.Extracurricular,
+                    actionUrl: $"/ekstrakurikuler/{extracurricular.Id}"
+                );
+            }
+
+            return new ExtracurricularMemberResponse
+            {
+                Id = member.Id,
+                ExtracurricularId = member.ExtracurricularId,
+                StudentId = member.StudentId,
+                StudentName = student.FullName,
+                StudentEmail = student.Email,
+                NIS = student.NIS,
+                NISN = student.NISN,
+                ClassName = student.Class?.Name,
+                PhotoUrl = student.PhotoUrl,
+                PhoneNumber = student.PhoneNumber,
+                Status = member.Status,
+                Position = member.Position.ToString(),
+                JoinedAt = member.JoinedAt
+            };
+        }
+        catch
         {
-            Id = member.Id,
-            ExtracurricularId = member.ExtracurricularId,
-            StudentId = member.StudentId,
-            StudentName = student.FullName,
-            StudentEmail = student.Email,
-            NIS = student.NIS,
-            NISN = student.NISN,
-            ClassName = student.Class?.Name,
-            PhotoUrl = student.PhotoUrl,
-            PhoneNumber = student.PhoneNumber,
-            Status = member.Status,
-            Position = member.Position.ToString(),
-            JoinedAt = member.JoinedAt
-        };
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
+            throw;
+        }
     }
 
     public async Task<bool> LeaveExtracurricularAsync(Guid extracurricularId, Guid studentId)
@@ -499,6 +553,14 @@ public class ExtracurricularService : IExtracurricularService
 
     public async Task<bool> UpdateMemberStatusAsync(Guid extracurricularId, Guid memberId, string status, Guid reviewerId)
     {
+        var validStatuses = new[] { "Pending", "Active", "Removed" };
+        var matchedStatus = validStatuses.FirstOrDefault(s => string.Equals(s, status?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        if (matchedStatus is null)
+        {
+            throw new ValidationException("Status keanggotaan tidak valid. Gunakan 'Pending', 'Active', atau 'Removed'.");
+        }
+
         var member = await _context.ExtracurricularMembers
             .Include(m => m.Extracurricular)
             .Include(m => m.Student)
@@ -507,13 +569,33 @@ public class ExtracurricularService : IExtracurricularService
         if (member is null) return false;
 
         var reviewer = await _context.Users.FindAsync(reviewerId);
-        if (reviewer == null || (reviewer.Role != UserRole.Admin && reviewer.Role != UserRole.Teacher))
-            throw new UnauthorizedAccessException("Hanya Admin atau Guru pengampu yang dapat mengelola keanggotaan.");
+        if (reviewer == null || reviewer.Role == UserRole.Student)
+        {
+            throw new UnauthorizedAccessException("Siswa tidak memiliki akses untuk mengelola keanggotaan.");
+        }
 
-        member.Status = status;
+        if (reviewer.Role != UserRole.Admin)
+        {
+            bool isAuthorized = member.Extracurricular.SupervisorTeacherId == reviewerId ||
+                               member.Extracurricular.ManagedByUserId == reviewerId;
+
+            if (!isAuthorized)
+            {
+                isAuthorized = await _context.ExtracurricularAdvisors
+                    .AsNoTracking()
+                    .AnyAsync(a => a.ExtracurricularId == extracurricularId && a.TeacherId == reviewerId);
+            }
+
+            if (!isAuthorized)
+            {
+                throw new UnauthorizedAccessException("Anda tidak memiliki wewenang untuk mengelola anggota ekstrakurikuler ini.");
+            }
+        }
+
+        member.Status = matchedStatus;
         await _context.SaveChangesAsync();
 
-        if (status == "Active")
+        if (matchedStatus == "Active")
         {
             await _notificationService.NotifyUserAsync(
                 member.StudentId,
@@ -526,7 +608,7 @@ public class ExtracurricularService : IExtracurricularService
                 actionUrl: $"/ekstrakurikuler/{extracurricularId}"
             );
         }
-        else if (status == "Removed")
+        else if (matchedStatus == "Removed")
         {
             await _notificationService.NotifyUserAsync(
                 member.StudentId,
@@ -616,30 +698,26 @@ public class ExtracurricularService : IExtracurricularService
 
         var memberCountDict = memberCounts.ToDictionary(x => x.ExtracurricularId, x => x.Count);
 
-        // 4. Batch-fetch pending proposal counts matched by ekskul name (Category string match)
-        //    This is the current mechanism; a proper FK (Proposal.ExtracurricularId) would be more reliable.
-        var ekskulNames = ekskuls.Select(e => e.Name.ToLower()).ToList();
+        // 4. Batch-fetch pending proposal counts matched by ekskul name (Exact Category string match)
         var allPendingProposals = await _context.Proposals
             .AsNoTracking()
             .Where(p => p.Status == StudentCenter.Domain.Enums.ProposalStatus.Pending && p.Category != null)
-            .Select(p => new { p.Id, Category = p.Category!.ToLower() })
+            .Select(p => new { p.Id, Category = p.Category!.Trim().ToLower() })
             .ToListAsync();
 
         // 5. Batch-fetch completed reviews (proposals reviewed by this teacher)
         var allReviewedProposals = await _context.Proposals
             .AsNoTracking()
             .Where(p => p.ReviewedByUserId == teacherId && p.Category != null)
-            .Select(p => new { p.Id, Category = p.Category!.ToLower() })
+            .Select(p => new { p.Id, Category = p.Category!.Trim().ToLower() })
             .ToListAsync();
 
         // 6. Map to summary DTO
         return ekskuls.Select(e =>
         {
-            var nameLower = e.Name.ToLower();
-            var pendingCount = allPendingProposals.Count(p =>
-                p.Category == nameLower || p.Category.Contains(nameLower));
-            var reviewedCount = allReviewedProposals.Count(p =>
-                p.Category == nameLower || p.Category.Contains(nameLower));
+            var nameTrimmed = e.Name.Trim().ToLower();
+            var pendingCount = allPendingProposals.Count(p => p.Category == nameTrimmed);
+            var reviewedCount = allReviewedProposals.Count(p => p.Category == nameTrimmed);
 
             return new SupervisedExtracurricularSummary
             {

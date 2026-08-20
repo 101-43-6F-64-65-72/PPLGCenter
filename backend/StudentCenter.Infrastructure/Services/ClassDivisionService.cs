@@ -21,11 +21,24 @@ public class ClassDivisionService : IClassDivisionService
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
         if (user is null) return false;
 
-        // Admin or Teacher can manage any class tree
-        if (user.Role == UserRole.Admin || user.Role == UserRole.Teacher)
+        // Admin can manage any class division tree
+        if (user.Role == UserRole.Admin)
             return true;
 
-        // Ketua Kelas can manage their assigned class tree
+        if (user.Role == UserRole.Teacher)
+        {
+            var schoolClass = await _context.SchoolClasses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == schoolClassId);
+            if (schoolClass != null && schoolClass.HomeroomTeacherId == userId)
+                return true;
+
+            var teachesClass = await _context.ClassSubjects
+                .AsNoTracking()
+                .AnyAsync(cs => cs.ClassId == schoolClassId && cs.TeacherSubject != null && cs.TeacherSubject.TeacherId == userId);
+
+            return teachesClass;
+        }
+
+        // Ketua Kelas can manage their assigned class division tree
         var isKetuaKelas = await _context.ClassLeadership
             .AsNoTracking()
             .AnyAsync(cl => cl.SchoolClassId == schoolClassId && cl.ClassLeaderStudentId == userId && cl.IsActive);

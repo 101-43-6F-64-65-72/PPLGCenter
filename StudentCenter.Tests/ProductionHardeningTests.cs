@@ -44,9 +44,10 @@ public class ProductionHardeningTests
     [Fact]
     public async Task UploadController_ExecutableFile_RejectsWithBadRequest()
     {
+        var context = GetInMemoryDbContext();
         var mockEnv = new Mock<IWebHostEnvironment>();
         var mockConfig = new Mock<IConfiguration>();
-        var controller = new UploadController(mockEnv.Object, mockConfig.Object, Mock.Of<IFileStorageService>(), Mock.Of<ICloudinaryService>());
+        var controller = new UploadController(mockEnv.Object, mockConfig.Object, Mock.Of<IFileStorageService>(), Mock.Of<ICloudinaryService>(), context);
 
         var fileMock = new Mock<IFormFile>();
         fileMock.Setup(f => f.FileName).Returns("malicious_script.exe");
@@ -61,9 +62,10 @@ public class ProductionHardeningTests
     [Fact]
     public async Task UploadController_FileExceeds10MB_RejectsWithBadRequest()
     {
+        var context = GetInMemoryDbContext();
         var mockEnv = new Mock<IWebHostEnvironment>();
         var mockConfig = new Mock<IConfiguration>();
-        var controller = new UploadController(mockEnv.Object, mockConfig.Object, Mock.Of<IFileStorageService>(), Mock.Of<ICloudinaryService>());
+        var controller = new UploadController(mockEnv.Object, mockConfig.Object, Mock.Of<IFileStorageService>(), Mock.Of<ICloudinaryService>(), context);
 
         var fileMock = new Mock<IFormFile>();
         fileMock.Setup(f => f.FileName).Returns("large_video.mp4");
@@ -85,7 +87,8 @@ public class ProductionHardeningTests
         var eventMock = new Mock<Application.Services.IAcademicEventService>();
 
         scheduleMock.Setup(s => s.GetTodaySchedulesForTeacherAsync(It.IsAny<Guid>())).ReturnsAsync(new List<ScheduleResponse>());
-        scheduleMock.Setup(s => s.GetTodaySchedulesForStudentAsync(It.IsAny<Guid>())).ReturnsAsync(new List<ScheduleResponse>());
+        scheduleMock.Setup(s => s.GetTodaySchedulesForStudentAsync(It.IsAny<Guid>())).ReturnsAsync(new StudentTodayScheduleResponse());
+
         materialMock.Setup(m => m.GetTeacherMaterialsAsync(It.IsAny<Guid>())).ReturnsAsync(new List<LessonMaterialResponse>());
         materialMock.Setup(m => m.GetStudentMaterialsAsync(It.IsAny<Guid>())).ReturnsAsync(new List<LessonMaterialResponse>());
         assignmentMock.Setup(a => a.GetTeacherAssignmentsAsync(It.IsAny<Guid>())).ReturnsAsync(new List<AssignmentResponse>());

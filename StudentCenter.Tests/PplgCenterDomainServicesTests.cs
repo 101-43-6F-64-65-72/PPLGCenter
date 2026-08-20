@@ -127,8 +127,8 @@ public class PplgCenterDomainServicesTests
 
         context.SchoolClasses.Add(new SchoolClass { Id = classId, Name = "XI PPLG A", Grade = "XI" });
         context.Users.Add(new User { Id = waliId, Username = "wali", Role = UserRole.Teacher });
-        context.Users.Add(new User { Id = student1Id, Username = "student1", Role = UserRole.Student });
-        context.Users.Add(new User { Id = student2Id, Username = "student2", Role = UserRole.Student });
+        context.Users.Add(new User { Id = student1Id, Username = "student1", Role = UserRole.Student, ClassId = classId });
+        context.Users.Add(new User { Id = student2Id, Username = "student2", Role = UserRole.Student, ClassId = classId });
         context.AcademicYears.Add(new AcademicYear { Id = academicYearId, Name = "2025/2026", StartDate = DateTime.UtcNow, EndDate = DateTime.UtcNow.AddYears(1) });
         await context.SaveChangesAsync();
 
@@ -210,7 +210,7 @@ public class PplgCenterDomainServicesTests
             AnchorStartDate = anchorDate,
             InitialCategory = SubjectCategory.KK,
             CycleWeeks = 2
-        });
+        }, Guid.NewGuid(), "Admin");
 
         // Week 1 (KK)
         var week1Cat = await service.GetCurrentCategoryForClassAsync(classId, anchorDate.AddDays(2));

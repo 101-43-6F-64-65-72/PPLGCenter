@@ -34,10 +34,10 @@ public class DiscussionService : IDiscussionService
 
         var canPost = await _authService.CanPostDiscussionThreadAsync(userId, request.ClassSubjectId);
         if (!canPost)
-            throw new ValidationException("Anda tidak berhak membuat diskusi di kelas ini.");
+            throw new UnauthorizedAccessException("Anda tidak memiliki akses untuk membuat diskusi di kelas ini.");
 
         var user = await _context.Users.FindAsync(userId);
-        if (user == null) throw new ValidationException("User not found.");
+        if (user == null) throw new KeyNotFoundException("User not found.");
 
         var thread = new DiscussionThread
         {
@@ -85,11 +85,15 @@ public class DiscussionService : IDiscussionService
             }
         }
 
-        return await GetThreadByIdAsync(thread.Id);
+        return await GetThreadByIdAsync(thread.Id, userId);
     }
 
-    public async Task<CursorPagedResult<DiscussionThreadResponse>> GetClassSubjectThreadsAsync(Guid classSubjectId, string? cursor, int limit = 15)
+    public async Task<CursorPagedResult<DiscussionThreadResponse>> GetClassSubjectThreadsAsync(Guid classSubjectId, Guid requestingUserId, string? cursor, int limit = 15)
     {
+        var canAccess = await _authService.CanPostDiscussionThreadAsync(requestingUserId, classSubjectId);
+        if (!canAccess)
+            throw new UnauthorizedAccessException("Anda tidak memiliki akses ke diskusi kelas ini.");
+
         if (limit < 1) limit = 15;
         if (limit > 50) limit = 50;
 
@@ -128,7 +132,7 @@ public class DiscussionService : IDiscussionService
         };
     }
 
-    public async Task<DiscussionThreadResponse> GetThreadByIdAsync(Guid threadId)
+    public async Task<DiscussionThreadResponse> GetThreadByIdAsync(Guid threadId, Guid requestingUserId)
     {
         var thread = await _context.DiscussionThreads
             .AsNoTracking()
@@ -140,7 +144,11 @@ public class DiscussionService : IDiscussionService
             .Include(t => t.CreatedByUser)
             .FirstOrDefaultAsync(t => t.Id == threadId && t.DeletedAt == null);
 
-        if (thread == null) throw new ValidationException("Diskusi tidak ditemukan.");
+        if (thread == null) throw new KeyNotFoundException("Diskusi tidak ditemukan.");
+
+        var canAccess = await _authService.CanPostDiscussionThreadAsync(requestingUserId, thread.ClassSubjectId);
+        if (!canAccess)
+            throw new UnauthorizedAccessException("Anda tidak memiliki akses ke diskusi kelas ini.");
 
         return MapThreadResponse(thread);
     }
@@ -148,28 +156,48 @@ public class DiscussionService : IDiscussionService
     public async Task<DiscussionThreadResponse> UpdateThreadAsync(Guid userId, Guid threadId, UpdateDiscussionThreadRequest request)
     {
         var thread = await _context.DiscussionThreads.FirstOrDefaultAsync(t => t.Id == threadId && t.DeletedAt == null);
-        if (thread == null) throw new ValidationException("Diskusi tidak ditemukan.");
+        if (thread == null) throw new KeyNotFoundException("Diskusi tidak ditemukan.");
 
         var user = await _context.Users.FindAsync(userId);
-        if (user == null) throw new ValidationException("User not found.");
+        if (user == null) throw new KeyNotFoundException("User not found.");
 
-        if (thread.CreatedByUserId != userId && user.Role != UserRole.Admin && user.Role != UserRole.Teacher)
-            throw new ValidationException("Anda tidak berhak mengubah diskusi ini.");
+        bool isAuthor = thread.CreatedByUserId == userId;
+        if (!isAuthor)
+        {
+            if (user.Role == UserRole.Admin)
+            {
+                // Admin allowed
+            }
+            else if (user.Role == UserRole.Teacher)
+            {
+                await VerifyTeacherOrAdminAuthorityAsync(user, thread.ClassSubjectId);
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Anda tidak berhak mengubah diskusi ini.");
+            }
+        }
 
         if (!string.IsNullOrWhiteSpace(request.Title)) thread.Title = request.Title.Trim();
         if (!string.IsNullOrWhiteSpace(request.Body)) thread.Body = request.Body.Trim();
 
-        if (request.IsPinned.HasValue && (user.Role == UserRole.Teacher || user.Role == UserRole.Admin))
+        if (request.IsPinned.HasValue)
+        {
+            await VerifyTeacherOrAdminAuthorityAsync(user, thread.ClassSubjectId);
             thread.IsPinned = request.IsPinned.Value;
+        }
 
-        if (request.IsLocked.HasValue && (user.Role == UserRole.Teacher || user.Role == UserRole.Admin))
+        if (request.IsLocked.HasValue)
+        {
+            await VerifyTeacherOrAdminAuthorityAsync(user, thread.ClassSubjectId);
             thread.IsLocked = request.IsLocked.Value;
+        }
 
         thread.UpdatedByUserId = userId;
         thread.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        return await GetThreadByIdAsync(thread.Id);
+        return await GetThreadByIdAsync(thread.Id, userId);
     }
 
     public async Task<bool> DeleteThreadAsync(Guid userId, Guid threadId)
@@ -180,8 +208,22 @@ public class DiscussionService : IDiscussionService
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return false;
 
-        if (thread.CreatedByUserId != userId && user.Role != UserRole.Admin && user.Role != UserRole.Teacher)
-            throw new ValidationException("Anda tidak berhak menghapus diskusi ini.");
+        bool isAuthor = thread.CreatedByUserId == userId;
+        if (!isAuthor)
+        {
+            if (user.Role == UserRole.Admin)
+            {
+                // Admin allowed
+            }
+            else if (user.Role == UserRole.Teacher)
+            {
+                await VerifyTeacherOrAdminAuthorityAsync(user, thread.ClassSubjectId);
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Anda tidak berhak menghapus diskusi ini.");
+            }
+        }
 
         thread.DeletedAt = DateTime.UtcNow;
         thread.DeletedByUserId = userId;
@@ -197,18 +239,21 @@ public class DiscussionService : IDiscussionService
 
         var canReply = await _authService.CanReplyDiscussionThreadAsync(userId, request.ThreadId);
         if (!canReply)
-            throw new ValidationException("Diskusi telah dikunci atau Anda tidak memiliki akses balasan.");
+            throw new UnauthorizedAccessException("Diskusi telah dikunci atau Anda tidak memiliki akses balasan.");
 
         var thread = await _context.DiscussionThreads.FirstOrDefaultAsync(t => t.Id == request.ThreadId && t.DeletedAt == null);
-        if (thread == null) throw new ValidationException("Diskusi tidak ditemukan.");
+        if (thread == null) throw new KeyNotFoundException("Diskusi tidak ditemukan.");
 
         var user = await _context.Users.FindAsync(userId);
-        if (user == null) throw new ValidationException("User not found.");
+        if (user == null) throw new KeyNotFoundException("User not found.");
 
         if (request.ParentReplyId.HasValue)
         {
             var parent = await _context.DiscussionReplies.FirstOrDefaultAsync(r => r.Id == request.ParentReplyId.Value && r.DeletedAt == null);
-            if (parent == null) throw new ValidationException("Balasan utama yang dituju telah dihapus.");
+            if (parent == null)
+                throw new KeyNotFoundException("Balasan utama yang dituju tidak ditemukan atau telah dihapus.");
+            if (parent.ThreadId != request.ThreadId)
+                throw new ValidationException("Balasan utama berasal dari diskusi yang berbeda.");
         }
 
         var reply = new DiscussionReply
@@ -274,13 +319,29 @@ public class DiscussionService : IDiscussionService
         return MapReplyResponse(reply, user);
     }
 
-    public async Task<List<DiscussionReplyResponse>> GetThreadRepliesAsync(Guid threadId)
+    public async Task<List<DiscussionReplyResponse>> GetThreadRepliesAsync(Guid threadId, Guid requestingUserId, int page = 1, int pageSize = 50)
     {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 50;
+        if (pageSize > 100) pageSize = 100;
+
+        var thread = await _context.DiscussionThreads
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == threadId && t.DeletedAt == null);
+
+        if (thread == null) throw new KeyNotFoundException("Diskusi tidak ditemukan.");
+
+        var canAccess = await _authService.CanPostDiscussionThreadAsync(requestingUserId, thread.ClassSubjectId);
+        if (!canAccess)
+            throw new UnauthorizedAccessException("Anda tidak memiliki akses ke diskusi kelas ini.");
+
         var replies = await _context.DiscussionReplies
             .AsNoTracking()
             .Include(r => r.CreatedByUser)
             .Where(r => r.ThreadId == threadId && r.DeletedAt == null)
             .OrderBy(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var replyDict = replies.ToDictionary(r => r.Id, r => MapReplyResponse(r, r.CreatedByUser));
@@ -312,8 +373,22 @@ public class DiscussionService : IDiscussionService
         var user = await _context.Users.FindAsync(userId);
         if (user == null) return false;
 
-        if (reply.CreatedByUserId != userId && user.Role != UserRole.Admin && user.Role != UserRole.Teacher)
-            throw new ValidationException("Anda tidak berhak menghapus balasan ini.");
+        bool isAuthor = reply.CreatedByUserId == userId;
+        if (!isAuthor)
+        {
+            if (user.Role == UserRole.Admin)
+            {
+                // Admin allowed
+            }
+            else if (user.Role == UserRole.Teacher)
+            {
+                await VerifyTeacherOrAdminAuthorityAsync(user, reply.Thread.ClassSubjectId);
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Anda tidak berhak menghapus balasan ini.");
+            }
+        }
 
         reply.DeletedAt = DateTime.UtcNow;
         reply.DeletedByUserId = userId;
@@ -330,35 +405,56 @@ public class DiscussionService : IDiscussionService
     public async Task<DiscussionThreadResponse> TogglePinThreadAsync(Guid userId, Guid threadId)
     {
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || (user.Role != UserRole.Teacher && user.Role != UserRole.Admin))
-            throw new ValidationException("Hanya guru atau admin yang dapat menyematkan (pin) diskusi.");
+        if (user == null) throw new KeyNotFoundException("User not found.");
 
         var thread = await _context.DiscussionThreads.FirstOrDefaultAsync(t => t.Id == threadId && t.DeletedAt == null);
-        if (thread == null) throw new ValidationException("Diskusi tidak ditemukan.");
+        if (thread == null) throw new KeyNotFoundException("Diskusi tidak ditemukan.");
+
+        await VerifyTeacherOrAdminAuthorityAsync(user, thread.ClassSubjectId);
 
         thread.IsPinned = !thread.IsPinned;
         thread.UpdatedByUserId = userId;
         thread.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        return await GetThreadByIdAsync(thread.Id);
+        return await GetThreadByIdAsync(thread.Id, userId);
     }
 
     public async Task<DiscussionThreadResponse> ToggleLockThreadAsync(Guid userId, Guid threadId)
     {
         var user = await _context.Users.FindAsync(userId);
-        if (user == null || (user.Role != UserRole.Teacher && user.Role != UserRole.Admin))
-            throw new ValidationException("Hanya guru atau admin yang dapat mengunci diskusi.");
+        if (user == null) throw new KeyNotFoundException("User not found.");
 
         var thread = await _context.DiscussionThreads.FirstOrDefaultAsync(t => t.Id == threadId && t.DeletedAt == null);
-        if (thread == null) throw new ValidationException("Diskusi tidak ditemukan.");
+        if (thread == null) throw new KeyNotFoundException("Diskusi tidak ditemukan.");
+
+        await VerifyTeacherOrAdminAuthorityAsync(user, thread.ClassSubjectId);
 
         thread.IsLocked = !thread.IsLocked;
         thread.UpdatedByUserId = userId;
         thread.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
-        return await GetThreadByIdAsync(thread.Id);
+        return await GetThreadByIdAsync(thread.Id, userId);
+    }
+
+    private async Task VerifyTeacherOrAdminAuthorityAsync(User user, Guid classSubjectId)
+    {
+        if (user.Role == UserRole.Admin) return;
+
+        if (user.Role == UserRole.Teacher)
+        {
+            var cs = await _context.ClassSubjects
+                .AsNoTracking()
+                .Include(c => c.TeacherSubject)
+                .FirstOrDefaultAsync(c => c.Id == classSubjectId);
+
+            if (cs?.TeacherSubject?.TeacherId == user.Id) return;
+
+            throw new UnauthorizedAccessException("Guru pengampu yang tidak mengajar kelas ini tidak memiliki wewenang moderasi.");
+        }
+
+        throw new UnauthorizedAccessException("Siswa tidak memiliki akses moderasi.");
     }
 
     private static DiscussionThreadResponse MapThreadResponse(DiscussionThread t)

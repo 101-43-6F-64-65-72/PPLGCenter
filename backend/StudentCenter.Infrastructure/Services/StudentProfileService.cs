@@ -40,7 +40,7 @@ public class StudentProfileService : IStudentProfileService
             {
                 Id = profile?.Id ?? Guid.Empty,
                 UserId = user.Id,
-                StudentName = user.FullName ?? user.Username,
+                StudentName = user.FullName ?? user.Username ?? string.Empty,
                 NIS = user.NIS ?? string.Empty,
                 ClassName = user.Class?.Name,
                 Visibility = ProfileVisibility.PRIVATE,
@@ -57,7 +57,7 @@ public class StudentProfileService : IStudentProfileService
         {
             Id = profile?.Id ?? Guid.Empty,
             UserId = user.Id,
-            StudentName = user.FullName ?? user.Username,
+            StudentName = user.FullName ?? user.Username ?? string.Empty,
             NIS = user.NIS ?? string.Empty,
             ClassName = user.Class?.Name,
             Bio = profile?.Bio,
@@ -122,6 +122,12 @@ public class StudentProfileService : IStudentProfileService
 
     public async Task<StudentProjectResponse> AddProjectAsync(Guid userId, StudentProjectRequest request)
     {
+        var userExists = await _context.Users.AnyAsync(u => u.Id == userId);
+        if (!userExists)
+        {
+            throw new KeyNotFoundException("User not found.");
+        }
+
         var profile = await _context.StudentProfiles
             .FirstOrDefaultAsync(sp => sp.UserId == userId);
 
