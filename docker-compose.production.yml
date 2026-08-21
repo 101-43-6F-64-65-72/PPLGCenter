@@ -43,6 +43,8 @@ services:
       - no-new-privileges:true
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+      - DOTNET_USE_POLLING_FILE_WATCHER=true
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET__FILE=/run/secrets/jwt_secret
       - JWT_ISSUER=${JWT_ISSUER:-PPLGCenter}

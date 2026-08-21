@@ -297,16 +297,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-try
+if (app.Environment.IsDevelopment())
 {
-    await SeedAdminData.SeedAsync(app.Services);
-    await MasterDataSeeder.SeedAsync(app.Services);
-    await OperationDataSeeder.SeedAsync(app.Services);
-    await UserJsonSeeder.SeedUsersFromJsonAsync(app.Services);
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"[Seeder Warning] Data seeding encountered error: {ex.Message}");
+    try
+    {
+        await SeedAdminData.SeedAsync(app.Services);
+        await MasterDataSeeder.SeedAsync(app.Services);
+        await OperationDataSeeder.SeedAsync(app.Services);
+        await UserJsonSeeder.SeedUsersFromJsonAsync(app.Services);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[Seeder Warning] Data seeding encountered error: {ex.Message}");
+    }
 }
 
 app.UseHttpsRedirection();
