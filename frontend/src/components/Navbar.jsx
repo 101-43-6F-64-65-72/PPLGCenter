@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
-import { User, LogOut } from "@/components/common/Icons";
+import { User, LogOut, ChevronDown } from "@/components/common/Icons";
 import LoginModal from "@/features/auth/components/LoginModal";
 import NotificationBell from "@/components/notification/NotificationBell";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -22,71 +24,56 @@ export default function Navbar() {
   const isPplgTeacher = userRole === "teacher" && (position.includes("pengembangan perangkat lunak dan gim") || position.includes("pplg"));
   const isAdminOrPplgTeacher = userRole === "admin" || isPplgTeacher;
 
-  const baseNavItems = [
+  // Primary visible items on desktop
+  const primaryNavItems = [
     { name: "Beranda", path: "/" },
     { name: "Kelas & Jadwal", path: "/kelas" },
     { name: "Pengumuman", path: "/pengumuman" },
     { name: "Mading", path: "/mading" },
     { name: "Fasilitas", path: "/fasilitas" },
+  ];
+
+  // Secondary items contained in "Lainnya" dropdown
+  const secondaryNavItems = [
     { name: "Perpustakaan", path: "/perpustakaan" },
     { name: "Komunitas PPLG", path: "/komunitas" },
     { name: "Kalender", path: "/kalender" },
   ];
 
-  if (isAuthenticated) {
-    if (isAdminOrPplgTeacher) {
-      baseNavItems.push({ name: "CCTV", path: "/cctv" });
-      baseNavItems.push({ name: "Panel Admin", path: "/admin" });
-    }
+  if (isAuthenticated && isAdminOrPplgTeacher) {
+    secondaryNavItems.push({ name: "CCTV", path: "/cctv" });
+    secondaryNavItems.push({ name: "Panel Admin", path: "/admin" });
   }
 
-  const navItems = baseNavItems;
+  const allNavItems = [...primaryNavItems, ...secondaryNavItems];
+
+  const isSecondaryActive = secondaryNavItems.some((item) =>
+    item.path === "/" ? pathname === "/" : pathname.startsWith(item.path)
+  );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleNavClick = (e, item) => {
     e.preventDefault();
     setMobileMenuOpen(false);
+    setIsDropdownOpen(false);
 
     if (item.path === "/") {
       if (pathname === "/") {
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         router.push("/");
-      }
-      return;
-    }
-
-    if (item.path === "/ekstrakurikuler") {
-      if (pathname === "/ekstrakurikuler") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        router.push("/ekstrakurikuler");
-      }
-      return;
-    }
-
-    if (item.path === "/mading") {
-      if (pathname === "/mading") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        router.push("/mading");
-      }
-      return;
-    }
-
-    if (item.path === "/proposal") {
-      if (pathname === "/proposal") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        router.push("/proposal");
-      }
-      return;
-    }
-
-    if (item.path === "/osis") {
-      if (pathname === "/osis") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        router.push("/osis");
       }
       return;
     }
@@ -109,12 +96,12 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl py-3 px-4 sm:px-6 lg:px-8 border-b border-slate-200/70 shadow-[0_2px_15px_-3px_rgba(15,23,42,0.04)] transition-all duration-200">
-        <div className="w-full max-w-[1536px] mx-auto flex items-center justify-between gap-3 sm:gap-6">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md py-2.5 px-4 sm:px-6 lg:px-8 border-b border-slate-200/80 shadow-[0_2px_15px_-3px_rgba(15,23,42,0.04)] transition-all duration-200">
+        <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between gap-3 sm:gap-6">
           {/* Left Side: Logo & School Name */}
           <Link
             href="/"
-            onClick={(e) => handleNavClick(e, navItems[0])}
+            onClick={(e) => handleNavClick(e, primaryNavItems[0])}
             className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer shrink-0"
           >
             <div className="relative h-9 w-7.5 sm:h-10 sm:w-8 shrink-0 transition-transform duration-300 group-hover:scale-105">
@@ -138,8 +125,8 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-1 shrink min-w-0 bg-slate-100/70 p-1 rounded-xl border border-slate-200/50">
-            {navItems.map((item) => {
+          <nav className="hidden lg:flex items-center gap-1 shrink min-w-0 bg-slate-100/70 p-1 rounded-xl border border-slate-200/50">
+            {primaryNavItems.map((item) => {
               const isActive =
                 item.path === "/"
                   ? pathname === "/"
@@ -150,16 +137,72 @@ export default function Navbar() {
                   key={item.name}
                   href={item.path}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`font-semibold text-xs xl:text-sm transition-all duration-200 cursor-pointer py-1.5 px-3.5 whitespace-nowrap rounded-lg ${
+                  className={`font-semibold text-xs lg:text-sm transition-all duration-150 cursor-pointer py-1.5 px-3 whitespace-nowrap rounded-lg ${
                     isActive
                       ? "text-slate-900 bg-white shadow-xs font-bold border border-slate-200/80"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
                   }`}
                 >
                   {item.name}
                 </Link>
               );
             })}
+
+            {/* "Lainnya" Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className={`font-semibold text-xs lg:text-sm transition-all duration-150 cursor-pointer py-1.5 px-3 whitespace-nowrap rounded-lg flex items-center gap-1 ${
+                  isSecondaryActive || isDropdownOpen
+                    ? "text-slate-900 bg-white shadow-xs font-bold border border-slate-200/80"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                }`}
+              >
+                <span>Lainnya</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    isDropdownOpen ? "rotate-180 text-slate-900" : "text-slate-500"
+                  }`}
+                />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 lg:left-0 lg:right-auto mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-200/80 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {secondaryNavItems.map((item) => {
+                    const isActive =
+                      item.path === "/"
+                        ? pathname === "/"
+                        : pathname.startsWith(item.path);
+                    const isAdminItem = item.path === "/admin" || item.path === "/cctv";
+
+                    return (
+                      <React.Fragment key={item.name}>
+                        {item.path === "/cctv" && (
+                          <div className="my-1 border-t border-slate-100" />
+                        )}
+                        <Link
+                          href={item.path}
+                          onClick={(e) => handleNavClick(e, item)}
+                          className={`flex items-center justify-between px-3.5 py-2 text-xs lg:text-sm font-medium transition-colors cursor-pointer ${
+                            isActive
+                              ? "bg-blue-50 text-blue-700 font-semibold"
+                              : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                          }`}
+                        >
+                          <span>{item.name}</span>
+                          {isAdminItem && (
+                            <span className="text-[10px] uppercase tracking-wider font-bold text-blue-600 bg-blue-100/70 px-1.5 py-0.5 rounded">
+                              Admin
+                            </span>
+                          )}
+                        </Link>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Right Side Auth Actions & Mobile Toggle */}
@@ -171,10 +214,10 @@ export default function Navbar() {
                   <NotificationBell />
                   <Link
                     href="/profile"
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-semibold text-xs xl:text-sm transition-all border border-slate-200 cursor-pointer shrink-0"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-semibold text-xs lg:text-sm transition-all border border-slate-200 cursor-pointer shrink-0"
                   >
                     <User className="w-3.5 h-3.5 text-[#2c1ee8]" />
-                    <span className="max-w-[90px] sm:max-w-[120px] xl:max-w-[150px] truncate">
+                    <span className="max-w-[90px] sm:max-w-[120px] lg:max-w-[140px] truncate">
                       {user?.fullName || user?.name?.split(" ")[0] || "Profil"}
                     </span>
                   </Link>
@@ -189,7 +232,7 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={handleOpenLogin}
-                  className="inline-flex items-center justify-center bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs xl:text-sm px-5 py-2 rounded-2xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-sm active:scale-[0.97]"
+                  className="inline-flex items-center justify-center bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs lg:text-sm px-4 sm:px-5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs active:scale-[0.97]"
                 >
                   Login
                 </button>
@@ -199,7 +242,7 @@ export default function Navbar() {
             {/* Hamburger Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="xl:hidden p-2 text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer rounded-lg hover:bg-slate-100"
+              className="lg:hidden p-2 text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer rounded-lg hover:bg-slate-100"
               aria-label="Toggle Navigation Menu"
             >
               <svg
@@ -230,31 +273,38 @@ export default function Navbar() {
 
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
-          <div className="xl:hidden mt-3 pb-4 border-t border-slate-100 flex flex-col gap-1.5 pt-3 px-2 max-h-[75vh] overflow-y-auto">
-            {navItems.map((item) => {
+          <div className="lg:hidden mt-2.5 pb-4 border-t border-slate-100 flex flex-col gap-1 pt-3 px-2 max-h-[75vh] overflow-y-auto">
+            {allNavItems.map((item) => {
               const isActive =
                 item.path === "/"
                   ? pathname === "/"
                   : pathname.startsWith(item.path);
+
+              const isAdminItem = item.path === "/admin" || item.path === "/cctv";
 
               return (
                 <Link
                   key={item.name}
                   href={item.path}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`font-semibold text-sm py-2 px-3 rounded-xl transition-colors cursor-pointer ${
+                  className={`font-semibold text-sm py-2 px-3 rounded-xl transition-colors cursor-pointer flex items-center justify-between ${
                     isActive
                       ? "text-slate-900 bg-slate-100 font-bold border border-slate-200/80"
                       : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
                   }`}
                 >
-                  {item.name}
+                  <span>{item.name}</span>
+                  {isAdminItem && (
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                      Admin
+                    </span>
+                  )}
                 </Link>
               );
             })}
 
             {isAuthenticated ? (
-              <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+              <div className="pt-2 mt-2 border-t border-slate-100 flex flex-col gap-2">
                 <Link
                   href="/profile"
                   className="font-semibold text-sm py-2 px-3 rounded-xl text-slate-800 hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
@@ -280,7 +330,7 @@ export default function Navbar() {
                   setMobileMenuOpen(false);
                   handleOpenLogin();
                 }}
-                className="w-full text-center bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm py-2.5 rounded-xl mt-2 cursor-pointer shadow-xs"
+                className="w-full text-center bg-[#2c1ee8] hover:bg-blue-700 text-white font-semibold text-sm py-2.5 rounded-xl mt-2 cursor-pointer shadow-xs"
               >
                 Login
               </button>

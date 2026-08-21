@@ -32,10 +32,7 @@ foreach (var envPath in possibleEnvPaths)
             {
                 var key = parts[0].Trim();
                 var val = parts[1].Trim().Trim('"').Trim('\'');
-                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
-                {
-                    Environment.SetEnvironmentVariable(key, val);
-                }
+                Environment.SetEnvironmentVariable(key, val);
             }
         }
     }

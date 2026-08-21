@@ -53,14 +53,14 @@ public class UserService : IUserService
             user = await baseQuery
                 .FirstOrDefaultAsync(u =>
                     u.Role == UserRole.Student &&
-                    ((u.NIS != null && (u.NIS.ToLower() == identifierLower || u.NIS.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)) ||
-                     (u.NISN != null && (u.NISN.ToLower() == identifierLower || u.NISN.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier))));
+                    ((u.NIS != null && (u.NIS.ToLower() == identifierLower || u.NIS.ToLower() == cleanIdentifier)) ||
+                     (u.NISN != null && (u.NISN.ToLower() == identifierLower || u.NISN.ToLower() == cleanIdentifier))));
 
             // Fallback: Check NIS/NISN regardless of role constraint if role tab mismatch occurs
             user ??= await baseQuery
                 .FirstOrDefaultAsync(u =>
-                    (u.NIS != null && (u.NIS.ToLower() == identifierLower || u.NIS.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)) ||
-                    (u.NISN != null && (u.NISN.ToLower() == identifierLower || u.NISN.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)));
+                    (u.NIS != null && (u.NIS.ToLower() == identifierLower || u.NIS.ToLower() == cleanIdentifier)) ||
+                    (u.NISN != null && (u.NISN.ToLower() == identifierLower || u.NISN.ToLower() == cleanIdentifier)));
 
             userType = user?.Role.ToString() ?? "Student";
             primaryIdentifier = identifier;
@@ -71,14 +71,14 @@ public class UserService : IUserService
             user = await baseQuery
                 .FirstOrDefaultAsync(u =>
                     u.Role == UserRole.Teacher &&
-                    ((u.NIP != null && (u.NIP.ToLower() == identifierLower || u.NIP.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)) ||
+                    ((u.NIP != null && (u.NIP.ToLower() == identifierLower || u.NIP.ToLower() == cleanIdentifier)) ||
                      u.Email.ToLower() == identifierLower ||
                      (u.Username != null && u.Username.ToLower() == identifierLower)));
 
             // Fallback: If not found under Teacher role, check if user exists by NIP/Email regardless of role
             user ??= await baseQuery
                 .FirstOrDefaultAsync(u =>
-                    (u.NIP != null && (u.NIP.ToLower() == identifierLower || u.NIP.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)) ||
+                    (u.NIP != null && (u.NIP.ToLower() == identifierLower || u.NIP.ToLower() == cleanIdentifier)) ||
                     u.Email.ToLower() == identifierLower ||
                     (u.Username != null && u.Username.ToLower() == identifierLower));
 
@@ -92,9 +92,9 @@ public class UserService : IUserService
                 .FirstOrDefaultAsync(u =>
                     u.Email.ToLower() == identifierLower ||
                     (u.Username != null && u.Username.ToLower() == identifierLower) ||
-                    (u.NIS != null && (u.NIS.ToLower() == identifierLower || u.NIS.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)) ||
-                    (u.NISN != null && (u.NISN.ToLower() == identifierLower || u.NISN.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)) ||
-                    (u.NIP != null && (u.NIP.ToLower() == identifierLower || u.NIP.Replace(" ", "").Replace(".", "").Replace("-", "").ToLower() == cleanIdentifier)));
+                    (u.NIS != null && (u.NIS.ToLower() == identifierLower || u.NIS.ToLower() == cleanIdentifier)) ||
+                    (u.NISN != null && (u.NISN.ToLower() == identifierLower || u.NISN.ToLower() == cleanIdentifier)) ||
+                    (u.NIP != null && (u.NIP.ToLower() == identifierLower || u.NIP.ToLower() == cleanIdentifier)));
 
             userType = user?.Role.ToString() ?? "Unknown";
             primaryIdentifier = identifier;

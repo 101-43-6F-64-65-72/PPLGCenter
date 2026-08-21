@@ -103,6 +103,12 @@ export const ChevronRight = ({ className = "w-5 h-5", ...props }) => (
   </svg>
 );
 
+export const ChevronDown = ({ className = "w-5 h-5", ...props }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" {...props}>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
 export const Play = ({ className = "w-5 h-5", ...props }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" {...props}>
     <path d="M8 5v14l11-7z" />
