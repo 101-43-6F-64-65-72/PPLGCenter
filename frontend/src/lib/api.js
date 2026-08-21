@@ -155,20 +155,29 @@ if (Axios) {
 }
 
 function formatApiError(error) {
-  const defaultErrorResponse = {
-    success: false,
-    statusCode: error?.response?.status || 500,
-    message: error?.message || "Gagal terhubung ke server. Silakan periksa koneksi internet Anda.",
-    errors: [],
-  };
+  let friendlyMessage = "Gagal terhubung ke server. Silakan periksa koneksi internet Anda.";
+  let statusCode = error?.response?.status || 500;
+  let fieldErrors = [];
+
+  if (error?.code === "ECONNABORTED" || error?.message?.includes("timeout")) {
+    friendlyMessage = "Server sedang merespons lebih lama dari biasanya (cold start). Silakan coba lagi sebentar.";
+  } else if (error?.message === "Network Error" || (!error?.response && error?.request)) {
+    friendlyMessage = "Koneksi ke server terputus atau server sedang aktif kembali. Silakan coba sesaat lagi.";
+  }
 
   if (!error || !error.response) {
-    return Promise.reject(defaultErrorResponse);
+    return Promise.reject({
+      success: false,
+      statusCode,
+      message: friendlyMessage,
+      errors: [],
+    });
   }
 
   const { status, data } = error.response;
-  let friendlyMessage = data?.message || "Terjadi kesalahan pada sistem.";
-  let fieldErrors = data?.errors || [];
+  statusCode = status;
+  friendlyMessage = data?.message || "Terjadi kesalahan pada sistem.";
+  fieldErrors = data?.errors || [];
 
   switch (status) {
     case 400:
@@ -182,11 +191,15 @@ function formatApiError(error) {
       }
       break;
     case 401:
-      friendlyMessage = data?.message || "Sesi Anda telah berakhir. Silakan login kembali.";
+      if (data?.message === "Invalid email or password" || data?.message === "User not found") {
+        friendlyMessage = "Identitas (NISN/NIP/Email) atau password salah. Silakan periksa kembali.";
+      } else {
+        friendlyMessage = data?.message || "Sesi Anda telah berakhir. Silakan login kembali.";
+      }
       setStoredToken(null); // Auto clear expired token
       break;
     case 403:
-      friendlyMessage = data?.message || "Akses tidak diizinkan.";
+      friendlyMessage = data?.message || "Akun Anda dinonaktifkan atau akses tidak diizinkan.";
       break;
     case 404:
       friendlyMessage = data?.message || "Data tidak ditemukan.";
@@ -195,7 +208,7 @@ function formatApiError(error) {
       friendlyMessage = data?.message || "Validasi aturan bisnis gagal.";
       break;
     case 500:
-      friendlyMessage = "Terjadi gangguan pada server sekolah.";
+      friendlyMessage = "Terjadi gangguan pada server sekolah. Silakan hubungi administrator.";
       break;
     default:
       break;

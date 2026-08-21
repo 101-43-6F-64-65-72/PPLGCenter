@@ -222,26 +222,33 @@ export default function FasilitasPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50/40 text-slate-900 flex flex-col font-sans relative">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
       {/* Navigation Header */}
       <Navbar />
 
       {/* Main Page Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-24">
-        {/* Page Banner Header */}
-        <div className="mb-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-            <div>
-              <span className="text-xs font-mono font-bold text-slate-500 uppercase tracking-widest block mb-1">
-                SARPRAS SMKN 2 SURAKARTA
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
+        {/* Top Hero Section Header Card */}
+        <div className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
+          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>SARPRAS & FASILITAS SMKN 2 SURAKARTA</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                 Katalog Fasilitas & Tempat
               </h1>
+              <p className="text-sm text-slate-600 max-w-2xl">
+                Layanan reservasi ruangan, laboratorium kejuruan, aula serbaguna, dan sarana olahraga sekolah secara online.
+              </p>
             </div>
 
-            {/* Top Action Bar */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Top Action Buttons */}
+            <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto shrink-0">
               {/* Tombol 1: Peminjaman Saya (Private to Student) */}
               <button
                 onClick={() => {
@@ -252,70 +259,70 @@ export default function FasilitasPage() {
                   fetchMyBookings();
                   setIsMyBookingsOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-xs font-bold bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all shadow-2xs cursor-pointer"
               >
-                <Clock className="w-4 h-4 text-[#2c1ee8]" />
+                <Clock className="w-4 h-4 text-[#2C1EE8]" />
                 <span>Peminjaman Saya</span>
               </button>
 
-              {/* Tombol 2: Daftar Pinjaman Semua (Public Borrowing Transparency List) */}
+              {/* Tombol 2: Daftar Pinjaman Semua */}
               <button
                 onClick={() => {
                   fetchPublicBookings();
                   setIsPublicBookingsOpen(true);
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2013ce] transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-[#2C1EE8] text-white hover:bg-blue-700 transition-all shadow-sm cursor-pointer"
               >
                 <Building2 className="w-4 h-4" />
                 <span>Daftar Pinjaman</span>
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Search & Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-5 border-t border-slate-200/80">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari fasilitas, aula, laboratorium, atau lapangan..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2.5 rounded-2xl border border-slate-200 bg-white focus:bg-white focus:border-[#2c1ee8] focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 text-xs sm:text-sm transition-all shadow-2xs"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+        {/* Search & Category Filter Toolbar */}
+        <div className="bg-white p-4 sm:p-5 rounded-[28px] border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Search Input */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari fasilitas, aula, lab, atau lapangan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs sm:text-sm text-slate-900 placeholder-slate-400 font-medium transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              {[
-                { id: "semua", label: "Semua" },
-                { id: "aula", label: "Aula & Ruang" },
-                { id: "lapangan", label: "Lapangan" },
-                { id: "lab", label: "Laboratorium" },
-                { id: "tersedia", label: "Status Tersedia" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? "bg-[#2c1ee8] text-white shadow-sm shadow-blue-500/20"
-                      : "bg-white text-slate-600 border border-slate-200/70 hover:bg-slate-100"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {[
+              { id: "semua", label: "Semua" },
+              { id: "aula", label: "Aula & Ruang" },
+              { id: "lapangan", label: "Lapangan" },
+              { id: "lab", label: "Laboratorium" },
+              { id: "tersedia", label: "Tersedia" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3.5 py-2 rounded-xl text-[11px] font-extrabold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "bg-[#2C1EE8] text-white shadow-2xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 

@@ -85,7 +85,8 @@ export const LoginForm = ({ onSuccess }) => {
       };
 
       const res = await login(payload);
-      setSuccessUserData(res?.user || null);
+      const userData = res?.data?.user || res?.data || res?.user || res;
+      setSuccessUserData(userData);
       setIsSuccess(true);
 
       if (onSuccess) {
@@ -94,9 +95,14 @@ export const LoginForm = ({ onSuccess }) => {
 
       // Smooth post-login celebration delay before navigation
       setTimeout(() => {
-        const dest = loginType === "Admin" ? "/admin" : callbackUrl;
+        let dest = callbackUrl;
+        if (callbackUrl === "/profile" || !callbackUrl || callbackUrl === "/") {
+          if (loginType === "Admin") dest = "/admin";
+          else if (loginType === "Teacher") dest = "/profile";
+          else dest = "/profile";
+        }
         router.push(dest);
-      }, 2800);
+      }, 2000);
     } catch (error) {
       const backendMessage =
         error?.response?.data?.message ||

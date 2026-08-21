@@ -65,19 +65,22 @@ export default function MadingSection() {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      gsap.from(".mading-animate-item", {
-        opacity: 0,
-        y: 35,
-        rotationX: 8,
-        duration: 0.7,
-        stagger: 0.15,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 80%",
-          toggleActions: "play none none reverse",
-        },
-      });
+      const items = sectionRef.current?.querySelectorAll(".mading-animate-item");
+      if (items && items.length > 0) {
+        gsap.from(items, {
+          opacity: 0,
+          y: 35,
+          rotationX: 8,
+          duration: 0.7,
+          stagger: 0.15,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 80%",
+            toggleActions: "play none none reverse",
+          },
+        });
+      }
     }, sectionRef);
 
     return () => ctx.revert();

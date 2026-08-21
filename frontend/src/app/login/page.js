@@ -99,6 +99,7 @@ export default function LoginPage() {
                 alt="Logo SMKN 2 Surakarta"
                 width={42}
                 height={42}
+                style={{ width: "auto", height: "auto" }}
                 className="object-contain"
                 priority
               />

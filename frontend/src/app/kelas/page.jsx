@@ -359,35 +359,42 @@ export default function KelasPage() {
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       <Navbar />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-12 space-y-5">
-        {/* Compact Header Card */}
-        <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-2xs relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
+        {/* Top Hero Section Header Card */}
+        <div className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
+          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
+                <Users className="w-3.5 h-3.5" />
+                <span>AKADEMIK & KESISWAAN PPLG</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                   Kelas & Jadwal Pelajaran
                 </h1>
                 {selectedClassName && (
-                  <span className="text-xs font-bold text-[#2C1EE8] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                  <span className="text-xs font-black text-[#2C1EE8] bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
                     {selectedClassName}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-1">
-                Struktur organisasi kelas, daftar siswa terdaftar, dan jadwal KBM harian.
+              <p className="text-sm text-slate-600 max-w-2xl">
+                Struktur organisasi kepengurusan kelas, direktori siswa aktif, dan jadwal kegiatan belajar mengajar (KBM) harian.
               </p>
             </div>
 
             {/* Class Selector (Admin/Teacher Only) or Student Class Badge */}
             {canManage ? (
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/80 p-1.5 rounded-xl self-start md:self-auto shrink-0">
-                <span className="text-xs font-bold text-slate-500 pl-2">Kelas:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 p-2 rounded-2xl self-start md:self-auto shrink-0 shadow-2xs">
+                <span className="text-xs font-bold text-slate-500 pl-2">Pilih Kelas:</span>
                 <select
                   id="kelas-selector-dropdown"
                   value={selectedClassId}
                   onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="bg-white border border-slate-200 text-[#2C1EE8] font-bold rounded-lg px-3 py-1.5 text-xs shadow-2xs focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 outline-none cursor-pointer transition-all"
+                  className="bg-white border border-slate-200 text-[#2C1EE8] font-extrabold rounded-xl px-3.5 py-2 text-xs shadow-2xs focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 outline-hidden cursor-pointer transition-all"
                 >
                   {classes.map((c) => (
                     <option key={c.id || c.Id} value={c.id || c.Id}>
@@ -397,8 +404,8 @@ export default function KelasPage() {
                 </select>
               </div>
             ) : (
-              <div className="flex items-center gap-2 bg-blue-50/80 border border-blue-200/80 px-3.5 py-2 rounded-xl self-start md:self-auto shrink-0">
-                <span className="text-xs font-bold text-slate-600">Kelas Saya:</span>
+              <div className="flex items-center gap-2 bg-blue-50/80 border border-blue-200 px-4 py-2.5 rounded-2xl self-start md:self-auto shrink-0 shadow-2xs">
+                <span className="text-xs font-bold text-slate-600">Kelas Terdaftar:</span>
                 <span className="text-xs font-black text-[#2C1EE8]">
                   {selectedClassName || "Kelas Siswa"}
                 </span>
