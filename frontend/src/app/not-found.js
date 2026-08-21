@@ -28,10 +28,10 @@ export default function NotFound() {
             ← Kembali ke Beranda
           </Link>
           <Link
-            href="/mading"
+            href="/pengumuman"
             className="inline-flex items-center justify-center bg-gray-100 text-gray-700 font-bold text-sm px-6 py-3 rounded-full hover:bg-gray-200 transition-all cursor-pointer"
           >
-            Lihat Mading Digital
+            Lihat Pengumuman Resmi
           </Link>
         </div>
       </main>

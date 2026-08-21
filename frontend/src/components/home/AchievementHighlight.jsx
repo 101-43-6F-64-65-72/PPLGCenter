@@ -119,10 +119,10 @@ export default function AchievementHighlight() {
           </div>
 
           <Link
-            href="/mading"
+            href="/pengumuman"
             className="inline-flex items-center justify-center gap-2 shrink-0 bg-[#2c1ee8] hover:bg-blue-600 text-white font-bold text-xs sm:text-sm px-5 py-2.5 rounded-xl transition-all shadow-md"
           >
-            <span>Jelajahi Mading & Prestasi</span>
+            <span>Jelajahi Pengumuman & Prestasi</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

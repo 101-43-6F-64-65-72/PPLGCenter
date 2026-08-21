@@ -42,11 +42,11 @@ test.describe('Production Release Manual QA Audit - All Pages', () => {
     await expect(page.getByRole('button', { name: /keluar sesi/i }).first()).toBeVisible();
   });
 
-  test('4. Mading (/mading) audit: catalog, category filters, and search bar', async ({ page }) => {
+  test('4. Pengumuman (/pengumuman) audit: catalog, category filters, and search bar', async ({ page }) => {
     await login(page, TEST_ADMIN);
-    await page.goto('/mading');
+    await page.goto('/pengumuman');
 
-    await expect(page.getByRole('heading', { name: /berita & publikasi siswa/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /pengumuman/i }).first()).toBeVisible();
     await expect(page.getByPlaceholder(/cari pengumuman/i)).toBeVisible();
   });
 

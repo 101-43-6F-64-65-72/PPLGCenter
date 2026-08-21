@@ -788,7 +788,7 @@ export default function KelasPage() {
                       <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-slate-900 text-xs truncate">{name}</h4>
                         <p className="text-[11px] text-slate-500 font-mono mt-0.5 truncate">
-                          NIS: {nis} • NISN: {nisn}
+                          NIS: {nis}
                         </p>
                       </div>
                     </div>

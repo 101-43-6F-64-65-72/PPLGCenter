@@ -23,10 +23,10 @@ test.describe('Authentication, Session Refresh & Navigation Verification', () =>
     await expect(page).toHaveURL(/\/fasilitas/);
     await expect(page.getByRole('heading', { name: /katalog fasilitas/i }).first()).toBeVisible();
 
-    await page.goto('/mading');
+    await page.goto('/pengumuman');
     await page.waitForLoadState('networkidle');
-    await expect(page).toHaveURL(/\/mading/);
-    await expect(page.getByRole('heading', { name: /berita/i }).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/pengumuman/);
+    await expect(page.getByRole('heading', { name: /pengumuman/i }).first()).toBeVisible();
 
     await page.goto('/proposal');
     await page.waitForLoadState('networkidle');

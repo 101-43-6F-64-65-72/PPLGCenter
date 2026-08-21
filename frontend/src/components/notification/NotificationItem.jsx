@@ -263,7 +263,7 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
       } else if (isExtracurricular) {
         url = refId ? `/ekstrakurikuler/${refId}` : "/ekstrakurikuler";
       } else if (isAnnouncement) {
-        url = refId ? `/mading/${refId}` : "/mading";
+        url = refId ? `/pengumuman/${refId}` : "/pengumuman";
       } else if (isElection) {
         url = "/dashboard";
       } else if (isGrade) {
@@ -278,10 +278,16 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
     if (!url) return null;
 
     if (url.startsWith("/announcements/")) {
-      return url.replace("/announcements/", "/mading/");
+      return url.replace("/announcements/", "/pengumuman/");
     }
     if (url === "/announcements") {
-      return "/mading";
+      return "/pengumuman";
+    }
+    if (url.startsWith("/mading/")) {
+      return url.replace("/mading/", "/pengumuman/");
+    }
+    if (url === "/mading") {
+      return "/pengumuman";
     }
     if (url.startsWith("/proposals/")) {
       return url.replace("/proposals/", "/proposal/");

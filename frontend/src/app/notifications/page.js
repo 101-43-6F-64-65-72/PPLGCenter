@@ -634,7 +634,7 @@ export default function NotificationsPage() {
                     value={broadcastForm.actionUrl}
                     onChange={(e) => setBroadcastForm({ ...broadcastForm, actionUrl: e.target.value })}
                     className="w-full bg-white border border-slate-300 focus:border-slate-900 focus:ring-1 focus:ring-slate-900 rounded-md px-3 py-2 text-xs sm:text-sm text-slate-900 outline-none font-medium"
-                    placeholder="Contoh: /mading"
+                    placeholder="Contoh: /pengumuman"
                   />
                 </div>
 

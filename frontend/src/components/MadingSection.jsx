@@ -234,10 +234,10 @@ export default function MadingSection() {
                     </div>
 
                     <Link
-                      href={`/mading/${featuredArticle.id || 1}`}
+                      href={`/pengumuman/${featuredArticle.id || 1}`}
                       className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-[#2c1ee8] hover:text-blue-700 transition-colors self-start group/btn"
                     >
-                      <span>Baca Artikel Selengkapnya</span>
+                      <span>Baca Pengumuman Selengkapnya</span>
                       <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover/btn:translate-x-1" />
                     </Link>
                   </div>
@@ -247,7 +247,7 @@ export default function MadingSection() {
               {/* Highlight Card (Right) */}
               {highlightArticle && (
                 <Link
-                  href={`/mading/${highlightArticle.id || 2}`}
+                  href={`/pengumuman/${highlightArticle.id || 2}`}
                   className="lg:col-span-5 relative rounded-3xl overflow-hidden shadow-md border border-slate-200/90 group cursor-pointer min-h-[260px] flex flex-col justify-end p-6 sm:p-7 hover:shadow-xl transition-all duration-300 bg-slate-900"
                 >
                   <Image
@@ -281,10 +281,10 @@ export default function MadingSection() {
         {/* Bottom Action Button */}
         <div className="mt-12 flex justify-center mading-animate-item">
           <Link
-            href="/mading"
+            href="/pengumuman"
             className="inline-flex items-center justify-center gap-2.5 bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm sm:text-base px-7 py-3.5 rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer active:scale-[0.97]"
           >
-            <span>Jelajahi Seluruh Mading Digital</span>
+            <span>Jelajahi Seluruh Pengumuman Resmi</span>
             <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </Link>
         </div>
@@ -355,7 +355,7 @@ export default function MadingSection() {
 
             <div className="p-3.5 sm:p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
               <Link
-                href={`/mading/${selectedArticle.id}`}
+                href={`/pengumuman/${selectedArticle.id}`}
                 className="text-xs font-bold text-[#2c1ee8] hover:text-blue-700 transition-colors"
               >
                 Buka Halaman Penuh →

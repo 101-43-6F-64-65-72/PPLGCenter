@@ -68,7 +68,6 @@ function StudentDashboard({ user, memberships }) {
 
   const menuItems = [
     { name: "Pengumuman", desc: "Pengumuman Resmi Jurusan", path: "/pengumuman", icon: Bell },
-    { name: "Mading", desc: "Berita & Mading Sekolah", path: "/mading", icon: Newspaper },
     { name: "Kalender", desc: "Jadwal Kegiatan", path: "/kalender", icon: Calendar },
     { name: "Ekstrakurikuler", desc: "Katalog & Pendaftaran", path: "/ekstrakurikuler", icon: Award },
     { name: "Proposal", desc: "Pengajuan Proposal", path: "/proposal", icon: FileText },
@@ -310,7 +309,7 @@ function TeacherDashboard({ user, advisorFor: propAdvisorFor }) {
     { name: "Ekskul Binaan", desc: "Kelola ekskul binaan", path: "/ekstrakurikuler", icon: Award },
     { name: "Buku Nilai", desc: "Buku nilai & rekap", path: "/guru", icon: CheckSquare },
     { name: "Kalender", desc: "Jadwal kegiatan", path: "/kalender", icon: Calendar },
-    { name: "Materi Belajar", desc: "Materi & tugas", path: "/mading", icon: BookOpen },
+    { name: "Pengumuman", desc: "Pengumuman & Informasi", path: "/pengumuman", icon: Bell },
     { name: "Profil", desc: "Pengaturan akun", path: "/profile", icon: User },
   ];
 

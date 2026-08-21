@@ -41,7 +41,6 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
   const studentMenu = [
     { name: "Home", path: "/", icon: Home },
     { name: "Pengumuman", path: "/pengumuman", icon: Bell },
-    { name: "Mading", path: "/mading", icon: Newspaper },
     { name: "Notifikasi", path: "/notifications", icon: Bell },
     { name: "Pesan & Chat", path: "/chat", icon: FileText },
     { name: "Nilai Saya", path: "/nilai", icon: Award },
@@ -74,7 +73,6 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
     { name: "Kelola User", tabId: "users", icon: Users, category: "MANAJEMEN" },
     { name: "Booking Facilities", tabId: "facilities", icon: Building2, category: "MANAJEMEN" },
     { name: "Pengumuman Resmi", tabId: "pengumuman-link", path: "/pengumuman", icon: Bell, category: "MANAJEMEN" },
-    { name: "Mading Digital", tabId: "mading-link", path: "/mading", icon: Newspaper, category: "MANAJEMEN" },
     { name: "Reset Password", tabId: "password-reset", icon: KeyRound, category: "MANAJEMEN" },
   ];
 

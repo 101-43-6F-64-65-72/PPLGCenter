@@ -29,7 +29,6 @@ export default function Navbar() {
     { name: "Beranda", path: "/" },
     { name: "Kelas & Jadwal", path: "/kelas" },
     { name: "Pengumuman", path: "/pengumuman" },
-    { name: "Mading", path: "/mading" },
     { name: "Fasilitas", path: "/fasilitas" },
   ];
 

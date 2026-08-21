@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import useAuth from "@/hooks/useAuth";
@@ -9,7 +11,7 @@ import announcementService from "@/services/announcementService";
 import AnnouncementCommentSection from "@/features/announcement/components/AnnouncementCommentSection";
 import { API_CONFIG } from "@/config/api";
 import { getStoredToken } from "@/lib/api";
-import { resolveImageUrl } from "@/lib/utils";
+import { resolveImageUrl, formatDate } from "@/lib/utils";
 import {
   Bell,
   Plus,
@@ -26,7 +28,11 @@ import {
   Search,
   Filter,
   ArrowRight,
-  Eye
+  Eye,
+  Pin,
+  TrendingUp,
+  BookOpen,
+  ChevronDown
 } from "lucide-react";
 
 const OFFICIAL_PPLG_CLASSES = [
@@ -39,20 +45,42 @@ const OFFICIAL_PPLG_CLASSES = [
   "XII PPLG B"
 ];
 
-export default function PengumumanPage() {
-  const { user, role, isAuthenticated } = useAuth();
+const CATEGORIES = [
+  "Semua",
+  "Populer",
+  "Akademik",
+  "OSIS",
+  "Ekstrakurikuler",
+  "Ujian",
+  "Libur",
+  "General"
+];
 
-  const userRole = (role || user?.role || "Student").toString().toLowerCase();
+export default function PengumumanPage() {
+  const router = useRouter();
+  const { user, role, memberships, isAuthenticated } = useAuth();
+
+  const userRole = (role || user?.role || "").toString().toLowerCase();
   const isStudent = userRole === "student";
-  const canCreateAnnouncement = isAuthenticated && (userRole === "admin" || userRole === "teacher");
+  const isAdmin = userRole === "admin";
+  const isTeacher = userRole === "teacher" || userRole === "guru";
+  const isOsisMember =
+    userRole === "osis" ||
+    (userRole === "student" &&
+      Array.isArray(memberships) &&
+      memberships.some(
+        (m) =>
+          m.name?.toLowerCase().includes("osis") ||
+          m.category?.toLowerCase().includes("osis")
+      ));
+
+  const canCreateAnnouncement = isAuthenticated && (isAdmin || isTeacher || isOsisMember);
 
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("Semua");
   const [selectedClassFilter, setSelectedClassFilter] = useState("Semua");
-
-  // Detail Modal State
-  const [activeDetailItem, setActiveDetailItem] = useState(null);
 
   // Create/Edit Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,6 +89,7 @@ export default function PengumumanPage() {
   // Form State
   const [formTitle, setFormTitle] = useState("");
   const [formContent, setFormContent] = useState("");
+  const [formCategory, setFormCategory] = useState("Pengumuman");
   const [selectedTargetClasses, setSelectedTargetClasses] = useState(["Semua Kelas"]);
   const [formPublishStart, setFormPublishStart] = useState("");
   const [formPublishEnd, setFormPublishEnd] = useState("");
@@ -72,7 +101,7 @@ export default function PengumumanPage() {
   const loadAnnouncements = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await announcementService.getAnnouncements({ page: 1, pageSize: 50 });
+      const res = await announcementService.getAnnouncements({ page: 1, pageSize: 60 });
       let items = res?.data?.items || res?.data || res?.items || [];
       if (Array.isArray(items)) {
         setAnnouncements(items);
@@ -156,6 +185,7 @@ export default function PengumumanPage() {
   const resetForm = () => {
     setFormTitle("");
     setFormContent("");
+    setFormCategory("Pengumuman");
     setSelectedTargetClasses(["Semua Kelas"]);
     setFormPublishStart("");
     setFormPublishEnd("");
@@ -173,6 +203,7 @@ export default function PengumumanPage() {
     setEditingId(ann.id);
     setFormTitle(ann.title || "");
     setFormContent(ann.content || "");
+    setFormCategory(ann.category || "Pengumuman");
     setCoverImageUrl(ann.coverImageUrl || "");
     if (ann.targetClasses) {
       setSelectedTargetClasses(ann.targetClasses.split(",").map((s) => s.trim()));
@@ -189,7 +220,6 @@ export default function PengumumanPage() {
     if (!confirm("Apakah Anda yakin ingin menghapus pengumuman ini?")) return;
     try {
       await announcementService.deleteAnnouncement(id);
-      if (activeDetailItem?.id === id) setActiveDetailItem(null);
       loadAnnouncements();
     } catch (err) {
       alert("Gagal menghapus pengumuman.");
@@ -208,7 +238,7 @@ export default function PengumumanPage() {
       const payload = {
         title: formTitle.trim(),
         content: formContent.trim(),
-        category: "Pengumuman",
+        category: formCategory || "Pengumuman",
         targetClasses: selectedTargetClasses.join(", "),
         publishStart: formPublishStart ? new Date(formPublishStart).toISOString() : null,
         publishEnd: formPublishEnd ? new Date(formPublishEnd).toISOString() : null,
@@ -233,12 +263,41 @@ export default function PengumumanPage() {
     }
   };
 
-  // Filter announcements for view
-  const filteredAnnouncements = announcements.filter((ann) => {
+  // Cover image resolver with curated category fallback
+  const getCoverImage = (item) => {
+    const raw = item?.coverImageUrl || item?.imageUrl || item?.image;
+    if (raw && typeof raw === "string" && !raw.includes("dummypic")) return resolveImageUrl(raw);
+    const cat = (item?.category || "").toLowerCase();
+    if (cat.includes("akademik") || cat.includes("ujian")) return "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80";
+    if (cat.includes("osis") || cat.includes("organisasi")) return "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop&q=80";
+    if (cat.includes("ekstra")) return "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&auto=format&fit=crop&q=80";
+    if (cat.includes("prestasi") || cat.includes("lomba")) return "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=800&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&auto=format&fit=crop&q=80";
+  };
+
+  // Category badge style
+  const getCategoryBadgeStyle = (category) => {
+    if (!category) return "bg-slate-100 text-slate-700 border-slate-200";
+    const cat = category.trim().toLowerCase();
+    if (cat.includes("libur")) return "bg-rose-50 text-rose-700 border-rose-200";
+    if (cat.includes("ujian")) return "bg-amber-50 text-amber-700 border-amber-200";
+    if (cat.includes("osis")) return "bg-indigo-50 text-indigo-700 border-indigo-200";
+    if (cat.includes("ekstra")) return "bg-purple-50 text-purple-700 border-purple-200";
+    if (cat.includes("akademik")) return "bg-blue-50 text-blue-700 border-blue-200";
+    return "bg-slate-100 text-slate-700 border-slate-200";
+  };
+
+  // Filter & sort announcements for view
+  let filteredAnnouncements = announcements.filter((ann) => {
     const matchesSearch =
       ann.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ann.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ann.createdByUserName?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "Semua" ||
+      selectedCategory === "Populer" ||
+      (ann.category && ann.category.toLowerCase().includes(selectedCategory.toLowerCase()));
 
     const matchesClass =
       isStudent ||
@@ -247,36 +306,47 @@ export default function PengumumanPage() {
       ann.targetClasses.includes("Semua Kelas") ||
       ann.targetClasses.includes(selectedClassFilter);
 
-    return matchesSearch && matchesClass;
+    return matchesSearch && matchesCategory && matchesClass;
   });
+
+  if (selectedCategory === "Populer") {
+    filteredAnnouncements = [...filteredAnnouncements].sort((a, b) => {
+      const scoreA = (a.reactionCount || a.ReactionCount || 0) + (a.commentCount || a.CommentCount || 0);
+      const scoreB = (b.reactionCount || b.ReactionCount || 0) + (b.commentCount || b.CommentCount || 0);
+      return scoreB - scoreA;
+    });
+  }
+
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       <Navbar />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
-        {/* Header Hero Card */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[28px] border border-slate-200/80 p-6 sm:p-8 shadow-xs relative overflow-hidden">
-          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-10">
+        {/* Top Hero Section Header Card */}
+        <div className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
+          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div>
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-extrabold text-[#2C1EE8] uppercase tracking-widest mb-2 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                <Megaphone className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                PENGUMUMAN RESMI SMKN 2 SURAKARTA
-              </span>
-              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
+                <Megaphone className="w-3.5 h-3.5" />
+                <span>Pusat Informasi & Pengumuman Resmi PPLG</span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
                 Pengumuman PPLG Center
               </h1>
-              <p className="text-sm text-slate-600 font-medium mt-1.5 max-w-2xl">
-                Pusat informasi resmi akademis, kegiatan ujian, dan pemberitahuan penting jurusan PPLG SMK Negeri 2 Surakarta.
+              <p className="text-sm sm:text-base text-slate-600 font-medium max-w-2xl">
+                Temukan jadwal ujian, pemberitahuan akademik, info kegiatan OSIS &amp; jurusan SMK Negeri 2 Surakarta terkini secara lengkap.
               </p>
             </div>
 
             {canCreateAnnouncement && (
               <button
                 onClick={handleOpenCreateModal}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#2C1EE8] hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md shadow-blue-500/20 transition-all duration-200 cursor-pointer shrink-0 active:scale-[0.98]"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#2C1EE8] hover:bg-blue-700 active:bg-blue-800 text-white font-black text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all duration-200 cursor-pointer shrink-0 active:scale-[0.98]"
               >
                 <Plus className="w-4 h-4" />
                 <span>Buat Pengumuman Baru</span>
@@ -284,234 +354,217 @@ export default function PengumumanPage() {
             )}
           </div>
 
-          {/* Search & Filter Bar */}
-          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            {/* Search Input */}
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Cari pengumuman..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200/90 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 transition-all"
-              />
-            </div>
-
-            {/* Class Filter Selector: Hide for Students as requested */}
-            {!isStudent && (
-              <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
-                <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0">
-                  <Filter className="w-3.5 h-3.5" /> Filter Kelas:
-                </span>
-                {["Semua", ...OFFICIAL_PPLG_CLASSES].map((cls) => (
+          {/* Search Bar & Category Controls */}
+          <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+              {/* Live Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Cari pengumuman, kata kunci, atau pembuat..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl pl-11 pr-4 py-2.5 text-xs sm:text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 transition-all shadow-2xs"
+                />
+                {searchQuery && (
                   <button
-                    key={cls}
-                    onClick={() => setSelectedClassFilter(cls)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
-                      selectedClassFilter === cls
-                        ? "bg-slate-900 text-white shadow-2xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                   >
-                    {cls}
+                    <X className="w-4 h-4" />
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Announcement Grid / Compact List */}
-        {isLoading ? (
-          <div className="text-center py-16 text-slate-400 font-bold text-sm">
-            Memuat daftar pengumuman...
-          </div>
-        ) : filteredAnnouncements.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#2C1EE8] flex items-center justify-center mx-auto border border-blue-100">
-              <Bell className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-black text-slate-900">Belum Ada Pengumuman</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
-              Tidak ada pengumuman yang ditujukan untuk Anda atau sesuai pencarian saat ini.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredAnnouncements.map((ann) => (
-              <div
-                key={ann.id}
-                className="bg-white rounded-[24px] border border-slate-200/80 shadow-xs hover:shadow-md hover:border-blue-200 transition-all duration-200 flex flex-col justify-between overflow-hidden group"
-              >
-                <div>
-                  {/* Optional Cover Image Thumbnail */}
-                  {ann.coverImageUrl && (
-                    <div className="relative w-full h-44 bg-slate-100 overflow-hidden">
-                      <Image
-                        src={resolveImageUrl(ann.coverImageUrl)}
-                        alt={ann.title}
-                        fill
-                        unoptimized
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-
-                  <div className="p-6 space-y-3.5">
-                    {/* Metadata Chips: Author & Target Classes */}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] font-extrabold">
-                        <Sparkles className="w-3 h-3 text-blue-300" />
-                        <span>{ann.createdByUserName || "Pengelola"}</span>
-                      </span>
-
-                      {ann.targetClasses && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#2C1EE8] border border-blue-100 text-[11px] font-bold">
-                          <Users className="w-3 h-3" />
-                          {ann.targetClasses}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Title */}
-                    <h2 className="text-lg font-black text-slate-900 tracking-tight leading-snug line-clamp-2 group-hover:text-[#2C1EE8] transition-colors">
-                      {ann.title}
-                    </h2>
-
-                    {/* Dates */}
-                    {(ann.publishStart || ann.publishEnd) && (
-                      <div className="space-y-1 text-[11px] font-semibold text-slate-500">
-                        {ann.publishStart && (
-                          <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 w-fit">
-                            <Clock className="w-3 h-3" />
-                            <span>Mulai: {new Date(ann.publishStart).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
-                          </div>
-                        )}
-                        {ann.publishEnd && (
-                          <div className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100 w-fit">
-                            <Calendar className="w-3 h-3" />
-                            <span>Berakhir: {new Date(ann.publishEnd).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Footer Action Card */}
-                <div className="px-6 pb-6 pt-2 flex items-center justify-between border-t border-slate-100 mt-2">
-                  <button
-                    onClick={() => setActiveDetailItem(ann)}
-                    className="inline-flex items-center gap-1.5 text-xs font-black text-[#2C1EE8] hover:text-blue-700 transition-colors cursor-pointer"
-                  >
-                    <span>Lihat Selengkapnya</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-
-                  {/* Admin / Teacher Controls */}
-                  {canCreateAnnouncement && (
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={(e) => handleEdit(ann, e)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Pengumuman"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={(e) => handleDelete(ann.id, e)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        title="Hapus Pengumuman"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Detail Modal: Full Announcement Content & Reactions & Comments */}
-      {activeDetailItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-[28px] border border-slate-200 shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6">
-            {/* Modal Header */}
-            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-white text-xs font-extrabold">
-                    <Sparkles className="w-3 h-3 text-blue-300" />
-                    <span>Pembuat: {activeDetailItem.createdByUserName || "Pengelola"}</span>
-                  </span>
-
-                  {activeDetailItem.targetClasses && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-[#2C1EE8] border border-blue-200 text-xs font-bold">
-                      <Users className="w-3.5 h-3.5" />
-                      Target: {activeDetailItem.targetClasses}
-                    </span>
-                  )}
-                </div>
-
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  {activeDetailItem.title}
-                </h2>
-
-                {(activeDetailItem.publishStart || activeDetailItem.publishEnd) && (
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
-                    {activeDetailItem.publishStart && (
-                      <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                        <Clock className="w-3.5 h-3.5" />
-                        Mulai: {new Date(activeDetailItem.publishStart).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
-                      </span>
-                    )}
-                    {activeDetailItem.publishEnd && (
-                      <span className="flex items-center gap-1 text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-200">
-                        <Calendar className="w-3.5 h-3.5" />
-                        Berakhir: {new Date(activeDetailItem.publishEnd).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
-                      </span>
-                    )}
-                  </div>
                 )}
               </div>
 
-              <button
-                onClick={() => setActiveDetailItem(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer shrink-0"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Filter Kelas Selector (for Admin/Teacher) */}
+              {!isStudent && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none shrink-0">
+                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0">
+                    <Filter className="w-3.5 h-3.5" /> Target Kelas:
+                  </span>
+                  <select
+                    value={selectedClassFilter}
+                    onChange={(e) => setSelectedClassFilter(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-800 outline-none focus:border-[#2C1EE8] cursor-pointer"
+                  >
+                    <option value="Semua">Semua Kelas PPLG</option>
+                    {OFFICIAL_PPLG_CLASSES.filter((c) => c !== "Semua Kelas").map((cls) => (
+                      <option key={cls} value={cls}>
+                        {cls}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
-            {/* Thumbnail Cover Image */}
-            {activeDetailItem.coverImageUrl && (
-              <div className="relative w-full h-64 sm:h-80 rounded-2xl overflow-hidden border border-slate-200 shadow-2xs">
-                <Image
-                  src={resolveImageUrl(activeDetailItem.coverImageUrl)}
-                  alt={activeDetailItem.title}
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-              </div>
-            )}
-
-            {/* Announcement Full Content Body */}
-            <div className="text-sm text-slate-800 leading-relaxed font-medium whitespace-pre-line bg-slate-50 p-5 rounded-2xl border border-slate-200/80">
-              {activeDetailItem.content}
-            </div>
-
-            {/* Comments & Reactions Section */}
-            <div className="pt-4 border-t border-slate-100">
-              <AnnouncementCommentSection announcementId={activeDetailItem.id} userRole={userRole} />
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pt-2 pb-1 scrollbar-none">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
+                    selectedCategory === cat
+                      ? "bg-[#2C1EE8] text-white shadow-sm shadow-blue-500/20"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
         </div>
-      )}
+
+
+        {/* Main Grid Catalog */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-black uppercase text-slate-900 tracking-wider">
+              {selectedCategory === "Semua" ? "Daftar Pengumuman Resmi" : `Kategori: ${selectedCategory}`}
+            </h2>
+            <span className="text-xs font-bold text-slate-500">
+              {filteredAnnouncements.length} Pengumuman ditemukan
+            </span>
+          </div>
+
+          {isLoading ? (
+            <div className="text-center py-20 text-slate-400 font-bold text-sm bg-white rounded-3xl border border-slate-200/80">
+              Memuat pengumuman...
+            </div>
+          ) : filteredAnnouncements.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#2C1EE8] flex items-center justify-center mx-auto border border-blue-100">
+                <Bell className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-black text-slate-900">Belum Ada Pengumuman</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
+                Tidak ada pengumuman yang sesuai dengan filter atau kata kunci pencarian Anda.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredAnnouncements.map((ann) => {
+                const cover = getCoverImage(ann);
+                const categoryBadge = getCategoryBadgeStyle(ann.category);
+                const formattedDateStr = formatDate(ann.createdAt);
+
+                return (
+                  <div
+                    key={ann.id}
+                    onClick={() => router.push(`/pengumuman/${ann.id}`)}
+                    className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 flex flex-col justify-between overflow-hidden group cursor-pointer"
+                  >
+                    <div>
+                      {/* Cover Thumbnail Image */}
+                      <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
+                        <Image
+                          src={cover}
+                          alt={ann.title}
+                          fill
+                          unoptimized
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        {/* Overlay Badges */}
+                        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[11px] font-black border shadow-2xs ${categoryBadge}`}>
+                            {ann.category || "Pengumuman"}
+                          </span>
+                        </div>
+                        {ann.isPinned && (
+                          <div className="absolute top-3 right-3">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black bg-amber-500 text-white shadow-sm">
+                              <Pin className="w-3 h-3 fill-current" />
+                              Disematkan
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card Details Body */}
+                      <div className="p-6 space-y-3.5">
+                        {/* Target Class & Author metadata */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] font-extrabold">
+                            <Sparkles className="w-3 h-3 text-blue-300" />
+                            <span>{ann.createdByUserName || "Pengelola"}</span>
+                          </span>
+
+                          {ann.targetClasses && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#2C1EE8] border border-blue-100 text-[11px] font-bold">
+                              <Users className="w-3 h-3" />
+                              <span>{ann.targetClasses}</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-lg font-black text-slate-900 tracking-tight leading-snug line-clamp-2 group-hover:text-[#2C1EE8] transition-colors">
+                          {ann.title}
+                        </h3>
+
+                        {/* Content Excerpt Snippet */}
+                        <p className="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed">
+                          {ann.content || ann.summary || "Klik untuk membaca detail pengumuman selengkapnya."}
+                        </p>
+
+                        {/* Dates Banner if applicable */}
+                        {(ann.publishStart || ann.publishEnd) && (
+                          <div className="space-y-1 text-[11px] font-semibold text-slate-500 pt-1">
+                            {ann.publishStart && (
+                              <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 w-fit">
+                                <Clock className="w-3 h-3" />
+                                <span>Mulai: {new Date(ann.publishStart).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
+                              </div>
+                            )}
+                            {ann.publishEnd && (
+                              <div className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100 w-fit">
+                                <Calendar className="w-3 h-3" />
+                                <span>Berakhir: {new Date(ann.publishEnd).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="px-6 pb-6 pt-2 flex items-center justify-between border-t border-slate-100 mt-2">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#2C1EE8] group-hover:translate-x-0.5 transition-transform">
+                        <span>Lihat Detail Pengumuman</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
+
+                      {/* Admin Controls */}
+                      {canCreateAnnouncement && (
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => handleEdit(ann, e)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Pengumuman"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => handleDelete(ann.id, e)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Hapus Pengumuman"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
 
       {/* Modal Form: Buat / Edit Pengumuman */}
       {isModalOpen && (
@@ -550,6 +603,26 @@ export default function PengumumanPage() {
                 />
               </div>
 
+              {/* Kategori Pengumuman */}
+              <div>
+                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Kategori Pengumuman <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 shadow-2xs transition cursor-pointer"
+                >
+                  <option value="Pengumuman">Pengumuman</option>
+                  <option value="Akademik">Akademik</option>
+                  <option value="OSIS">OSIS</option>
+                  <option value="Ekstrakurikuler">Ekstrakurikuler</option>
+                  <option value="Ujian">Ujian</option>
+                  <option value="Libur">Libur Sekolah</option>
+                  <option value="General">General</option>
+                </select>
+              </div>
+
               {/* Target Kelas Picker (Multi-select) */}
               <div>
                 <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -583,7 +656,7 @@ export default function PengumumanPage() {
                       <span>Tambah Kelas</span>
                     </button>
 
-                    {/* Popover List 6 Kelas PPLG */}
+                    {/* Popover List Kelas PPLG */}
                     {isClassPickerOpen && (
                       <div className="absolute left-0 mt-2 w-52 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 p-2 space-y-1">
                         {OFFICIAL_PPLG_CLASSES.map((clsName) => (
@@ -609,7 +682,7 @@ export default function PengumumanPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Tanggal & Jam Mulai
+                    Tanggal &amp; Jam Mulai
                   </label>
                   <input
                     type="datetime-local"
@@ -621,7 +694,7 @@ export default function PengumumanPage() {
 
                 <div>
                   <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Tanggal & Jam Berakhir
+                    Tanggal &amp; Jam Berakhir
                   </label>
                   <input
                     type="datetime-local"
