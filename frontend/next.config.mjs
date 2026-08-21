@@ -36,6 +36,7 @@ if (backendHostname && backendHostname !== 'localhost' && backendHostname !== '1
 }
 
 const nextConfig = {
+  output: 'standalone',
   reactCompiler: true,
   images: {
     remotePatterns,
