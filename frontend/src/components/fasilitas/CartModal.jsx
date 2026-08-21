@@ -14,10 +14,11 @@ import {
   ShoppingBag,
   ArrowLeft,
   ChevronRight,
-  Send
+  Send,
+  UserPlus
 } from "lucide-react";
 import bookingService from "@/services/bookingService";
-import OrganizationSelect from "@/components/common/OrganizationSelect";
+import StudentBatchPickerModal from "@/components/fasilitas/StudentBatchPickerModal";
 
 export default function CartModal({
   isOpen,
@@ -28,8 +29,8 @@ export default function CartModal({
   onSuccessSubmit
 }) {
   const [step, setStep] = useState(1); // 1: Cart Items List, 2: Bulk Form, 3: Success
-  const [organization, setOrganization] = useState("");
-  const [customOrg, setCustomOrg] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [batchPickerOpen, setBatchPickerOpen] = useState(false);
   const [activityName, setActivityName] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState({});
@@ -48,9 +49,8 @@ export default function CartModal({
     e.preventDefault();
     const newErrors = {};
 
-    const finalOrg = organization === "Lainnya (Ketik Manual)" ? customOrg.trim() : organization;
-    if (!finalOrg) {
-      newErrors.organization = "Nama organisasi terdaftar wajib dipilih atau diisi";
+    if (selectedMembers.length === 0) {
+      newErrors.members = "Wajib memilih minimal 1 siswa / teman yang ikut meminjam fasilitas.";
     }
     if (!activityName.trim()) {
       newErrors.activityName = "Nama kegiatan wajib diisi";
@@ -67,7 +67,8 @@ export default function CartModal({
     setErrors({});
     setIsSubmitting(true);
 
-    let fullPurpose = `[${finalOrg}] ${activityName.trim()}: ${description.trim()}`;
+    const membersSummary = selectedMembers.map((m) => `${m.fullName} (${m.className || "PPLG"})`).join(", ");
+    let fullPurpose = `[Peminjam: ${selectedMembers.length} Siswa - ${membersSummary}] ${activityName.trim()}: ${description.trim()}`;
     if (fullPurpose.length > 500) {
       fullPurpose = fullPurpose.substring(0, 497) + "...";
     }
@@ -134,15 +135,13 @@ export default function CartModal({
       onClearCart();
     }
     setStep(1);
-    setOrganization("");
-    setCustomOrg("");
+    setSelectedMembers([]);
+    setBatchPickerOpen(false);
     setActivityName("");
     setDescription("");
     setErrors({});
     onClose();
   };
-
-  const finalOrgDisplay = organization === "Lainnya (Ketik Manual)" ? customOrg : organization;
 
   return (
     <AnimatePresence>
@@ -340,23 +339,73 @@ export default function CartModal({
                 )}
 
                 {/* Single Form for All Cart Items */}
-                <form onSubmit={handleFormSubmit} className="space-y-4">
-                  <OrganizationSelect
-                    value={organization}
-                    customValue={customOrg}
-                    onChange={(val) => {
-                      setOrganization(val);
-                      if (errors.organization) setErrors({ ...errors, organization: null });
-                    }}
-                    onCustomChange={(val) => setCustomOrg(val)}
-                    error={errors.organization}
-                    label="Nama Organisasi Terdaftar"
-                  />
+                <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
+                  {/* 1. Batch Member Selection (Peminjam / Teman yang Diwakilkan) */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-700 font-extrabold uppercase tracking-wider">
+                        Daftar Siswa / Teman Peminjam <span className="text-rose-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setBatchPickerOpen(true)}
+                        className="px-3.5 py-1.5 bg-blue-50 text-[#2C1EE8] border border-blue-200 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" />
+                        <span>Pilih Teman / Kelas ({selectedMembers.length})</span>
+                      </button>
+                    </div>
+
+                    {errors.members && (
+                      <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {errors.members}
+                      </p>
+                    )}
+
+                    {selectedMembers.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                        {selectedMembers.map((m) => (
+                          <span
+                            key={m.userId || m.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-white text-slate-800 border border-slate-200 rounded-xl text-[11px] font-bold shadow-2xs"
+                          >
+                            <span>{m.fullName}</span>
+                            <span className="text-[10px] text-[#2C1EE8] font-mono">({m.className || "PPLG"})</span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedMembers(
+                                  selectedMembers.filter((item) => (item.id || item.userId) !== (m.id || m.userId))
+                                )
+                              }
+                              className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => setBatchPickerOpen(true)}
+                        className="p-4 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-center text-slate-500 cursor-pointer hover:bg-slate-100/80 transition-all flex flex-col items-center gap-1"
+                      >
+                        <Users className="w-5 h-5 text-slate-400" />
+                        <span className="font-semibold text-xs text-slate-700">
+                          Klik di sini untuk memilih teman atau kelas yang ikut meminjam
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Mendukung pemilihan multi-user dan opsi &quot;Pilih Semua&quot; per kelas (X, XI, XII PPLG A & B).
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
                   {/* 2. Nama Kegiatan */}
                   <div>
-                    <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-1.5">
-                      Nama Kegiatan <span className="text-rose-500">*</span>
+                    <label className="block text-slate-700 font-extrabold uppercase tracking-wider mb-1">
+                      Nama Kegiatan / Keperluan <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -366,8 +415,8 @@ export default function CartModal({
                         setActivityName(e.target.value);
                         if (errors.activityName) setErrors({ ...errors, activityName: null });
                       }}
-                      className={`w-full px-4 py-3 rounded-2xl border bg-gray-50/50 focus:bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all ${
-                        errors.activityName ? "border-rose-400 focus:border-rose-500" : "border-gray-200 focus:border-[#2c1ee8]"
+                      className={`w-full px-4 py-2.5 rounded-xl border bg-slate-50 focus:bg-white text-xs font-medium focus:outline-hidden focus:border-[#2C1EE8] transition-all ${
+                        errors.activityName ? "border-rose-400 focus:border-rose-500" : "border-slate-200"
                       }`}
                     />
                     {errors.activityName && (
@@ -380,12 +429,12 @@ export default function CartModal({
 
                   {/* 3. Deskripsi / Tujuan Peminjaman (Purpose) */}
                   <div>
-                    <div className="flex justify-between items-center mb-1.5">
-                      <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-slate-700 font-extrabold uppercase tracking-wider">
                         Tujuan & Deskripsi Peminjaman <span className="text-rose-500">*</span>
                       </label>
-                      <span className="text-[11px] text-gray-400 font-medium">
-                        {description.length}/500 karakter
+                      <span className="text-[11px] text-slate-400 font-medium">
+                        {description.length}/400 karakter
                       </span>
                     </div>
                     <textarea
@@ -397,8 +446,8 @@ export default function CartModal({
                         setDescription(e.target.value);
                         if (errors.description) setErrors({ ...errors, description: null });
                       }}
-                      className={`w-full px-4 py-3 rounded-2xl border bg-gray-50/50 focus:bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all resize-none ${
-                        errors.description ? "border-rose-400 focus:border-rose-500" : "border-gray-200 focus:border-[#2c1ee8]"
+                      className={`w-full px-4 py-2.5 rounded-xl border bg-slate-50 focus:bg-white text-xs font-medium focus:outline-hidden focus:border-[#2C1EE8] transition-all resize-none ${
+                        errors.description ? "border-rose-400 focus:border-rose-500" : "border-slate-200"
                       }`}
                     />
                     {errors.description && (
@@ -410,19 +459,19 @@ export default function CartModal({
                   </div>
 
                   {/* Submit Button */}
-                  <div className="pt-2 flex items-center justify-end gap-3">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setStep(1)}
                       disabled={isSubmitting}
-                      className="px-6 py-3 rounded-2xl text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+                      className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                     >
                       Batal / Kelola Daftar
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="inline-flex items-center gap-2 px-8 py-3 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-sm rounded-2xl shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center gap-2 px-7 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <Send className="w-4 h-4" />
                       <span>{isSubmitting ? "Mengirim..." : "Kirim Pengajuan Kolektif"}</span>
@@ -435,13 +484,13 @@ export default function CartModal({
 
           {/* Footer Action when step 1 */}
           {step === 1 && cartItems.length > 0 && (
-            <div className="border-t border-gray-100 pt-4 flex items-center justify-between flex-shrink-0">
-              <div className="text-xs text-gray-500">
-                Total Item: <strong className="text-gray-900 text-sm font-black">{cartItems.length}</strong>
+            <div className="border-t border-slate-100 pt-4 flex items-center justify-between flex-shrink-0">
+              <div className="text-xs text-slate-500">
+                Total Item: <strong className="text-slate-900 text-sm font-black">{cartItems.length}</strong>
               </div>
               <button
                 onClick={handleNextToForm}
-                className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#2c1ee8] hover:bg-[#2218a3] text-white font-bold text-sm rounded-2xl shadow-md shadow-blue-500/20 active:scale-95 transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm active:scale-95 transition-all cursor-pointer"
               >
                 <span>Lanjut Isi Form (1x Input)</span>
                 <ChevronRight className="w-4 h-4" />
@@ -449,6 +498,17 @@ export default function CartModal({
             </div>
           )}
         </motion.div>
+
+        {/* Student Batch Picker Modal */}
+        <StudentBatchPickerModal
+          isOpen={batchPickerOpen}
+          onClose={() => setBatchPickerOpen(false)}
+          initialSelected={selectedMembers}
+          onSave={(users) => {
+            setSelectedMembers(users);
+            if (errors.members) setErrors({ ...errors, members: null });
+          }}
+        />
       </div>
     </AnimatePresence>
   );
