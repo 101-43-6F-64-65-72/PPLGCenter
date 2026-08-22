@@ -11,6 +11,7 @@ import NotificationBell from "@/components/notification/NotificationBell";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -49,6 +50,12 @@ export default function Navbar() {
   const isSecondaryActive = secondaryNavItems.some((item) =>
     item.path === "/" ? pathname === "/" : pathname.startsWith(item.path)
   );
+
+  useEffect(() => {
+    if (isSecondaryActive) {
+      setMobileDropdownOpen(true);
+    }
+  }, [isSecondaryActive, pathname]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -215,8 +222,8 @@ export default function Navbar() {
 
           {/* Right Side Auth Actions & Mobile Toggle */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Desktop Auth */}
-            <div className="flex items-center gap-2">
+            {/* Desktop Auth (Hidden on mobile screens) */}
+            <div className="hidden lg:flex items-center gap-2">
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
                   <div data-ai-target="notif_button">
@@ -227,7 +234,7 @@ export default function Navbar() {
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-semibold text-xs lg:text-sm transition-all border border-slate-200 cursor-pointer shrink-0"
                   >
                     <User className="w-3.5 h-3.5 text-[#2c1ee8]" />
-                    <span className="max-w-[90px] sm:max-w-[120px] lg:max-w-[140px] truncate">
+                    <span className="max-w-[140px] truncate">
                       {user?.fullName || user?.name?.split(" ")[0] || "Profil"}
                     </span>
                   </Link>
@@ -243,76 +250,134 @@ export default function Navbar() {
                 <button
                   data-ai-target="login_button"
                   onClick={handleOpenLogin}
-                  className="inline-flex items-center justify-center bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs lg:text-sm px-4 sm:px-5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs active:scale-[0.97]"
+                  className="inline-flex items-center justify-center bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs lg:text-sm px-5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs active:scale-[0.97]"
                 >
                   Login
                 </button>
               )}
             </div>
 
-            {/* Hamburger Toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer rounded-lg hover:bg-slate-100"
-              aria-label="Toggle Navigation Menu"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* Mobile Header Controls (Visible on mobile/tablet) */}
+            <div className="flex lg:hidden items-center gap-1.5 sm:gap-2">
+              {isAuthenticated && (
+                <div data-ai-target="notif_button_mobile">
+                  <NotificationBell />
+                </div>
+              )}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-slate-700 hover:text-slate-900 focus:outline-none cursor-pointer rounded-xl bg-slate-100 hover:bg-slate-200/80 transition-colors border border-slate-200/60"
+                aria-label="Toggle Navigation Menu"
               >
-                {mobileMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
-            </button>
+                <svg
+                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  {mobileMenuOpen ? (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  ) : (
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div className="lg:hidden mt-2.5 pb-4 border-t border-slate-100 flex flex-col gap-1 pt-3 px-2 max-h-[75vh] overflow-y-auto">
-            {allNavItems.map((item) => {
+            {/* Primary Mobile Links */}
+            {primaryNavItems.map((item) => {
               const isActive =
                 item.path === "/"
                   ? pathname === "/"
                   : pathname.startsWith(item.path);
-
-              const isAdminItem = item.path === "/admin" || item.path === "/cctv";
 
               return (
                 <Link
                   key={item.name}
                   href={item.path}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`font-semibold text-sm py-2 px-3 rounded-xl transition-colors cursor-pointer flex items-center justify-between ${
+                  className={`font-semibold text-sm py-2.5 px-3 rounded-xl transition-colors cursor-pointer flex items-center justify-between ${
                     isActive
                       ? "text-slate-900 bg-slate-100 font-bold border border-slate-200/80"
                       : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
                   }`}
                 >
                   <span>{item.name}</span>
-                  {isAdminItem && (
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
-                      Admin
-                    </span>
-                  )}
                 </Link>
               );
             })}
+
+            {/* Mobile Dropdown for "Lainnya" */}
+            <div className="flex flex-col">
+              <button
+                type="button"
+                onClick={() => setMobileDropdownOpen((prev) => !prev)}
+                className={`font-semibold text-sm py-2.5 px-3 rounded-xl transition-colors cursor-pointer flex items-center justify-between w-full text-left ${
+                  isSecondaryActive || mobileDropdownOpen
+                    ? "text-slate-900 bg-slate-100/90 font-bold border border-slate-200/80"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span>Lainnya</span>
+                  {isSecondaryActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                  )}
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    mobileDropdownOpen ? "rotate-180 text-blue-600" : "text-slate-400"
+                  }`}
+                />
+              </button>
+
+              {mobileDropdownOpen && (
+                <div className="ml-3 pl-3 my-1 border-l-2 border-blue-500/30 flex flex-col gap-1 py-1.5 animate-in fade-in slide-in-from-top-1 duration-150">
+                  {secondaryNavItems.map((item) => {
+                    const isActive =
+                      item.path === "/"
+                        ? pathname === "/"
+                        : pathname.startsWith(item.path);
+                    const isAdminItem = item.path === "/admin" || item.path === "/cctv";
+
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.path}
+                        onClick={(e) => handleNavClick(e, item)}
+                        className={`font-medium text-xs sm:text-sm py-2 px-3 rounded-lg transition-colors cursor-pointer flex items-center justify-between ${
+                          isActive
+                            ? "text-blue-700 bg-blue-50 font-semibold"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span>{item.name}</span>
+                        {isAdminItem && (
+                          <span className="text-[10px] uppercase tracking-wider font-bold text-blue-600 bg-blue-100/70 px-1.5 py-0.5 rounded">
+                            Admin
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {isAuthenticated ? (
               <div className="pt-2 mt-2 border-t border-slate-100 flex flex-col gap-2">

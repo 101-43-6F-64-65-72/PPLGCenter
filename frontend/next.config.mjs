@@ -38,6 +38,7 @@ if (backendHostname && backendHostname !== 'localhost' && backendHostname !== '1
 const nextConfig = {
   output: 'standalone',
   reactCompiler: true,
+  allowedDevOrigins: ['192.168.1.*', '192.168.*', '10.*', 'localhost:*'],
   images: {
     remotePatterns,
   },
