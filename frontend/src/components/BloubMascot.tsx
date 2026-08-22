@@ -1,2 +1,2 @@
-export * from "./BloubMascot.jsx";
-export { default } from "./BloubMascot.jsx";
+import BloubMascot from "./BloubMascot.jsx";
+export default BloubMascot;

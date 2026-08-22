@@ -1,1 +1,3 @@
-export { default, UnauthorizedPage } from "./UnauthorizedPage.jsx";
+import UnauthorizedPage from "./UnauthorizedPage.jsx";
+export default UnauthorizedPage;
+export { UnauthorizedPage };
