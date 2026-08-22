@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { User, Lock, Eye, EyeOff } from "@/components/common/Icons";
 import { GraduationCap, BookOpen, ShieldAlert, Sparkles, CheckCircle2, Check } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
+import BloubMascot from "@/components/BloubMascot";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import ErrorAlert from "@/components/common/ErrorAlert";
@@ -56,16 +57,19 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [successUserData, setSuccessUserData] = useState(null);
 
-  // ─── Submitting / Loading Cycle: Alternate 'idle' <-> 'sad' every 1.5s ───
+  // ─── Submitting / Loading Cycle: Inquisitive 'thinking' & 'peek' states ───
   useEffect(() => {
     let intervalId;
     if (isSubmitting) {
-      if (setMascotState) setMascotState("idle");
+      if (setMascotState) setMascotState("thinking");
+      const loadingStates = ["thinking", "peek", "thinking", "closed"];
+      let stepIndex = 0;
       intervalId = setInterval(() => {
+        stepIndex = (stepIndex + 1) % loadingStates.length;
         if (setMascotState) {
-          setMascotState((prev) => (prev === "idle" ? "sad" : "idle"));
+          setMascotState(loadingStates[stepIndex]);
         }
-      }, 1500);
+      }, 650);
     }
     return () => clearInterval(intervalId);
   }, [isSubmitting, setMascotState]);
@@ -137,17 +141,6 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
       if (onSuccess) {
         onSuccess(res);
       }
-
-      // Smooth post-login celebration delay before navigation
-      setTimeout(() => {
-        let dest = callbackUrl;
-        if (callbackUrl === "/profile" || !callbackUrl || callbackUrl === "/") {
-          if (loginType === "Admin") dest = "/admin";
-          else if (loginType === "Teacher") dest = "/profile";
-          else dest = "/profile";
-        }
-        router.push(dest);
-      }, 2000);
     } catch (error) {
       const backendMessage =
         error?.response?.data?.message ||
@@ -170,80 +163,58 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
   }, [loginType]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // POST-LOGIN CELEBRATION SUCCESS ANIMATION SCREEN
+  // POST-LOGIN CELEBRATION SUCCESS SCREEN (Uses Mascot Exclusively & Doesn't Close Instantly)
   if (isSuccess) {
     const roleLabel =
       loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin";
     const userName = successUserData?.fullName || successUserData?.name || identifier;
+
+    const handleProceed = () => {
+      let dest = callbackUrl;
+      if (callbackUrl === "/profile" || !callbackUrl || callbackUrl === "/") {
+        if (loginType === "Admin") dest = "/admin";
+        else if (loginType === "Teacher") dest = "/profile";
+        else dest = "/profile";
+      }
+      router.push(dest);
+    };
 
     return (
       <MotionDiv
         initial={{ opacity: 0, scale: 0.9, rotateY: 90 }}
         animate={{ opacity: 1, scale: 1, rotateY: 0 }}
         transition={{ duration: 0.5, type: "spring", stiffness: 300, damping: 24 }}
-        className="w-full py-6 flex flex-col items-center justify-center text-center space-y-5"
+        className="w-full py-4 flex flex-col items-center justify-center text-center space-y-4 font-sans"
         style={{ transformStyle: "preserve-3d" }}
       >
-        {/* Animated Glowing Ring & Checkmark */}
-        <div className="relative flex items-center justify-center">
-          <MotionDiv
-            initial={{ scale: 0 }}
-            animate={{ scale: [0.8, 1.4, 1.1] }}
-            transition={{ duration: 0.6, times: [0, 0.6, 1], ease: "easeOut" }}
-            className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shadow-lg shadow-emerald-500/30"
-          >
-            <MotionDiv
-              initial={{ scale: 0, rotate: -45 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.2, duration: 0.4, type: "spring", stiffness: 400 }}
-              className="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-600/40"
-            >
-              <Check className="w-8 h-8 stroke-[3]" />
-            </MotionDiv>
-          </MotionDiv>
-
-          {/* Sparkles Particle Accents */}
-          <MotionDiv
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: [0, 1, 0], y: -20 }}
-            transition={{ delay: 0.3, duration: 1, repeat: Infinity, repeatDelay: 0.2 }}
-            className="absolute -top-2 -right-2 text-amber-300"
-          >
-            <Sparkles className="w-5 h-5" />
-          </MotionDiv>
+        {/* Replyz Mascot Celebration Illustration Exclusively */}
+        <div className="relative p-3 bg-slate-900/90 border border-slate-700/80 rounded-3xl shadow-xl backdrop-blur-md flex items-center justify-center">
+          <BloubMascot size={110} state="happy" badge={false} />
         </div>
 
         {/* Text Details */}
-        <div className="space-y-1.5 max-w-xs">
+        <div className="space-y-1 max-w-xs">
           <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[11px] font-black uppercase tracking-wider">
             <CheckCircle2 className="w-3.5 h-3.5" /> Login Berhasil
           </span>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-            Selamat Datang!
+            Selamat Datang, {userName}!
           </h2>
-          <p className="text-xs text-white/80 font-medium truncate max-w-[260px] mx-auto">
-            {userName}
+          <p className="text-xs text-blue-100/90 font-medium">
+            Akses portal sebagai <span className="font-extrabold text-amber-300">{roleLabel}</span> PPLG Center.
           </p>
-          <div className="pt-1">
-            <span className="inline-block text-[11px] font-extrabold text-blue-200 bg-white/10 px-3 py-1 rounded-full border border-white/20">
-              Akses Portal {roleLabel}
-            </span>
-          </div>
         </div>
 
-        {/* Progress Fill Bar before redirect */}
-        <div className="w-full max-w-xs space-y-1.5 pt-2">
-          <div className="w-full bg-white/15 h-2 rounded-full overflow-hidden p-0.5 border border-white/20">
-            <MotionDiv
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 2.5, ease: "easeInOut" }}
-              className="h-full bg-gradient-to-r from-emerald-400 via-teal-300 to-white rounded-full shadow-sm"
-            />
-          </div>
-          <p className="text-[11px] font-bold text-white/70 animate-pulse">
-            Mengalihkan ke dashboard...
-          </p>
+        {/* Action Button: User Controls When to Proceed */}
+        <div className="w-full max-w-xs pt-2">
+          <button
+            type="button"
+            onClick={handleProceed}
+            className="w-full py-3 px-5 rounded-2xl bg-white text-[#2c1ee8] hover:bg-slate-100 font-black text-sm shadow-xl transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+          >
+            <span>Lanjutkan ke Aplikasi</span>
+            <Sparkles className="w-4 h-4 text-amber-500" />
+          </button>
         </div>
       </MotionDiv>
     );

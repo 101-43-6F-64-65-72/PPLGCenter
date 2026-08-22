@@ -180,13 +180,15 @@ export default function NotificationBell({ useMascot = false }) {
         aria-label="Notifikasi"
       >
         {useMascot ? (
-          <BloubMascot
-            size={38}
-            state={isOpen ? "happy" : unreadCount > 0 ? "notif" : "idle"}
-            badge={unreadCount > 0 ? unreadCount : false}
-            badgeColor="#ef4444"
-            interactiveGaze={false}
-          />
+          <div className="p-0.5 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-xs">
+            <BloubMascot
+              size={38}
+              state={isOpen ? "happy" : unreadCount > 0 ? "notif" : "idle"}
+              badge={unreadCount > 0 ? unreadCount : false}
+              badgeColor="#ef4444"
+              interactiveGaze={false}
+            />
+          </div>
         ) : (
           <>
             <svg

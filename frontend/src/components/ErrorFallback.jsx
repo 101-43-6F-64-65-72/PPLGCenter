@@ -225,7 +225,7 @@ export function ErrorFallback({
         <span>{codeBadgeText.startsWith("ERR_") ? codeBadgeText : `HTTP ${codeBadgeText}`}</span>
       </motion.div>
 
-      {/* 2. Centered Interactive Mascot */}
+      {/* 2. Centered Interactive Mascot in Dark Glass Sphere Container */}
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -235,9 +235,9 @@ export function ErrorFallback({
           damping: 20,
           delay: 0.15,
         }}
-        className="my-1 select-none"
+        className="my-2 p-3.5 rounded-full bg-slate-900/95 border border-slate-700/80 shadow-xl shadow-blue-900/25 inline-flex items-center justify-center select-none"
       >
-        <BloubMascot state={mascotState} size={200} interactiveGaze={true} />
+        <BloubMascot state={mascotState} size={180} interactiveGaze={true} />
       </motion.div>
 
       {/* 3. Typography Content */}

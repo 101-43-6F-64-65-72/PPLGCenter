@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, ChevronLeft, X, Sparkles, Compass, CheckCircle2, Ban } from "lucide-react";
@@ -327,9 +328,15 @@ export default function ManualGuide() {
     }
   };
 
-  if (!isAuthenticated) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !isAuthenticated) return null;
+
+  return createPortal(
     <>
       {/* ─────────────────────────────────────────────────────────────
           1. NON-INTRUSIVE PROMPT BUBBLE (Matching Web App Light/Glass Aesthetic)
@@ -341,11 +348,19 @@ export default function ManualGuide() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.92 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="fixed bottom-24 right-6 z-50 w-84 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_20px_50px_-10px_rgba(15,23,42,0.18)] rounded-[26px] p-4.5 flex flex-col gap-3 font-sans text-slate-900 ring-4 ring-blue-500/10"
+            style={{
+              position: "fixed",
+              bottom: "6rem",
+              right: "1.5rem",
+              left: "auto",
+              top: "auto",
+              zIndex: 99998,
+            }}
+            className="w-84 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_20px_50px_-10px_rgba(15,23,42,0.18)] rounded-[26px] p-4.5 flex flex-col gap-3 font-sans text-slate-900 ring-4 ring-blue-500/10"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2.5">
-                <div className="relative p-1 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shrink-0 shadow-xs">
+                <div className="relative p-1 bg-slate-900 border border-slate-700/80 rounded-xl shrink-0 shadow-xs">
                   <BloubMascot size={44} state="wink" badge={false} />
                 </div>
                 <div>
@@ -472,7 +487,7 @@ export default function ManualGuide() {
 
                 {/* Body: Animated Replyz Mascot + Clean Description */}
                 <div className="flex items-start gap-3.5">
-                  <div className="relative p-2.5 bg-gradient-to-br from-blue-50 to-indigo-50/60 border border-blue-100/90 rounded-2xl shrink-0 shadow-xs flex items-center justify-center">
+                  <div className="relative p-2.5 bg-slate-900 border border-slate-700/80 rounded-2xl shrink-0 shadow-xs flex items-center justify-center">
                     <BloubMascot
                       size={68}
                       state={currentStep.emotion}
@@ -535,6 +550,7 @@ export default function ManualGuide() {
           </div>
         )}
       </AnimatePresence>
-    </>
+    </>,
+    document.body
   );
 }
