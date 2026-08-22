@@ -1,3 +1,5 @@
-import UnauthorizedPage from "./UnauthorizedPage.jsx";
-export default UnauthorizedPage;
-export { UnauthorizedPage };
+// @ts-nocheck
+import PageComponent from "./UnauthorizedPage.jsx";
+
+export const UnauthorizedPage = PageComponent;
+export default PageComponent;
