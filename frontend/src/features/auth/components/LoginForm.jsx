@@ -73,7 +73,14 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
   // Input Focus Handlers
   const handleIdentifierFocus = () => {
     if (!isSubmitting && !isSuccess && setMascotState) {
-      setMascotState("idle");
+      setMascotState("notif");
+    }
+  };
+
+  const handleIdentifierChange = (e) => {
+    setIdentifier(e.target.value);
+    if (!isSubmitting && !isSuccess && setMascotState) {
+      setMascotState("notif");
     }
   };
 
@@ -344,7 +351,7 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
                 leftIcon={<User className="w-4 h-4 text-[#2c1ee8]" />}
                 value={identifier}
                 onFocus={handleIdentifierFocus}
-                onChange={(e) => setIdentifier(e.target.value)}
+                onChange={handleIdentifierChange}
               />
             </div>
 

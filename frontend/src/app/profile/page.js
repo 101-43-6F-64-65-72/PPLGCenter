@@ -8,7 +8,7 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import useAuth from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/constants/userRoles";
 import { Shield, LogOut, User, Lock, Mail, Phone, MapPin, CheckCircle, AlertCircle, Camera } from "@/components/common/Icons";
-import { GraduationCap, BookOpen, Award, Hash, Sparkles, Key, KeyRound } from "lucide-react";
+import { GraduationCap, BookOpen, Award, Hash, Sparkles, Key, KeyRound, Compass, RotateCcw, Trash2 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import profileService from "@/services/profileService";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
@@ -676,6 +676,9 @@ function ProfileContent() {
           </form>
         )}
       </div>
+
+      {/* Manual Guide Settings Card at the bottom of Profile */}
+      <ManualGuideSettingsCard />
     </div>
   );
 }
@@ -720,6 +723,40 @@ function AcademicInfoCard({ user, isStudent, isTeacher, isAdmin }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manual Guide Settings Card (Positioned at the very bottom of Profile Page)
+// ─────────────────────────────────────────────────────────────────────────────
+function ManualGuideSettingsCard() {
+  const handleStartGuide = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("app:start-manual-guide"));
+    }
+  };
+
+  return (
+    <div className="rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs font-sans">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+            Panduan Manual Replyz
+          </h2>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Pelajari alur dan fitur utama PPLG Center kapan saja.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleStartGuide}
+          className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#2C1EE8] hover:bg-blue-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer shrink-0"
+        >
+          Buka Panduan Manual
+        </button>
       </div>
     </div>
   );

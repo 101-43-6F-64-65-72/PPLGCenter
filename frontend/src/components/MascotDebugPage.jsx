@@ -18,6 +18,11 @@ import {
   Maximize2,
   Layers,
   Play,
+  Heart,
+  Moon,
+  HelpCircle,
+  Brain,
+  Flame,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -50,7 +55,7 @@ const EMOTION_STATES = [
     icon: Sparkles,
     color: "bg-emerald-600 text-white shadow-emerald-500/25",
     accentBorder: "border-emerald-500/30 bg-emerald-50/50",
-    description: "Upward crescent arcs with cheerful slight upward y-offset (-6px).",
+    description: "Natural upward crescent arcs (⌒ ⌒) with rosy blush cheeks and lively squishy float motion.",
   },
   {
     id: "closed",
@@ -68,7 +73,7 @@ const EMOTION_STATES = [
     icon: Zap,
     color: "bg-amber-600 text-white shadow-amber-500/25",
     accentBorder: "border-amber-500/30 bg-amber-50/50",
-    description: "Wide open eyes with subtle jitter and body shrink.",
+    description: "Wide open dilated pupil pulse with alert trembling body jitter.",
   },
   {
     id: "side",
@@ -96,6 +101,51 @@ const EMOTION_STATES = [
     color: "bg-[#ef4444] text-white shadow-red-500/25",
     accentBorder: "border-red-500/30 bg-red-50/50",
     description: "Excited gaze shifted up-right looking directly at the satellite notification badge.",
+  },
+  {
+    id: "wink",
+    label: "Wink",
+    badge: "Playful",
+    icon: Sparkles,
+    color: "bg-pink-600 text-white shadow-pink-500/25",
+    accentBorder: "border-pink-500/30 bg-pink-50/50",
+    description: "Playful winking eye twitch with rosy blush cheeks.",
+  },
+  {
+    id: "sleepy",
+    label: "Sleepy",
+    badge: "Resting",
+    icon: Moon,
+    color: "bg-indigo-800 text-white shadow-indigo-700/25",
+    accentBorder: "border-indigo-500/30 bg-indigo-50/50",
+    description: "Peaceful drowsy drooping eyelids (︶ ︶) with slow float slump.",
+  },
+  {
+    id: "dizzy",
+    label: "Dizzy",
+    badge: "Puzzled",
+    icon: HelpCircle,
+    color: "bg-amber-600 text-white shadow-amber-500/25",
+    accentBorder: "border-amber-500/30 bg-amber-50/50",
+    description: "Cross-eyed slanted confusion posture with bewildered gaze drift.",
+  },
+  {
+    id: "thinking",
+    label: "Thinking",
+    badge: "Focused",
+    icon: Brain,
+    color: "bg-blue-600 text-white shadow-blue-500/25",
+    accentBorder: "border-blue-500/30 bg-blue-50/50",
+    description: "Organic eye-scan motion (kanan-kiri) with inquisitive pondering head sway.",
+  },
+  {
+    id: "angry",
+    label: "Angry",
+    badge: "Fierce",
+    icon: Flame,
+    color: "bg-rose-700 text-white shadow-rose-600/25",
+    accentBorder: "border-rose-500/30 bg-rose-50/50",
+    description: "Sharp inward tilted fierce eyes (/ \\) with firm compressed posture.",
   },
 ];
 
@@ -413,7 +463,7 @@ export default function MascotDebugPage() {
                 <span className="text-[10px] text-purple-400 block uppercase font-semibold">Spring Physics & Body Squash/Stretch</span>
                 <span className="text-slate-300 block">stiffness: 300 | damping: 22</span>
                 <span className="text-slate-400 text-[11px] block">
-                  Body: Happy (y: -12, scaleY: 1.06) | Sad (y: +8, scaleY: 0.94) | Idle (3.5s float loop)
+                  Body: Happy (y: -7, scaleX: 1.03, scaleY: 0.97, 2.4s float loop) | Sad (y: +8, scaleY: 0.94) | Idle (3.5s float loop)
                 </span>
               </div>
             </div>

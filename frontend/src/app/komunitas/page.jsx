@@ -44,6 +44,7 @@ import {
 import BatchMemberPickerModal from "@/features/community/components/BatchMemberPickerModal";
 import InviteUserModal from "@/features/community/components/InviteUserModal";
 import CommunityInboxModal from "@/features/community/components/CommunityInboxModal";
+import ErrorFallback from "@/components/ErrorFallback";
 
 const safeBase64Encode = (str) => {
   if (!str) return "";
@@ -71,6 +72,7 @@ export default function KomunitasPage() {
 
   const [groups, setGroups] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [pageError, setPageError] = useState(null);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [messages, setMessages] = useState([]);
   const [members, setMembers] = useState([]);
@@ -146,10 +148,13 @@ export default function KomunitasPage() {
   const fetchGroups = useCallback(async () => {
     try {
       setLoadingGroups(true);
+      setPageError(null);
       const res = await communityService.getGroups({ page: 1, pageSize: 50 });
-      setGroups(res?.items || res?.data?.items || []);
+      const items = res?.items || res?.data?.items || (Array.isArray(res) ? res : []);
+      setGroups(items);
     } catch (err) {
       console.error("Failed to load community groups:", err);
+      setPageError(err);
     } finally {
       setLoadingGroups(false);
     }
@@ -505,13 +510,41 @@ export default function KomunitasPage() {
       m.fullName?.toLowerCase().includes(memberSearchQuery.toLowerCase())
   );
 
+  if (pageError) {
+    const is401or403 =
+      pageError?.response?.status === 401 ||
+      pageError?.response?.status === 403 ||
+      pageError?.status === 401 ||
+      pageError?.status === 403;
+
+    return (
+      <ErrorFallback
+        error={pageError}
+        statusCode={pageError?.response?.status || pageError?.status || 500}
+        title={is401or403 ? "Perlu Akses Komunitas" : "Gagal Memuat Komunitas"}
+        description={
+          pageError?.response?.data?.message ||
+          pageError?.message ||
+          "Terjadi kesalahan saat memuat data kelompok komunitas PPLG Center."
+        }
+        primaryAction={
+          is401or403
+            ? { label: "Masuk Akun (Login)", onClick: () => setIsLoginModalOpen(true) }
+            : { label: "Coba Lagi", onClick: () => fetchGroups() }
+        }
+        secondaryAction={{ label: "Kembali ke Beranda", href: "/" }}
+        fullPage={true}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
       <Navbar />
 
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-6">
         {/* Top Header Card */}
-        <div className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
+        <div id="komunitas-header-card" className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
           <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
 

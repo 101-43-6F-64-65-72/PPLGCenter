@@ -36,7 +36,7 @@ Selalu berikan respon dalam format JSON murni tanpa markdown backticks:
 
 {
   "speech": "Jawaban ramah tanpa emoji.",
-  "emotion": "idle" | "happy" | "sad" | "peek" | "side" | "notif" | "closed" | "shock",
+  "emotion": "idle" | "happy" | "sad" | "peek" | "side" | "notif" | "closed" | "shock" | "wink" | "sleepy" | "dizzy" | "thinking" | "angry",
   "action": "navigate" | "open_modal" | "highlight_ui" | "fetch_data" | null,
   "params": {
     "route": "/jadwal" | "/pengumuman" | "/fasilitas" | "/komunitas" | "/profile" | "/",

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, X, Send, Sparkles, Bot, Zap, Key } from "lucide-react";
+import { Trash2, X, Send, Sparkles, Bot, Zap, Key, HelpCircle } from "lucide-react";
 import BloubMascot from "@/components/BloubMascot";
 import { AI_TOOLS, executeAiTool } from "@/services/aiTools";
 import { generateReplyzAiResponse, getAiApiKey } from "@/services/aiService";
@@ -104,6 +104,30 @@ export default function AiChatModal() {
   useEffect(() => {
     const key = getAiApiKey();
     setHasApiKey(Boolean(key && key !== "your_ai_api_key_here"));
+  }, []);
+
+  const [hasCompletedGuide, setHasCompletedGuide] = useState(false);
+
+  useEffect(() => {
+    const checkGuideState = () => {
+      if (typeof window !== "undefined") {
+        const completed = localStorage.getItem("sc_has_completed_manual_guide");
+        setHasCompletedGuide(Boolean(completed));
+      }
+    };
+    checkGuideState();
+
+    const handleResetGuide = () => setHasCompletedGuide(false);
+    if (typeof window !== "undefined") {
+      window.addEventListener("app:reset-manual-guide-cache", handleResetGuide);
+      window.addEventListener("app:start-manual-guide", checkGuideState);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("app:reset-manual-guide-cache", handleResetGuide);
+        window.removeEventListener("app:start-manual-guide", checkGuideState);
+      }
+    };
   }, []);
 
   // Auto scroll to bottom when messages change
@@ -232,7 +256,7 @@ export default function AiChatModal() {
           1. FLOATING MASCOT TRIGGER (Bottom-Right Viewport)
          ───────────────────────────────────────────────────────────── */}
       <div id="ai-chat-modal" className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-auto">
-        {/* Floating Tooltip Pill */}
+        {/* Floating Tooltip Pills */}
         <AnimatePresence>
           {!isOpen && (
             <motion.div
@@ -240,10 +264,47 @@ export default function AiChatModal() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 4, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              onClick={() => setIsOpen(true)}
-              className="mb-1.5 bg-blue-600 text-white shadow-md border border-blue-500/40 text-[10px] tracking-wider uppercase font-black px-2.5 py-0.5 rounded-full cursor-pointer flex items-center gap-1 select-none hover:bg-blue-700 transition-all"
+              className="mb-1.5 flex items-center gap-1.5"
             >
-              <span>BETA</span>
+              {!hasCompletedGuide && (
+                <div
+                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-md border border-blue-500/40 text-[10px] tracking-wider uppercase font-black px-2.5 py-0.5 rounded-full cursor-pointer flex items-center gap-1.5 select-none transition-all"
+                  title="Panduan Manual Replyz"
+                >
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("app:start-manual-guide"));
+                      }
+                    }}
+                    className="hover:underline"
+                  >
+                    Panduan manual
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem("sc_has_completed_manual_guide", "true");
+                        setHasCompletedGuide(true);
+                      }
+                    }}
+                    className="hover:bg-blue-800/80 p-0.5 rounded-full text-blue-100 hover:text-white transition-colors cursor-pointer"
+                    title="Hapus Panduan Manual"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              <div
+                onClick={() => setIsOpen(true)}
+                className="bg-blue-600 text-white shadow-md border border-blue-500/40 text-[10px] tracking-wider uppercase font-black px-2 py-0.5 rounded-full cursor-pointer flex items-center gap-1 select-none hover:bg-blue-700 transition-all"
+              >
+                <span>BETA</span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

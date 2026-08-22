@@ -123,9 +123,11 @@ export function ErrorFallback({
   const handleMouseLeave = () => setMascotState(defaultMascotState);
 
   // ─── Default Action Configurations ─────────────────────────────────────
+  const isUnauthorized = numericCode === 401 || numericCode === 403;
+
   const defaultPrimary = {
-    label: numericCode === 401 ? "Masuk Akun (Login)" : "Kembali ke Beranda",
-    href: numericCode === 401 ? "/login" : "/",
+    label: isUnauthorized ? "Masuk Akun (Login)" : "Kembali ke Beranda",
+    href: isUnauthorized ? "/login" : "/",
   };
 
   const defaultSecondary = {

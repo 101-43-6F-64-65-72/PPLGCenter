@@ -133,7 +133,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1 shrink min-w-0 bg-slate-100/70 p-1 rounded-xl border border-slate-200/50">
+          <nav id="nav-primary" className="hidden lg:flex items-center gap-1 shrink min-w-0 bg-slate-100/70 p-1 rounded-xl border border-slate-200/50">
             {primaryNavItems.map((item) => {
               const isActive =
                 item.path === "/"

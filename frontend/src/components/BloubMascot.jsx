@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useId } from "react";
 import { motion } from "framer-motion";
 
 /**
- * @typedef {'sad' | 'happy' | 'idle' | 'closed' | 'shock' | 'side' | 'peek' | 'notif'} MascotState
+ * @typedef {'sad' | 'happy' | 'idle' | 'closed' | 'shock' | 'side' | 'peek' | 'notif' | 'wink' | 'sleepy' | 'dizzy' | 'thinking' | 'angry'} MascotState
  */
 
 /**
@@ -18,11 +18,11 @@ export const mascotVariants = {
     body: { y: 0, scaleX: 1, scaleY: 1 },
   },
   happy: {
-    // Joyful crescents (⌒ ⌒) arched upward with rounded tapered ends
-    path: "M -16 6 C -14 -8, 14 -8, 16 6 C 10 0, -10 0, -16 6 Z",
-    leftEye: { x: -24, y: -6, rotate: 6, scaleX: 1.1, scaleY: 1.1 },
-    rightEye: { x: 24, y: -6, rotate: -6, scaleX: 1.1, scaleY: 1.1 },
-    body: { y: -12, scaleX: 0.96, scaleY: 1.06 },
+    // Natural joyful upward crescent arcs (⌒ ⌒) with soft tapered tips & squishy happy body
+    path: "M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z",
+    leftEye: { x: -24, y: -4, rotate: 0, scaleX: 1.04, scaleY: 1.04 },
+    rightEye: { x: 24, y: -4, rotate: 0, scaleX: 1.04, scaleY: 1.04 },
+    body: { y: -7, scaleX: 1.03, scaleY: 0.97 },
   },
   sad: {
     // Soft drooping inverted teardrop capsules (\ /)
@@ -65,6 +65,48 @@ export const mascotVariants = {
     leftEye: { x: 13.5, y: -36.5, rotate: -19, scaleX: 0.97, scaleY: 0.95 },
     rightEye: { x: 58.8, y: -47.2, rotate: -6, scaleX: 0.81, scaleY: 0.95 },
     body: { y: -6, scaleX: 0.96, scaleY: 1.04 },
+  },
+  wink: {
+    // Playful winking smile: left eye crescent arc (⌒), right eye wink slit (-)
+    path: "M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z",
+    leftEye: { x: -24, y: -4, rotate: 0, scaleX: 1.04, scaleY: 1.04 },
+    rightEye: { x: 24, y: 4, rotate: -4, scaleX: 1.15, scaleY: 0.05 },
+    body: { y: -5, scaleX: 1.02, scaleY: 0.98 },
+  },
+  sleepy: {
+    // Peaceful drowsy drooping crescents (︶ ︶) with relaxed body slump
+    path: "M -12 -5 C -12 7, 12 7, 12 -5 C 8 -1, -8 -1, -12 -5 Z",
+    leftEye: { x: -22, y: 4, rotate: 0, scaleX: 1.05, scaleY: 0.9 },
+    rightEye: { x: 22, y: 4, rotate: 0, scaleX: 1.05, scaleY: 0.9 },
+    body: { y: 6, scaleX: 1.05, scaleY: 0.93 },
+  },
+  dizzy: {
+    // Cross-eyed slanted confusion posture
+    path: "M -8 -13 A 8 8 0 0 1 8 -13 L 8 13 A 8 8 0 0 1 -8 13 Z",
+    leftEye: { x: -20, y: 4, rotate: 34, scaleX: 0.92, scaleY: 0.92 },
+    rightEye: { x: 20, y: -3, rotate: -34, scaleX: 0.92, scaleY: 0.92 },
+    body: { y: 2, scaleX: 0.96, scaleY: 1.04 },
+  },
+  thinking: {
+    // Raised eyebrow inquisitive pondering gaze
+    path: "M -10 -12 A 10 10 0 0 1 10 -12 L 10 12 A 10 10 0 0 1 -10 12 Z",
+    leftEye: { x: -24, y: -10, rotate: -12, scaleX: 1.05, scaleY: 1.15 },
+    rightEye: { x: 24, y: -2, rotate: 8, scaleX: 0.95, scaleY: 0.75 },
+    body: { y: -4, scaleX: 0.97, scaleY: 1.03 },
+  },
+  angry: {
+    // Sharp inward tilted fierce eyes (/ \) frowning down
+    path: "M -9 -13 A 9 9 0 0 1 9 -13 L 7 11 A 7 7 0 0 1 -7 11 Z",
+    leftEye: { x: -22, y: 2, rotate: 24, scaleX: 1.05, scaleY: 0.9 },
+    rightEye: { x: 22, y: 2, rotate: -24, scaleX: 1.05, scaleY: 0.9 },
+    body: { y: 4, scaleX: 1.06, scaleY: 0.93 },
+  },
+  love: {
+    // Excited admiring / affectionate wide crescent eyes with buoyant posture
+    path: "M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z",
+    leftEye: { x: -24, y: -5, rotate: 4, scaleX: 1.12, scaleY: 1.12 },
+    rightEye: { x: 24, y: -5, rotate: -4, scaleX: 1.12, scaleY: 1.12 },
+    body: { y: -9, scaleX: 1.05, scaleY: 1.05 },
   },
 };
 
@@ -137,21 +179,23 @@ export function BloubMascot({
   const activeState = state;
   const currentVariant = mascotVariants[activeState] || mascotVariants.sad;
 
-  // ─── Contextual In-Place Eye Blinking (No position jump) ────────────────
+  // ─── Contextual In-Place Eye Blinking, Gaze Damping & Expression Motions ───
   const isClosedState = state === "closed";
   const isEyeBlinking = isBlinking || isClosedState;
+  const isWink = activeState === "wink";
+  const happyGazeFactor = (activeState === "happy" || isWink) ? 0.45 : 1;
 
   const leftEyeAnim = {
-    x: currentVariant.leftEye.x + gaze.x,
-    y: currentVariant.leftEye.y + gaze.y + (isBlinking ? 2 : 0),
+    x: currentVariant.leftEye.x + gaze.x * happyGazeFactor,
+    y: currentVariant.leftEye.y + gaze.y * happyGazeFactor + (isBlinking ? 2 : 0),
     rotate: currentVariant.leftEye.rotate,
     scaleX: isBlinking ? (currentVariant.leftEye.scaleX || 1) * 1.12 : currentVariant.leftEye.scaleX,
     scaleY: isBlinking ? 0.05 : currentVariant.leftEye.scaleY,
   };
 
   const rightEyeAnim = {
-    x: currentVariant.rightEye.x + gaze.x * 0.88,
-    y: currentVariant.rightEye.y + gaze.y * 0.88 + (isBlinking ? 2 : 0),
+    x: currentVariant.rightEye.x + gaze.x * 0.88 * happyGazeFactor,
+    y: currentVariant.rightEye.y + gaze.y * 0.88 * happyGazeFactor + (isBlinking ? 2 : 0),
     rotate: currentVariant.rightEye.rotate,
     scaleX: isBlinking ? (currentVariant.rightEye.scaleX || 1) * 1.12 : currentVariant.rightEye.scaleX,
     scaleY: isBlinking ? 0.05 : currentVariant.rightEye.scaleY,
@@ -184,8 +228,9 @@ export function BloubMascot({
 
   const springTransition = {
     type: "spring",
-    stiffness: 300,
-    damping: 22,
+    stiffness: 280,
+    damping: 24,
+    mass: 0.8,
   };
 
   const activeTransition = isEyeBlinking
@@ -212,12 +257,13 @@ export function BloubMascot({
       {/* Inner Breathing Float Loop Container */}
       <motion.div
         animate={{
-          y: [-2, 2, -2],
-          scaleX: [1, 1.01, 1],
-          scaleY: [1, 1.015, 1],
+          y: activeState === "happy" ? [-4, 4, -4] : activeState === "sleepy" ? [2, 6, 2] : activeState === "thinking" ? [-4, 2, -4] : activeState === "angry" ? [3, 5, 3] : activeState === "shock" ? [-2, -5, -2] : activeState === "dizzy" ? [1, -3, 1] : [-2, 2, -2],
+          scaleX: activeState === "happy" ? [1, 1.03, 1] : activeState === "angry" ? [1.03, 1.05, 1.03] : [1, 1.01, 1],
+          scaleY: activeState === "happy" ? [1, 1.03, 1] : activeState === "angry" ? [0.95, 0.93, 0.95] : [1, 1.015, 1],
+          rotate: activeState === "happy" ? [-1.5, 1.5, -1.5] : isWink ? [-2, 1, -2] : activeState === "thinking" ? [-3, 3, -3] : activeState === "dizzy" ? [-3, 3, -3] : activeState === "angry" ? [-1, 1, -1] : [0, 0, 0],
         }}
         transition={{
-          duration: 3.5,
+          duration: activeState === "happy" ? 2.4 : activeState === "sleepy" ? 4.2 : activeState === "thinking" ? 2.8 : activeState === "angry" ? 1.5 : activeState === "dizzy" ? 2.2 : 3.5,
           repeat: Infinity,
           ease: "easeInOut",
         }}
@@ -250,12 +296,38 @@ export function BloubMascot({
                 transition={activeTransition}
                 style={{ transformBox: "fill-box", transformOrigin: "center center" }}
               >
-                <motion.path
-                  d={currentVariant.path}
-                  fill="#000"
-                  animate={{ d: currentVariant.path }}
-                  transition={activeTransition}
-                />
+                <motion.g
+                  animate={
+                    activeState === "thinking"
+                      ? { x: [-3, 6, -8, -3], y: [-2, -4, 0, -2] }
+                      : activeState === "dizzy"
+                      ? { x: [-2, 3, -2], y: [2, -2, 2] }
+                      : activeState === "shock"
+                      ? { scale: [1, 1.08, 1] }
+                      : activeState === "sleepy"
+                      ? { scaleY: [1, 0.45, 1], y: [0, 2, 0] }
+                      : { x: 0, y: 0, scale: 1, scaleY: 1 }
+                  }
+                  transition={
+                    activeState === "thinking"
+                      ? { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
+                      : activeState === "dizzy"
+                      ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+                      : activeState === "shock"
+                      ? { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
+                      : activeState === "sleepy"
+                      ? { duration: 4.2, repeat: Infinity, ease: "easeInOut" }
+                      : springTransition
+                  }
+                  style={{ transformBox: "fill-box", transformOrigin: "center center" }}
+                >
+                  <motion.path
+                    d={currentVariant.path}
+                    fill="#000"
+                    animate={{ d: currentVariant.path }}
+                    transition={springTransition}
+                  />
+                </motion.g>
               </motion.g>
 
               {/* Right Eye Cutout inside Mask */}
@@ -264,12 +336,42 @@ export function BloubMascot({
                 transition={activeTransition}
                 style={{ transformBox: "fill-box", transformOrigin: "center center" }}
               >
-                <motion.path
-                  d={currentVariant.path}
-                  fill="#000"
-                  animate={{ d: currentVariant.path }}
-                  transition={activeTransition}
-                />
+                <motion.g
+                  animate={
+                    activeState === "thinking"
+                      ? { x: [4, -6, 8, 4], y: [-3, 0, -4, -3] }
+                      : activeState === "dizzy"
+                      ? { x: [3, -2, 3], y: [-2, 2, -2] }
+                      : activeState === "shock"
+                      ? { scale: [1, 1.08, 1] }
+                      : activeState === "sleepy"
+                      ? { scaleY: [1, 0.45, 1], y: [0, 2, 0] }
+                      : activeState === "wink"
+                      ? { scaleY: [0.05, 0.35, 0.05] }
+                      : { x: 0, y: 0, scale: 1, scaleY: 1 }
+                  }
+                  transition={
+                    activeState === "thinking"
+                      ? { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
+                      : activeState === "dizzy"
+                      ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+                      : activeState === "shock"
+                      ? { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
+                      : activeState === "sleepy"
+                      ? { duration: 4.2, repeat: Infinity, ease: "easeInOut" }
+                      : activeState === "wink"
+                      ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
+                      : springTransition
+                  }
+                  style={{ transformBox: "fill-box", transformOrigin: "center center" }}
+                >
+                  <motion.path
+                    d={currentVariant.path}
+                    fill="#000"
+                    animate={{ d: currentVariant.path }}
+                    transition={springTransition}
+                  />
+                </motion.g>
               </motion.g>
             </mask>
           </defs>
@@ -283,6 +385,21 @@ export function BloubMascot({
               <rect x="-158" y="-158" width="316" height="316" fill="#0a0a0c" />
             </g>
           </g>
+
+          {/* ─── Rosy Blush Cheeks (Fades in on happy, wink) ─── */}
+          <motion.g
+            initial={false}
+            animate={{
+              opacity: (activeState === "happy" || isWink) ? 0.75 : 0,
+              scale: (activeState === "happy" || isWink) ? 1 : 0.6,
+              y: (activeState === "happy" || isWink) ? 0 : 4,
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            style={{ transformBox: "fill-box", transformOrigin: "center center" }}
+          >
+            <ellipse cx="-40" cy="14" rx="11" ry="6" fill="#f43f5e" opacity="0.85" />
+            <ellipse cx="40" cy="14" rx="11" ry="6" fill="#f43f5e" opacity="0.85" />
+          </motion.g>
 
           {/* ─── Satellite Badge / Indicator (Top-Right Combo) ─── */}
           {badge !== undefined && badge !== false && badge !== null && (

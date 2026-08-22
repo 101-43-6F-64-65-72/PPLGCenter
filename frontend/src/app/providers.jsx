@@ -4,6 +4,7 @@ import React from "react";
 import { QueryClientProvider, queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AiChatModal from "@/components/AiChatModal";
+import ManualGuide from "@/components/onboarding/ManualGuide";
 
 let ToasterComponent = () => null;
 try {
@@ -18,6 +19,7 @@ export function Providers({ children }) {
       <AuthProvider>
         {children}
         <AiChatModal />
+        <ManualGuide />
         <ToasterComponent
           position="top-right"
           toastOptions={{
