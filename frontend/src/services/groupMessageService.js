@@ -9,6 +9,10 @@ export const groupMessageService = {
     return res;
   },
 
+  getMessages: async (groupId, params = {}) => {
+    return groupMessageService.getGroupMessages(groupId, params);
+  },
+
   sendMessage: async (data) => {
     const res = await apiClient.post("/api/CommunityMessages/send", data);
     return res;
@@ -16,3 +20,4 @@ export const groupMessageService = {
 };
 
 export default groupMessageService;
+

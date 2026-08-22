@@ -98,7 +98,7 @@ export default function InviteUserModal({ isOpen, onClose, group, onInviteSucces
           {/* Results List */}
           <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
             {isLoading ? (
-              <div className="py-8 text-center text-xs text-slate-400 font-bold">Mencari pengguna di Supabase...</div>
+              <div className="py-8 text-center text-xs text-slate-400 font-bold">Mencari pengguna...</div>
             ) : !query.trim() ? (
               <div className="py-8 text-center text-xs text-slate-400 font-bold">
                 Ketik nama lengkap pengguna untuk mencari dan mengundang.

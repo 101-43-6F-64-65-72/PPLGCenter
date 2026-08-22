@@ -58,8 +58,17 @@ export default function Navbar() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
+    
+    const handleOpenLoginEvent = () => setIsLoginModalOpen(true);
+    if (typeof window !== "undefined") {
+      window.addEventListener("app:open-login", handleOpenLoginEvent);
+    }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("app:open-login", handleOpenLoginEvent);
+      }
     };
   }, []);
 
@@ -210,7 +219,9 @@ export default function Navbar() {
             <div className="flex items-center gap-2">
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
-                  <NotificationBell />
+                  <div data-ai-target="notif_button">
+                    <NotificationBell />
+                  </div>
                   <Link
                     href="/profile"
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-semibold text-xs lg:text-sm transition-all border border-slate-200 cursor-pointer shrink-0"
@@ -230,6 +241,7 @@ export default function Navbar() {
                 </div>
               ) : (
                 <button
+                  data-ai-target="login_button"
                   onClick={handleOpenLogin}
                   className="inline-flex items-center justify-center bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs lg:text-sm px-4 sm:px-5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 shadow-xs active:scale-[0.97]"
                 >

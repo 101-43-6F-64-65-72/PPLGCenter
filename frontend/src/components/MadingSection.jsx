@@ -65,7 +65,9 @@ export default function MadingSection() {
     if (typeof window === "undefined" || !sectionRef.current) return;
 
     const ctx = gsap.context(() => {
-      const items = sectionRef.current?.querySelectorAll(".mading-animate-item");
+      const items = sectionRef.current?.querySelectorAll(
+        ".mading-animate-item",
+      );
       if (items && items.length > 0) {
         gsap.from(items, {
           opacity: 0,
@@ -104,36 +106,6 @@ export default function MadingSection() {
       <div className="absolute inset-0 bg-dots-pattern opacity-60 pointer-events-none" />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* INNOVATIVE INFINITE MARQUEE TICKER */}
-        <div className="mb-10 w-full overflow-hidden rounded-2xl bg-blue-50/70 border border-blue-100/90 py-2.5 px-4 backdrop-blur-xs select-none">
-          <div className="flex whitespace-nowrap animate-marquee gap-8 items-center text-xs font-mono font-semibold text-[#2c1ee8] uppercase tracking-widest">
-            <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#2c1ee8] animate-pulse" />
-              MADING DIGITAL SMKN 2 SURAKARTA
-            </span>
-            <span>•</span>
-            <span className="inline-flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              PENGUMUMAN RESMI SEKOLAH
-            </span>
-            <span>•</span>
-            <span className="inline-flex items-center gap-2">
-              <Flame className="w-3.5 h-3.5 text-amber-500" />
-              PRESTASI & KARYA INOVASI SISWA
-            </span>
-            <span>•</span>
-            <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#2c1ee8] animate-pulse" />
-              MADING DIGITAL SMKN 2 SURAKARTA
-            </span>
-            <span>•</span>
-            <span className="inline-flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              PENGUMUMAN RESMI SEKOLAH
-            </span>
-          </div>
-        </div>
-
         {/* Top Header Section: Left Collage, Right Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
           {/* Left Column: 3D Floating Collage */}

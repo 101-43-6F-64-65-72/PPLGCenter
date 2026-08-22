@@ -3,6 +3,7 @@
 import React from "react";
 import { QueryClientProvider, queryClient } from "@/lib/queryClient";
 import { AuthProvider } from "@/contexts/AuthContext";
+import AiChatModal from "@/components/AiChatModal";
 
 let ToasterComponent = () => null;
 try {
@@ -16,6 +17,7 @@ export function Providers({ children }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         {children}
+        <AiChatModal />
         <ToasterComponent
           position="top-right"
           toastOptions={{

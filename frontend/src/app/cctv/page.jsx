@@ -5,6 +5,7 @@ import cctvService from "@/services/cctvService";
 import useAuth from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ErrorFallback from "@/components/ErrorFallback";
 import { Camera, Radio, RefreshCw, ShieldAlert, PlusCircle, Power, Trash2, Search, CheckCircle2 } from "lucide-react";
 
 export default function CctvPage() {
@@ -184,18 +185,28 @@ export default function CctvPage() {
         )}
 
         {isStudent ? (
-          <div className="p-8 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-center text-rose-300 space-y-2">
-            <ShieldAlert className="w-10 h-10 mx-auto text-rose-400" />
-            <h3 className="text-base font-bold">Akses Dibatasi</h3>
-            <p className="text-xs text-rose-400/80">
-              Sistem CCTV terbatas hanya untuk Pengawas Laboratorium, Guru, dan Administrator Sistem.
-            </p>
+          <div className="py-6 w-full flex justify-center">
+            <ErrorFallback
+              statusCode={403}
+              title="Akses CCTV Dibatasi"
+              description="Sistem pemantauan CCTV terbatas hanya untuk Pengawas Laboratorium, Guru, dan Administrator Sistem."
+              primaryAction={{ label: "Kembali ke Beranda", href: "/" }}
+              showHomeButton={false}
+              fullPage={false}
+            />
           </div>
         ) : loading ? (
           <div className="py-20 text-center text-slate-500 text-xs">Memuat daftar kamera CCTV...</div>
         ) : cameras.length === 0 ? (
-          <div className="py-20 text-center text-slate-400 text-xs bg-slate-800/40 rounded-2xl border border-slate-700/50 p-8">
-            Belum ada kamera CCTV terdaftar di lingkungan sekolah.
+          <div className="py-6 w-full flex justify-center">
+            <ErrorFallback
+              statusCode="EMPTY"
+              title="Belum Ada Kamera CCTV"
+              description="Belum ada kamera CCTV terdaftar di lingkungan laboratorium sekolah."
+              primaryAction={{ label: "Kembali ke Beranda", href: "/" }}
+              showHomeButton={false}
+              fullPage={false}
+            />
           </div>
         ) : (
           /* Camera Grid */

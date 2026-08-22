@@ -7,6 +7,7 @@ import uploadImageToCloudinary from "@/services/cloudinaryService";
 import useAuth from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ErrorFallback from "@/components/ErrorFallback";
 import LoginModal from "@/features/auth/components/LoginModal";
 import {
   Folder,
@@ -727,8 +728,15 @@ export default function PerpustakaanPage() {
                 Memuat riwayat peminjaman...
               </div>
             ) : myRequests.length === 0 ? (
-              <div className="text-center py-16 bg-slate-50 rounded-2xl border border-slate-200/80 text-slate-500 text-xs">
-                Belum ada riwayat peminjaman buku. Pilih buku di repositori untuk mengajukan pinjaman.
+              <div className="py-6 w-full flex justify-center">
+                <ErrorFallback
+                  statusCode="EMPTY"
+                  title="Belum Ada Peminjaman"
+                  description="Belum ada riwayat peminjaman buku. Silakan pilih buku di repositori untuk mengajukan permohonan."
+                  primaryAction={{ label: "Kembali ke Beranda", href: "/" }}
+                  showHomeButton={false}
+                  fullPage={false}
+                />
               </div>
             ) : (
               <div className="space-y-3">

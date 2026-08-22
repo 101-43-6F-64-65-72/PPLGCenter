@@ -6,8 +6,10 @@ import schoolClassService from "@/services/schoolClassService";
 import userService from "@/services/userService";
 import { scheduleService } from "@/services/scheduleService";
 import useAuth from "@/hooks/useAuth";
+import AuthGuard from "@/components/layout/AuthGuard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ErrorFallback from "@/components/ErrorFallback";
 import AssignPositionModal from "@/components/kelas/AssignPositionModal";
 import AddDivisionModal from "@/components/kelas/AddDivisionModal";
 import { WEEKLY_AGENDA_DATA } from "@/data/weeklyAgendaData";
@@ -42,7 +44,7 @@ import {
   MapPin
 } from "lucide-react";
 
-export default function KelasPage() {
+function KelasPage() {
   const { role, user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [selectedClassId, setSelectedClassId] = useState("");
@@ -733,8 +735,15 @@ export default function KelasPage() {
             {loading ? (
               <div className="text-slate-400 text-xs py-12 text-center">Memuat data siswa...</div>
             ) : filteredStudents.length === 0 ? (
-              <div className="text-slate-400 text-xs py-12 text-center border border-dashed border-slate-200 rounded-xl">
-                Tidak ada data siswa ditemukan.
+              <div className="py-6 w-full flex justify-center">
+                <ErrorFallback
+                  statusCode="EMPTY"
+                  title="Data Siswa Tidak Ditemukan"
+                  description="Tidak ada data siswa terdaftar yang sesuai dengan filter atau kata kunci pencarian Anda."
+                  primaryAction={{ label: "Kembali ke Beranda", href: "/" }}
+                  showHomeButton={false}
+                  fullPage={false}
+                />
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1302,3 +1311,12 @@ export default function KelasPage() {
     </div>
   );
 }
+
+export default function Page() {
+  return (
+    <AuthGuard>
+      <KelasPage />
+    </AuthGuard>
+  );
+}
+

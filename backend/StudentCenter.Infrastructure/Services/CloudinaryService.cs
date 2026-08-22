@@ -31,26 +31,37 @@ public class CloudinaryService : ICloudinaryService
     {
         var cloudName = Clean(_configuration["Cloudinary:CloudName"]
             ?? _configuration["CLOUDINARY_CLOUD_NAME"]
+            ?? _configuration["CLOUDINARY__CLOUDNAME"]
             ?? Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME")
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY__CLOUDNAME")
             ?? Environment.GetEnvironmentVariable("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"));
 
         var apiKey = Clean(_configuration["Cloudinary:ApiKey"]
             ?? _configuration["CLOUDINARY_API_KEY"]
+            ?? _configuration["CLOUDINARY__APIKEY"]
             ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY")
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY__APIKEY")
             ?? Environment.GetEnvironmentVariable("NEXT_PUBLIC_CLOUDINARY_API_KEY"));
 
         var apiSecret = Clean(_configuration["Cloudinary:ApiSecret"]
             ?? _configuration["CLOUDINARY_API_SECRET"]
-            ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET"));
+            ?? _configuration["CLOUDINARY__APISECRET"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY__APISECRET"));
 
         var uploadPreset = Clean(_configuration["Cloudinary:UploadPreset"]
             ?? _configuration["CLOUDINARY_UPLOAD_PRESET"]
-            ?? Environment.GetEnvironmentVariable("CLOUDINARY_UPLOAD_PRESET"));
+            ?? _configuration["CLOUDINARY__UPLOADPRESET"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_UPLOAD_PRESET")
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY__UPLOADPRESET")
+            ?? Environment.GetEnvironmentVariable("NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET"));
 
         // Support CLOUDINARY_URL (e.g. cloudinary://API_KEY:API_SECRET@CLOUD_NAME)
         var cloudinaryUrl = Clean(_configuration["Cloudinary:Url"]
             ?? _configuration["CLOUDINARY_URL"]
-            ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+            ?? _configuration["CLOUDINARY__URL"]
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY_URL")
+            ?? Environment.GetEnvironmentVariable("CLOUDINARY__URL"));
 
         if (!string.IsNullOrWhiteSpace(cloudinaryUrl))
         {

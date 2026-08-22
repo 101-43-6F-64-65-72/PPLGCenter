@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import LoginForm from "./LoginForm";
 import { X } from "@/components/common/Icons";
+import BloubMascot from "@/components/BloubMascot";
 
 let motionImport = null;
 let animatePresenceImport = null;
@@ -31,10 +32,13 @@ const MotionDiv = motionImport?.div || FallbackDiv;
 const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
 
 export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
-  // Lock body scroll when overlay is active
+  const [mascotState, setMascotState] = useState("happy");
+
+  // Lock body scroll and reset mascot to happy entrance when modal opens
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      setMascotState("happy");
     } else {
       document.body.style.overflow = "unset";
     }
@@ -96,12 +100,12 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
               exit={{ opacity: 0, scale: 0.85, y: 25, rotateX: 6 }}
               transition={{ delay: 0.25, duration: 0.45, type: "spring", stiffness: 320, damping: 26 }}
               style={{ transformStyle: "preserve-3d" }}
-              className="relative w-full max-w-md rounded-[36px] border border-white/25 bg-[#2c1ee8]/95 p-7 sm:p-8 text-white shadow-2xl shadow-slate-950/80 backdrop-blur-2xl font-sans my-auto pointer-events-auto overflow-hidden"
+              className="relative w-full max-w-md rounded-[36px] border border-white/25 bg-[#2c1ee8]/95 p-7 sm:p-8 text-white shadow-2xl shadow-slate-950/80 backdrop-blur-2xl font-sans my-auto pointer-events-auto overflow-visible"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Glowing Ambient Background Accents */}
-              <div className="absolute -top-16 -left-16 w-60 h-60 bg-blue-400/25 rounded-full blur-3xl pointer-events-none animate-pulse" />
-              <div className="absolute -bottom-16 -right-16 w-60 h-60 bg-indigo-400/25 rounded-full blur-3xl pointer-events-none animate-pulse" />
+              <div className="absolute -top-16 -left-16 w-60 h-60 bg-blue-400/25 rounded-full blur-3xl pointer-events-none animate-pulse rounded-[36px] overflow-hidden" />
+              <div className="absolute -bottom-16 -right-16 w-60 h-60 bg-indigo-400/25 rounded-full blur-3xl pointer-events-none animate-pulse rounded-[36px] overflow-hidden" />
 
               {/* Close Button */}
               <button
@@ -137,8 +141,23 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
 
               {/* Form Container */}
               <div className="relative z-10">
-                <LoginForm onSuccess={onSuccess} />
+                <LoginForm
+                  onSuccess={onSuccess}
+                  mascotState={mascotState}
+                  setMascotState={setMascotState}
+                />
               </div>
+
+              {/* 50% Below & 50% Left Overlapping Mascot on Bottom-Left Modal Corner */}
+              <MotionDiv
+                initial={{ y: 120, scale: 0.3, opacity: 0 }}
+                animate={{ y: 0, scale: 1, opacity: 1 }}
+                exit={{ y: 120, scale: 0.3, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 350, damping: 18, mass: 0.8 }}
+                className="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 z-30 pointer-events-none hidden md:block"
+              >
+                <BloubMascot size={150} state={mascotState} />
+              </MotionDiv>
             </MotionDiv>
           </div>
         </div>

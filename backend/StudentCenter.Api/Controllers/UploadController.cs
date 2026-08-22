@@ -238,6 +238,11 @@ public class UploadController : ControllerBase
                 scheme = "https";
             }
             baseUrl = $"{scheme}://{Request.Host}";
+
+            if (!_environment.IsDevelopment() && (baseUrl.Contains("localhost") || baseUrl.Contains("127.0.0.1")))
+            {
+                baseUrl = "https://pplgcenter.onrender.com";
+            }
         }
 
         var fileUrl = $"{baseUrl}/uploads/{uniqueFileName}";

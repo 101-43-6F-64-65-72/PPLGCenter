@@ -35,12 +35,15 @@ CREATE TABLE public.Announcements (
   Title character varying NOT NULL,
   Content text NOT NULL,
   Category character varying NOT NULL,
-  CoverImageUrl character varying DEFAULT 'https://i0.wp.com/systass.org/wp-content/uploads/2023/11/placeholder-2-1.png?ssl=1'::character varying,
+  CoverImageUrl character varying,
   IsPinned boolean NOT NULL DEFAULT false,
   CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
   UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
   CreatedByUserId uuid NOT NULL,
   IsCommentsLocked boolean NOT NULL DEFAULT false,
+  TargetClasses text,
+  PublishStart timestamp with time zone,
+  PublishEnd timestamp with time zone,
   CONSTRAINT Announcements_pkey PRIMARY KEY (Id),
   CONSTRAINT FK_Announcements_Users_CreatedByUserId FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id)
 );
@@ -65,8 +68,8 @@ CREATE TABLE public.Assignments (
   Grade text NOT NULL,
   DueDate timestamp with time zone NOT NULL,
   MaxScore double precision NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  UpdatedAt timestamp with time zone NOT NULL,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
   CreatedByUserId uuid NOT NULL,
   AllowLateSubmission boolean NOT NULL DEFAULT false,
   Attachment text,
@@ -75,7 +78,7 @@ CREATE TABLE public.Assignments (
   DeletedAt timestamp with time zone,
   IsDeleted boolean NOT NULL DEFAULT false,
   LatePenaltyPercent double precision NOT NULL DEFAULT 0.0,
-  PublishAt timestamp with time zone NOT NULL DEFAULT '-infinity'::timestamp with time zone,
+  PublishAt timestamp with time zone NOT NULL DEFAULT now(),
   ScheduleId uuid,
   TeacherId uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000'::uuid,
   UpdatedBy uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000'::uuid,
@@ -96,9 +99,9 @@ CREATE TABLE public.Submissions (
   GradedAt timestamp with time zone,
   AssignmentId uuid NOT NULL,
   StudentId uuid NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL DEFAULT '-infinity'::timestamp with time zone,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
   LatestVersion integer NOT NULL DEFAULT 0,
-  UpdatedAt timestamp with time zone NOT NULL DEFAULT '-infinity'::timestamp with time zone,
+  UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT Submissions_pkey PRIMARY KEY (Id),
   CONSTRAINT FK_Submissions_Users_StudentId FOREIGN KEY (StudentId) REFERENCES public.Users(Id),
   CONSTRAINT FK_Submissions_Assignments_AssignmentId FOREIGN KEY (AssignmentId) REFERENCES public.Assignments(Id)
@@ -115,12 +118,6 @@ CREATE TABLE public.CalendarEvents (
   CreatedByUserId uuid NOT NULL,
   CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
   UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
-  Color text,
-  DeletedAt timestamp with time zone,
-  EndTime text,
-  EventDate timestamp with time zone NOT NULL DEFAULT '-infinity'::timestamp with time zone,
-  StartTime text,
-  Visibility text NOT NULL DEFAULT ''::text,
   CONSTRAINT CalendarEvents_pkey PRIMARY KEY (Id),
   CONSTRAINT FK_CalendarEvents_Users_CreatedByUserId FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id)
 );
@@ -147,8 +144,8 @@ CREATE TABLE public.AnnouncementReactions (
   AnnouncementId uuid NOT NULL,
   UserId uuid NOT NULL,
   CONSTRAINT AnnouncementReactions_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_AnnouncementReactions_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id),
-  CONSTRAINT FK_AnnouncementReactions_Announcements_AnnouncementId FOREIGN KEY (AnnouncementId) REFERENCES public.Announcements(Id)
+  CONSTRAINT FK_AnnouncementReactions_Announcements_AnnouncementId FOREIGN KEY (AnnouncementId) REFERENCES public.Announcements(Id),
+  CONSTRAINT FK_AnnouncementReactions_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id)
 );
 CREATE TABLE public.Notifications (
   Id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -157,7 +154,7 @@ CREATE TABLE public.Notifications (
   Body character varying NOT NULL,
   Type integer NOT NULL,
   ReferenceId character varying,
-  ReferenceType character varying NOT NULL DEFAULT ''::character varying,
+  ReferenceType character varying DEFAULT ''::character varying,
   IsRead boolean NOT NULL DEFAULT false,
   CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
   ActionUrl character varying,
@@ -182,8 +179,9 @@ CREATE TABLE public.Facilities (
   UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
   Category character varying,
   ImageUrl character varying,
-  IsDeleted boolean NOT NULL DEFAULT false,
-  CONSTRAINT Facilities_pkey PRIMARY KEY (Id)
+  ManagerTeacherId uuid,
+  CONSTRAINT Facilities_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_Facilities_Users_ManagerTeacherId FOREIGN KEY (ManagerTeacherId) REFERENCES public.Users(Id)
 );
 CREATE TABLE public.FacilityBookings (
   Id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -218,11 +216,12 @@ CREATE TABLE public.Proposals (
   AttachmentUrl text NOT NULL DEFAULT ''::text,
   Category text,
   StudentId uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000'::uuid,
-  SubmittedAt timestamp with time zone NOT NULL DEFAULT '-infinity'::timestamp with time zone,
-  TeacherComment text,
+  SubmittedAt timestamp with time zone NOT NULL DEFAULT now(),
+  ExtracurricularId uuid,
   CONSTRAINT Proposals_pkey PRIMARY KEY (Id),
   CONSTRAINT FK_Proposals_Users_ReviewedByUserId FOREIGN KEY (ReviewedByUserId) REFERENCES public.Users(Id),
-  CONSTRAINT FK_Proposals_Users_SubmittedByUserId FOREIGN KEY (SubmittedByUserId) REFERENCES public.Users(Id)
+  CONSTRAINT FK_Proposals_Users_SubmittedByUserId FOREIGN KEY (SubmittedByUserId) REFERENCES public.Users(Id),
+  CONSTRAINT FK_Proposals_Extracurriculars_ExtracurricularId FOREIGN KEY (ExtracurricularId) REFERENCES public.Extracurriculars(Id)
 );
 CREATE TABLE public.Extracurriculars (
   Id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -240,13 +239,6 @@ CREATE TABLE public.Extracurriculars (
   Location character varying,
   ScheduleDay character varying,
   ScheduleTime character varying,
-  CoachName text,
-  CoachPhoneNumber text,
-  Day text,
-  EndTime text,
-  MaximumMembers integer NOT NULL DEFAULT 0,
-  RegistrationOpen boolean NOT NULL DEFAULT false,
-  StartTime text,
   SupervisorTeacherId uuid,
   CONSTRAINT Extracurriculars_pkey PRIMARY KEY (Id),
   CONSTRAINT FK_Extracurriculars_Users_ManagedByUserId FOREIGN KEY (ManagedByUserId) REFERENCES public.Users(Id),
@@ -271,8 +263,8 @@ CREATE TABLE public.Attendances (
   Status integer NOT NULL,
   Notes character varying,
   RecordedByUserId uuid,
-  CreatedAt timestamp with time zone NOT NULL,
-  UpdatedAt timestamp with time zone NOT NULL,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
   AttendanceSessionId uuid,
   CheckInTime timestamp with time zone,
   CONSTRAINT Attendances_pkey PRIMARY KEY (Id),
@@ -552,19 +544,6 @@ CREATE TABLE public.DiscussionReplies (
   CONSTRAINT FK_DiscussionReplies_DiscussionThreads_ThreadId FOREIGN KEY (ThreadId) REFERENCES public.DiscussionThreads(Id),
   CONSTRAINT FK_DiscussionReplies_Users_CreatedByUserId FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id)
 );
-CREATE TABLE public.ConversationMembers (
-  Id uuid NOT NULL DEFAULT gen_random_uuid(),
-  ConversationId uuid NOT NULL,
-  UserId uuid NOT NULL,
-  JoinedAt timestamp with time zone NOT NULL,
-  LastReadAt timestamp with time zone,
-  CreatedByUserId uuid NOT NULL,
-  UpdatedByUserId uuid,
-  DeletedByUserId uuid,
-  CONSTRAINT ConversationMembers_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_ConversationMembers_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id),
-  CONSTRAINT FK_ConversationMembers_Conversations_ConversationId FOREIGN KEY (ConversationId) REFERENCES public.Conversations(Id)
-);
 CREATE TABLE public.Conversations (
   Id uuid NOT NULL DEFAULT gen_random_uuid(),
   Title character varying,
@@ -581,6 +560,19 @@ CREATE TABLE public.Conversations (
   CONSTRAINT Conversations_pkey PRIMARY KEY (Id),
   CONSTRAINT FK_Conversations_Users_CreatedByUserId FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id),
   CONSTRAINT FK_Conversations_Messages_LastMessageId FOREIGN KEY (LastMessageId) REFERENCES public.Messages(Id)
+);
+CREATE TABLE public.ConversationMembers (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  ConversationId uuid NOT NULL,
+  UserId uuid NOT NULL,
+  JoinedAt timestamp with time zone NOT NULL,
+  LastReadAt timestamp with time zone,
+  CreatedByUserId uuid NOT NULL,
+  UpdatedByUserId uuid,
+  DeletedByUserId uuid,
+  CONSTRAINT ConversationMembers_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_ConversationMembers_Conversations_ConversationId FOREIGN KEY (ConversationId) REFERENCES public.Conversations(Id),
+  CONSTRAINT FK_ConversationMembers_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id)
 );
 CREATE TABLE public.Messages (
   Id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -612,133 +604,221 @@ CREATE TABLE public.MessageAttachments (
   CONSTRAINT MessageAttachments_pkey PRIMARY KEY (Id),
   CONSTRAINT FK_MessageAttachments_Messages_MessageId FOREIGN KEY (MessageId) REFERENCES public.Messages(Id)
 );
-CREATE TABLE public.Elections (
-  Id uuid NOT NULL,
+CREATE TABLE public.PasswordResetRequests (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  UserId uuid NOT NULL,
+  TokenHash character varying NOT NULL,
+  ExpiresAt timestamp with time zone NOT NULL,
+  IsUsed boolean NOT NULL DEFAULT false,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT PasswordResetRequests_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_PasswordResetRequests_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.BookManagers (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  BookCategory text,
+  ManagerUserId uuid NOT NULL,
+  AssignedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT BookManagers_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_BookManagers_Users_ManagerUserId FOREIGN KEY (ManagerUserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.Books (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  Title character varying NOT NULL,
+  Author character varying NOT NULL,
+  ISBN text,
+  Category text NOT NULL,
+  TotalCopies integer NOT NULL DEFAULT 1,
+  AvailableCopies integer NOT NULL DEFAULT 1 CHECK ("AvailableCopies" >= 0),
+  CoverImageUrl text,
+  IsActive boolean NOT NULL DEFAULT true,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  FolderId uuid,
+  LocationType text NOT NULL DEFAULT 'Offline'::text,
+  LocationDetails text,
+  Publisher text,
+  PublicationYear integer,
+  Synopsis text,
+  CreatedByUserId uuid,
+  CONSTRAINT Books_pkey PRIMARY KEY (Id),
+  CONSTRAINT Books_FolderId_fkey FOREIGN KEY (FolderId) REFERENCES public.LibraryFolders(Id),
+  CONSTRAINT Books_CreatedByUserId_fkey FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.ClassDivisions (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  SchoolClassId uuid NOT NULL,
+  ParentDivisionId uuid,
+  Name character varying NOT NULL,
+  Description text,
+  LeaderStudentId uuid,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ClassDivisions_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_ClassDivisions_ClassDivisions_ParentDivisionId FOREIGN KEY (ParentDivisionId) REFERENCES public.ClassDivisions(Id),
+  CONSTRAINT FK_ClassDivisions_SchoolClasses_SchoolClassId FOREIGN KEY (SchoolClassId) REFERENCES public.SchoolClasses(Id),
+  CONSTRAINT FK_ClassDivisions_Users_LeaderStudentId FOREIGN KEY (LeaderStudentId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.ClassLeadership (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  SchoolClassId uuid NOT NULL,
+  HomeroomTeacherId uuid NOT NULL,
+  ClassLeaderStudentId uuid NOT NULL,
+  AcademicYearId uuid NOT NULL,
+  AppointedByUserId uuid NOT NULL,
+  AppointedAt timestamp with time zone NOT NULL DEFAULT now(),
+  IsActive boolean NOT NULL DEFAULT true,
+  EffectiveDate timestamp with time zone NOT NULL DEFAULT now(),
+  EndDate timestamp with time zone,
+  CONSTRAINT ClassLeadership_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_ClassLeadership_AcademicYears_AcademicYearId FOREIGN KEY (AcademicYearId) REFERENCES public.AcademicYears(Id),
+  CONSTRAINT FK_ClassLeadership_SchoolClasses_SchoolClassId FOREIGN KEY (SchoolClassId) REFERENCES public.SchoolClasses(Id),
+  CONSTRAINT FK_ClassLeadership_Users_ClassLeaderStudentId FOREIGN KEY (ClassLeaderStudentId) REFERENCES public.Users(Id),
+  CONSTRAINT FK_ClassLeadership_Users_HomeroomTeacherId FOREIGN KEY (HomeroomTeacherId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.CommunityGroups (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  Name text NOT NULL,
+  Description text,
+  AvatarUrl text,
+  CreatedByUserId uuid NOT NULL,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT CommunityGroups_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_CommunityGroups_Users_CreatedByUserId FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.FacilityManagers (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  FacilityId uuid NOT NULL,
+  ManagerUserId uuid NOT NULL,
+  AssignedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT FacilityManagers_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_FacilityManagers_Facilities_FacilityId FOREIGN KEY (FacilityId) REFERENCES public.Facilities(Id),
+  CONSTRAINT FK_FacilityManagers_Users_ManagerUserId FOREIGN KEY (ManagerUserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.ScheduleRotationConfigs (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  SchoolClassId uuid NOT NULL,
+  AnchorStartDate timestamp with time zone NOT NULL,
+  InitialCategory integer NOT NULL DEFAULT 0,
+  CycleWeeks integer NOT NULL DEFAULT 2,
+  IsActive boolean NOT NULL DEFAULT true,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ScheduleRotationConfigs_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_ScheduleRotationConfigs_SchoolClasses_SchoolClassId FOREIGN KEY (SchoolClassId) REFERENCES public.SchoolClasses(Id)
+);
+CREATE TABLE public.StudentProfiles (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  UserId uuid NOT NULL,
+  Bio character varying,
+  SkillsJson text,
+  TechStackJson text,
+  SocialLinksJson text,
+  Visibility integer NOT NULL DEFAULT 0,
+  UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT StudentProfiles_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_StudentProfiles_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.UserPermissions (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  UserId uuid NOT NULL,
+  Capability text NOT NULL,
+  GrantedAt timestamp with time zone NOT NULL DEFAULT now(),
+  GrantedByUserId uuid NOT NULL,
+  CONSTRAINT UserPermissions_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_UserPermissions_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.BookBorrowRequests (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  BookId uuid NOT NULL,
+  BorrowerStudentId uuid NOT NULL,
+  BorrowDate timestamp with time zone NOT NULL,
+  DueDate timestamp with time zone NOT NULL,
+  ReturnDate timestamp with time zone,
+  Status integer NOT NULL DEFAULT 0,
+  RejectionReason text,
+  ApprovedByUserId uuid,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  UpdatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  TargetTeacherId uuid,
+  BorrowNotes text,
+  CONSTRAINT BookBorrowRequests_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_BookBorrowRequests_Books_BookId FOREIGN KEY (BookId) REFERENCES public.Books(Id),
+  CONSTRAINT FK_BookBorrowRequests_Users_ApprovedByUserId FOREIGN KEY (ApprovedByUserId) REFERENCES public.Users(Id),
+  CONSTRAINT FK_BookBorrowRequests_Users_BorrowerStudentId FOREIGN KEY (BorrowerStudentId) REFERENCES public.Users(Id),
+  CONSTRAINT BookBorrowRequests_TargetTeacherId_fkey FOREIGN KEY (TargetTeacherId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.CommunityGroupMembers (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  GroupId uuid NOT NULL,
+  UserId uuid NOT NULL,
+  Role integer NOT NULL DEFAULT 0,
+  Status integer NOT NULL DEFAULT 0,
+  JoinedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT CommunityGroupMembers_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_CommunityGroupMembers_CommunityGroups_GroupId FOREIGN KEY (GroupId) REFERENCES public.CommunityGroups(Id),
+  CONSTRAINT FK_CommunityGroupMembers_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.GroupMessages (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  GroupId uuid NOT NULL,
+  SenderUserId uuid NOT NULL,
+  EncryptedPayloadBase64 text NOT NULL,
+  Nonce text NOT NULL,
+  SentAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT GroupMessages_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_GroupMessages_CommunityGroups_GroupId FOREIGN KEY (GroupId) REFERENCES public.CommunityGroups(Id),
+  CONSTRAINT FK_GroupMessages_Users_SenderUserId FOREIGN KEY (SenderUserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.StudentProjects (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  StudentProfileId uuid NOT NULL,
   Title character varying NOT NULL,
   Description character varying NOT NULL,
-  StartDate timestamp with time zone NOT NULL,
-  EndDate timestamp with time zone NOT NULL,
+  TechStackJson text,
+  GithubUrl text,
+  DemoUrl text,
+  ImageUrl text,
+  CreatedAt timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT StudentProjects_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_StudentProjects_StudentProfiles_StudentProfileId FOREIGN KEY (StudentProfileId) REFERENCES public.StudentProfiles(Id)
+);
+CREATE TABLE public.GroupMessageRecipientEnvelopes (
+  Id uuid NOT NULL DEFAULT gen_random_uuid(),
+  MessageId uuid NOT NULL,
+  RecipientUserId uuid NOT NULL,
+  EncryptedKeyPackage text NOT NULL,
+  CONSTRAINT GroupMessageRecipientEnvelopes_pkey PRIMARY KEY (Id),
+  CONSTRAINT FK_GroupMessageRecipientEnvelopes_GroupMessages_MessageId FOREIGN KEY (MessageId) REFERENCES public.GroupMessages(Id),
+  CONSTRAINT FK_GroupMessageRecipientEnvelopes_Users_RecipientUserId FOREIGN KEY (RecipientUserId) REFERENCES public.Users(Id)
+);
+CREATE TABLE public.CctvCameras (
+  Id uuid NOT NULL,
+  Name text NOT NULL,
+  Location text NOT NULL,
+  Description text,
+  IsEnabled boolean NOT NULL,
+  Host text NOT NULL,
+  Port integer NOT NULL,
+  StreamPath text NOT NULL,
+  EncryptedUsername text NOT NULL,
+  EncryptedPassword text NOT NULL,
+  EncryptionIV text NOT NULL,
   Status integer NOT NULL,
+  LastSeenAt timestamp with time zone,
+  CreatedAt timestamp with time zone NOT NULL,
+  UpdatedAt timestamp with time zone NOT NULL,
+  CONSTRAINT CctvCameras_pkey PRIMARY KEY (Id)
+);
+CREATE TABLE public.LibraryFolders (
+  Id uuid NOT NULL,
+  Name text NOT NULL,
+  Description text,
+  ParentFolderId uuid,
+  VisibilityType text NOT NULL DEFAULT 'Public'::text,
+  AllowedClassIdsJson text,
   CreatedByUserId uuid NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  UpdatedAt timestamp with time zone NOT NULL,
-  DeletedAt timestamp with time zone,
-  CONSTRAINT Elections_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_Elections_Users_CreatedByUserId FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id)
-);
-CREATE TABLE public.ElectionCandidates (
-  Id uuid NOT NULL,
-  ElectionId uuid NOT NULL,
-  StudentId uuid NOT NULL,
-  Vision character varying NOT NULL,
-  Mission character varying NOT NULL,
-  PhotoUrl text,
-  CandidateNumber integer NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  CONSTRAINT ElectionCandidates_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_ElectionCandidates_Elections_ElectionId FOREIGN KEY (ElectionId) REFERENCES public.Elections(Id),
-  CONSTRAINT FK_ElectionCandidates_Users_StudentId FOREIGN KEY (StudentId) REFERENCES public.Users(Id)
-);
-CREATE TABLE public.Votes (
-  Id uuid NOT NULL,
-  ElectionId uuid NOT NULL,
-  CandidateId uuid NOT NULL,
-  VoterUserId uuid NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  CONSTRAINT Votes_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_Votes_ElectionCandidates_CandidateId FOREIGN KEY (CandidateId) REFERENCES public.ElectionCandidates(Id),
-  CONSTRAINT FK_Votes_Elections_ElectionId FOREIGN KEY (ElectionId) REFERENCES public.Elections(Id),
-  CONSTRAINT FK_Votes_Users_VoterUserId FOREIGN KEY (VoterUserId) REFERENCES public.Users(Id)
-);
-CREATE TABLE public.CandidatePairs (
-  Id uuid NOT NULL,
-  ElectionId uuid NOT NULL,
-  CandidateNumber integer NOT NULL,
-  ChairmanUserId uuid NOT NULL,
-  ViceUserId uuid,
-  Vision text NOT NULL,
-  Mission text NOT NULL,
-  Programs text NOT NULL,
-  ViceVision text,
-  ViceMission text,
-  PhotoUrl text,
-  VicePhotoUrl text,
-  Status integer NOT NULL,
-  RejectionReason text,
-  ApprovedAt timestamp with time zone,
-  CreatedAt timestamp with time zone NOT NULL,
-  UpdatedAt timestamp with time zone NOT NULL,
-  CONSTRAINT CandidatePairs_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_CandidatePairs_Elections_ElectionId FOREIGN KEY (ElectionId) REFERENCES public.Elections(Id),
-  CONSTRAINT FK_CandidatePairs_Users_ChairmanUserId FOREIGN KEY (ChairmanUserId) REFERENCES public.Users(Id),
-  CONSTRAINT FK_CandidatePairs_Users_ViceUserId FOREIGN KEY (ViceUserId) REFERENCES public.Users(Id)
-);
-CREATE TABLE public.OsisCabinetHistories (
-  Id uuid NOT NULL,
-  AcademicYearId uuid NOT NULL,
-  StudentId uuid NOT NULL,
-  PositionTitle text NOT NULL,
-  Department text NOT NULL,
-  PhotoUrl text,
-  IsActive boolean NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  CONSTRAINT OsisCabinetHistories_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_OsisCabinetHistories_AcademicYears_AcademicYearId FOREIGN KEY (AcademicYearId) REFERENCES public.AcademicYears(Id),
-  CONSTRAINT FK_OsisCabinetHistories_Users_StudentId FOREIGN KEY (StudentId) REFERENCES public.Users(Id)
-);
-CREATE TABLE public.OsisPositions (
-  Id uuid NOT NULL,
-  AcademicYearId uuid NOT NULL,
-  Title text NOT NULL,
-  Department text NOT NULL,
-  Description text NOT NULL,
-  Capacity integer NOT NULL,
-  IsOpenForRecruitment boolean NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  UpdatedAt timestamp with time zone NOT NULL,
-  CONSTRAINT OsisPositions_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_OsisPositions_AcademicYears_AcademicYearId FOREIGN KEY (AcademicYearId) REFERENCES public.AcademicYears(Id)
-);
-CREATE TABLE public.CandidatePairVotes (
-  Id uuid NOT NULL,
-  ElectionId uuid NOT NULL,
-  CandidatePairId uuid NOT NULL,
-  VoterUserId uuid NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  CONSTRAINT CandidatePairVotes_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_CandidatePairVotes_CandidatePairs_CandidatePairId FOREIGN KEY (CandidatePairId) REFERENCES public.CandidatePairs(Id),
-  CONSTRAINT FK_CandidatePairVotes_Elections_ElectionId FOREIGN KEY (ElectionId) REFERENCES public.Elections(Id),
-  CONSTRAINT FK_CandidatePairVotes_Users_VoterUserId FOREIGN KEY (VoterUserId) REFERENCES public.Users(Id)
-);
-CREATE TABLE public.OsisApplications (
-  Id uuid NOT NULL,
-  OsisPositionId uuid NOT NULL,
-  ApplicantStudentId uuid NOT NULL,
-  Motivation text NOT NULL,
-  PortfolioUrl text,
-  Status integer NOT NULL,
-  TeacherReviewNotes text,
-  ChairmanNotes text,
-  AdminNotes text,
-  ReviewedAt timestamp with time zone,
-  CreatedAt timestamp with time zone NOT NULL,
-  UpdatedAt timestamp with time zone NOT NULL,
-  CONSTRAINT OsisApplications_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_OsisApplications_OsisPositions_OsisPositionId FOREIGN KEY (OsisPositionId) REFERENCES public.OsisPositions(Id),
-  CONSTRAINT FK_OsisApplications_Users_ApplicantStudentId FOREIGN KEY (ApplicantStudentId) REFERENCES public.Users(Id)
-);
-CREATE TABLE public.PasswordResetRequests (
-  Id uuid NOT NULL,
-  UserId uuid NOT NULL,
-  Status integer NOT NULL,
-  Reason text,
-  AdminNotes text,
-  ReviewedByUserId uuid,
-  ExpiresAt timestamp with time zone NOT NULL,
-  CreatedAt timestamp with time zone NOT NULL,
-  UpdatedAt timestamp with time zone NOT NULL,
-  ResetTokenHash character varying NOT NULL DEFAULT ''::character varying,
-  CONSTRAINT PasswordResetRequests_pkey PRIMARY KEY (Id),
-  CONSTRAINT FK_PasswordResetRequests_Users_ReviewedByUserId FOREIGN KEY (ReviewedByUserId) REFERENCES public.Users(Id),
-  CONSTRAINT FK_PasswordResetRequests_Users_UserId FOREIGN KEY (UserId) REFERENCES public.Users(Id)
+  CreatedAt timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UpdatedAt timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT LibraryFolders_pkey PRIMARY KEY (Id),
+  CONSTRAINT LibraryFolders_ParentFolderId_fkey FOREIGN KEY (ParentFolderId) REFERENCES public.LibraryFolders(Id),
+  CONSTRAINT LibraryFolders_CreatedByUserId_fkey FOREIGN KEY (CreatedByUserId) REFERENCES public.Users(Id)
 );

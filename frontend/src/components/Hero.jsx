@@ -12,19 +12,19 @@ import ChalkboardOverlay from "@/components/common/ChalkboardOverlay";
 
 const HERO_STATS = [
   {
-    icon: ShieldCheck,
-    title: "Akreditasi Unggul",
-    subtitle: "Nilai A (Sangat Baik)",
+    icon: GraduationCap,
+    title: "Software Engineering",
+    subtitle: "Web, Mobile & Backend API",
   },
   {
     icon: Trophy,
-    title: "Berprestasi",
-    subtitle: "Tingkat Nasional",
+    title: "Game Development",
+    subtitle: "2D/3D & Interactive Media",
   },
   {
-    icon: GraduationCap,
-    title: "Kurikulum Industri",
-    subtitle: "Diselaraskan DUDI",
+    icon: ShieldCheck,
+    title: "Project-Based",
+    subtitle: "Standar Industri Software",
   },
 ];
 
@@ -85,18 +85,20 @@ export default function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="lg:col-span-6 flex flex-col items-start"
         >
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#2c1ee8] text-xs font-mono font-bold uppercase tracking-wider mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" />
+            <span>PPLG CENTER — SMKN 2 SURAKARTA</span>
+          </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-5">
-            Mencetak Lulusan Unggul &{" "}
+            Pusat Talenta & Inovasi{" "}
             <span className="text-[#2c1ee8] underline decoration-blue-500/40 decoration-wavy decoration-2 underline-offset-4">
-              Ready-to-Work
+              Pengembangan Perangkat Lunak & Gim
             </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
-            Program pengembangan sekolah kejuruan terdepan untuk menghasilkan
-            lulusan kompeten dan berkarakter, diselaraskan secara mendalam
-            dengan kebutuhan dunia usaha, industri, dan kerja (DUDI).
+            Platform ekosistem pembelajaran modern jurusan PPLG SMKN 2 Surakarta: fasilitas workstation 3D, laboratorium komputasi, jadwal praktik, dan mading digital kejuruan.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-10">

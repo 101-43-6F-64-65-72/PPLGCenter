@@ -80,8 +80,9 @@ export default function KomunitasPage() {
   const [activeSubTab, setActiveSubTab] = useState("chat"); // "chat" | "members"
   const [alertMessage, setAlertMessage] = useState(null);
 
-  // Category Filter State
+  // Category & Search Filter State
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [searchGroupQuery, setSearchGroupQuery] = useState("");
 
   // Pinned Groups in localStorage
   const [pinnedGroupIds, setPinnedGroupIds] = useState([]);
@@ -180,11 +181,15 @@ export default function KomunitasPage() {
         const fetchedMembers = memRes?.data || memRes || [];
         const fetchedMsgs = msgRes?.data?.items || msgRes?.items || [];
 
+        const sortedMsgs = Array.isArray(fetchedMsgs)
+          ? [...fetchedMsgs].sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt))
+          : [];
+
         setMembers(Array.isArray(fetchedMembers) ? fetchedMembers : []);
-        setMessages(Array.isArray(fetchedMsgs) ? fetchedMsgs : []);
+        setMessages(sortedMsgs);
 
         // Load pinned announcement if any message starts with [PENGUMUMAN]
-        const pinnedMsg = fetchedMsgs.find((m) => {
+        const pinnedMsg = sortedMsgs.slice().reverse().find((m) => {
           const text = safeBase64Decode(m.encryptedPayloadBase64);
           return text.startsWith("📌 [PENGUMUMAN]") || text.startsWith("[PENGUMUMAN]");
         });
@@ -269,17 +274,21 @@ export default function KomunitasPage() {
     try {
       setAlertMessage(null);
       const initialMemberUserIds = selectedBatchMembers.map((m) => m.userId || m.id);
-      await communityService.createGroup({
+      const res = await communityService.createGroup({
         name: newGroupName.trim(),
         description: newGroupDesc.trim(),
         initialMemberUserIds: initialMemberUserIds.length > 0 ? initialMemberUserIds : undefined,
       });
+      const createdGroup = res?.data || res;
       setCreateModalOpen(false);
       setNewGroupName("");
       setNewGroupDesc("");
       setSelectedBatchMembers([]);
       setAlertMessage({ type: "success", text: "Komunitas baru berhasil dibuat!" });
-      fetchGroups();
+      await fetchGroups();
+      if (createdGroup?.id) {
+        handleSelectGroup(createdGroup);
+      }
     } catch (err) {
       setAlertMessage({ type: "error", text: err?.message || "Gagal membuat komunitas." });
     }
@@ -401,6 +410,12 @@ export default function KomunitasPage() {
     if (actionType === "KICK") {
       if (!window.confirm(`Apakah Anda yakin ingin mengeluarkan "${targetUserName}" dari grup?`)) return;
       newStatus = 2; // Rejected/Kicked
+    } else if (actionType === "ACCEPT") {
+      newStatus = 1; // Accepted
+      newRole = 2; // Member
+    } else if (actionType === "DECLINE") {
+      if (!window.confirm(`Apakah Anda yakin ingin menolak permintaan dari "${targetUserName}"?`)) return;
+      newStatus = 2; // Rejected/Declined
     } else if (actionType === "PROMOTE") {
       if (!window.confirm(`Jadikan "${targetUserName}" sebagai Admin Grup?`)) return;
       newRole = 1; // Admin
@@ -420,6 +435,10 @@ export default function KomunitasPage() {
         text:
           actionType === "KICK"
             ? `Pengguna ${targetUserName} telah dikeluarkan.`
+            : actionType === "ACCEPT"
+            ? `Permintaan ${targetUserName} telah diterima.`
+            : actionType === "DECLINE"
+            ? `Permintaan ${targetUserName} telah ditolak.`
             : `Status ${targetUserName} berhasil diperbarui.`,
       });
       loadGroupDetails(selectedGroup);
@@ -444,6 +463,14 @@ export default function KomunitasPage() {
   const isGroupAdmin = isGlobalAdmin || isGroupOwner || selectedGroup?.myRole === "Admin" || selectedGroup?.myRole === 1;
 
   const filteredGroups = groups.filter((g) => {
+    if (searchGroupQuery.trim()) {
+      const q = searchGroupQuery.toLowerCase();
+      const matchName = g.name?.toLowerCase().includes(q);
+      const matchDesc = g.description?.toLowerCase().includes(q);
+      const matchCreator = g.creatorName?.toLowerCase().includes(q);
+      if (!matchName && !matchDesc && !matchCreator) return false;
+    }
+
     if (categoryFilter === "ALL") return true;
     if (categoryFilter === "MY_GROUPS") return g.createdByUserId === user?.id;
     if (categoryFilter === "STUDENT_GROUPS")
@@ -574,6 +601,27 @@ export default function KomunitasPage() {
               <span className="text-[11px] bg-blue-50 text-[#2C1EE8] font-bold px-2.5 py-0.5 rounded-full">
                 {sortedGroups.length} Grup
               </span>
+            </div>
+
+            {/* Search Input Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Cari komunitas..."
+                value={searchGroupQuery}
+                onChange={(e) => setSearchGroupQuery(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all"
+              />
+              {searchGroupQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchGroupQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Category Filter Pills */}
@@ -835,13 +883,76 @@ export default function KomunitasPage() {
                                   : "bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200/60"
                               }`}
                             >
-                              {isImageAttachment && imageUrl ? (
-                                <div className="rounded-xl overflow-hidden my-1 max-w-xs">
-                                  <img src={imageUrl} alt="Lampiran" className="object-cover w-full max-h-48 rounded-lg" />
-                                </div>
-                              ) : (
-                                <p className="whitespace-pre-wrap leading-relaxed">{decoded}</p>
-                              )}
+                              {(() => {
+                                const isDocAttachment = decoded.startsWith("[📄 Dokumen:");
+                                const docUrl = isDocAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
+                                const docName = isDocAttachment ? decoded.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] : null;
+
+                                if (isImageAttachment && imageUrl) {
+                                  return (
+                                    <div className="rounded-xl overflow-hidden my-1 max-w-xs">
+                                      <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+                                        <img
+                                          src={imageUrl}
+                                          alt="Lampiran Gambar"
+                                          className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
+                                        />
+                                      </a>
+                                    </div>
+                                  );
+                                }
+
+                                if (isDocAttachment && docUrl) {
+                                  return (
+                                    <div
+                                      className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                                        isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2 truncate">
+                                        <FileText className="w-4 h-4 shrink-0 text-blue-400" />
+                                        <span className="font-bold text-xs truncate">{docName || "Dokumen Lampiran"}</span>
+                                      </div>
+                                      <a
+                                        href={docUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
+                                          isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
+                                        }`}
+                                      >
+                                        Buka File
+                                      </a>
+                                    </div>
+                                  );
+                                }
+
+                                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                                const parts = decoded.split(urlRegex);
+
+                                return (
+                                  <p className="whitespace-pre-wrap leading-relaxed">
+                                    {parts.map((part, idx) => {
+                                      if (part.match(/^https?:\/\//)) {
+                                        return (
+                                          <a
+                                            key={idx}
+                                            href={part}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`underline font-bold hover:opacity-80 transition-opacity break-all ${
+                                              isMe ? "text-blue-100" : "text-[#2C1EE8]"
+                                            }`}
+                                          >
+                                            {part}
+                                          </a>
+                                        );
+                                      }
+                                      return part;
+                                    })}
+                                  </p>
+                                );
+                              })()}
 
                               {/* Message Reaction Hover Bar */}
                               <div
@@ -976,6 +1087,7 @@ export default function KomunitasPage() {
                     <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
                       {searchedMembersInDrawer.map((m) => {
                         const isMemberAdmin = m.role === "Admin" || m.role === 1 || m.role === "Owner" || m.role === 0;
+                        const isMemberPending = m.status === "Pending" || m.status === 0;
                         const isMe = m.userId === user?.id;
 
                         return (
@@ -991,17 +1103,55 @@ export default function KomunitasPage() {
                             </div>
 
                             <div className="flex items-center gap-1 shrink-0">
-                              {isMemberAdmin ? (
-                                <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                                  Admin
-                                </span>
+                              {isMemberPending ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                    Menunggu
+                                  </span>
+                                  {isGroupAdmin && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "ACCEPT")}
+                                        className="p-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                        title="Terima Bergabung"
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "DECLINE")}
+                                        className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                        title="Tolak Permintaan"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              ) : isMemberAdmin ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                                    Admin
+                                  </span>
+                                  {isGroupOwner && !isMe && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "DEMOTE")}
+                                      className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                                      title="Cabut Status Admin"
+                                    >
+                                      <UserMinus className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               ) : (
                                 isGroupAdmin &&
                                 !isMe && (
                                   <div className="flex items-center gap-1">
                                     <button
                                       type="button"
-                                      onClick={() => handleManageMemberAction(m.userId, m.fullName, "PROMOTE")}
+                                      onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "PROMOTE")}
                                       className="p-1 text-slate-400 hover:text-amber-600 cursor-pointer"
                                       title="Jadikan Admin"
                                     >
@@ -1009,7 +1159,7 @@ export default function KomunitasPage() {
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => handleManageMemberAction(m.userId, m.fullName, "KICK")}
+                                      onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "KICK")}
                                       className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                                       title="Keluarkan dari Grup"
                                     >

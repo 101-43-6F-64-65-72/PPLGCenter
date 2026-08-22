@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import { MapPin, Users, ArrowRight, UserCheck } from "lucide-react";
+import { resolveImageUrl } from "@/lib/utils";
 
 const getCategoryMatchingImage = (title, location, currentSrc) => {
   if (currentSrc && currentSrc !== "/images/tempat/lapangansmkn2ska.jpg") {
-    return currentSrc;
+    return resolveImageUrl(currentSrc);
   }
   const text = `${title || ""} ${location || ""}`.toLowerCase();
   if (
@@ -41,7 +42,7 @@ const getCategoryMatchingImage = (title, location, currentSrc) => {
   ) {
     return "/images/tempat/labsmkn2ska.jpeg";
   }
-  return currentSrc || "/images/tempat/halamandepansmkn2ska.jpg";
+  return currentSrc ? resolveImageUrl(currentSrc) : "/images/tempat/halamandepansmkn2ska.jpg";
 };
 
 export default function FacilityCard({

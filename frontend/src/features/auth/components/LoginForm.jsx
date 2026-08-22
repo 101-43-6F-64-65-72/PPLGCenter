@@ -35,7 +35,7 @@ FallbackDiv.displayName = "FallbackDiv";
 const MotionDiv = motionImport?.div || FallbackDiv;
 const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
 
-export const LoginForm = ({ onSuccess }) => {
+export const LoginForm = ({ onSuccess, setMascotState }) => {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,6 +56,40 @@ export const LoginForm = ({ onSuccess }) => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [successUserData, setSuccessUserData] = useState(null);
 
+  // ─── Submitting / Loading Cycle: Alternate 'idle' <-> 'sad' every 1.5s ───
+  useEffect(() => {
+    let intervalId;
+    if (isSubmitting) {
+      if (setMascotState) setMascotState("idle");
+      intervalId = setInterval(() => {
+        if (setMascotState) {
+          setMascotState((prev) => (prev === "idle" ? "sad" : "idle"));
+        }
+      }, 1500);
+    }
+    return () => clearInterval(intervalId);
+  }, [isSubmitting, setMascotState]);
+
+  // Input Focus Handlers
+  const handleIdentifierFocus = () => {
+    if (!isSubmitting && !isSuccess && setMascotState) {
+      setMascotState("idle");
+    }
+  };
+
+  const handlePasswordFocus = () => {
+    if (isSubmitting || isSuccess || !setMascotState) return;
+    setMascotState(showPassword ? "peek" : "side");
+  };
+
+  const togglePasswordVisibility = () => {
+    const nextShow = !showPassword;
+    setShowPassword(nextShow);
+    if (!isSubmitting && !isSuccess && setMascotState) {
+      setMascotState(nextShow ? "peek" : "side");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -68,11 +102,14 @@ export const LoginForm = ({ onSuccess }) => {
           : loginType === "Teacher"
           ? "NIP atau Email"
           : "Email atau Username Admin";
-      setErrorMessage(`${idLabel} wajib diisi`);
+      const msg = `${idLabel} wajib diisi`;
+      setErrorMessage(msg);
+      if (setMascotState) setMascotState("sad");
       return;
     }
     if (!password) {
       setErrorMessage("Password wajib diisi");
+      if (setMascotState) setMascotState("sad");
       return;
     }
 
@@ -88,6 +125,7 @@ export const LoginForm = ({ onSuccess }) => {
       const userData = res?.data?.user || res?.data || res?.user || res;
       setSuccessUserData(userData);
       setIsSuccess(true);
+      if (setMascotState) setMascotState("happy");
 
       if (onSuccess) {
         onSuccess(res);
@@ -110,6 +148,7 @@ export const LoginForm = ({ onSuccess }) => {
         error?.message ||
         "Gagal masuk. Silakan periksa kredensial Anda.";
       setErrorMessage(backendMessage);
+      if (setMascotState) setMascotState("sad");
     } finally {
       setIsSubmitting(false);
     }
@@ -304,6 +343,7 @@ export const LoginForm = ({ onSuccess }) => {
                 variant="dark"
                 leftIcon={<User className="w-4 h-4 text-[#2c1ee8]" />}
                 value={identifier}
+                onFocus={handleIdentifierFocus}
                 onChange={(e) => setIdentifier(e.target.value)}
               />
             </div>
@@ -318,10 +358,11 @@ export const LoginForm = ({ onSuccess }) => {
                 isRequired
                 variant="dark"
                 leftIcon={<Lock className="w-4 h-4 text-[#2c1ee8]" />}
+                onFocus={handlePasswordFocus}
                 rightIcon={
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={togglePasswordVisibility}
                     className="text-slate-400 hover:text-white transition-colors focus:outline-none cursor-pointer"
                     aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                   >

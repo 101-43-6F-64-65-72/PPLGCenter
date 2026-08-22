@@ -6,7 +6,9 @@ import { getStoredToken } from "@/lib/api";
 import { notificationService } from "@/services/notificationService";
 import NotificationDropdown from "./NotificationDropdown";
 
-export default function NotificationBell() {
+import BloubMascot from "@/components/BloubMascot";
+
+export default function NotificationBell({ useMascot = false }) {
   const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -89,11 +91,25 @@ export default function NotificationBell() {
       }
     }, 30000);
 
+    const handleOpenNotifEvent = () => {
+      setIsOpen(true);
+      fetchSummary();
+    };
+
+    if (typeof window !== "undefined") {
+      window.openNotificationDrawer = handleOpenNotifEvent;
+      window.addEventListener("app:open-notifications", handleOpenNotifEvent);
+    }
+
     return () => {
       isMounted = false;
       stopPolling();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("app:open-notifications", handleOpenNotifEvent);
+        delete window.openNotificationDrawer;
+      }
     };
-  }, [isAuthenticated, fetchUnreadCount, stopPolling]);
+  }, [isAuthenticated, fetchUnreadCount, stopPolling, fetchSummary]);
 
   const handleToggle = () => {
     if (!isOpen) {
@@ -106,9 +122,9 @@ export default function NotificationBell() {
     try {
       await notificationService.markAllAsRead();
       setUnreadCount(0);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      fetchSummary();
     } catch (err) {
-      console.error("Failed to mark all as read", err);
+      console.error("Failed to mark notification as read", err);
     }
   };
 
@@ -124,10 +140,25 @@ export default function NotificationBell() {
     }
   };
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside, but ignore clicks originating inside AI Chat Modal or mascot
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      const target = event.target;
+      if (!target) return;
+
+      const isAiChatClick = Boolean(
+        target.closest && (
+          target.closest("#ai-chat-modal") ||
+          target.closest(".ai-chat-container") ||
+          target.closest("[data-ai-modal]") ||
+          target.closest("[aria-label*='Replyz']") ||
+          target.closest("[aria-label*='Chat']")
+        )
+      );
+
+      if (isAiChatClick) return;
+
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
       }
     };
@@ -138,30 +169,47 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        id="notif_button"
         onClick={handleToggle}
-        className="relative p-2.5 text-slate-600 hover:text-[#2c1ee8] bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all border border-slate-200 cursor-pointer"
+        className={`relative flex items-center justify-center transition-all cursor-pointer rounded-2xl ${
+          useMascot
+            ? "p-1 hover:scale-105 active:scale-95"
+            : "p-2.5 text-slate-600 hover:text-[#2c1ee8] bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-xl"
+        }`}
         title="Notifikasi"
         aria-label="Notifikasi"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.75}
-          stroke="currentColor"
-          className="w-4 h-4"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 0 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 0-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+        {useMascot ? (
+          <BloubMascot
+            size={38}
+            state={isOpen ? "happy" : unreadCount > 0 ? "notif" : "idle"}
+            badge={unreadCount > 0 ? unreadCount : false}
+            badgeColor="#ef4444"
+            interactiveGaze={false}
           />
-        </svg>
+        ) : (
+          <>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.75}
+              stroke="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 0 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 0-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+              />
+            </svg>
 
-        {unreadCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-600 text-[9px] font-black text-white shadow-md shadow-rose-500/20 ring-2 ring-white animate-pulse">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-600 text-[9px] font-black text-white shadow-md shadow-rose-500/20 ring-2 ring-white animate-pulse">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </>
         )}
       </button>
 

@@ -30,7 +30,7 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
   if (!isOpen) return null;
 
   const handleCroppedImage = async (dataUrl, metadata) => {
-    setImageUrl(dataUrl); // instant preview as fallback
+    setImageUrl(dataUrl);
     setIsUploading(true);
     setUploadSuccessMsg("");
     try {
@@ -41,7 +41,8 @@ export default function CreateAnnouncementModal({ isOpen, onClose, onSuccess }) 
         setUploadSuccessMsg("Gambar berhasil diunggah!");
       }
     } catch {
-      setErrorMsg("Gagal mengunggah");
+      setImageUrl(dataUrl);
+      setUploadSuccessMsg("Gambar siap digunakan.");
     } finally {
       setIsUploading(false);
     }

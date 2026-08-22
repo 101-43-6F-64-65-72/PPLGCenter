@@ -30,6 +30,8 @@ services:
         value: https://pplgcenter.vercel.app
       - key: UPLOAD_PATH
         value: /app/wwwroot/uploads
+      - key: PUBLIC_BASE_URL
+        value: https://pplgcenter.onrender.com
       - key: CLOUDINARY__CLOUDNAME
         sync: false
       - key: CLOUDINARY__APIKEY

@@ -6,9 +6,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ErrorFallback from "@/components/ErrorFallback";
 import useAuth from "@/hooks/useAuth";
 import announcementService from "@/services/announcementService";
 import AnnouncementCommentSection from "@/features/announcement/components/AnnouncementCommentSection";
+import uploadImageToCloudinary from "@/services/cloudinaryService";
 import { API_CONFIG } from "@/config/api";
 import { getStoredToken } from "@/lib/api";
 import { resolveImageUrl, formatDate } from "@/lib/utils";
@@ -123,33 +125,18 @@ export default function PengumumanPage() {
     };
   }, [loadAnnouncements]);
 
-  // Handle Image File Upload directly to backend API (Cloudinary integration)
+  // Handle Image File Upload directly from frontend to Cloudinary
   const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "announcements");
-
-      const token = getStoredToken();
-      const uploadEndpoint = `${API_CONFIG.BASE_URL}/api/upload`;
-
-      const res = await fetch(uploadEndpoint, {
-        method: "POST",
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (res.ok && (data?.data?.url || data?.url)) {
-        setCoverImageUrl(data?.data?.url || data?.url);
+      const uploadedUrl = await uploadImageToCloudinary(file, "announcements");
+      if (uploadedUrl) {
+        setCoverImageUrl(uploadedUrl);
       } else {
-        alert(data?.message || "Gagal mengunggah gambar thumbnail.");
+        alert("Gagal mengunggah gambar thumbnail.");
       }
     } catch (err) {
       console.error("Image upload failed:", err);
@@ -435,14 +422,15 @@ export default function PengumumanPage() {
               Memuat pengumuman...
             </div>
           ) : filteredAnnouncements.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#2C1EE8] flex items-center justify-center mx-auto border border-blue-100">
-                <Bell className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-900">Belum Ada Pengumuman</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
-                Tidak ada pengumuman yang sesuai dengan filter atau kata kunci pencarian Anda.
-              </p>
+            <div className="py-6 w-full flex justify-center">
+              <ErrorFallback
+                statusCode="EMPTY"
+                title="Belum Ada Pengumuman"
+                description="Tidak ada pengumuman yang sesuai dengan filter atau kata kunci pencarian Anda."
+                primaryAction={{ label: "Kembali ke Beranda", href: "/" }}
+                showHomeButton={false}
+                fullPage={false}
+              />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -140,11 +140,13 @@ export default function AnnouncementDetailPage() {
     try {
       const file = metadata?.croppedFile || (await fetch(dataUrl).then((r) => r.blob()).then((blob) => new File([blob], "pengumuman-cover.jpg", { type: "image/jpeg" })));
       const uploadedUrl = await uploadImageToCloudinary(file);
-      if (uploadedUrl && uploadedUrl.startsWith("https://")) {
+      if (uploadedUrl) {
         setEditCoverImageUrl(uploadedUrl);
+      } else {
+        setEditCoverImageUrl(dataUrl);
       }
     } catch {
-      // keep current image URL on upload error
+      setEditCoverImageUrl(dataUrl);
     } finally {
       setIsUploadingEditCover(false);
     }

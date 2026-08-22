@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import Link from "next/link";
+import React from "react";
+import { usePathname } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
 import Skeleton from "@/components/ui/Skeleton";
 import { ROLE_LABELS } from "@/constants/userRoles";
+import UnauthorizedPage from "@/components/UnauthorizedPage";
 
 /**
  * Client-Side AuthGuard & RoleGuard Wrapper
  * Enforces strict authentication and role-based access verification.
- * Even if a user manually forces the URL, access will be blocked if unauthenticated or unauthorized.
+ * Renders UnauthorizedPage (ErrorFallback 401/403) for unauthenticated/unauthorized users without auto-redirecting.
  * 
  * @param {Object} props
  * @param {React.ReactNode} props.children
@@ -18,17 +18,9 @@ import { ROLE_LABELS } from "@/constants/userRoles";
  */
 export const AuthGuard = ({ children, allowedRoles = null }) => {
   const { isAuthenticated, loading, role, user } = useAuth();
-  const router = useRouter();
   const pathname = usePathname();
 
   const userRole = role || user?.role || "Student";
-  const isDev = process.env.NODE_ENV === "development";
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push(`/login?callbackUrl=${encodeURIComponent(pathname)}`);
-    }
-  }, [isAuthenticated, loading, pathname, router]);
 
   if (loading) {
     return (
@@ -44,9 +36,18 @@ export const AuthGuard = ({ children, allowedRoles = null }) => {
     );
   }
 
-  // 1. Verification for unauthenticated visitors
+  // 1. Verification for unauthenticated visitors: Render Unauthorized Error Page (NO auto-redirect)
   if (!isAuthenticated) {
-    return null;
+    return (
+      <UnauthorizedPage
+        statusCode={401}
+        title="Akses Terbatas (401 - Unauthorized)"
+        subtitle="Kamu harus masuk (login) dengan akun terdaftar untuk mengakses ekosistem dan modul ini."
+        loginUrl={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
+        homeUrl="/"
+        fullPage={true}
+      />
+    );
   }
 
   // 2. Verification for role authorization if allowedRoles is specified
@@ -62,41 +63,14 @@ export const AuthGuard = ({ children, allowedRoles = null }) => {
 
     if (!hasRoleAccess) {
       return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gray-50 p-4 font-sans">
-          <div className="flex flex-col items-center gap-5 p-8 sm:p-10 rounded-3xl bg-white shadow-xl border border-red-100 max-w-md w-full text-center">
-            <div className="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center border border-red-100 shadow-inner">
-              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-
-            <div>
-              <div className="inline-block px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-black uppercase tracking-wider mb-2">
-                403 Forbidden Access
-              </div>
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Akses Ditolak</h2>
-              <p className="text-sm text-gray-600 mt-2 leading-relaxed">
-                Akun Anda terdaftar sebagai <span className="font-bold text-gray-800">{ROLE_LABELS[userRole] || userRole}</span>. 
-                Anda tidak memiliki hak akses untuk membuka halaman panel ini.
-              </p>
-            </div>
-
-            <div className="pt-2 w-full flex flex-col gap-2.5">
-              <Link
-                href="/"
-                className="w-full py-3 px-4 rounded-xl bg-[#2c1ee8] text-white font-bold text-sm shadow-md shadow-[#2c1ee8]/20 hover:bg-blue-700 transition-colors"
-              >
-                Kembali ke Beranda
-              </Link>
-              <Link
-                href="/profile"
-                className="w-full py-2.5 px-4 rounded-xl bg-gray-100 text-gray-700 font-semibold text-xs hover:bg-gray-200 transition-colors"
-              >
-                Lihat Profil Saya
-              </Link>
-            </div>
-          </div>
-        </div>
+        <UnauthorizedPage
+          statusCode={403}
+          title="Akses Ditolak (Forbidden)"
+          subtitle={`Akun Anda terdaftar sebagai ${ROLE_LABELS[userRole] || userRole}. Anda tidak memiliki hak akses untuk membuka halaman panel ini.`}
+          loginUrl={`/login?callbackUrl=${encodeURIComponent(pathname)}`}
+          homeUrl="/"
+          fullPage={true}
+        />
       );
     }
   }
