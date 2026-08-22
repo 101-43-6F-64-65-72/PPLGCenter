@@ -312,6 +312,8 @@ export async function executeAiTool(toolName, parameters = {}, context = {}) {
       } else {
         resultText = `Jadwal KBM ${userClassName} - Hari ${dayFormatted}:\n\n` +
           uniqueItems.map((s, idx) => `${idx + 1}. ${s.time || s.startTime}: ${s.subject || s.subjectName}\n   Pengajar: ${s.teacher || s.teacherName || "Guru PPLG"} | Ruangan: ${s.room || s.roomName || "Ruang Kelas PPLG"}`).join("\n\n");
+      }
+
       resultText += "\n\nAda yang mau kamu tanyakan lagi seputar KBM?";
 
       return {
