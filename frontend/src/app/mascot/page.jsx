@@ -1,4 +1,4 @@
-import MascotDebugPage from "@/pages/MascotDebugPage";
+import MascotDebugPage from "@/components/MascotDebugPage";
 
 export const metadata = {
   title: "Bloub Mascot Expression Studio | PPLG Center",
