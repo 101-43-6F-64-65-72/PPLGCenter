@@ -575,14 +575,20 @@ export default function KomunitasPage() {
     return usernameMatch || fullNameMatch;
   });
 
+  const isSemuaMatching =
+    mentionQuery != null &&
+    (!mentionQuery ||
+      "semua".includes(mentionQuery.toLowerCase()) ||
+      "everyone".includes(mentionQuery.toLowerCase()));
 
   const insertMention = (member) => {
     if (mentionIndex === -1) return;
     const prefix = newMessage.substring(0, mentionIndex);
-    const mentionText = `@${member.userName} `;
+    const mentionText = member.isEveryone ? `@semua ` : `@${member.userName} `;
     setNewMessage(prefix + mentionText);
     setMentionQuery(null);
   };
+
 
 
 
@@ -1220,61 +1226,67 @@ export default function KomunitasPage() {
                         Belum ada pesan di komunitas ini. Mulai percakapan pertama!
                       </div>
                     ) : (
-                      messages
-                        .filter((msg) => {
-                          if (!chatSearchQuery) return true;
-                          const text = safeBase64Decode(msg.encryptedPayloadBase64);
-                          return text.toLowerCase().includes(chatSearchQuery.toLowerCase());
-                        })
-                        .map((msg, idx) => {
-                          const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
-                          const isMe = msg.senderUserId === user?.id;
-                          const reactions = msg.reactions || msg.Reactions || {};
-                          const userReaction = msg.userReaction || msg.UserReaction || null;
+                          messages
+                            .filter((msg) => {
+                              if (!chatSearchQuery) return true;
+                              const text = safeBase64Decode(msg.encryptedPayloadBase64);
+                              return text.toLowerCase().includes(chatSearchQuery.toLowerCase());
+                            })
+                            .map((msg, idx) => {
+                              const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
+                              const isMe = msg.senderUserId === user?.id;
+                              const reactions = msg.reactions || msg.Reactions || {};
+                              const userReaction = msg.userReaction || msg.UserReaction || null;
 
-                          const isImageAttachment = decoded.startsWith("![Gambar]");
-                          const imageUrl = isImageAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
+                              const isImageAttachment = decoded.startsWith("![Gambar]");
+                              const imageUrl = isImageAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
 
-                          // Check if current logged-in user is mentioned in this message
-                          const isMentionedMe = user?.userName && decoded.toLowerCase().includes(`@${user.userName.toLowerCase()}`);
+                              // Check if current logged-in user or everyone is mentioned in this message
+                              const isMentionedEveryone = decoded.toLowerCase().includes("@semua") || decoded.toLowerCase().includes("@everyone");
+                              const isMentionedMe = (user?.userName && decoded.toLowerCase().includes(`@${user.userName.toLowerCase()}`)) || isMentionedEveryone;
 
-                          // Smart positioning: if message is near bottom of chat, position popover ABOVE
-                          const isNearBottom = idx >= messages.length - 3;
-                          const isActive = activeMenuMsgId === msg.id;
+                              // Smart positioning: if message is near bottom of chat, position popover ABOVE
+                              const isNearBottom = idx >= messages.length - 3;
+                              const isActive = activeMenuMsgId === msg.id;
 
-                          return (
-                            <div
-                              key={msg.id}
-                              className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative transition-all duration-300 ${
-                                isActive ? "z-50" : "z-0"
-                              }`}
-                            >
-                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 font-mono">
-                                {(msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl) && (
-                                  <img
-                                    src={msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl}
-                                    alt={msg.senderName}
-                                    className="w-4 h-4 rounded-full object-cover border border-slate-200 shrink-0 shadow-2xs"
-                                  />
-                                )}
-                                <span className="font-bold text-slate-600">{msg.senderName}</span>
+                              return (
+                                <div
+                                  key={msg.id}
+                                  className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative transition-all duration-300 ${
+                                    isActive ? "z-50" : "z-0"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 font-mono">
+                                    {(msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl) && (
+                                      <img
+                                        src={msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl}
+                                        alt={msg.senderName}
+                                        className="w-4 h-4 rounded-full object-cover border border-slate-200 shrink-0 shadow-2xs"
+                                      />
+                                    )}
+                                    <span className="font-bold text-slate-600">{msg.senderName}</span>
 
-                                <span>•</span>
-                                <span>
-                                  {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </span>
-                                {(msg.isEdited || msg.IsEdited) && (
-                                  <span className="text-[9px] font-semibold text-amber-600 italic"> (diedit)</span>
-                                )}
-                                {isMentionedMe && (
-                                  <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase flex items-center gap-0.5 shadow-2xs">
-                                    <AtSign className="w-2.5 h-2.5 text-amber-700" /> Menyebut Anda
-                                  </span>
-                                )}
-                              </div>
+                                    <span>•</span>
+                                    <span>
+                                      {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                    {(msg.isEdited || msg.IsEdited) && (
+                                      <span className="text-[9px] font-semibold text-amber-600 italic"> (diedit)</span>
+                                    )}
+                                    {isMentionedEveryone ? (
+                                      <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-300 text-[9px] font-black uppercase flex items-center gap-0.5 shadow-2xs">
+                                        <Users className="w-2.5 h-2.5 text-purple-700" /> Mention @semua
+                                      </span>
+                                    ) : isMentionedMe ? (
+                                      <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase flex items-center gap-0.5 shadow-2xs">
+                                        <AtSign className="w-2.5 h-2.5 text-amber-700" /> Menyebut Anda
+                                      </span>
+                                    ) : null}
+                                  </div>
+
 
                               <div className="flex items-center gap-1.5 max-w-full">
                                 {/* Left Option Button for My Messages (Hover-only or active) */}
@@ -1413,8 +1425,8 @@ export default function KomunitasPage() {
                                       );
                                     }
 
-                                    // Parse URLs and @fullName / @userName mention tags dynamically
-                                    const mentionTargets = [];
+                                    // Parse URLs, @semua, and @fullName / @userName mention tags dynamically
+                                    const mentionTargets = ["semua", "everyone"];
                                     members.forEach((m) => {
                                       if (m.fullName && m.fullName.trim()) mentionTargets.push(m.fullName.trim());
                                       if (m.userName && m.userName.trim()) mentionTargets.push(m.userName.trim());
@@ -1444,6 +1456,17 @@ export default function KomunitasPage() {
                                               </a>
                                             );
                                           }
+                                          if (part.toLowerCase() === "@semua" || part.toLowerCase() === "@everyone") {
+                                            return (
+                                              <span
+                                                key={idx}
+                                                className="font-black px-2 py-0.5 rounded-md border inline-flex items-center gap-1 mx-0.5 transition-transform hover:scale-105 bg-purple-100 text-purple-950 border-purple-300 shadow-2xs"
+                                              >
+                                                <Users className="w-3 h-3 text-purple-700" />
+                                                {part}
+                                              </span>
+                                            );
+                                          }
                                           if (part.startsWith("@")) {
                                             return (
                                               <span
@@ -1462,6 +1485,7 @@ export default function KomunitasPage() {
                                         })}
                                       </p>
                                     );
+
 
                                   })()}
 
@@ -1688,18 +1712,45 @@ export default function KomunitasPage() {
                   {/* Chat Input Bar Container with Relative Positioning for Popover */}
                   <div className="relative pt-2 border-t border-slate-100">
                     {/* Mention Autocomplete Dropdown Popover */}
-                    {mentionQuery != null && filteredMembersForMention.length > 0 && (
+                    {mentionQuery != null && (filteredMembersForMention.length > 0 || isSemuaMatching) && (
                       <div className="absolute bottom-full mb-3 left-0 right-0 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-2.5 z-50 max-h-56 overflow-y-auto font-sans animate-in fade-in slide-in-from-bottom-2 duration-200">
                         <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-slate-100">
                           <span className="text-[10px] font-extrabold text-[#2C1EE8] uppercase tracking-wider flex items-center gap-1">
                             <AtSign className="w-3 h-3" /> Sebut Anggota (@)
                           </span>
                           <span className="text-[10px] font-semibold text-slate-400">
-                            {filteredMembersForMention.length} saran anggota
+                            {filteredMembersForMention.length + (isSemuaMatching ? 1 : 0)} saran anggota
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
+                          {/* Special @semua Mention Option */}
+                          {isSemuaMatching && (
+                            <button
+                              type="button"
+                              onClick={() => insertMention({ isEveryone: true, userName: "semua" })}
+                              className="flex items-center justify-between p-2 rounded-xl bg-purple-50/90 hover:bg-purple-100/90 border border-purple-200 cursor-pointer text-xs transition-colors w-full text-left group/mitem mb-1 shadow-2xs"
+                            >
+                              <div className="flex items-center gap-2.5 truncate">
+                                <div className="w-8 h-8 rounded-lg bg-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                                  <Users className="w-4 h-4" />
+                                </div>
+                                <div className="flex flex-col truncate">
+                                  <span className="font-extrabold text-purple-900 group-hover/mitem:text-purple-950 truncate flex items-center gap-1">
+                                    @semua <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500 inline" />
+                                  </span>
+                                  <span className="text-[10px] text-purple-700 font-medium truncate">
+                                    Sebut Seluruh Anggota Grup ({members.length} Anggota)
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-purple-200 text-purple-900 uppercase border border-purple-300 shrink-0">
+                                SEMUA
+                              </span>
+                            </button>
+                          )}
+
                           {filteredMembersForMention.map((member) => (
+
                             <button
                               key={member.userId || member.id}
                               type="button"

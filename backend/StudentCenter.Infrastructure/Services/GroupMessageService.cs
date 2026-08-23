@@ -141,16 +141,22 @@ public class GroupMessageService : IGroupMessageService
                     var uName = member.User?.UserName;
                     var fName = member.User?.FullName;
 
-                    bool isMentioned = (!string.IsNullOrEmpty(uName) && plainText.ToLower().Contains($"@{uName.ToLower()}")) ||
+                    bool isMentionedEveryone = plainText.ToLower().Contains("@semua") || plainText.ToLower().Contains("@everyone");
+                    bool isMentioned = isMentionedEveryone ||
+                                       (!string.IsNullOrEmpty(uName) && plainText.ToLower().Contains($"@{uName.ToLower()}")) ||
                                        (!string.IsNullOrEmpty(fName) && plainText.ToLower().Contains($"@{fName.ToLower()}"));
 
                     if (isMentioned)
                     {
                         var snippet = plainText.Length > 60 ? plainText.Substring(0, 60) + "..." : plainText;
+                        var notifTitle = isMentionedEveryone
+                            ? $"{senderName} menyebut @semua di {groupName}"
+                            : $"{senderName} menyebut Anda di {groupName}";
+
                         await notifService.CreateAsync(new CreateNotificationRequest
                         {
                             UserId = member.UserId,
-                            Title = $"{senderName} menyebut Anda di {groupName}",
+                            Title = notifTitle,
                             Message = $"\"{snippet}\"",
                             Type = NotificationType.Mention,
                             Priority = NotificationPriority.High,
@@ -159,6 +165,7 @@ public class GroupMessageService : IGroupMessageService
                         });
                     }
                 }
+
             }
         }
         catch (Exception ex)
