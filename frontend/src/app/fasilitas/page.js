@@ -8,8 +8,7 @@ import ScheduleModal from "@/components/fasilitas/ScheduleModal";
 import CartModal from "@/components/fasilitas/CartModal";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import LoginModal from "@/features/auth/components/LoginModal";
-import DesktopComputerViewer3D from "@/components/common/DesktopComputerViewer3D";
-import { Search, ShoppingBag, X, Clock, Building2, Trash2, Box } from "lucide-react";
+import { Search, ShoppingBag, X, Clock, Building2, Trash2 } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import bookingService from "@/services/bookingService";
 import useAuth from "@/hooks/useAuth";
@@ -81,11 +80,6 @@ export default function FasilitasPage() {
   const [myBookingsData, setMyBookingsData] = useState([]);
   const [isMyBookingsOpen, setIsMyBookingsOpen] = useState(false);
   const [loadingMyBookings, setLoadingMyBookings] = useState(false);
-
-  // 3D Model Viewer Modal State
-  const [is3DModalOpen, setIs3DModalOpen] = useState(false);
-  const [active3DPath, setActive3DPath] = useState(null);
-  const [active3DTitle, setActive3DTitle] = useState(null);
 
   // All Public Borrowings System States (Transparency Schedule for All Students)
   const [publicBookingsData, setPublicBookingsData] = useState([]);
@@ -260,15 +254,6 @@ export default function FasilitasPage() {
 
             {/* Top Action Buttons */}
             <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto shrink-0">
-              {/* Tombol 3D Model Desktop Computer */}
-              <button
-                onClick={() => setIs3DModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold bg-slate-900 text-white border border-slate-700 hover:bg-slate-800 transition-all shadow-md cursor-pointer group"
-              >
-                <Box className="w-4 h-4 text-blue-400 group-hover:rotate-12 transition-transform" />
-                <span>Simulasi 3D Lab PC</span>
-              </button>
-
               {/* Tombol 1: Peminjaman Saya (Private to Student) */}
               <button
                 onClick={() => {
@@ -587,45 +572,6 @@ export default function FasilitasPage() {
                   </table>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3D Desktop Computer Interactive Model Modal */}
-      {is3DModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-slate-950 w-full max-w-4xl rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-800 space-y-4 max-h-[90vh] flex flex-col font-sans relative overflow-hidden">
-            <div className="flex flex-col border-b border-slate-800 pb-3 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black">
-                    <Box className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-white">{active3DTitle || "Simulasi 3D Workstation & Fasilitas"}</h3>
-                    <p className="text-xs text-slate-400">Model 3D Interaktif Fasilitas SMKN 2 Surakarta</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setIs3DModalOpen(false);
-                    setActive3DPath(null);
-                    setActive3DTitle(null);
-                  }}
-                  className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-full transition cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-              <DesktopComputerViewer3D
-                glbPath={active3DPath || "/desktop_computer.glb"}
-                title={active3DTitle || "Workstation Desktop PPLG"}
-                subtitle="Model 3D Interaktif Spesifikasi Fasilitas SMKN 2 Surakarta"
-              />
             </div>
           </div>
         </div>
