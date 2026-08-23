@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { MapPin, Users, ArrowRight, UserCheck } from "lucide-react";
+import { MapPin, Users, ArrowRight, UserCheck, Box } from "lucide-react";
 import { resolveImageUrl } from "@/lib/utils";
+import { resolve3DModelUrl } from "@/config/storage3dModels";
 
 const getCategoryMatchingImage = (title, location, currentSrc) => {
   if (currentSrc && currentSrc !== "/images/tempat/lapangansmkn2ska.jpg") {
@@ -46,6 +47,7 @@ const getCategoryMatchingImage = (title, location, currentSrc) => {
 };
 
 export default function FacilityCard({
+  id = null,
   title = "Laboratorium Komputer",
   location = "SMKN 2 Surakarta",
   capacity = 36,
@@ -55,8 +57,10 @@ export default function FacilityCard({
   isActive = true,
   time = "07.00 s.d 17.00 WIB",
   imageSrc = "/images/tempat/lapangansmkn2ska.jpg",
+  model3dUrl = null,
   managerTeacherName = "",
   onActionClick,
+  onOpen3D,
 }) {
   const isAvailable = isActive && (status || "").toLowerCase() === "tersedia";
   const displayTitle = (title || "").replace(/^\[SEED\]\s*/i, "").trim();
@@ -65,13 +69,21 @@ export default function FacilityCard({
     location,
     imageSrc,
   );
+  const resolved3dUrl = resolve3DModelUrl({
+    model3dUrl,
+    title: displayTitle,
+    category,
+    location,
+  });
   const [imgSrc, setImgSrc] = useState(resolvedImageSrc);
 
   const handleCardClick = () => {
     if (!isAvailable) return;
     onActionClick &&
       onActionClick({
+        id,
         title: displayTitle,
+        name: displayTitle,
         location,
         capacity,
         category,
@@ -80,6 +92,7 @@ export default function FacilityCard({
         isActive,
         time,
         imageSrc: imgSrc,
+        model3dUrl: resolved3dUrl || null,
         managerTeacherName,
       });
   };
@@ -121,12 +134,22 @@ export default function FacilityCard({
               {isAvailable ? "Tersedia" : "Nonaktif"}
             </span>
 
-            {capacity > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-0.5 text-[11px] font-bold text-slate-800 shadow-2xs">
-                <Users className="w-3 h-3 text-[#2c1ee8]" />
-                <span>{capacity} Orang</span>
-              </span>
-            )}
+            <div className="flex items-center gap-1.5">
+
+              {capacity > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-0.5 text-[11px] font-bold text-slate-800 shadow-2xs">
+                  <Users className="w-3 h-3 text-[#2c1ee8]" />
+                  <span>
+                    {capacity}{" "}
+                    {/barang|peralatan|alat|proyektor|printer|kamera|laptop|pc|cctv|sound|speaker|micro|headset|vr|ps5|gpu/i.test(
+                      `${category || ""} ${displayTitle}`
+                    )
+                      ? "Unit"
+                      : "Orang"}
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

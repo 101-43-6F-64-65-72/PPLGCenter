@@ -29,6 +29,7 @@ public class FacilityService : IFacilityService
         Location = f.Location,
         Capacity = f.Capacity,
         ImageUrl = FileUrlHelper.ResolveUrl(f.ImageUrl),
+        Model3DUrl = FileUrlHelper.ResolveUrl(f.Model3DUrl),
         Category = f.Category,
         IsActive = f.IsActive,
         ManagerTeacherId = f.ManagerTeacherId,
@@ -96,6 +97,7 @@ public class FacilityService : IFacilityService
             Location = request.Location,
             Capacity = request.Capacity,
             ImageUrl = request.ImageUrl,
+            Model3DUrl = request.Model3DUrl,
             Category = request.Category,
             IsActive = request.IsActive,
             ManagerTeacherId = request.ManagerTeacherId,
@@ -141,6 +143,7 @@ public class FacilityService : IFacilityService
         facility.Location = request.Location;
         facility.Capacity = request.Capacity;
         facility.ImageUrl = request.ImageUrl;
+        facility.Model3DUrl = request.Model3DUrl;
         facility.Category = request.Category;
         facility.IsActive = request.IsActive;
         facility.ManagerTeacherId = request.ManagerTeacherId;

@@ -9,7 +9,9 @@ export const API_CONFIG = {
   BASE_URL:
     typeof window !== "undefined"
       ? ""
-      : process.env.NEXT_PUBLIC_API_BASE_URL || "https://pplgcenter.onrender.com",
+      : process.env.NEXT_PUBLIC_API_BASE_URL ||
+        process.env.NEXT_PUBLIC_API_URL ||
+        "http://localhost:5051",
   TIMEOUT: 60000, // 60 seconds timeout for Render cold start tolerance
   WITH_CREDENTIALS: true,
   HEADERS: {

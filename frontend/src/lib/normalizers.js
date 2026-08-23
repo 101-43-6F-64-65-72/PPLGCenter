@@ -107,6 +107,7 @@ export function normalizeFacility(data) {
     capacity: data.capacity ?? 0,
     category: data.category ?? "Fasilitas Umum",
     imageUrl: data.imageUrl ?? data.imageSrc ?? "/images/tempat/lapangansmkn2ska.jpg",
+    model3dUrl: data.model3dUrl ?? data.model3DUrl ?? data.Model3DUrl ?? null,
     isActive: data.isActive ?? true,
     createdAt: data.createdAt ?? null,
     updatedAt: data.updatedAt ?? null,

@@ -22,6 +22,9 @@ public class CreateFacilityRequest
     [MaxLength(500, ErrorMessage = "ImageUrl cannot exceed 500 characters.")]
     public string? ImageUrl { get; set; }
 
+    [MaxLength(500, ErrorMessage = "Model3DUrl cannot exceed 500 characters.")]
+    public string? Model3DUrl { get; set; }
+
     [MaxLength(100, ErrorMessage = "Category cannot exceed 100 characters.")]
     public string? Category { get; set; }
 

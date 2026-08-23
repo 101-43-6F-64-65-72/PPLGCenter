@@ -43,7 +43,12 @@ export default function DesktopComputerViewer3D({
   className = "",
   customOrbit = null,
   hideToolbar = false,
+  hideControls = false,
+  lightMode = false,
 }) {
+  const shouldHideToolbar = hideToolbar || compact;
+  const shouldHideControls = hideControls || compact;
+  const isLight = lightMode || compact;
   const modelViewerRef = useRef(null);
   const containerRef = useRef(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -152,19 +157,25 @@ export default function DesktopComputerViewer3D({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full rounded-3xl overflow-hidden bg-slate-950 text-white border border-slate-800 shadow-2xl transition-all duration-300 ${
+      className={`relative w-full rounded-3xl overflow-hidden transition-all duration-300 ${
+        isLight
+          ? "bg-slate-50 text-slate-900 border border-slate-200"
+          : "bg-slate-950 text-white border border-slate-800 shadow-2xl"
+      } ${
         isFullscreen ? "fixed inset-0 z-[9999] rounded-none border-none" : ""
       } ${className}`}
     >
       {/* Dynamic Background Ambient Shimmer */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)]" />
-      </div>
+      {!isLight && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] animate-pulse" />
+          <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-indigo-600/20 rounded-full blur-[100px] animate-pulse" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.08),transparent_70%)]" />
+        </div>
+      )}
 
       {/* Top Floating Overlay Toolbar */}
-      {!hideToolbar && (
+      {!shouldHideToolbar && (
         <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
@@ -183,7 +194,6 @@ export default function DesktopComputerViewer3D({
 
           {/* Right Quick Controls */}
           <div className="flex items-center gap-2">
-            {/* Auto-Rotate Button */}
             <button
               type="button"
               onClick={() => setAutoRotate(!autoRotate)}
@@ -198,7 +208,6 @@ export default function DesktopComputerViewer3D({
               <span className="hidden sm:inline">{autoRotate ? "Putar 360° On" : "Putar 360° Off"}</span>
             </button>
 
-            {/* Reset Camera Button */}
             <button
               type="button"
               onClick={handleResetView}
@@ -208,7 +217,6 @@ export default function DesktopComputerViewer3D({
               <RotateCcw className="w-4 h-4" />
             </button>
 
-            {/* Fullscreen Button */}
             <button
               type="button"
               onClick={toggleFullscreen}
@@ -222,26 +230,20 @@ export default function DesktopComputerViewer3D({
       )}
 
       {/* 3D Model Rendering Area */}
-      <div className={`relative w-full ${compact ? "h-[360px]" : "h-[450px] sm:h-[540px]"} bg-slate-950 flex items-center justify-center`}>
+      <div className={`relative w-full ${compact ? "h-[290px] sm:h-[320px]" : "h-[450px] sm:h-[540px]"} ${isLight ? "bg-slate-100/60" : "bg-slate-950"} flex items-center justify-center`}>
         {/* Loading Progress Bar Overlay */}
         {!isLoaded && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-6 space-y-4">
-            <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-4 border-blue-500/20" />
-              <div className="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin" />
+          <div className={`absolute inset-0 z-30 flex flex-col items-center justify-center p-6 space-y-4 ${isLight ? "bg-slate-50/90" : "bg-slate-950/90 backdrop-blur-md"}`}>
+            <div className="relative w-12 h-12">
+              <div className={`absolute inset-0 rounded-full border-4 ${isLight ? "border-blue-200" : "border-blue-500/20"}`} />
+              <div className="absolute inset-0 rounded-full border-4 border-[#2C1EE8] border-t-transparent animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Box className="w-6 h-6 text-blue-400" />
+                <Box className="w-5 h-5 text-[#2C1EE8]" />
               </div>
             </div>
             <div className="text-center space-y-1">
-              <p className="text-sm font-bold text-white">Memuat Model 3D Desktop Computer...</p>
-              <p className="text-xs text-slate-400 font-mono">{loadProgress}% terunduh</p>
-            </div>
-            <div className="w-48 h-2 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
-                style={{ width: `${loadProgress}%` }}
-              />
+              <p className={`text-xs font-bold ${isLight ? "text-slate-800" : "text-white"}`}>Memuat Model 3D...</p>
+              <p className={`text-[11px] font-mono ${isLight ? "text-slate-500" : "text-slate-400"}`}>{loadProgress}% terunduh</p>
             </div>
           </div>
         )}
@@ -251,151 +253,74 @@ export default function DesktopComputerViewer3D({
           <model-viewer
             ref={modelViewerRef}
             src={glbPath}
-            alt="3D Desktop Computer PPLG SMKN 2 Surakarta"
+            alt="3D Model Viewer"
             camera-controls
-            auto-rotate={autoRotate ? "" : undefined}
+            auto-rotate=""
             auto-rotate-delay="1000"
-            rotation-per-second="15deg"
+            rotation-per-second="12deg"
             touch-action="pan-y"
-            shadow-intensity={currentLighting.shadow}
+            shadow-intensity="1.0"
             shadow-softness="0.8"
-            exposure={currentLighting.exposure}
-            environment-image={currentLighting.env}
+            exposure="1.1"
+            environment-image="neutral"
             camera-orbit="45deg 65deg 105%"
             field-of-view="auto"
             min-camera-orbit="auto 0deg auto"
             max-camera-orbit="auto 180deg auto"
-            ar
-            ar-modes="webxr scene-viewer quick-look"
-            className="w-full h-full cursor-grab active:cursor-grabbing outline-none"
+            className="w-full h-full cursor-grab active:cursor-grabbing outline-hidden"
             style={{ width: "100%", height: "100%", "--poster-color": "transparent" }}
-          >
-            {/* Interactive Hotspot 1: Monitor Display */}
-            <button
-              type="button"
-              slot="hotspot-monitor"
-              data-position="0m 0.25m 0.05m"
-              data-normal="0m 0m 1m"
-              onClick={() => setActiveHotspot(activeHotspot === "monitor" ? null : "monitor")}
-              className="group relative px-3 py-1.5 rounded-full bg-blue-600/90 text-white text-xs font-bold shadow-lg shadow-blue-600/50 backdrop-blur-md border border-blue-400/50 hover:scale-110 transition cursor-pointer flex items-center gap-1.5"
-            >
-              <Monitor className="w-3.5 h-3.5 text-blue-200" />
-              <span>Monitor IPS 144Hz</span>
-            </button>
-
-            {/* Interactive Hotspot 2: CPU Tower */}
-            <button
-              type="button"
-              slot="hotspot-cpu"
-              data-position="0.25m -0.05m 0m"
-              data-normal="1m 0m 0m"
-              onClick={() => setActiveHotspot(activeHotspot === "cpu" ? null : "cpu")}
-              className="group relative px-3 py-1.5 rounded-full bg-indigo-600/90 text-white text-xs font-bold shadow-lg shadow-indigo-600/50 backdrop-blur-md border border-indigo-400/50 hover:scale-110 transition cursor-pointer flex items-center gap-1.5"
-            >
-              <Cpu className="w-3.5 h-3.5 text-indigo-200" />
-              <span>Intel Core i9 / RTX</span>
-            </button>
-
-            {/* Interactive Hotspot 3: Keyboard & Mouse */}
-            <button
-              type="button"
-              slot="hotspot-peripherals"
-              data-position="0m -0.2m 0.2m"
-              data-normal="0m 1m 0m"
-              onClick={() => setActiveHotspot(activeHotspot === "peripherals" ? null : "peripherals")}
-              className="group relative px-3 py-1.5 rounded-full bg-purple-600/90 text-white text-xs font-bold shadow-lg shadow-purple-600/50 backdrop-blur-md border border-purple-400/50 hover:scale-110 transition cursor-pointer flex items-center gap-1.5"
-            >
-              <Keyboard className="w-3.5 h-3.5 text-purple-200" />
-              <span>Peripherals RGB</span>
-            </button>
-          </model-viewer>
+          />
         ) : (
-          <div className="text-slate-500 text-sm font-medium">Inisialisasi Renderer 3D...</div>
+          <div className="text-slate-500 text-xs font-medium">Inisialisasi Renderer 3D...</div>
         )}
+      </div>
 
-        {/* Floating Interactive Specs Detail Popup */}
-        {activeHotspot && (
-          <div className="absolute bottom-20 left-6 right-6 sm:left-auto sm:right-6 sm:w-80 z-30 bg-slate-900/95 border border-blue-500/30 p-4 rounded-2xl backdrop-blur-xl shadow-2xl space-y-2 animate-in fade-in slide-in-from-bottom-3 duration-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-blue-400 font-bold text-xs">
-                <Sparkles className="w-4 h-4" />
-                <span>
-                  {activeHotspot === "monitor" && "Display Monitor Layar Utama"}
-                  {activeHotspot === "cpu" && "Central Processing Unit (CPU)"}
-                  {activeHotspot === "peripherals" && "Keyboard & Gaming Mouse"}
-                </span>
-              </div>
+      {/* Bottom Interactive Control Panel Bar (Only shown if controls NOT hidden) */}
+      {!shouldHideControls && (
+        <div className="relative z-20 p-4 sm:p-5 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
+              <CameraIcon className="w-3.5 h-3.5 text-blue-400" />
+              Angle:
+            </span>
+            {CAMERA_PRESETS.map((preset) => (
               <button
-                onClick={() => setActiveHotspot(null)}
-                className="text-slate-400 hover:text-white text-xs p-1"
+                key={preset.id}
+                type="button"
+                onClick={() => applyCameraPreset(preset)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer border ${
+                  activePreset === preset.id
+                    ? "bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-600/30"
+                    : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                }`}
               >
-                ✕
+                {preset.label}
               </button>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {activeHotspot === "monitor" &&
-                "Layar Monitor Resolusi Full HD IPS 144Hz sRGB 99% dengan sudut pandang luas & perlindungan Anti-Blue Light untuk kenyamanan koding dalam waktu lama."}
-              {activeHotspot === "cpu" &&
-                "Dapur pacu performa tinggi dengan Processor Intel Core i9 Gen-13, RAM 32GB DDR5 Dual Channel, SSD NVMe Gen4 1TB, dan GPU RTX Series untuk kompilasi software & rendering 3D."}
-              {activeHotspot === "peripherals" &&
-                "Set Keyboard Mekanikal Tactile Switches dengan Full RGB Backlight dan Precision Optical Ergonomic Mouse untuk produktivitas pengerjaan project siswa PPLG."}
-            </p>
+            ))}
           </div>
-        )}
 
-        {/* Corner Instruction Badge */}
-        <div className="absolute bottom-4 left-4 z-20 pointer-events-none flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/70 backdrop-blur-md border border-slate-700/60 text-slate-300 text-[11px] font-medium">
-          <Eye className="w-3.5 h-3.5 text-blue-400" />
-          <span>Klik & Geser mouse untuk memutar 3D Model</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider mr-1 flex items-center gap-1">
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              Lighting:
+            </span>
+            {LIGHTING_PRESETS.map((light) => (
+              <button
+                key={light.id}
+                type="button"
+                onClick={() => setActiveLighting(light.id)}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  activeLighting === light.id
+                    ? "bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-600/30"
+                    : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                }`}
+              >
+                {light.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
-      {/* Bottom Interactive Control Panel Bar */}
-      <div className="relative z-20 p-4 sm:p-5 bg-slate-900/90 backdrop-blur-xl border-t border-slate-800/80 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Presets Angle Buttons */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
-          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider shrink-0 mr-1 flex items-center gap-1">
-            <CameraIcon className="w-3.5 h-3.5 text-blue-400" />
-            Angle:
-          </span>
-          {CAMERA_PRESETS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => applyCameraPreset(preset)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer border ${
-                activePreset === preset.id
-                  ? "bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-600/30"
-                  : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
-              }`}
-            >
-              {preset.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Lighting & Environment Modes */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider mr-1 flex items-center gap-1">
-            <Sun className="w-3.5 h-3.5 text-amber-400" />
-            Lighting:
-          </span>
-          {LIGHTING_PRESETS.map((light) => (
-            <button
-              key={light.id}
-              type="button"
-              onClick={() => setActiveLighting(light.id)}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                activeLighting === light.id
-                  ? "bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-600/30"
-                  : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
-              }`}
-            >
-              {light.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

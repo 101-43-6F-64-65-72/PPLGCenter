@@ -10,6 +10,7 @@ export default function FacilitySection({
   items = [],
   isLoading = false,
   onItemAction,
+  onOpen3D,
 }) {
   const skeletonGrid = (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
@@ -47,6 +48,7 @@ export default function FacilitySection({
             {items.map((item) => (
               <FacilityCard
                 key={item.id}
+                id={item.id}
                 title={item.title || item.name}
                 location={item.location}
                 capacity={item.capacity}
@@ -56,8 +58,10 @@ export default function FacilitySection({
                 isActive={item.isActive}
                 time={item.time}
                 imageSrc={item.imageSrc}
+                model3dUrl={item.model3dUrl || item.model3DUrl || item.Model3DUrl}
                 managerTeacherName={item.managerTeacherName}
-                onActionClick={() => onItemAction && onItemAction(item)}
+                onActionClick={(cardData) => onItemAction && onItemAction(cardData || item)}
+                onOpen3D={onOpen3D}
               />
             ))}
           </div>

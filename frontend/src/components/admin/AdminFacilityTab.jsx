@@ -24,11 +24,16 @@ import {
   AlignLeft,
   ChevronDown,
   ArrowRight,
+  Box,
+  Sparkles,
+  ExternalLink,
 } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import userService from "@/services/userService";
 import apiClient from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
+import STORAGE_3D_MODELS from "@/config/storage3dModels";
+import DesktopComputerViewer3D from "@/components/common/DesktopComputerViewer3D";
 
 // ─────────────────────────────────────────────
 // Modal Tambah / Edit Fasilitas
@@ -41,6 +46,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
     location: facility?.location || facility?.Location || "",
     capacity: facility?.capacity ?? facility?.Capacity ?? "",
     imageUrl: facility?.imageUrl || facility?.ImageUrl || "",
+    model3dUrl: facility?.model3dUrl || facility?.Model3dUrl || facility?.model3DUrl || facility?.Model3DUrl || "",
     category: facility?.category || facility?.Category || "",
     isActive: facility?.isActive ?? facility?.IsActive ?? true,
     managerTeacherId: facility?.managerTeacherId || facility?.ManagerTeacherId || "",
@@ -49,6 +55,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState("");
+  const [show3DPreview, setShow3DPreview] = useState(false);
 
   useEffect(() => {
     // Fetch teachers list for manager selection
@@ -89,6 +96,9 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
         location: form.location.trim(),
         capacity: Number(form.capacity),
         imageUrl: form.imageUrl.trim() || null,
+        model3dUrl: form.model3dUrl.trim() || null,
+        model3DUrl: form.model3dUrl.trim() || null,
+        Model3DUrl: form.model3dUrl.trim() || null,
         category: form.category.trim() || null,
         isActive: form.isActive,
         managerTeacherId: form.managerTeacherId || null,
@@ -139,7 +149,7 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
           {/* Nama */}
           <div>
             <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-              Nama Fasilitas <span className="text-rose-500">*</span>
+              Nama Fasilitas / Barang <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -147,17 +157,17 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                placeholder="cth. Aula Utama SMKN 2 Surakarta"
+                placeholder="cth. Lab Komputer, Aula Utama, atau Proyektor Epson HD"
                 maxLength={100}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
 
-          {/* Lokasi */}
+          {/* Lokasi / Tempat Penyimpanan */}
           <div>
             <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-              Lokasi <span className="text-rose-500">*</span>
+              Lokasi / Posisi Penyimpanan <span className="text-rose-500">*</span>
             </label>
             <div className="relative">
               <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -165,18 +175,18 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                 name="location"
                 value={form.location}
                 onChange={handleChange}
-                placeholder="cth. Lantai 1, Gedung Utama"
+                placeholder="cth. Lantai 1 Gedung A, Ruang Lab 1, atau Gudang Sarpras"
                 maxLength={200}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
 
-          {/* Kapasitas & Kategori */}
+          {/* Kapasitas / Stok Unit & Kategori */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                Kapasitas <span className="text-rose-500">*</span>
+                Kapasitas / Stok Unit <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -187,10 +197,11 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                   max="10000"
                   value={form.capacity}
                   onChange={handleChange}
-                  placeholder="200"
+                  placeholder="Kapasitas / Unit (cth. 40)"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
                 />
               </div>
+              <p className="text-[10px] text-slate-400 mt-1 font-medium">Orang (Ruang) / Stok (Barang)</p>
             </div>
             <div>
               <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Kategori</label>
@@ -200,10 +211,26 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
                   name="category"
                   value={form.category}
                   onChange={handleChange}
-                  placeholder="cth. Ruangan, Lapangan"
+                  placeholder="cth. Ruangan, Peralatan, AV"
                   maxLength={100}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
                 />
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {["Ruangan", "Laboratorium", "Peralatan", "Multimedia", "Olahraga"].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, category: cat }))}
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded border transition ${
+                      form.category === cat
+                        ? "bg-blue-100 text-[#2C1EE8] border-blue-300"
+                        : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                    }`}
+                  >
+                    + {cat}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -230,20 +257,20 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
               </select>
             </div>
             <p className="text-[11px] text-slate-500 mt-1 font-medium">
-              Guru yang dipilih akan memiliki tab khusus untuk menyetujui / menolak peminjaman fasilitas ini.
+              Guru yang dipilih akan memiliki tab khusus untuk menyetujui / menolak peminjaman fasilitas/barang ini.
             </p>
           </div>
 
           {/* Deskripsi */}
           <div>
-            <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Deskripsi</label>
+            <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">Deskripsi & Spesifikasi</label>
             <div className="relative">
               <AlignLeft className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
               <textarea
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                placeholder="Deskripsi singkat tentang fasilitas ini..."
+                placeholder="Deskripsi singkat spesifikasi, ketersediaan, atau panduan penggunaan..."
                 maxLength={1000}
                 rows={3}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-[#2C1EE8] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all resize-none"
@@ -318,6 +345,110 @@ function FacilityFormModal({ facility, onClose, onSaved }) {
               </div>
             </div>
           </div>
+
+          {/* Pilihan Model 3D dari Storage & Manual URL */}
+          <div className="space-y-3 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/90">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                Model 3D Interaktif (.glb / .gltf) <span className="text-slate-400 font-normal lowercase">(opsional)</span>
+              </label>
+              {form.model3dUrl && (
+                <button
+                  type="button"
+                  onClick={() => setShow3DPreview(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-[#2C1EE8] text-white hover:bg-blue-700 transition cursor-pointer shadow-2xs"
+                >
+                  <Box className="w-3.5 h-3.5 text-blue-300" />
+                  <span>Preview 3D</span>
+                </button>
+              )}
+            </div>
+
+            {/* Dropdown Preset Storage */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                Pilih dari 3D Model di Storage Sekolah:
+              </label>
+              <div className="relative">
+                <Box className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <select
+                  value={
+                    STORAGE_3D_MODELS.find(
+                      (m) => m.url === form.model3dUrl || m.localFallback === form.model3dUrl
+                    )?.url || (form.model3dUrl ? "custom" : "")
+                  }
+                  onChange={(e) => {
+                    const selectedVal = e.target.value;
+                    if (selectedVal === "custom") {
+                      // Keep existing URL or leave for manual typing
+                    } else {
+                      setForm((prev) => ({ ...prev, model3dUrl: selectedVal }));
+                    }
+                  }}
+                  className="w-full pl-10 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-extrabold text-slate-800 focus:border-[#2C1EE8] focus:outline-none transition-all cursor-pointer appearance-none"
+                >
+                  <option value="">-- Tanpa Model 3D --</option>
+                  <optgroup label="Aset 3D Storage (Supabase & Local)">
+                    {STORAGE_3D_MODELS.map((m) => (
+                      <option key={m.id} value={m.url}>
+                        {m.label} ({m.category})
+                      </option>
+                    ))}
+                  </optgroup>
+                  <option value="custom">-- Input URL Custom / Link Manual --</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Input Link Manual / Detail URL */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                URL / Path File Model 3D (.glb):
+              </label>
+              <input
+                name="model3dUrl"
+                value={form.model3dUrl}
+                onChange={handleChange}
+                placeholder="cth. /desktop_computer.glb atau https://.../model.glb"
+                maxLength={500}
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-800 focus:border-[#2C1EE8] focus:outline-none transition-all"
+              />
+            </div>
+
+            <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+              Model 3D yang dipilih akan muncul sebagai tombol 3D interaktif pada Katalog Fasilitas.
+            </p>
+          </div>
+
+          {/* Modal Preview 3D */}
+          {show3DPreview && form.model3dUrl && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+              <div className="bg-slate-950 w-full max-w-3xl rounded-3xl p-5 border border-slate-800 space-y-4 max-h-[90vh] flex flex-col font-sans">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center gap-2 text-white font-extrabold text-sm">
+                    <Box className="w-4 h-4 text-blue-400" />
+                    <span>Pratinjau Model 3D — {form.name || "Fasilitas"}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShow3DPreview(false)}
+                    className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <DesktopComputerViewer3D
+                    glbPath={form.model3dUrl}
+                    title={form.name || "Pratinjau Fasilitas"}
+                    subtitle="Model 3D Interaktif Storage"
+                    compact={true}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Status Aktif */}
           <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-200">
@@ -475,6 +606,7 @@ export default function AdminFacilityTab({ isQuickView = false, onViewAll }) {
         location: f.location || f.Location || "",
         capacity: f.capacity ?? f.Capacity ?? 0,
         imageUrl: f.imageUrl || f.ImageUrl || "",
+        model3dUrl: f.model3dUrl || f.Model3dUrl || f.model3DUrl || f.Model3DUrl || "",
         category: f.category || f.Category || "",
         isActive: f.isActive ?? f.IsActive ?? true,
       }));
@@ -516,6 +648,9 @@ export default function AdminFacilityTab({ isQuickView = false, onViewAll }) {
         location: facility.location || facility.Location,
         capacity: Number(facility.capacity ?? facility.Capacity ?? 1),
         imageUrl: facility.imageUrl || facility.ImageUrl || null,
+        model3dUrl: facility.model3dUrl || facility.Model3dUrl || facility.model3DUrl || facility.Model3DUrl || null,
+        model3DUrl: facility.model3dUrl || facility.Model3dUrl || facility.model3DUrl || facility.Model3DUrl || null,
+        Model3DUrl: facility.model3dUrl || facility.Model3dUrl || facility.model3DUrl || facility.Model3DUrl || null,
         category: facility.category || facility.Category || null,
         isActive: nextActive,
         managerTeacherId: facility.managerTeacherId || facility.ManagerTeacherId || null,

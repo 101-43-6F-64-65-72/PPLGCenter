@@ -43,7 +43,8 @@ const nextConfig = {
     remotePatterns,
   },
   async rewrites() {
-    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://pplgcenter.onrender.com';
+    const rawUrl = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5051';
+    const backendUrl = rawUrl.replace(/\/api\/?$/, '');
     return [
       {
         source: '/api/:path*',

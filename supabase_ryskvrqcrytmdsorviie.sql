@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
     "MigrationId" character varying(150) NOT NULL,
     "ProductVersion" character varying(32) NOT NULL,
     CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
@@ -235,6 +235,9 @@ CREATE TABLE "Facilities" (
     "Description" character varying(1000),
     "Location" character varying(200) NOT NULL,
     "Capacity" integer NOT NULL,
+    "ImageUrl" character varying(500),
+    "Model3DUrl" character varying(500),
+    "Category" character varying(100),
     "IsActive" boolean NOT NULL DEFAULT TRUE,
     "CreatedAt" timestamp with time zone NOT NULL DEFAULT (now()),
     "UpdatedAt" timestamp with time zone NOT NULL DEFAULT (now()),

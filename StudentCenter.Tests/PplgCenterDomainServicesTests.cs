@@ -265,4 +265,41 @@ public class PplgCenterDomainServicesTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.ProcessBorrowRequestAsync(req2.Id, new ProcessBorrowRequest { Approve = true }, teacherId));
     }
+
+    [Fact]
+    public async Task FacilityService_Supports_Optional_3DModelUrl()
+    {
+        using var context = GetInMemoryDbContext();
+        var service = new FacilityService(context, NullLogger<FacilityService>.Instance);
+
+        // 1. Create with Model3DUrl
+        var createReq = new CreateFacilityRequest
+        {
+            Name = "Lab Server 3D",
+            Location = "Lantai 3",
+            Capacity = 20,
+            Model3DUrl = "/models/server_lab.glb"
+        };
+        var created = await service.CreateFacilityAsync(createReq);
+        Assert.NotNull(created);
+        Assert.Equal("/models/server_lab.glb", created.Model3DUrl);
+
+        // 2. Fetch By Id
+        var fetched = await service.GetFacilityByIdAsync(created.Id);
+        Assert.NotNull(fetched);
+        Assert.Equal("/models/server_lab.glb", fetched!.Model3DUrl);
+
+        // 3. Update Model3DUrl
+        var updateReq = new UpdateFacilityRequest
+        {
+            Name = "Lab Server 3D Updated",
+            Location = "Lantai 3",
+            Capacity = 25,
+            Model3DUrl = "https://cdn.school.sch.id/models/server_v2.glb",
+            IsActive = true
+        };
+        var updated = await service.UpdateFacilityAsync(created.Id, updateReq);
+        Assert.NotNull(updated);
+        Assert.Equal("https://cdn.school.sch.id/models/server_v2.glb", updated!.Model3DUrl);
+    }
 }

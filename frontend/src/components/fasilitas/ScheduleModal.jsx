@@ -16,9 +16,14 @@ import {
   Calendar,
   RotateCcw,
   UserPlus,
+  Box,
+  Image as ImageIcon,
+  Sparkles,
 } from "lucide-react";
 import bookingService from "@/services/bookingService";
 import StudentBatchPickerModal from "@/components/fasilitas/StudentBatchPickerModal";
+import DesktopComputerViewer3D from "@/components/common/DesktopComputerViewer3D";
+import { resolve3DModelUrl } from "@/config/storage3dModels";
 
 export default function ScheduleModal({
   isOpen,
@@ -44,6 +49,19 @@ export default function ScheduleModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const model3dUrl = resolve3DModelUrl(facility);
+
+  const [activeRightTab, setActiveRightTab] = useState(
+    model3dUrl ? "3d" : "image",
+  );
+
+  useEffect(() => {
+    if (facility) {
+      const mUrl = resolve3DModelUrl(facility);
+      setActiveRightTab(mUrl ? "3d" : "image");
+    }
+  }, [facility]);
 
   // Fetch dynamic slot availability from bookingService
   const fetchAvailability = useCallback(async () => {
@@ -484,16 +502,71 @@ export default function ScheduleModal({
                 </div>
               </div>
 
-              {/* RIGHT COLUMN: Facility Image */}
-              <div className="md:col-span-5 h-[320px] sm:h-[380px] relative rounded-3xl overflow-hidden shadow-xs border border-slate-200">
-                <Image
-                  src={facility.imageSrc || "/images/tempat/lapangansmkn2ska.jpg"}
-                  alt={facility.title || "Facility Image"}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 400px"
-                  priority
-                />
+              {/* RIGHT COLUMN: Facility Image / 3D Model Viewer */}
+              <div className="md:col-span-5 h-[340px] sm:h-[400px] relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-50 flex flex-col shadow-2xs">
+                {model3dUrl && (
+                  <div className="flex items-center gap-1.5 p-3 bg-white border-b border-slate-200 shrink-0 z-20">
+                    <button
+                      type="button"
+                      onClick={() => setActiveRightTab("image")}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        activeRightTab === "image"
+                          ? "bg-[#2C1EE8] text-white shadow-2xs"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Foto</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveRightTab("3d")}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        activeRightTab === "3d"
+                          ? "bg-[#2C1EE8] text-white shadow-2xs"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      <Box className="w-3.5 h-3.5" />
+                      <span>3D Model</span>
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex-1 relative w-full h-full overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeRightTab}
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="w-full h-full relative"
+                    >
+                      {model3dUrl && activeRightTab === "3d" ? (
+                        <DesktopComputerViewer3D
+                          glbPath={model3dUrl}
+                          title={facility.title || facility.name}
+                          subtitle={facility.location}
+                          compact={true}
+                          hideControls={true}
+                          hideToolbar={true}
+                          lightMode={true}
+                          className="h-full rounded-none border-none shadow-none bg-slate-50"
+                        />
+                      ) : (
+                        <Image
+                          src={facility.imageSrc || "/images/tempat/lapangansmkn2ska.jpg"}
+                          alt={facility.title || "Facility Image"}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 400px"
+                          priority
+                        />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           ) : (

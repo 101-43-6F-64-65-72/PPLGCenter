@@ -8,6 +8,7 @@ public class Facility
     public string Location { get; set; } = string.Empty;
     public int Capacity { get; set; }
     public string? ImageUrl { get; set; }
+    public string? Model3DUrl { get; set; }
     public string? Category { get; set; }
     public bool IsActive { get; set; } = true;
     public bool IsDeleted { get; set; } = false;

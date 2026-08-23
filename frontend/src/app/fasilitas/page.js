@@ -84,6 +84,8 @@ export default function FasilitasPage() {
 
   // 3D Model Viewer Modal State
   const [is3DModalOpen, setIs3DModalOpen] = useState(false);
+  const [active3DPath, setActive3DPath] = useState(null);
+  const [active3DTitle, setActive3DTitle] = useState(null);
 
   // All Public Borrowings System States (Transparency Schedule for All Students)
   const [publicBookingsData, setPublicBookingsData] = useState([]);
@@ -139,6 +141,7 @@ export default function FasilitasPage() {
             const rawDesc = item.description || item.Description || "";
             const infoDescription = getDefaultFacilityDescription(facilityTitle, facilityCategory, rawDesc);
             const isFacilityActive = item.isActive ?? item.IsActive ?? true;
+            const extracted3d = item.model3dUrl || item.Model3dUrl || item.model3DUrl || item.Model3DUrl || item.model3d_url || item.Model3d_url || null;
 
             return {
               id: item.id || item.Id,
@@ -152,6 +155,7 @@ export default function FasilitasPage() {
               status: isFacilityActive ? "tersedia" : "tidak tersedia",
               time: isFacilityActive ? "07.00 s.d 17.00 WIB" : "Tutup / Nonaktif",
               imageSrc: getCategoryMatchingImage(item),
+              model3dUrl: extracted3d,
               managerTeacherName: item.managerTeacherName || item.ManagerTeacherName || "",
             };
           });
@@ -223,6 +227,7 @@ export default function FasilitasPage() {
     if (activeTab === "aula") return combinedText.includes("aula") || combinedText.includes("ruang");
     if (activeTab === "lapangan") return combinedText.includes("lapangan") || combinedText.includes("olahraga");
     if (activeTab === "lab") return combinedText.includes("lab") || combinedText.includes("komputer") || combinedText.includes("laboratorium");
+    if (activeTab === "barang") return combinedText.includes("barang") || combinedText.includes("peralatan") || combinedText.includes("alat") || combinedText.includes("proyektor") || combinedText.includes("printer") || combinedText.includes("kamera") || combinedText.includes("multimedia") || combinedText.includes("cctv") || combinedText.includes("sound") || combinedText.includes("speaker") || combinedText.includes("micro") || combinedText.includes("headset") || combinedText.includes("vr") || combinedText.includes("ps5") || combinedText.includes("gpu");
 
     return true;
   });
@@ -246,10 +251,10 @@ export default function FasilitasPage() {
                 <span>SARPRAS & FASILITAS SMKN 2 SURAKARTA</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Katalog Fasilitas & Tempat
+                Katalog Fasilitas, Ruangan & Peralatan
               </h1>
               <p className="text-sm text-slate-600 max-w-2xl">
-                Layanan reservasi ruangan, laboratorium kejuruan, aula serbaguna, dan sarana olahraga sekolah secara online.
+                Layanan peminjaman ruangan, laboratorium, aula, sarana olahraga, serta peralatan & barang sarpras sekolah secara online.
               </p>
             </div>
 
@@ -324,6 +329,7 @@ export default function FasilitasPage() {
               { id: "aula", label: "Aula & Ruang" },
               { id: "lapangan", label: "Lapangan" },
               { id: "lab", label: "Laboratorium" },
+              { id: "barang", label: "Peralatan & Barang" },
               { id: "tersedia", label: "Tersedia" },
             ].map((tab) => (
               <button
@@ -351,6 +357,11 @@ export default function FasilitasPage() {
             items={filteredPlaces}
             isLoading={isLoading}
             onItemAction={(item) => handleOpenModal(item)}
+            onOpen3D={(url, title) => {
+              setActive3DPath(url);
+              setActive3DTitle(title);
+              setIs3DModalOpen(true);
+            }}
           />
         )}
       </main>
@@ -585,29 +596,35 @@ export default function FasilitasPage() {
       {is3DModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-slate-950 w-full max-w-4xl rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-800 space-y-4 max-h-[90vh] flex flex-col font-sans relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black">
-                  <Box className="w-5 h-5" />
+            <div className="flex flex-col border-b border-slate-800 pb-3 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-black">
+                    <Box className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-white">{active3DTitle || "Simulasi 3D Workstation & Fasilitas"}</h3>
+                    <p className="text-xs text-slate-400">Model 3D Interaktif Fasilitas SMKN 2 Surakarta</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-black text-white">Simulasi 3D Desktop Computer Workstation</h3>
-                  <p className="text-xs text-slate-400">Model Perangkat Desktop Standard Lab Komputer PPLG SMKN 2 Surakarta</p>
-                </div>
+                <button
+                  onClick={() => {
+                    setIs3DModalOpen(false);
+                    setActive3DPath(null);
+                    setActive3DTitle(null);
+                  }}
+                  className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-full transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                onClick={() => setIs3DModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-full transition cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
               <DesktopComputerViewer3D
-                glbPath="/desktop_computer.glb"
-                title="Workstation Desktop PPLG"
-                subtitle="Model 3D Interaktif Spesifikasi Komputer Lab PPLG"
+                glbPath={active3DPath || "/desktop_computer.glb"}
+                title={active3DTitle || "Workstation Desktop PPLG"}
+                subtitle="Model 3D Interaktif Spesifikasi Fasilitas SMKN 2 Surakarta"
               />
             </div>
           </div>
