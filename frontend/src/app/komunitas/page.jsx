@@ -51,7 +51,13 @@ import {
   Zap,
   Award,
   Lightbulb,
-  CheckSquare,
+  Mic,
+  Volume2,
+  Play,
+  Pause,
+  PinOff,
+  Download,
+  Link as LinkIcon,
   Square
 } from "lucide-react";
 
@@ -113,43 +119,9 @@ export default function KomunitasPage() {
   const [editingMessage, setEditingMessage] = useState(null);
   const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
 
-  // Multi-Message Selection State
-  const [isSelectMode, setIsSelectMode] = useState(false);
-  const [selectedMessageIds, setSelectedMessageIds] = useState([]);
-
-  const toggleSelectMessage = (msgId) => {
-    setSelectedMessageIds((prev) =>
-      prev.includes(msgId) ? prev.filter((id) => id !== msgId) : [...prev, msgId]
-    );
-  };
-
-  const handleSelectAllMessages = () => {
-    if (selectedMessageIds.length === messages.length) {
-      setSelectedMessageIds([]);
-    } else {
-      setSelectedMessageIds(messages.map((m) => m.id));
-    }
-  };
-
-  const handleBatchDeleteForMe = async () => {
-    if (selectedMessageIds.length === 0) return;
-    try {
-      for (const id of selectedMessageIds) {
-        await groupMessageService.deleteForMe(id);
-      }
-      setMessages((prev) => prev.filter((m) => !selectedMessageIds.includes(m.id)));
-      toast.success(`${selectedMessageIds.length} pesan berhasil dihapus untuk Anda`);
-      setSelectedMessageIds([]);
-      setIsSelectMode(false);
-    } catch (err) {
-      toast.error("Gagal menghapus beberapa pesan");
-    }
-  };
-
   const popoverCardRef = useRef(null);
 
   const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "🎉", "💡"];
-
 
   // GSAP Animation when popover menu opens
   useEffect(() => {
@@ -184,8 +156,24 @@ export default function KomunitasPage() {
   const [inboxModalOpen, setInboxModalOpen] = useState(false);
   const [inboxCount, setInboxCount] = useState(0);
 
+  // In-Chat Search State
+  const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
+
+  // Slide-Out Drawer Sub-Tabs ("members" | "media" | "links")
+  const [drawerTab, setDrawerTab] = useState("members");
+
+  // Voice Note Recording State
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+  const [playingAudioMsgId, setPlayingAudioMsgId] = useState(null);
+
   // Mention Auto-Complete Popover State
   const [mentionQuery, setMentionQuery] = useState(null);
+
   const [mentionIndex, setMentionIndex] = useState(-1);
 
   // File Upload Ref
@@ -458,6 +446,136 @@ export default function KomunitasPage() {
     }
   };
 
+  const triggerMentionPicker = () => {
+    const spacePrefix = newMessage && !newMessage.endsWith(" ") ? " " : "";
+    const newText = newMessage + spacePrefix + "@";
+    setNewMessage(newText);
+    setMentionQuery("");
+    setMentionIndex(newText.length - 1);
+  };
+
+  // Pin & Unpin Message Banner Handler
+  const handlePinMessage = (msg) => {
+    const text = safeBase64Decode(msg.encryptedPayloadBase64);
+    const pinData = { id: msg.id, sender: msg.senderName, text };
+    setPinnedAnnouncement(pinData);
+    if (selectedGroup) {
+      try {
+        localStorage.setItem(`pplg_pinned_${selectedGroup.id}`, JSON.stringify(pinData));
+      } catch (e) {}
+    }
+  };
+
+  const handleUnpinMessage = () => {
+    setPinnedAnnouncement(null);
+    if (selectedGroup) {
+      try {
+        localStorage.removeItem(`pplg_pinned_${selectedGroup.id}`);
+      } catch (e) {}
+    }
+  };
+
+  // Voice Recording Handlers
+  const startVoiceRecording = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Browser Anda tidak mendukung perekaman suara.");
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.start();
+      setIsRecordingAudio(true);
+      setRecordingSeconds(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Gagal memulai perekaman audio:", err);
+      alert("Izin mikrofon ditolak atau mikrofon tidak tersedia.");
+    }
+  };
+
+  const stopVoiceRecordingAndSend = () => {
+    if (!mediaRecorderRef.current) return;
+    const recorder = mediaRecorderRef.current;
+
+    recorder.onstop = async () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        const base64Audio = reader.result;
+        const durationSec = recordingSeconds || 1;
+        const formattedDuration = `${Math.floor(durationSec / 60)}:${(durationSec % 60).toString().padStart(2, "0")}`;
+        const payloadText = `[🎙️ Pesan Suara: ${formattedDuration}](${base64Audio})`;
+
+        try {
+          setSendingMessage(true);
+          const payloadBase64 = safeBase64Encode(payloadText);
+          await groupMessageService.sendMessage({
+            groupId: selectedGroup.id,
+            encryptedPayloadBase64: payloadBase64,
+            nonce: "audio-nonce-" + Date.now(),
+            replyToMessageId: replyingMessage ? replyingMessage.id : null,
+            recipientEnvelopes: [],
+          });
+          setReplyingMessage(null);
+          await loadGroupDetails(selectedGroup);
+        } catch (err) {
+          console.error("Gagal mengirim pesan suara:", err);
+        } finally {
+          setSendingMessage(false);
+          setIsRecordingAudio(false);
+          setRecordingSeconds(0);
+        }
+      };
+
+      reader.readAsDataURL(audioBlob);
+
+      if (recorder.stream) {
+        recorder.stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+
+    recorder.stop();
+  };
+
+  const cancelVoiceRecording = () => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+    }
+    setIsRecordingAudio(false);
+    setRecordingSeconds(0);
+    audioChunksRef.current = [];
+  };
+
+
+  const filteredMembersForMention = members.filter((m) => {
+    if (mentionQuery === null) return false;
+
+    // Filter ONLY members who are active & accepted in the community group
+    const isAcceptedMember = m.status === "Accepted" || m.status === 1;
+    if (!isAcceptedMember) return false;
+
+    if (!mentionQuery) return true;
+    const q = mentionQuery.toLowerCase();
+    const usernameMatch = m.userName && m.userName.toLowerCase().includes(q);
+    const fullNameMatch = m.fullName && m.fullName.toLowerCase().includes(q);
+    return usernameMatch || fullNameMatch;
+  });
+
+
   const insertMention = (member) => {
     if (mentionIndex === -1) return;
     const prefix = newMessage.substring(0, mentionIndex);
@@ -465,6 +583,8 @@ export default function KomunitasPage() {
     setNewMessage(prefix + mentionText);
     setMentionQuery(null);
   };
+
+
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -657,10 +777,8 @@ export default function KomunitasPage() {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  const filteredMembersForMention =
-    mentionQuery != null ? members.filter((m) => m.userName?.toLowerCase().includes(mentionQuery)) : [];
-
   const searchedMembersInDrawer = members.filter(
+
     (m) =>
       !memberSearchQuery.trim() ||
       m.userName?.toLowerCase().includes(memberSearchQuery.toLowerCase()) ||
@@ -920,7 +1038,8 @@ export default function KomunitasPage() {
           </div>
 
           {/* Right Column: Chat & Community Workspace */}
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-[28px] p-6 flex flex-col h-[650px] relative overflow-hidden shadow-xs">
+          <div className={`lg:col-span-2 bg-white border border-slate-200 rounded-[28px] p-6 flex flex-col h-[650px] relative ${activeMenuMsgId !== null ? "overflow-visible z-30" : "overflow-hidden"} shadow-xs`}>
+
             {!selectedGroup ? (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs space-y-3">
                 <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-[#2C1EE8]">
@@ -965,6 +1084,20 @@ export default function KomunitasPage() {
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {/* In-Chat Search Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
+                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                        isChatSearchOpen
+                          ? "bg-blue-50 border-blue-200 text-[#2C1EE8]"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                      }`}
+                      title="Cari Pesan dalam Komunitas"
+                    >
+                      <Search className="w-4 h-4" />
+                    </button>
+
                     {/* Invite Button ONLY for Group Admins/Teachers/Global Admins */}
                     {isGroupAdmin && (
                       <button
@@ -1015,274 +1148,324 @@ export default function KomunitasPage() {
                   </div>
                 </div>
 
-                {/* Pinned Announcement Banner */}
-                {pinnedAnnouncement && (
-                  <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between text-xs text-amber-900">
-                    <div className="flex items-center gap-2">
-                      <Pin className="w-4 h-4 text-amber-600 fill-amber-600 shrink-0" />
-                      <span className="font-semibold line-clamp-1">{pinnedAnnouncement}</span>
-                    </div>
-                    {isGroupAdmin && (
+                {/* In-Chat Search Bar */}
+                {isChatSearchOpen && (
+                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <Search className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                    <input
+                      type="text"
+                      placeholder="Cari kata kunci pesan atau dokumen..."
+                      value={chatSearchQuery}
+                      onChange={(e) => setChatSearchQuery(e.target.value)}
+                      className="flex-1 bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-hidden font-medium"
+                    />
+                    {chatSearchQuery && (
                       <button
-                        onClick={() => setPinnedAnnouncement(null)}
-                        className="text-amber-700 hover:text-amber-900 text-[10px] font-bold underline cursor-pointer"
+                        type="button"
+                        onClick={() => setChatSearchQuery("")}
+                        className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
                       >
-                        Tutup
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
                 )}
 
-                {/* Chat Messages View */}
-                <div className="flex flex-col flex-1 min-h-0 relative">
-                  {/* Multi-Select Top Navbar Header (WhatsApp Web Style) when > 1 messages selected */}
-                  {isSelectMode && selectedMessageIds.length > 1 && (
-                    <div className="bg-[#2C1EE8] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-between gap-4 mb-3 animate-in slide-in-from-top duration-200 z-40">
-                      <div className="flex items-center gap-3 font-bold text-sm sm:text-base">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSelectMode(false);
-                            setSelectedMessageIds([]);
-                          }}
-                          className="p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
-                          title="Batal"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                        <span>{selectedMessageIds.length} Pesan Dipilih</span>
-                      </div>
 
-                      <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
-                        <button
-                          type="button"
-                          onClick={handleSelectAllMessages}
-                          className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 transition-colors cursor-pointer"
-                        >
-                          {selectedMessageIds.length === messages.length ? "Batal Semua" : "Pilih Semua"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleBatchDeleteForMe}
-                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold transition-colors cursor-pointer shadow-xs"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span>Hapus Terpilih</span>
-                        </button>
+                {/* Pinned Announcement Banner */}
+                {pinnedAnnouncement && (
+                  <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs text-amber-900 shadow-2xs">
+                    <div className="flex items-center gap-2 truncate">
+                      <Pin className="w-4 h-4 text-amber-600 fill-amber-600 shrink-0" />
+                      <div className="flex flex-col truncate">
+                        <span className="font-extrabold text-[10px] text-amber-800 uppercase tracking-wider">
+                          Pesan Disematkan oleh {pinnedAnnouncement.sender || "Admin"}
+                        </span>
+                        <span className="font-semibold text-slate-800 truncate">
+                          {pinnedAnnouncement.text}
+                        </span>
                       </div>
                     </div>
-                  )}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isGroupAdmin && (
+                        <button
+                          type="button"
+                          onClick={handleUnpinMessage}
+                          className="text-amber-700 hover:text-amber-900 text-[10px] font-bold underline cursor-pointer px-1"
+                        >
+                          Lepas
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                  {/* Subtle Backdrop Dim & Blur Overlay when 1 message is focused/active */}
-                  {(activeMenuMsgId !== null || (isSelectMode && selectedMessageIds.length === 1)) && (
+                {/* Chat Messages View */}
+                <div className={`flex flex-col flex-1 min-h-0 relative ${activeMenuMsgId !== null ? "overflow-visible" : ""}`}>
+                  {/* Subtle Backdrop Dim & Blur Overlay when a message is focused/active */}
+                  {activeMenuMsgId !== null && (
                     <div
-                      onClick={() => {
-                        setActiveMenuMsgId(null);
-                        if (isSelectMode && selectedMessageIds.length === 1) {
-                          setIsSelectMode(false);
-                          setSelectedMessageIds([]);
-                        }
-                      }}
+                      onClick={() => setActiveMenuMsgId(null)}
                       className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-30 transition-all duration-300 pointer-events-auto"
                     />
                   )}
 
                   <div
                     ref={chatContainerRef}
-                    className={`flex-1 space-y-3 pr-2 mb-3 ${
-                      activeMenuMsgId !== null || (isSelectMode && selectedMessageIds.length === 1)
-                        ? "overflow-visible z-40"
-                        : "overflow-y-auto"
-                    }`}
+                    className={`flex-1 space-y-3 pr-2 mb-3 ${activeMenuMsgId !== null ? "overflow-visible" : "overflow-y-auto"}`}
                   >
-
                     {messages.length === 0 ? (
                       <div className="text-center py-20 text-slate-400 text-xs">
                         <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-1" />
                         Belum ada pesan di komunitas ini. Mulai percakapan pertama!
                       </div>
                     ) : (
-                      messages.map((msg, idx) => {
-                        const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
-                        const isMe = msg.senderUserId === user?.id;
-                        const reactions = msg.reactions || msg.Reactions || {};
-                        const userReaction = msg.userReaction || msg.UserReaction || null;
+                      messages
+                        .filter((msg) => {
+                          if (!chatSearchQuery) return true;
+                          const text = safeBase64Decode(msg.encryptedPayloadBase64);
+                          return text.toLowerCase().includes(chatSearchQuery.toLowerCase());
+                        })
+                        .map((msg, idx) => {
+                          const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
+                          const isMe = msg.senderUserId === user?.id;
+                          const reactions = msg.reactions || msg.Reactions || {};
+                          const userReaction = msg.userReaction || msg.UserReaction || null;
 
-                        const isImageAttachment = decoded.startsWith("![Gambar]");
-                        const imageUrl = isImageAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
+                          const isImageAttachment = decoded.startsWith("![Gambar]");
+                          const imageUrl = isImageAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
 
-                        // Smart positioning: if message is near bottom of chat, position popover ABOVE
-                        const isNearBottom = idx >= messages.length - 3;
-                        const isSelected = selectedMessageIds.includes(msg.id);
-                        const isMenuOpen = activeMenuMsgId === msg.id;
-                        const isSingleFocused = isMenuOpen || (isSelectMode && selectedMessageIds.length === 1 && isSelected);
+                          // Check if current logged-in user is mentioned in this message
+                          const isMentionedMe = user?.userName && decoded.toLowerCase().includes(`@${user.userName.toLowerCase()}`);
 
-                        return (
-                          <div
-                            key={msg.id}
-                            className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative transition-all duration-300 ${
-                              isSingleFocused ? "z-50" : "z-0"
-                            }`}
-                          >
-                            <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 font-mono">
-                              <span className="font-bold text-slate-600">{msg.senderName}</span>
-                              <span>•</span>
-                              <span>
-                                {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-                              {(msg.isEdited || msg.IsEdited) && (
-                                <span className="text-[9px] font-semibold text-amber-600 italic"> (diedit)</span>
-                              )}
-                            </div>
+                          // Smart positioning: if message is near bottom of chat, position popover ABOVE
+                          const isNearBottom = idx >= messages.length - 3;
+                          const isActive = activeMenuMsgId === msg.id;
 
-                            <div className="flex items-center gap-1.5 max-w-full">
-                              {/* Selection Checkbox for Multi-Select Mode */}
-                              {isSelectMode && (
-                                <button
-                                  type="button"
-                                  onClick={() => toggleSelectMessage(msg.id)}
-                                  className="p-1 cursor-pointer text-[#2C1EE8] shrink-0 hover:scale-110 transition-transform"
-                                >
-                                  {isSelected ? (
-                                    <CheckSquare className="w-5 h-5 text-[#2C1EE8] fill-blue-50" />
-                                  ) : (
-                                    <Square className="w-5 h-5 text-slate-400" />
-                                  )}
-                                </button>
-                              )}
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative transition-all duration-300 ${
+                                isActive ? "z-50" : "z-0"
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 font-mono">
+                                {(msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl) && (
+                                  <img
+                                    src={msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl}
+                                    alt={msg.senderName}
+                                    className="w-4 h-4 rounded-full object-cover border border-slate-200 shrink-0 shadow-2xs"
+                                  />
+                                )}
+                                <span className="font-bold text-slate-600">{msg.senderName}</span>
 
-                              {/* Left Option Button for My Messages (Hover-only or active) */}
-                              {isMe && !msg.isDeletedForEveryone && !isSelectMode && (
-                                <button
-                                  type="button"
-                                  data-message-action="true"
-                                  onClick={(e) => {
+                                <span>•</span>
+                                <span>
+                                  {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                {(msg.isEdited || msg.IsEdited) && (
+                                  <span className="text-[9px] font-semibold text-amber-600 italic"> (diedit)</span>
+                                )}
+                                {isMentionedMe && (
+                                  <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase flex items-center gap-0.5 shadow-2xs">
+                                    <AtSign className="w-2.5 h-2.5 text-amber-700" /> Menyebut Anda
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-1.5 max-w-full">
+                                {/* Left Option Button for My Messages (Hover-only or active) */}
+                                {isMe && !msg.isDeletedForEveryone && (
+                                  <button
+                                    type="button"
+                                    data-message-action="true"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
+                                    }}
+                                    className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
+                                      isActive ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
+                                    } shrink-0`}
+                                    title="Opsi & Reaksi Pesan"
+                                  >
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
+                                )}
+
+                                {/* Message Bubble Container with Scale & Highlight */}
+                                <div
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
                                     setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
                                   }}
-                                  className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
-                                    isMenuOpen ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
-                                  } shrink-0`}
-                                  title="Opsi & Reaksi Pesan"
+                                  className={`px-4 py-2.5 rounded-2xl max-w-md text-xs sm:text-sm font-medium relative transition-all duration-300 ease-out ${
+                                    isActive ? "scale-[1.04] shadow-2xl ring-2 ring-[#2C1EE8]/50 z-50" : "shadow-2xs"
+                                  } ${
+                                    isMe
+                                      ? "bg-[#2C1EE8] text-white rounded-br-xs"
+                                      : "bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200/60"
+                                  }`}
                                 >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
-                              )}
-
-
-                              {/* Message Bubble Container with Scale & Highlight */}
-                              <div
-                                onContextMenu={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
-                                }}
-                                onClick={() => {
-                                  if (isSelectMode) toggleSelectMessage(msg.id);
-                                }}
-                                className={`px-4 py-2.5 rounded-2xl max-w-md text-xs sm:text-sm font-medium relative transition-all duration-300 ease-out ${
-                                  isSingleFocused
-                                    ? "scale-[1.03] shadow-2xl ring-2 ring-[#2C1EE8]/50 z-50"
-                                    : isSelected
-                                    ? "ring-2 ring-[#2C1EE8] bg-blue-50/20"
-                                    : "shadow-2xs"
-                                } ${
-
-                                  isMe
-                                    ? "bg-[#2C1EE8] text-white rounded-br-xs"
-                                    : "bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200/60"
-                                } ${isSelectMode ? "cursor-pointer" : ""}`}
-                              >
-                                {/* Quoted Reply Card */}
-                                {((msg.replyToSenderName || msg.ReplyToSenderName) || (msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)) && (
-                                  <div
-                                    className={`mb-2 p-2 rounded-xl text-[11px] border-l-3 ${
-                                      isMe ? "bg-white/15 border-white/70 text-blue-100" : "bg-slate-200/80 border-[#2C1EE8] text-slate-700"
-                                    }`}
-                                  >
-                                    <div className="font-bold text-[10px] tracking-wide opacity-90">
-                                      Membalas {msg.replyToSenderName || msg.ReplyToSenderName || "Anggota"}
-                                    </div>
-                                    <div className="truncate opacity-80 font-normal">
-                                      {safeBase64Decode(msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {(() => {
-                                  const isDocAttachment = decoded.startsWith("[📄 Dokumen:");
-                                  const docUrl = isDocAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
-                                  const docName = isDocAttachment ? decoded.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] : null;
-
-                                  if (isImageAttachment && imageUrl) {
-                                    return (
-                                      <div className="rounded-xl overflow-hidden my-1 max-w-xs">
-                                        <a href={imageUrl} target="_blank" rel="noopener noreferrer">
-                                          <img
-                                            src={imageUrl}
-                                            alt="Lampiran Gambar"
-                                            className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
-                                          />
-                                        </a>
+                                  {/* Quoted Reply Card */}
+                                  {((msg.replyToSenderName || msg.ReplyToSenderName) || (msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)) && (
+                                    <div
+                                      className={`mb-2 p-2 rounded-xl text-[11px] border-l-3 ${
+                                        isMe ? "bg-white/15 border-white/70 text-blue-100" : "bg-slate-200/80 border-[#2C1EE8] text-slate-700"
+                                      }`}
+                                    >
+                                      <div className="font-bold text-[10px] tracking-wide opacity-90">
+                                        Membalas {msg.replyToSenderName || msg.ReplyToSenderName || "Anggota"}
                                       </div>
-                                    );
-                                  }
+                                      <div className="truncate opacity-80 font-normal">
+                                        {safeBase64Decode(msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)}
+                                      </div>
+                                    </div>
+                                  )}
 
-                                  if (isDocAttachment && docUrl) {
-                                    return (
-                                      <div
-                                        className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
-                                          isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
-                                        }`}
-                                      >
-                                        <div className="flex items-center gap-2 truncate">
-                                          <FileText className="w-4 h-4 shrink-0 text-blue-400" />
-                                          <span className="font-bold text-xs truncate">{docName || "Dokumen Lampiran"}</span>
+                                  {(() => {
+                                    const isDocAttachment = decoded.startsWith("[📄 Dokumen:");
+                                    const docUrl = isDocAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
+                                    const docName = isDocAttachment ? decoded.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] : null;
+
+                                    const isAudioAttachment = decoded.startsWith("[🎙️ Pesan Suara:");
+                                    const audioUrl = isAudioAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
+                                    const audioDuration = isAudioAttachment ? decoded.match(/\[🎙️ Pesan Suara:\s*(.*?)\]/)?.[1] : "0:05";
+
+                                    if (isAudioAttachment && audioUrl) {
+                                      const isPlaying = playingAudioMsgId === msg.id;
+                                      return (
+                                        <div className={`my-1 p-2.5 rounded-2xl border flex items-center gap-3 text-xs ${isMe ? "bg-white/15 border-white/20 text-white" : "bg-white border-slate-200 text-slate-800"}`}>
+                                          <button
+                                            type="button"
+                                            onClick={() => setPlayingAudioMsgId(isPlaying ? null : msg.id)}
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-transform active:scale-95 ${isMe ? "bg-white text-[#2C1EE8]" : "bg-[#2C1EE8] text-white"}`}
+                                          >
+                                            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                                          </button>
+                                          <div className="flex flex-col flex-1 min-w-36">
+                                            <div className="flex items-center justify-between mb-1 text-[10px] font-bold opacity-90">
+                                              <span>Pesan Suara</span>
+                                              <span>{audioDuration}</span>
+                                            </div>
+                                            {/* Animated Waveform Bars */}
+                                            <div className="flex items-center gap-0.5 h-4">
+                                              {[40, 70, 30, 90, 60, 100, 45, 80, 50, 95, 35, 65, 85, 40].map((h, i) => (
+                                                <div
+                                                  key={i}
+                                                  className={`flex-1 rounded-full transition-all duration-300 ${isPlaying ? "bg-current animate-pulse" : "opacity-40 bg-current"}`}
+                                                  style={{ height: `${isPlaying ? Math.max(25, (h + (i * 7) % 50)) : h}%` }}
+                                                />
+                                              ))}
+                                            </div>
+                                            {isPlaying && (
+                                              <audio
+                                                src={audioUrl}
+                                                autoPlay
+                                                onEnded={() => setPlayingAudioMsgId(null)}
+                                                className="hidden"
+                                              />
+                                            )}
+                                          </div>
                                         </div>
-                                        <a
-                                          href={docUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
-                                            isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
+                                      );
+                                    }
+
+                                    if (isImageAttachment && imageUrl) {
+                                      return (
+                                        <div className="rounded-xl overflow-hidden my-1 max-w-xs">
+                                          <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+                                            <img
+                                              src={imageUrl}
+                                              alt="Lampiran Gambar"
+                                              className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
+                                            />
+                                          </a>
+                                        </div>
+                                      );
+                                    }
+
+                                    if (isDocAttachment && docUrl) {
+                                      return (
+                                        <div
+                                          className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                                            isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
                                           }`}
                                         >
-                                          Buka File
-                                        </a>
-                                      </div>
+                                          <div className="flex items-center gap-2 truncate">
+                                            <FileText className="w-4 h-4 shrink-0 text-blue-400" />
+                                            <span className="font-bold text-xs truncate">{docName || "Dokumen Lampiran"}</span>
+                                          </div>
+                                          <a
+                                            href={docUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
+                                              isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
+                                            }`}
+                                          >
+                                            Buka File
+                                          </a>
+                                        </div>
+                                      );
+                                    }
+
+                                    // Parse URLs and @fullName / @userName mention tags dynamically
+                                    const mentionTargets = [];
+                                    members.forEach((m) => {
+                                      if (m.fullName && m.fullName.trim()) mentionTargets.push(m.fullName.trim());
+                                      if (m.userName && m.userName.trim()) mentionTargets.push(m.userName.trim());
+                                    });
+                                    mentionTargets.sort((a, b) => b.length - a.length);
+                                    const escapedTargets = mentionTargets.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+                                    const pattern = `(https?:\\/\\/[^\\s]+|@(?:${escapedTargets.length > 0 ? escapedTargets.join("|") + "|" : ""}[a-zA-Z0-9_.-]+))`;
+                                    const tokenRegex = new RegExp(pattern, "gi");
+                                    const parts = decoded.split(tokenRegex);
+
+                                    return (
+                                      <p className={`whitespace-pre-wrap leading-relaxed ${msg.isDeletedForEveryone ? "italic opacity-70" : ""}`}>
+                                        {parts.map((part, idx) => {
+                                          if (!part) return null;
+                                          if (part.match(/^https?:\/\//i)) {
+                                            return (
+                                              <a
+                                                key={idx}
+                                                href={part}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`underline font-bold hover:opacity-80 transition-opacity break-all ${
+                                                  isMe ? "text-blue-100" : "text-[#2C1EE8]"
+                                                }`}
+                                              >
+                                                {part}
+                                              </a>
+                                            );
+                                          }
+                                          if (part.startsWith("@")) {
+                                            return (
+                                              <span
+                                                key={idx}
+                                                className={`font-extrabold px-1.5 py-0.5 rounded-md border inline-flex items-center gap-0.5 mx-0.5 transition-transform hover:scale-105 ${
+                                                  isMe
+                                                    ? "bg-white/20 text-white border-white/30 shadow-2xs"
+                                                    : "bg-blue-100/90 text-[#2C1EE8] border-blue-200/80 shadow-2xs"
+                                                }`}
+                                              >
+                                                {part}
+                                              </span>
+                                            );
+                                          }
+                                          return part;
+                                        })}
+                                      </p>
                                     );
-                                  }
 
-                                  const urlRegex = /(https?:\/\/[^\s]+)/g;
-                                  const parts = decoded.split(urlRegex);
+                                  })()}
 
-                                  return (
-                                    <p className={`whitespace-pre-wrap leading-relaxed ${msg.isDeletedForEveryone ? "italic opacity-70" : ""}`}>
-                                      {parts.map((part, idx) => {
-                                        if (part.match(/^https?:\/\//)) {
-                                          return (
-                                            <a
-                                              key={idx}
-                                              href={part}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className={`underline font-bold hover:opacity-80 transition-opacity break-all ${
-                                                isMe ? "text-blue-100" : "text-[#2C1EE8]"
-                                              }`}
-                                            >
-                                              {part}
-                                            </a>
-                                          );
-                                        }
-                                        return part;
-                                      })}
-                                    </p>
-                                  );
-                                })()}
+
 
                                 {/* GSAP Animated Floating Popover Card (Dynamic Placement Top vs Bottom) */}
                                 {activeMenuMsgId === msg.id && (
@@ -1294,7 +1477,7 @@ export default function KomunitasPage() {
                                       isNearBottom ? "bottom-full mb-2" : "top-full mt-2"
                                     } ${
                                       isMe ? "right-0" : "left-0"
-                                    } bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-3 z-50 min-w-56 flex flex-col gap-2.5 font-sans`}
+                                    } bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-3 z-40 min-w-56 flex flex-col gap-2.5 font-sans`}
                                   >
                                     {/* Real Emoji Reaction Bar */}
                                     <div className="flex items-center justify-between gap-1 bg-slate-50 border border-slate-200/60 rounded-xl p-1.5">
@@ -1332,14 +1515,13 @@ export default function KomunitasPage() {
                                       <button
                                         type="button"
                                         onClick={() => {
-                                          setIsSelectMode(true);
-                                          setSelectedMessageIds([msg.id]);
+                                          handlePinMessage(msg);
                                           setActiveMenuMsgId(null);
                                         }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 text-purple-700 transition-colors cursor-pointer w-full text-left"
+                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-slate-700 hover:text-amber-800 transition-colors cursor-pointer w-full text-left"
                                       >
-                                        <CheckSquare className="w-4 h-4 text-purple-600 shrink-0" />
-                                        <span>Pilih Pesan Ini</span>
+                                        <Pin className="w-4 h-4 text-amber-600 shrink-0" />
+                                        <span>Sematkan Pesan</span>
                                       </button>
 
                                       {isMe && !msg.isDeletedForEveryone && (
@@ -1387,7 +1569,7 @@ export default function KomunitasPage() {
                               </div>
 
                               {/* Right Option Button for Other Users' Messages (Hover-only or active) */}
-                              {!isMe && !msg.isDeletedForEveryone && !isSelectMode && (
+                              {!isMe && !msg.isDeletedForEveryone && (
                                 <button
                                   type="button"
                                   data-message-action="true"
@@ -1396,9 +1578,8 @@ export default function KomunitasPage() {
                                     setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
                                   }}
                                   className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
-                                    isMenuOpen ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
+                                    activeMenuMsgId === msg.id ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
                                   } shrink-0`}
-
                                   title="Opsi & Reaksi Pesan"
                                 >
                                   <MoreVertical className="w-4 h-4" />
@@ -1407,6 +1588,7 @@ export default function KomunitasPage() {
                             </div>
 
                             {/* Rendered Emoji Reaction Counter Pills */}
+
                             {Object.keys(reactions).length > 0 && (
                               <div className="flex items-center gap-1 mt-1">
                                 {Object.entries(reactions).map(([emojiKey, count]) => {
@@ -1427,76 +1609,17 @@ export default function KomunitasPage() {
                               </div>
                             )}
 
+
                           </div>
                         );
                       })
+
+
                     )}
                   </div>
 
-                  {/* Multi-Message Selection Floating Action Bar (when <= 1 message selected) */}
-                  {isSelectMode && selectedMessageIds.length <= 1 && (
-
-                    <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-3 mb-2 flex items-center justify-between gap-3 text-white text-xs sm:text-sm font-sans z-40">
-                      <div className="flex items-center gap-2 font-bold px-2">
-                        <CheckSquare className="w-4 h-4 text-blue-400" />
-                        <span>{selectedMessageIds.length} Pesan Dipilih</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleSelectAllMessages}
-                          className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors cursor-pointer text-xs"
-                        >
-                          {selectedMessageIds.length === messages.length ? "Batal Semua" : "Pilih Semua"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={handleBatchDeleteForMe}
-                          disabled={selectedMessageIds.length === 0}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold transition-colors cursor-pointer disabled:opacity-50 text-xs shadow-md"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Hapus Terpilih</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSelectMode(false);
-                            setSelectedMessageIds([]);
-                          }}
-                          className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                          title="Tutup Mode Pilih"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-
-                  {/* Mention Autocomplete Dropdown */}
-                  {mentionQuery != null && filteredMembersForMention.length > 0 && (
-                    <div className="absolute bottom-16 left-0 right-0 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-20 max-h-40 overflow-y-auto">
-                      <div className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">
-                        Sebut Anggota (@)
-                      </div>
-                      {filteredMembersForMention.map((member) => (
-                        <div
-                          key={member.userId || member.id}
-                          onClick={() => insertMention(member)}
-                          className="flex items-center gap-2 p-2 hover:bg-slate-50 rounded-xl cursor-pointer text-xs"
-                        >
-                          <span className="font-bold text-[#2C1EE8]">@{member.userName}</span>
-                          <span className="text-slate-500">({member.fullName})</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
                   {/* Reply Preview Banner */}
+
                   {replyingMessage && (
                     <div className="flex items-center justify-between bg-blue-50/90 border-l-4 border-[#2C1EE8] px-3 py-2 rounded-r-xl text-xs mb-2 shadow-2xs">
                       <div className="flex items-center gap-2 truncate">
@@ -1534,8 +1657,89 @@ export default function KomunitasPage() {
                     </div>
                   )}
 
-                  {/* Chat Input Bar */}
-                  <form onSubmit={handleSendMessage} className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                  {/* Voice Recording Live Banner */}
+                  {isRecordingAudio && (
+                    <div className="flex items-center justify-between bg-rose-50 border border-rose-200/90 rounded-2xl px-4 py-2.5 text-xs text-rose-700 font-semibold mb-2 shadow-2xs animate-in fade-in duration-200">
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-rose-600 animate-ping shrink-0" />
+                        <span className="font-extrabold text-rose-900">
+                          Merekam Suara... ({Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={cancelVoiceRecording}
+                          className="px-3 py-1 bg-white border border-rose-200 text-rose-600 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopVoiceRecordingAndSend}
+                          className="px-3 py-1 bg-rose-600 text-white hover:bg-rose-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                        >
+                          Kirim Suara
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Chat Input Bar Container with Relative Positioning for Popover */}
+                  <div className="relative pt-2 border-t border-slate-100">
+                    {/* Mention Autocomplete Dropdown Popover */}
+                    {mentionQuery != null && filteredMembersForMention.length > 0 && (
+                      <div className="absolute bottom-full mb-3 left-0 right-0 bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-2.5 z-50 max-h-56 overflow-y-auto font-sans animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="flex items-center justify-between px-2 py-1 mb-1 border-b border-slate-100">
+                          <span className="text-[10px] font-extrabold text-[#2C1EE8] uppercase tracking-wider flex items-center gap-1">
+                            <AtSign className="w-3 h-3" /> Sebut Anggota (@)
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-400">
+                            {filteredMembersForMention.length} saran anggota
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {filteredMembersForMention.map((member) => (
+                            <button
+                              key={member.userId || member.id}
+                              type="button"
+                              onClick={() => insertMention(member)}
+                              className="flex items-center justify-between p-2 hover:bg-blue-50/80 rounded-xl cursor-pointer text-xs transition-colors w-full text-left group/mitem"
+                            >
+                              <div className="flex items-center gap-2.5 truncate">
+                                {member.userPhotoUrl || member.userPhoto || member.photoUrl || member.avatarUrl || member.UserPhotoUrl ? (
+                                  <img
+                                    src={member.userPhotoUrl || member.userPhoto || member.photoUrl || member.avatarUrl || member.UserPhotoUrl}
+                                    alt={member.userName}
+                                    className="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0 shadow-2xs"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-[#2C1EE8] font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs">
+                                    {(member.fullName || member.userName || "U").slice(0, 2).toUpperCase()}
+                                  </div>
+                                )}
+                                <div className="flex flex-col truncate">
+                                  <span className="font-extrabold text-slate-900 group-hover/mitem:text-[#2C1EE8] truncate">
+                                    {member.fullName || member.userName}
+                                  </span>
+                                  <span className="text-[10px] font-mono text-slate-400 truncate">
+                                    @{member.userName}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {member.role && (
+                                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 uppercase border border-slate-200 shrink-0">
+                                  {member.role}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
 
                     <input
                       type="file"
@@ -1554,6 +1758,26 @@ export default function KomunitasPage() {
                       <Paperclip className="w-4 h-4" />
                     </button>
 
+                    {/* Mention / Tag Button (@) */}
+                    <button
+                      type="button"
+                      onClick={triggerMentionPicker}
+                      className="p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2C1EE8] font-black transition-colors cursor-pointer text-xs flex items-center justify-center shrink-0 border border-blue-200"
+                      title="Sebut / Tag Anggota (@)"
+                    >
+                      <AtSign className="w-4 h-4" />
+                    </button>
+
+                    {/* Voice Note Mic Button */}
+                    <button
+                      type="button"
+                      onClick={startVoiceRecording}
+                      className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-black transition-colors cursor-pointer text-xs flex items-center justify-center shrink-0 border border-rose-200"
+                      title="Rekam Pesan Suara"
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+
                     <input
                       type="text"
                       placeholder="Ketik pesan... (Gunakan @ untuk mention)"
@@ -1562,6 +1786,8 @@ export default function KomunitasPage() {
                       className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
                     />
 
+
+
                     <button
                       type="submit"
                       disabled={!newMessage.trim() || sendingMessage}
@@ -1569,7 +1795,8 @@ export default function KomunitasPage() {
                     >
                       <Send className="w-4 h-4" />
                     </button>
-                  </form>
+                    </form>
+                  </div>
                 </div>
               </div>
             )}
@@ -1593,110 +1820,247 @@ export default function KomunitasPage() {
                     <p className="text-slate-500 text-xs mt-1">{selectedGroup.description}</p>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
-                      <span>Daftar Anggota:</span>
-                      <span className="font-bold text-[#2C1EE8]">{members.length} Orang</span>
-                    </div>
-
-                    <input
-                      type="text"
-                      placeholder="Cari anggota..."
-                      value={memberSearchQuery}
-                      onChange={(e) => setMemberSearchQuery(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-hidden focus:border-[#2C1EE8]"
-                    />
-
-                    <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
-                      {searchedMembersInDrawer.map((m) => {
-                        const isMemberAdmin = m.role === "Admin" || m.role === 1 || m.role === "Owner" || m.role === 0;
-                        const isMemberPending = m.status === "Pending" || m.status === 0;
-                        const isMe = m.userId === user?.id;
-
-                        return (
-                          <div
-                            key={m.userId || m.id}
-                            className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-xs border border-slate-100"
-                          >
-                            <div className="min-w-0">
-                              <p className="font-bold text-slate-900 truncate">
-                                {m.fullName || m.userName} {isMe && "(Anda)"}
-                              </p>
-                              <p className="text-[10px] text-slate-400 font-mono">@{m.userName}</p>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0">
-                              {isMemberPending ? (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                                    Menunggu
-                                  </span>
-                                  {isGroupAdmin && (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "ACCEPT")}
-                                        className="p-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                        title="Terima Bergabung"
-                                      >
-                                        <Check className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "DECLINE")}
-                                        className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                                        title="Tolak Permintaan"
-                                      >
-                                        <X className="w-3.5 h-3.5" />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              ) : isMemberAdmin ? (
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-                                    Admin
-                                  </span>
-                                  {isGroupOwner && !isMe && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "DEMOTE")}
-                                      className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                                      title="Cabut Status Admin"
-                                    >
-                                      <UserMinus className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              ) : (
-                                isGroupAdmin &&
-                                !isMe && (
-                                  <div className="flex items-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "PROMOTE")}
-                                      className="p-1 text-slate-400 hover:text-amber-600 cursor-pointer"
-                                      title="Jadikan Admin"
-                                    >
-                                      <Crown className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "KICK")}
-                                      className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
-                                      title="Keluarkan dari Grup"
-                                    >
-                                      <UserMinus className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                  {/* Drawer Sub-Tabs Selector */}
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setDrawerTab("members")}
+                      className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                        drawerTab === "members" ? "bg-white text-[#2C1EE8] shadow-2xs" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Anggota
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDrawerTab("media")}
+                      className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                        drawerTab === "media" ? "bg-white text-[#2C1EE8] shadow-2xs" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Media & File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDrawerTab("links")}
+                      className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                        drawerTab === "links" ? "bg-white text-[#2C1EE8] shadow-2xs" : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Tautan
+                    </button>
                   </div>
+
+                  {drawerTab === "members" && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
+                        <span>Daftar Anggota:</span>
+                        <span className="font-bold text-[#2C1EE8]">{members.length} Orang</span>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Cari anggota..."
+                        value={memberSearchQuery}
+                        onChange={(e) => setMemberSearchQuery(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-hidden focus:border-[#2C1EE8]"
+                      />
+
+                      <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
+                        {searchedMembersInDrawer.map((m) => {
+                          const isMemberAdmin = m.role === "Admin" || m.role === 1 || m.role === "Owner" || m.role === 0;
+                          const isMemberPending = m.status === "Pending" || m.status === 0;
+                          const isMe = m.userId === user?.id;
+
+                          return (
+                            <div
+                              key={m.userId || m.id}
+                              className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-xs border border-slate-100"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {m.userPhotoUrl || m.userPhoto || m.photoUrl || m.avatarUrl || m.UserPhotoUrl ? (
+                                  <img
+                                    src={m.userPhotoUrl || m.userPhoto || m.photoUrl || m.avatarUrl || m.UserPhotoUrl}
+                                    alt={m.userName}
+                                    className="w-7 h-7 rounded-lg object-cover border border-slate-200 shrink-0 shadow-2xs"
+                                  />
+                                ) : (
+                                  <div className="w-7 h-7 rounded-lg bg-blue-100 text-[#2C1EE8] font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs">
+                                    {(m.fullName || m.userName || "U").slice(0, 2).toUpperCase()}
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p className="font-bold text-slate-900 truncate">
+                                    {m.fullName || m.userName} {isMe && "(Anda)"}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 font-mono">@{m.userName}</p>
+                                </div>
+                              </div>
+
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isMemberPending ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                      Menunggu
+                                    </span>
+                                    {isGroupAdmin && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "ACCEPT")}
+                                          className="p-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                          title="Terima Bergabung"
+                                        >
+                                          <Check className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "DECLINE")}
+                                          className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                          title="Tolak Permintaan"
+                                        >
+                                          <X className="w-3.5 h-3.5" />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                ) : isMemberAdmin ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                                      Admin
+                                    </span>
+                                    {isGroupOwner && !isMe && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "DEMOTE")}
+                                        className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                                        title="Cabut Status Admin"
+                                      >
+                                        <UserMinus className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  isGroupAdmin &&
+                                  !isMe && (
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "PROMOTE")}
+                                        className="p-1 text-slate-400 hover:text-amber-600 cursor-pointer"
+                                        title="Jadikan Admin"
+                                      >
+                                        <Crown className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "KICK")}
+                                        className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
+                                        title="Keluarkan dari Grup"
+                                      >
+                                        <UserMinus className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {drawerTab === "media" && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-slate-600 block">Berkas & Foto Komunitas:</span>
+                      <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+                        {(() => {
+                          const mediaList = messages.filter((m) => {
+                            const text = safeBase64Decode(m.encryptedPayloadBase64);
+                            return text.startsWith("![Gambar]") || text.startsWith("[📄 Dokumen:");
+                          });
+
+                          if (mediaList.length === 0) {
+                            return <p className="text-xs text-slate-400 text-center py-8">Belum ada foto atau dokumen yang dibagikan.</p>;
+                          }
+
+                          return mediaList.map((m) => {
+                            const text = safeBase64Decode(m.encryptedPayloadBase64);
+                            const isImg = text.startsWith("![Gambar]");
+                            const fileUrl = text.match(/\((.*?)\)/)?.[1];
+                            const fileName = isImg ? "Foto Lampiran" : text.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] || "Dokumen";
+
+                            return (
+                              <div key={m.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                                <div className="flex items-center gap-2 truncate">
+                                  {isImg ? <ImageIcon className="w-4 h-4 text-purple-500 shrink-0" /> : <FileText className="w-4 h-4 text-blue-500 shrink-0" />}
+                                  <div className="flex flex-col truncate">
+                                    <span className="font-bold text-slate-800 truncate">{fileName}</span>
+                                    <span className="text-[10px] text-slate-400">Oleh {m.senderName}</span>
+                                  </div>
+                                </div>
+                                {fileUrl && (
+                                  <a
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 rounded-lg bg-blue-50 text-[#2C1EE8] hover:bg-blue-100 transition-colors shrink-0"
+                                    title="Buka / Unduh"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
+                  {drawerTab === "links" && (
+                    <div className="space-y-2">
+                      <span className="text-xs font-bold text-slate-600 block">Tautan Web Dibagikan:</span>
+                      <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+                        {(() => {
+                          const linkMsgs = messages.filter((m) => {
+                            const text = safeBase64Decode(m.encryptedPayloadBase64);
+                            return text.match(/https?:\/\/[^\s]+/);
+                          });
+
+                          if (linkMsgs.length === 0) {
+                            return <p className="text-xs text-slate-400 text-center py-8">Belum ada tautan web yang dibagikan.</p>;
+                          }
+
+                          return linkMsgs.map((m) => {
+                            const text = safeBase64Decode(m.encryptedPayloadBase64);
+                            const urlMatch = text.match(/https?:\/\/[^\s]+/);
+                            const targetUrl = urlMatch ? urlMatch[0] : "";
+
+                            return (
+                              <div key={m.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-slate-700 text-[10px]">{m.senderName}</span>
+                                  <a
+                                    href={targetUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#2C1EE8] font-bold text-[10px] underline flex items-center gap-1"
+                                  >
+                                    Buka <LinkIcon className="w-3 h-3" />
+                                  </a>
+                                </div>
+                                <p className="text-blue-600 font-semibold truncate break-all">{targetUrl}</p>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
                 <div className="pt-3 border-t border-slate-100">

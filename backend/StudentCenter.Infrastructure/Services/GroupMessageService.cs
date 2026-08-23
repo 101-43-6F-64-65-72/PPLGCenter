@@ -115,7 +115,59 @@ public class GroupMessageService : IGroupMessageService
             await transaction.CommitAsync();
         }
 
+        // Trigger real-time system notifications for mentioned users
+        try
+        {
+            var rawBytes = Convert.FromBase64String(request.EncryptedPayloadBase64);
+            var plainText = System.Text.Encoding.UTF8.GetString(rawBytes);
+
+            if (plainText.Contains("@"))
+            {
+                var group = await _context.CommunityGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == request.GroupId);
+                var senderUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == senderUserId);
+                var senderName = senderUser?.FullName ?? senderUser?.UserName ?? "Anggota";
+                var groupName = group?.Name ?? "Komunitas";
+
+                var acceptedMembers = await _context.CommunityGroupMembers
+                    .Include(m => m.User)
+                    .AsNoTracking()
+                    .Where(m => m.GroupId == request.GroupId && m.Status == CommunityMemberStatus.Accepted && m.UserId != senderUserId)
+                    .ToListAsync();
+
+                var notifService = new NotificationService(_context);
+
+                foreach (var member in acceptedMembers)
+                {
+                    var uName = member.User?.UserName;
+                    var fName = member.User?.FullName;
+
+                    bool isMentioned = (!string.IsNullOrEmpty(uName) && plainText.ToLower().Contains($"@{uName.ToLower()}")) ||
+                                       (!string.IsNullOrEmpty(fName) && plainText.ToLower().Contains($"@{fName.ToLower()}"));
+
+                    if (isMentioned)
+                    {
+                        var snippet = plainText.Length > 60 ? plainText.Substring(0, 60) + "..." : plainText;
+                        await notifService.CreateAsync(new CreateNotificationRequest
+                        {
+                            UserId = member.UserId,
+                            Title = $"{senderName} menyebut Anda di {groupName}",
+                            Message = $"\"{snippet}\"",
+                            Type = NotificationType.Mention,
+                            Priority = NotificationPriority.High,
+                            ReferenceId = message.Id,
+                            ReferenceType = NotificationReferenceType.Message
+                        });
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Mention Notification Error] {ex.Message}");
+        }
+
         var created = await _context.GroupMessages
+
             .Include(m => m.SenderUser)
             .Include(m => m.RecipientEnvelopes)
             .Include(m => m.Reactions)
