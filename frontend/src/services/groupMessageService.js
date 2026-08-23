@@ -17,7 +17,26 @@ export const groupMessageService = {
     const res = await apiClient.post("/api/CommunityMessages/send", data);
     return res;
   },
+
+  toggleReaction: async (messageId, emoji) => {
+    const res = await apiClient.post(`/api/CommunityMessages/messages/${messageId}/reactions`, { emoji });
+    return res;
+  },
+
+  editMessage: async (messageId, data) => {
+    const res = await apiClient.put(`/api/CommunityMessages/messages/${messageId}`, data);
+    return res;
+  },
+
+  deleteForEveryone: async (messageId) => {
+    const res = await apiClient.delete(`/api/CommunityMessages/messages/${messageId}/everyone`);
+    return res;
+  },
+
+  deleteForMe: async (messageId) => {
+    const res = await apiClient.delete(`/api/CommunityMessages/messages/${messageId}/me`);
+    return res;
+  },
 };
 
 export default groupMessageService;
-

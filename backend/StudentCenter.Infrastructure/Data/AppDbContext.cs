@@ -86,6 +86,9 @@ public class AppDbContext : DbContext
     public DbSet<CommunityGroupMember> CommunityGroupMembers => Set<CommunityGroupMember>();
     public DbSet<GroupMessage> GroupMessages => Set<GroupMessage>();
     public DbSet<GroupMessageRecipientEnvelope> GroupMessageRecipientEnvelopes => Set<GroupMessageRecipientEnvelope>();
+    public DbSet<GroupMessageReaction> GroupMessageReactions => Set<GroupMessageReaction>();
+    public DbSet<GroupMessageDeletedUser> GroupMessageDeletedUsers => Set<GroupMessageDeletedUser>();
+
 
     // CCTV Subsystem (Phase 22)
     public DbSet<CctvCamera> CctvCameras => Set<CctvCamera>();

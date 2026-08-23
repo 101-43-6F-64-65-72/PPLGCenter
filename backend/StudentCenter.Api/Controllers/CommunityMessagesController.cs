@@ -65,4 +65,89 @@ public class CommunityMessagesController : ControllerBase
             return NotFound(ApiResponse<object>.Fail(ex.Message));
         }
     }
+
+    [HttpPost("messages/{messageId:guid}/reactions")]
+    [HttpPost("{messageId:guid}/reactions")]
+    public async Task<IActionResult> ToggleReaction(Guid messageId, [FromBody] ToggleGroupMessageReactionRequest request)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var message = await _messageService.ToggleReactionAsync(messageId, request.Emoji, currentUserId);
+            return Ok(message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    [HttpPut("messages/{messageId:guid}")]
+    [HttpPut("{messageId:guid}")]
+    public async Task<IActionResult> EditMessage(Guid messageId, [FromBody] EditGroupMessageRequest request)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            var message = await _messageService.EditMessageAsync(messageId, request, currentUserId);
+            return Ok(message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    [HttpDelete("messages/{messageId:guid}/everyone")]
+    [HttpDelete("{messageId:guid}/everyone")]
+    public async Task<IActionResult> DeleteMessageForEveryone(Guid messageId)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            await _messageService.DeleteMessageForEveryoneAsync(messageId, currentUserId);
+            return Ok(ApiResponse<object>.Ok("Pesan telah dihapus untuk semua orang."));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    [HttpDelete("messages/{messageId:guid}/me")]
+    [HttpDelete("{messageId:guid}/me")]
+    public async Task<IActionResult> DeleteMessageForMe(Guid messageId)
+    {
+        try
+        {
+            var currentUserId = GetCurrentUserId();
+            await _messageService.DeleteMessageForMeAsync(messageId, currentUserId);
+            return Ok(ApiResponse<object>.Ok("Pesan telah dihapus untuk saya."));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
 }
+

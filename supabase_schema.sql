@@ -2613,5 +2613,29 @@ BEGIN
     VALUES ('20260823130000_Add3DModelUrlToFacility', '10.0.10');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20260823140000_AddGroupMessageReactions') THEN
+    CREATE TABLE "GroupMessageReactions" (
+        "Id" uuid NOT NULL DEFAULT (gen_random_uuid()),
+        "MessageId" uuid NOT NULL,
+        "UserId" uuid NOT NULL,
+        "Emoji" text NOT NULL,
+        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (now()),
+        CONSTRAINT "PK_GroupMessageReactions" PRIMARY KEY ("Id"),
+        CONSTRAINT "FK_GroupMessageReactions_GroupMessages_MessageId" FOREIGN KEY ("MessageId") REFERENCES "GroupMessages" ("Id") ON DELETE CASCADE,
+        CONSTRAINT "FK_GroupMessageReactions_Users_UserId" FOREIGN KEY ("UserId") REFERENCES "Users" ("Id") ON DELETE RESTRICT
+    );
+
+    CREATE INDEX "IX_GroupMessageReactions_MessageId" ON "GroupMessageReactions" ("MessageId");
+    CREATE UNIQUE INDEX "IX_GroupMessageReactions_MessageId_UserId" ON "GroupMessageReactions" ("MessageId", "UserId");
+    CREATE INDEX "IX_GroupMessageReactions_UserId" ON "GroupMessageReactions" ("UserId");
+
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20260823140000_AddGroupMessageReactions', '10.0.10');
+    END IF;
+END $EF$;
 COMMIT;
+
 

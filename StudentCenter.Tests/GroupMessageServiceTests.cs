@@ -79,4 +79,50 @@ public class GroupMessageServiceTests
         savedMessage.Should().NotBeNull();
         savedMessage!.RecipientEnvelopes.Should().HaveCount(1);
     }
+
+    [Fact]
+    public async Task ToggleReactionAsync_AcceptedMember_AddsUpdatesAndRemovesReaction()
+    {
+        var groupId = Guid.NewGuid();
+        var senderId = Guid.NewGuid();
+
+        var sender = new User { Id = senderId, FullName = "Sender Student", Email = "sender2@test.com", Role = UserRole.Student };
+        _context.Users.Add(sender);
+
+        var group = new CommunityGroup { Id = groupId, Name = "Test Group", Description = "Desc", CreatedByUserId = senderId, CreatedAt = DateTime.UtcNow };
+        _context.CommunityGroups.Add(group);
+
+        _context.CommunityGroupMembers.Add(
+            new CommunityGroupMember { Id = Guid.NewGuid(), GroupId = groupId, UserId = senderId, Role = CommunityMemberRole.Admin, Status = CommunityMemberStatus.Accepted, JoinedAt = DateTime.UtcNow }
+        );
+
+        var message = new GroupMessage
+        {
+            Id = Guid.NewGuid(),
+            GroupId = groupId,
+            SenderUserId = senderId,
+            EncryptedPayloadBase64 = "CIPHERTEXT",
+            Nonce = "NONCE",
+            SentAt = DateTime.UtcNow
+        };
+        _context.GroupMessages.Add(message);
+        await _context.SaveChangesAsync();
+
+        // 1. Add reaction 👍
+        var res1 = await _service.ToggleReactionAsync(message.Id, "👍", senderId);
+        res1.Reactions.Should().ContainKey("👍").WhoseValue.Should().Be(1);
+        res1.UserReaction.Should().Be("👍");
+
+        // 2. Change reaction to ❤️
+        var res2 = await _service.ToggleReactionAsync(message.Id, "❤️", senderId);
+        res2.Reactions.Should().ContainKey("❤️").WhoseValue.Should().Be(1);
+        res2.Reactions.Should().NotContainKey("👍");
+        res2.UserReaction.Should().Be("❤️");
+
+        // 3. Toggle off ❤️ (same emoji clicked)
+        var res3 = await _service.ToggleReactionAsync(message.Id, "❤️", senderId);
+        res3.Reactions.Should().NotContainKey("❤️");
+        res3.UserReaction.Should().BeNull();
+    }
 }
+

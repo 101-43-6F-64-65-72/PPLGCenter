@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import gsap from "gsap";
 import communityService from "@/services/communityService";
+
 import groupMessageService from "@/services/groupMessageService";
 import useAuth from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
@@ -39,8 +41,22 @@ import {
   Check,
   Clock,
   Radio,
-  FileText
+  FileText,
+  Edit3,
+  CornerUpLeft,
+  EyeOff,
+  ThumbsUp,
+  Heart,
+  Flame,
+  Zap,
+  Award,
+  Lightbulb,
+  CheckSquare,
+  Square
 } from "lucide-react";
+
+
+
 import BatchMemberPickerModal from "@/features/community/components/BatchMemberPickerModal";
 import InviteUserModal from "@/features/community/components/InviteUserModal";
 import CommunityInboxModal from "@/features/community/components/CommunityInboxModal";
@@ -92,10 +108,65 @@ export default function KomunitasPage() {
   // Pinned Banner Message per Group (WhatsApp Style)
   const [pinnedAnnouncement, setPinnedAnnouncement] = useState(null);
 
-  // Message Reactions (stored in local state per msg id)
-  const [messageReactions, setMessageReactions] = useState({});
+  // Chat Controls & Reactions State
+  const [replyingMessage, setReplyingMessage] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
+
+  // Multi-Message Selection State
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState([]);
+
+  const toggleSelectMessage = (msgId) => {
+    setSelectedMessageIds((prev) =>
+      prev.includes(msgId) ? prev.filter((id) => id !== msgId) : [...prev, msgId]
+    );
+  };
+
+  const handleSelectAllMessages = () => {
+    if (selectedMessageIds.length === messages.length) {
+      setSelectedMessageIds([]);
+    } else {
+      setSelectedMessageIds(messages.map((m) => m.id));
+    }
+  };
+
+  const handleBatchDeleteForMe = async () => {
+    if (selectedMessageIds.length === 0) return;
+    try {
+      for (const id of selectedMessageIds) {
+        await groupMessageService.deleteForMe(id);
+      }
+      setMessages((prev) => prev.filter((m) => !selectedMessageIds.includes(m.id)));
+      toast.success(`${selectedMessageIds.length} pesan berhasil dihapus untuk Anda`);
+      setSelectedMessageIds([]);
+      setIsSelectMode(false);
+    } catch (err) {
+      toast.error("Gagal menghapus beberapa pesan");
+    }
+  };
+
+  const popoverCardRef = useRef(null);
+
+  const REACTION_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🔥", "🎉", "💡"];
+
+
+  // GSAP Animation when popover menu opens
+  useEffect(() => {
+    if (activeMenuMsgId && popoverCardRef.current) {
+      gsap.fromTo(
+        popoverCardRef.current,
+        { scale: 0.65, opacity: 0, y: -10 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.25, ease: "back.out(1.8)" }
+      );
+    }
+  }, [activeMenuMsgId]);
+
+
 
   // Modals & Drawers
+
+
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingGroup, setDeletingGroup] = useState(null);
@@ -123,8 +194,20 @@ export default function KomunitasPage() {
   // Dedicated Chat Scroll Container Ref
   const chatContainerRef = useRef(null);
 
+  // Close active context menu on document click
+  useEffect(() => {
+    const handleDocumentClick = (e) => {
+      if (e.target && e.target.closest("[data-message-action]")) return;
+      setActiveMenuMsgId(null);
+    };
+    document.addEventListener("click", handleDocumentClick);
+    return () => document.removeEventListener("click", handleDocumentClick);
+  }, []);
+
+
   // Load pinned groups from localStorage
   useEffect(() => {
+
     try {
       const stored = localStorage.getItem("pplg_pinned_groups");
       if (stored) setPinnedGroupIds(JSON.parse(stored));
@@ -390,21 +473,82 @@ export default function KomunitasPage() {
     try {
       setSendingMessage(true);
       const payloadBase64 = safeBase64Encode(newMessage.trim());
-      await groupMessageService.sendMessage({
-        groupId: selectedGroup.id,
-        encryptedPayloadBase64: payloadBase64,
-        nonce: "foundation-nonce-" + Date.now(),
-        recipientEnvelopes: [],
-      });
+
+      if (editingMessage) {
+        const res = await groupMessageService.editMessage(editingMessage.id, {
+          encryptedPayloadBase64: payloadBase64,
+          nonce: "edited-nonce-" + Date.now(),
+        });
+        const updatedMsg = res.data?.data || res.data || res;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === editingMessage.id
+              ? { ...m, ...updatedMsg, encryptedPayloadBase64: payloadBase64, isEdited: true }
+              : m
+          )
+        );
+        setEditingMessage(null);
+      } else {
+        await groupMessageService.sendMessage({
+          groupId: selectedGroup.id,
+          replyToMessageId: replyingMessage?.id || null,
+          encryptedPayloadBase64: payloadBase64,
+          nonce: "foundation-nonce-" + Date.now(),
+          recipientEnvelopes: [],
+        });
+        setReplyingMessage(null);
+        await loadGroupDetails(selectedGroup);
+      }
+
       setNewMessage("");
       setMentionQuery(null);
-      await loadGroupDetails(selectedGroup);
     } catch (err) {
-      setAlertMessage({ type: "error", text: err?.message || "Gagal mengirim pesan." });
+      setAlertMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Gagal mengirim pesan." });
     } finally {
       setSendingMessage(false);
     }
   };
+
+  const handleStartEdit = (msg) => {
+    const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
+    setEditingMessage(msg);
+    setReplyingMessage(null);
+    setNewMessage(decoded);
+    setActiveMenuMsgId(null);
+  };
+
+  const handleStartReply = (msg) => {
+    setReplyingMessage(msg);
+    setEditingMessage(null);
+    setActiveMenuMsgId(null);
+  };
+
+  const handleDeleteForEveryone = async (msgId) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus pesan ini untuk semua orang?")) return;
+    try {
+      await groupMessageService.deleteForEveryone(msgId);
+      const deletedTextBase64 = safeBase64Encode("[Pesan ini telah dihapus]");
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId ? { ...m, isDeletedForEveryone: true, encryptedPayloadBase64: deletedTextBase64 } : m
+        )
+      );
+      setActiveMenuMsgId(null);
+    } catch (err) {
+      setAlertMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Gagal menghapus pesan untuk semua orang." });
+    }
+  };
+
+  const handleDeleteForMe = async (msgId) => {
+    try {
+      await groupMessageService.deleteForMe(msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      setActiveMenuMsgId(null);
+    } catch (err) {
+      setAlertMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Gagal menghapus pesan untuk saya." });
+    }
+  };
+
 
   const handleManageMemberAction = async (targetUserId, targetUserName, actionType) => {
     if (!selectedGroup) return;
@@ -453,13 +597,26 @@ export default function KomunitasPage() {
     }
   };
 
-  const handleAddReaction = (msgId, emoji) => {
-    setMessageReactions((prev) => {
-      const current = prev[msgId] || {};
-      const count = (current[emoji] || 0) + 1;
-      return { ...prev, [msgId]: { ...current, [emoji]: count } };
-    });
+  const handleAddReaction = async (msgId, emoji) => {
+    try {
+      const res = await groupMessageService.toggleReaction(msgId, emoji);
+      const updatedMsg = res.data?.data || res.data || res;
+      setMessages((prevMessages) =>
+        prevMessages.map((m) =>
+          m.id === msgId
+            ? {
+                ...m,
+                reactions: updatedMsg.reactions ?? updatedMsg.Reactions ?? {},
+                userReaction: updatedMsg.userReaction ?? updatedMsg.UserReaction ?? null,
+              }
+            : m
+        )
+      );
+    } catch (err) {
+      setAlertMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Gagal memperbarui reaksi." });
+    }
   };
+
 
   const userRoleStr = (role || user?.role || "").toString().toLowerCase();
   const isGlobalAdmin = userRoleStr === "admin" || userRoleStr === "teacher" || userRoleStr === "guru";
@@ -878,25 +1035,95 @@ export default function KomunitasPage() {
 
                 {/* Chat Messages View */}
                 <div className="flex flex-col flex-1 min-h-0 relative">
-                  <div ref={chatContainerRef} className="flex-1 overflow-y-auto space-y-3 pr-2 mb-3">
+                  {/* Multi-Select Top Navbar Header (WhatsApp Web Style) when > 1 messages selected */}
+                  {isSelectMode && selectedMessageIds.length > 1 && (
+                    <div className="bg-[#2C1EE8] text-white px-4 py-3 rounded-2xl shadow-xl flex items-center justify-between gap-4 mb-3 animate-in slide-in-from-top duration-200 z-40">
+                      <div className="flex items-center gap-3 font-bold text-sm sm:text-base">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSelectMode(false);
+                            setSelectedMessageIds([]);
+                          }}
+                          className="p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
+                          title="Batal"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                        <span>{selectedMessageIds.length} Pesan Dipilih</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold">
+                        <button
+                          type="button"
+                          onClick={handleSelectAllMessages}
+                          className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 transition-colors cursor-pointer"
+                        >
+                          {selectedMessageIds.length === messages.length ? "Batal Semua" : "Pilih Semua"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleBatchDeleteForMe}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold transition-colors cursor-pointer shadow-xs"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus Terpilih</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subtle Backdrop Dim & Blur Overlay when 1 message is focused/active */}
+                  {(activeMenuMsgId !== null || (isSelectMode && selectedMessageIds.length === 1)) && (
+                    <div
+                      onClick={() => {
+                        setActiveMenuMsgId(null);
+                        if (isSelectMode && selectedMessageIds.length === 1) {
+                          setIsSelectMode(false);
+                          setSelectedMessageIds([]);
+                        }
+                      }}
+                      className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-30 transition-all duration-300 pointer-events-auto"
+                    />
+                  )}
+
+                  <div
+                    ref={chatContainerRef}
+                    className={`flex-1 space-y-3 pr-2 mb-3 ${
+                      activeMenuMsgId !== null || (isSelectMode && selectedMessageIds.length === 1)
+                        ? "overflow-visible z-40"
+                        : "overflow-y-auto"
+                    }`}
+                  >
+
                     {messages.length === 0 ? (
                       <div className="text-center py-20 text-slate-400 text-xs">
                         <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-1" />
                         Belum ada pesan di komunitas ini. Mulai percakapan pertama!
                       </div>
                     ) : (
-                      messages.map((msg) => {
+                      messages.map((msg, idx) => {
                         const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
                         const isMe = msg.senderUserId === user?.id;
-                        const reactions = messageReactions[msg.id] || {};
+                        const reactions = msg.reactions || msg.Reactions || {};
+                        const userReaction = msg.userReaction || msg.UserReaction || null;
 
                         const isImageAttachment = decoded.startsWith("![Gambar]");
                         const imageUrl = isImageAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
 
+                        // Smart positioning: if message is near bottom of chat, position popover ABOVE
+                        const isNearBottom = idx >= messages.length - 3;
+                        const isSelected = selectedMessageIds.includes(msg.id);
+                        const isMenuOpen = activeMenuMsgId === msg.id;
+                        const isSingleFocused = isMenuOpen || (isSelectMode && selectedMessageIds.length === 1 && isSelected);
+
                         return (
                           <div
                             key={msg.id}
-                            className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative`}
+                            className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative transition-all duration-300 ${
+                              isSingleFocused ? "z-50" : "z-0"
+                            }`}
                           >
                             <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 font-mono">
                               <span className="font-bold text-slate-600">{msg.senderName}</span>
@@ -907,124 +1134,348 @@ export default function KomunitasPage() {
                                   minute: "2-digit",
                                 })}
                               </span>
+                              {(msg.isEdited || msg.IsEdited) && (
+                                <span className="text-[9px] font-semibold text-amber-600 italic"> (diedit)</span>
+                              )}
                             </div>
 
-                            <div
-                              className={`px-4 py-2.5 rounded-2xl max-w-md text-xs sm:text-sm font-medium relative shadow-2xs ${
-                                isMe
-                                  ? "bg-[#2C1EE8] text-white rounded-br-xs"
-                                  : "bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200/60"
-                              }`}
-                            >
-                              {(() => {
-                                const isDocAttachment = decoded.startsWith("[📄 Dokumen:");
-                                const docUrl = isDocAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
-                                const docName = isDocAttachment ? decoded.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] : null;
+                            <div className="flex items-center gap-1.5 max-w-full">
+                              {/* Selection Checkbox for Multi-Select Mode */}
+                              {isSelectMode && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSelectMessage(msg.id)}
+                                  className="p-1 cursor-pointer text-[#2C1EE8] shrink-0 hover:scale-110 transition-transform"
+                                >
+                                  {isSelected ? (
+                                    <CheckSquare className="w-5 h-5 text-[#2C1EE8] fill-blue-50" />
+                                  ) : (
+                                    <Square className="w-5 h-5 text-slate-400" />
+                                  )}
+                                </button>
+                              )}
 
-                                if (isImageAttachment && imageUrl) {
-                                  return (
-                                    <div className="rounded-xl overflow-hidden my-1 max-w-xs">
-                                      <a href={imageUrl} target="_blank" rel="noopener noreferrer">
-                                        <img
-                                          src={imageUrl}
-                                          alt="Lampiran Gambar"
-                                          className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
-                                        />
-                                      </a>
+                              {/* Left Option Button for My Messages (Hover-only or active) */}
+                              {isMe && !msg.isDeletedForEveryone && !isSelectMode && (
+                                <button
+                                  type="button"
+                                  data-message-action="true"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
+                                  }}
+                                  className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
+                                    isMenuOpen ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
+                                  } shrink-0`}
+                                  title="Opsi & Reaksi Pesan"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                              )}
+
+
+                              {/* Message Bubble Container with Scale & Highlight */}
+                              <div
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
+                                }}
+                                onClick={() => {
+                                  if (isSelectMode) toggleSelectMessage(msg.id);
+                                }}
+                                className={`px-4 py-2.5 rounded-2xl max-w-md text-xs sm:text-sm font-medium relative transition-all duration-300 ease-out ${
+                                  isSingleFocused
+                                    ? "scale-[1.03] shadow-2xl ring-2 ring-[#2C1EE8]/50 z-50"
+                                    : isSelected
+                                    ? "ring-2 ring-[#2C1EE8] bg-blue-50/20"
+                                    : "shadow-2xs"
+                                } ${
+
+                                  isMe
+                                    ? "bg-[#2C1EE8] text-white rounded-br-xs"
+                                    : "bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200/60"
+                                } ${isSelectMode ? "cursor-pointer" : ""}`}
+                              >
+                                {/* Quoted Reply Card */}
+                                {((msg.replyToSenderName || msg.ReplyToSenderName) || (msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)) && (
+                                  <div
+                                    className={`mb-2 p-2 rounded-xl text-[11px] border-l-3 ${
+                                      isMe ? "bg-white/15 border-white/70 text-blue-100" : "bg-slate-200/80 border-[#2C1EE8] text-slate-700"
+                                    }`}
+                                  >
+                                    <div className="font-bold text-[10px] tracking-wide opacity-90">
+                                      Membalas {msg.replyToSenderName || msg.ReplyToSenderName || "Anggota"}
                                     </div>
-                                  );
-                                }
+                                    <div className="truncate opacity-80 font-normal">
+                                      {safeBase64Decode(msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)}
+                                    </div>
+                                  </div>
+                                )}
 
-                                if (isDocAttachment && docUrl) {
-                                  return (
-                                    <div
-                                      className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
-                                        isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-2 truncate">
-                                        <FileText className="w-4 h-4 shrink-0 text-blue-400" />
-                                        <span className="font-bold text-xs truncate">{docName || "Dokumen Lampiran"}</span>
+                                {(() => {
+                                  const isDocAttachment = decoded.startsWith("[📄 Dokumen:");
+                                  const docUrl = isDocAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
+                                  const docName = isDocAttachment ? decoded.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] : null;
+
+                                  if (isImageAttachment && imageUrl) {
+                                    return (
+                                      <div className="rounded-xl overflow-hidden my-1 max-w-xs">
+                                        <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+                                          <img
+                                            src={imageUrl}
+                                            alt="Lampiran Gambar"
+                                            className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
+                                          />
+                                        </a>
                                       </div>
-                                      <a
-                                        href={docUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
-                                          isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
+                                    );
+                                  }
+
+                                  if (isDocAttachment && docUrl) {
+                                    return (
+                                      <div
+                                        className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                                          isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
                                         }`}
                                       >
-                                        Buka File
-                                      </a>
-                                    </div>
+                                        <div className="flex items-center gap-2 truncate">
+                                          <FileText className="w-4 h-4 shrink-0 text-blue-400" />
+                                          <span className="font-bold text-xs truncate">{docName || "Dokumen Lampiran"}</span>
+                                        </div>
+                                        <a
+                                          href={docUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
+                                            isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
+                                          }`}
+                                        >
+                                          Buka File
+                                        </a>
+                                      </div>
+                                    );
+                                  }
+
+                                  const urlRegex = /(https?:\/\/[^\s]+)/g;
+                                  const parts = decoded.split(urlRegex);
+
+                                  return (
+                                    <p className={`whitespace-pre-wrap leading-relaxed ${msg.isDeletedForEveryone ? "italic opacity-70" : ""}`}>
+                                      {parts.map((part, idx) => {
+                                        if (part.match(/^https?:\/\//)) {
+                                          return (
+                                            <a
+                                              key={idx}
+                                              href={part}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className={`underline font-bold hover:opacity-80 transition-opacity break-all ${
+                                                isMe ? "text-blue-100" : "text-[#2C1EE8]"
+                                              }`}
+                                            >
+                                              {part}
+                                            </a>
+                                          );
+                                        }
+                                        return part;
+                                      })}
+                                    </p>
                                   );
-                                }
+                                })()}
 
-                                const urlRegex = /(https?:\/\/[^\s]+)/g;
-                                const parts = decoded.split(urlRegex);
-
-                                return (
-                                  <p className="whitespace-pre-wrap leading-relaxed">
-                                    {parts.map((part, idx) => {
-                                      if (part.match(/^https?:\/\//)) {
-                                        return (
-                                          <a
-                                            key={idx}
-                                            href={part}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`underline font-bold hover:opacity-80 transition-opacity break-all ${
-                                              isMe ? "text-blue-100" : "text-[#2C1EE8]"
-                                            }`}
-                                          >
-                                            {part}
-                                          </a>
-                                        );
-                                      }
-                                      return part;
-                                    })}
-                                  </p>
-                                );
-                              })()}
-
-                              {/* Message Reaction Hover Bar */}
-                              <div
-                                className={`absolute -top-3 ${
-                                  isMe ? "right-2" : "left-2"
-                                } opacity-0 group-hover/msg:opacity-100 transition-opacity bg-white border border-slate-200 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-md z-10`}
-                              >
-                                {["👍", "❤️", "🚀", "💡"].map((emoji) => (
-                                  <button
-                                    key={emoji}
-                                    type="button"
-                                    onClick={() => handleAddReaction(msg.id, emoji)}
-                                    className="hover:scale-125 transition-transform text-xs cursor-pointer p-0.5"
+                                {/* GSAP Animated Floating Popover Card (Dynamic Placement Top vs Bottom) */}
+                                {activeMenuMsgId === msg.id && (
+                                  <div
+                                    ref={popoverCardRef}
+                                    data-message-action="true"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className={`absolute ${
+                                      isNearBottom ? "bottom-full mb-2" : "top-full mt-2"
+                                    } ${
+                                      isMe ? "right-0" : "left-0"
+                                    } bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-3 z-50 min-w-56 flex flex-col gap-2.5 font-sans`}
                                   >
-                                    {emoji}
-                                  </button>
-                                ))}
+                                    {/* Real Emoji Reaction Bar */}
+                                    <div className="flex items-center justify-between gap-1 bg-slate-50 border border-slate-200/60 rounded-xl p-1.5">
+                                      {REACTION_EMOJIS.map((emoji) => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          onClick={() => {
+                                            handleAddReaction(msg.id, emoji);
+                                            setActiveMenuMsgId(null);
+                                          }}
+                                          className="hover:scale-135 active:scale-95 transition-transform text-lg sm:text-xl cursor-pointer p-1 rounded-lg hover:bg-white flex items-center justify-center"
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+
+                                    <div className="w-full h-px bg-slate-100" />
+
+                                    {/* Action Buttons List */}
+                                    <div className="flex flex-col gap-1 text-xs sm:text-sm font-semibold">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleStartReply(msg);
+                                          setActiveMenuMsgId(null);
+                                        }}
+                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 text-slate-700 hover:text-[#2C1EE8] transition-colors cursor-pointer w-full text-left"
+                                      >
+                                        <CornerUpLeft className="w-4 h-4 text-blue-600 shrink-0" />
+                                        <span>Balas Pesan</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setIsSelectMode(true);
+                                          setSelectedMessageIds([msg.id]);
+                                          setActiveMenuMsgId(null);
+                                        }}
+                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-purple-50 text-purple-700 transition-colors cursor-pointer w-full text-left"
+                                      >
+                                        <CheckSquare className="w-4 h-4 text-purple-600 shrink-0" />
+                                        <span>Pilih Pesan Ini</span>
+                                      </button>
+
+                                      {isMe && !msg.isDeletedForEveryone && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleStartEdit(msg);
+                                            setActiveMenuMsgId(null);
+                                          }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
+                                        >
+                                          <Edit3 className="w-4 h-4 text-amber-600 shrink-0" />
+                                          <span>Edit Pesan</span>
+                                        </button>
+                                      )}
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleDeleteForMe(msg.id);
+                                          setActiveMenuMsgId(null);
+                                        }}
+                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer w-full text-left"
+                                      >
+                                        <EyeOff className="w-4 h-4 text-slate-500 shrink-0" />
+                                        <span>Hapus untuk Saya</span>
+                                      </button>
+
+                                      {(isMe || isGroupAdmin) && !msg.isDeletedForEveryone && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleDeleteForEveryone(msg.id);
+                                            setActiveMenuMsgId(null);
+                                          }}
+                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50 text-red-600 transition-colors cursor-pointer w-full text-left"
+                                        >
+                                          <Trash2 className="w-4 h-4 text-red-500 shrink-0" />
+                                          <span>Hapus untuk Semua</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
+
+                              {/* Right Option Button for Other Users' Messages (Hover-only or active) */}
+                              {!isMe && !msg.isDeletedForEveryone && !isSelectMode && (
+                                <button
+                                  type="button"
+                                  data-message-action="true"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
+                                  }}
+                                  className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
+                                    isMenuOpen ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
+                                  } shrink-0`}
+
+                                  title="Opsi & Reaksi Pesan"
+                                >
+                                  <MoreVertical className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
 
-                            {/* Rendered Reaction Counter Pills */}
+                            {/* Rendered Emoji Reaction Counter Pills */}
                             {Object.keys(reactions).length > 0 && (
                               <div className="flex items-center gap-1 mt-1">
-                                {Object.entries(reactions).map(([emoji, count]) => (
-                                  <span
-                                    key={emoji}
-                                    className="bg-white border border-slate-200 rounded-full px-2 py-0.5 text-[10px] font-bold text-slate-700 shadow-2xs flex items-center gap-0.5"
-                                  >
-                                    <span>{emoji}</span>
-                                    <span>{count}</span>
-                                  </span>
-                                ))}
+                                {Object.entries(reactions).map(([emojiKey, count]) => {
+                                  if (!count || count <= 0) return null;
+                                  const isUserReacted = userReaction === emojiKey;
+                                  return (
+                                    <span
+                                      key={emojiKey}
+                                      className={`bg-white border ${
+                                        isUserReacted ? "border-blue-500 bg-blue-50/70 text-[#2C1EE8]" : "border-slate-200 text-slate-700"
+                                      } rounded-full px-2 py-0.5 text-[11px] font-bold shadow-2xs flex items-center gap-1 transition-colors`}
+                                    >
+                                      <span>{emojiKey}</span>
+                                      <span>{count}</span>
+                                    </span>
+                                  );
+                                })}
                               </div>
                             )}
+
                           </div>
                         );
                       })
                     )}
                   </div>
+
+                  {/* Multi-Message Selection Floating Action Bar (when <= 1 message selected) */}
+                  {isSelectMode && selectedMessageIds.length <= 1 && (
+
+                    <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-3 mb-2 flex items-center justify-between gap-3 text-white text-xs sm:text-sm font-sans z-40">
+                      <div className="flex items-center gap-2 font-bold px-2">
+                        <CheckSquare className="w-4 h-4 text-blue-400" />
+                        <span>{selectedMessageIds.length} Pesan Dipilih</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSelectAllMessages}
+                          className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition-colors cursor-pointer text-xs"
+                        >
+                          {selectedMessageIds.length === messages.length ? "Batal Semua" : "Pilih Semua"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleBatchDeleteForMe}
+                          disabled={selectedMessageIds.length === 0}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold transition-colors cursor-pointer disabled:opacity-50 text-xs shadow-md"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus Terpilih</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSelectMode(false);
+                            setSelectedMessageIds([]);
+                          }}
+                          className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                          title="Tutup Mode Pilih"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
 
                   {/* Mention Autocomplete Dropdown */}
                   {mentionQuery != null && filteredMembersForMention.length > 0 && (
@@ -1045,8 +1496,47 @@ export default function KomunitasPage() {
                     </div>
                   )}
 
+                  {/* Reply Preview Banner */}
+                  {replyingMessage && (
+                    <div className="flex items-center justify-between bg-blue-50/90 border-l-4 border-[#2C1EE8] px-3 py-2 rounded-r-xl text-xs mb-2 shadow-2xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <CornerUpLeft className="w-3.5 h-3.5 text-[#2C1EE8] shrink-0" />
+                        <span className="font-bold text-slate-800">Membalas {replyingMessage.senderName}:</span>
+                        <span className="text-slate-600 truncate">{safeBase64Decode(replyingMessage.encryptedPayloadBase64)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setReplyingMessage(null)}
+                        className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Edit Message Banner */}
+                  {editingMessage && (
+                    <div className="flex items-center justify-between bg-amber-50/90 border-l-4 border-amber-500 px-3 py-2 rounded-r-xl text-xs mb-2 shadow-2xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <Edit3 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span className="font-bold text-amber-900">Mengedit Pesan...</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingMessage(null);
+                          setNewMessage("");
+                        }}
+                        className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+
                   {/* Chat Input Bar */}
                   <form onSubmit={handleSendMessage} className="flex items-center gap-2 pt-2 border-t border-slate-100">
+
                     <input
                       type="file"
                       ref={fileInputRef}
@@ -1390,6 +1880,8 @@ export default function KomunitasPage() {
       />
 
       <Footer />
+
+
     </div>
   );
 }
