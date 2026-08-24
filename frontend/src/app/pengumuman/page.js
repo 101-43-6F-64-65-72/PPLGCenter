@@ -1,40 +1,28 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "@/lib/motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ErrorFallback from "@/components/ErrorFallback";
 import useAuth from "@/hooks/useAuth";
 import announcementService from "@/services/announcementService";
-import AnnouncementCommentSection from "@/features/announcement/components/AnnouncementCommentSection";
-import uploadImageToCloudinary from "@/services/cloudinaryService";
-import { API_CONFIG } from "@/config/api";
-import { getStoredToken } from "@/lib/api";
-import { resolveImageUrl, formatDate } from "@/lib/utils";
+import AnnouncementCard from "@/features/announcement/components/AnnouncementCard";
+import AnnouncementSkeleton from "@/features/announcement/components/AnnouncementSkeleton";
+import AnnouncementShowcaseSlider from "@/features/announcement/components/AnnouncementShowcaseSlider";
+import CreateAnnouncementModal from "@/features/announcement/components/CreateAnnouncementModal";
+import ManageShowcaseModal from "@/features/announcement/components/ManageShowcaseModal";
+import LoginModal from "@/features/auth/components/LoginModal";
 import {
-  Bell,
-  Plus,
-  Calendar,
-  Clock,
-  Users,
-  Image as ImageIcon,
-  X,
-  Check,
-  Megaphone,
-  Trash2,
-  Edit,
-  Sparkles,
   Search,
   Filter,
-  ArrowRight,
-  Eye,
-  Pin,
+  X,
+  Plus,
   TrendingUp,
-  BookOpen,
-  ChevronDown
+  Pin,
+  ChevronDown,
+  Layers,
+  SlidersHorizontal,
 } from "lucide-react";
 
 const OFFICIAL_PPLG_CLASSES = [
@@ -44,18 +32,18 @@ const OFFICIAL_PPLG_CLASSES = [
   "XI PPLG A",
   "XI PPLG B",
   "XII PPLG A",
-  "XII PPLG B"
+  "XII PPLG B",
 ];
 
 const CATEGORIES = [
   "Semua",
-  "Populer",
   "Akademik",
   "OSIS",
   "Ekstrakurikuler",
   "Ujian",
   "Libur",
-  "General"
+  "Prestasi",
+  "General",
 ];
 
 export default function PengumumanPage() {
@@ -63,7 +51,6 @@ export default function PengumumanPage() {
   const { user, role, memberships, isAuthenticated } = useAuth();
 
   const userRole = (role || user?.role || "").toString().toLowerCase();
-  const isStudent = userRole === "student";
   const isAdmin = userRole === "admin";
   const isTeacher = userRole === "teacher" || userRole === "guru";
   const isOsisMember =
@@ -81,24 +68,15 @@ export default function PengumumanPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Semua");
-  const [selectedClassFilter, setSelectedClassFilter] = useState("Semua");
+  const [activeCategory, setActiveCategory] = useState("Semua");
+  const [activeClassFilter, setActiveClassFilter] = useState("Semua");
+  const [sortFilter, setSortFilter] = useState("terbaru"); // 'terbaru' | 'populer' | 'disematkan'
 
-  // Create/Edit Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isClassPickerOpen, setIsClassPickerOpen] = useState(false);
-
-  // Form State
-  const [formTitle, setFormTitle] = useState("");
-  const [formContent, setFormContent] = useState("");
-  const [formCategory, setFormCategory] = useState("Pengumuman");
-  const [selectedTargetClasses, setSelectedTargetClasses] = useState(["Semua Kelas"]);
-  const [formPublishStart, setFormPublishStart] = useState("");
-  const [formPublishEnd, setFormPublishEnd] = useState("");
-  const [coverImageUrl, setCoverImageUrl] = useState("");
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+  const [isManageShowcaseOpen, setIsManageShowcaseOpen] = useState(false);
+  const [showcaseRefreshKey, setShowcaseRefreshKey] = useState(0);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const loadAnnouncements = useCallback(async () => {
     setIsLoading(true);
@@ -110,6 +88,7 @@ export default function PengumumanPage() {
       }
     } catch (err) {
       console.error("Failed to load announcements:", err);
+      setAnnouncements([]);
     } finally {
       setIsLoading(false);
     }
@@ -125,633 +104,357 @@ export default function PengumumanPage() {
     };
   }, [loadAnnouncements]);
 
-  // Handle Image File Upload directly from frontend to Cloudinary
-  const handleImageChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingImage(true);
-    try {
-      const uploadedUrl = await uploadImageToCloudinary(file, "announcements");
-      if (uploadedUrl) {
-        setCoverImageUrl(uploadedUrl);
-      } else {
-        alert("Gagal mengunggah gambar thumbnail.");
-      }
-    } catch (err) {
-      console.error("Image upload failed:", err);
-      alert("Terjadi kesalahan saat mengunggah gambar thumbnail.");
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
-
-  const handleAddClass = (clsName) => {
-    if (clsName === "Semua Kelas") {
-      setSelectedTargetClasses(["Semua Kelas"]);
-    } else {
-      let updated = selectedTargetClasses.filter((c) => c !== "Semua Kelas");
-      if (!updated.includes(clsName)) {
-        updated.push(clsName);
-      }
-      if (updated.length === 0) updated = ["Semua Kelas"];
-      setSelectedTargetClasses(updated);
-    }
-    setIsClassPickerOpen(false);
-  };
-
-  const handleRemoveClass = (clsName) => {
-    const updated = selectedTargetClasses.filter((c) => c !== clsName);
-    if (updated.length === 0) {
-      setSelectedTargetClasses(["Semua Kelas"]);
-    } else {
-      setSelectedTargetClasses(updated);
-    }
-  };
-
-  const resetForm = () => {
-    setFormTitle("");
-    setFormContent("");
-    setFormCategory("Pengumuman");
-    setSelectedTargetClasses(["Semua Kelas"]);
-    setFormPublishStart("");
-    setFormPublishEnd("");
-    setCoverImageUrl("");
-    setEditingId(null);
-  };
-
   const handleOpenCreateModal = () => {
-    resetForm();
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (ann, e) => {
-    if (e) e.stopPropagation();
-    setEditingId(ann.id);
-    setFormTitle(ann.title || "");
-    setFormContent(ann.content || "");
-    setFormCategory(ann.category || "Pengumuman");
-    setCoverImageUrl(ann.coverImageUrl || "");
-    if (ann.targetClasses) {
-      setSelectedTargetClasses(ann.targetClasses.split(",").map((s) => s.trim()));
-    } else {
-      setSelectedTargetClasses(["Semua Kelas"]);
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
     }
-    setFormPublishStart(ann.publishStart ? new Date(ann.publishStart).toISOString().slice(0, 16) : "");
-    setFormPublishEnd(ann.publishEnd ? new Date(ann.publishEnd).toISOString().slice(0, 16) : "");
+    setEditingAnnouncement(null);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id, e) => {
-    if (e) e.stopPropagation();
-    if (!confirm("Apakah Anda yakin ingin menghapus pengumuman ini?")) return;
+  const handleOpenEditModal = (ann) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setEditingAnnouncement(ann);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus pengumuman ini?")) return;
     try {
       await announcementService.deleteAnnouncement(id);
       loadAnnouncements();
     } catch (err) {
-      alert("Gagal menghapus pengumuman.");
+      console.error("Failed to delete announcement", err);
+      alert(err?.response?.data?.message || "Gagal menghapus pengumuman.");
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formTitle.trim() || !formContent.trim()) {
-      alert("Judul dan isi pengumuman wajib diisi!");
-      return;
-    }
+  // Filter and sort items
+  const filteredAnnouncements = useMemo(() => {
+    let list = announcements.filter((ann) => {
+      const titleStr = (ann?.title || "").toLowerCase();
+      const contentStr = (ann?.content || ann?.summary || "").toLowerCase();
+      const authorStr = (ann?.createdByUserName || ann?.author || "").toLowerCase();
+      const catStr = (ann?.category || "").toLowerCase();
+      const targetStr = (ann?.targetClasses || "").toLowerCase();
+      const combined = `${titleStr} ${contentStr} ${authorStr} ${catStr} ${targetStr}`;
 
-    setIsSubmitting(true);
-    try {
-      const payload = {
-        title: formTitle.trim(),
-        content: formContent.trim(),
-        category: formCategory || "Pengumuman",
-        targetClasses: selectedTargetClasses.join(", "),
-        publishStart: formPublishStart ? new Date(formPublishStart).toISOString() : null,
-        publishEnd: formPublishEnd ? new Date(formPublishEnd).toISOString() : null,
-        coverImageUrl: coverImageUrl || null,
-        isPinned: false
-      };
+      const matchesSearch = combined.includes(searchQuery.toLowerCase().trim());
+      if (!matchesSearch) return false;
 
-      if (editingId) {
-        await announcementService.updateAnnouncement(editingId, payload);
-      } else {
-        await announcementService.createAnnouncement(payload);
+      if (activeCategory !== "Semua") {
+        if (!catStr.includes(activeCategory.toLowerCase())) return false;
       }
 
-      setIsModalOpen(false);
-      resetForm();
-      loadAnnouncements();
-    } catch (err) {
-      console.error("Failed to save announcement:", err);
-      alert("Terjadi kesalahan saat menyimpan pengumuman.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      if (activeClassFilter !== "Semua") {
+        if (
+          targetStr &&
+          !targetStr.includes("semua") &&
+          !targetStr.includes(activeClassFilter.toLowerCase())
+        ) {
+          return false;
+        }
+      }
 
-  // Cover image resolver with curated category fallback
-  const getCoverImage = (item) => {
-    const raw = item?.coverImageUrl || item?.imageUrl || item?.image;
-    if (raw && typeof raw === "string" && !raw.includes("dummypic")) return resolveImageUrl(raw);
-    const cat = (item?.category || "").toLowerCase();
-    if (cat.includes("akademik") || cat.includes("ujian")) return "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80";
-    if (cat.includes("osis") || cat.includes("organisasi")) return "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop&q=80";
-    if (cat.includes("ekstra")) return "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800&auto=format&fit=crop&q=80";
-    if (cat.includes("prestasi") || cat.includes("lomba")) return "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=800&auto=format&fit=crop&q=80";
-    return "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&auto=format&fit=crop&q=80";
-  };
+      if (sortFilter === "disematkan" && !ann.isPinned) {
+        return false;
+      }
 
-  // Category badge style
-  const getCategoryBadgeStyle = (category) => {
-    if (!category) return "bg-slate-100 text-slate-700 border-slate-200";
-    const cat = category.trim().toLowerCase();
-    if (cat.includes("libur")) return "bg-rose-50 text-rose-700 border-rose-200";
-    if (cat.includes("ujian")) return "bg-amber-50 text-amber-700 border-amber-200";
-    if (cat.includes("osis")) return "bg-indigo-50 text-indigo-700 border-indigo-200";
-    if (cat.includes("ekstra")) return "bg-purple-50 text-purple-700 border-purple-200";
-    if (cat.includes("akademik")) return "bg-blue-50 text-blue-700 border-blue-200";
-    return "bg-slate-100 text-slate-700 border-slate-200";
-  };
-
-  // Filter & sort announcements for view
-  let filteredAnnouncements = announcements.filter((ann) => {
-    const matchesSearch =
-      ann.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ann.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ann.createdByUserName?.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCategory =
-      selectedCategory === "Semua" ||
-      selectedCategory === "Populer" ||
-      (ann.category && ann.category.toLowerCase().includes(selectedCategory.toLowerCase()));
-
-    const matchesClass =
-      isStudent ||
-      selectedClassFilter === "Semua" ||
-      !ann.targetClasses ||
-      ann.targetClasses.includes("Semua Kelas") ||
-      ann.targetClasses.includes(selectedClassFilter);
-
-    return matchesSearch && matchesCategory && matchesClass;
-  });
-
-  if (selectedCategory === "Populer") {
-    filteredAnnouncements = [...filteredAnnouncements].sort((a, b) => {
-      const scoreA = (a.reactionCount || a.ReactionCount || 0) + (a.commentCount || a.CommentCount || 0);
-      const scoreB = (b.reactionCount || b.ReactionCount || 0) + (b.commentCount || b.CommentCount || 0);
-      return scoreB - scoreA;
+      return true;
     });
-  }
 
+    if (sortFilter === "populer") {
+      list.sort((a, b) => {
+        const scoreA =
+          (a.reactionCount || a.ReactionCount || a.reactionsCount || a.ReactionsCount || 0) +
+          (a.commentCount || a.CommentCount || a.commentsCount || a.CommentsCount || 0);
+        const scoreB =
+          (b.reactionCount || b.ReactionCount || b.reactionsCount || b.ReactionsCount || 0) +
+          (b.commentCount || b.CommentCount || b.commentsCount || b.CommentsCount || 0);
+        return scoreB - scoreA;
+      });
+    } else {
+      // Default: sort pinned first, then by date newest
+      list.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
+    }
 
+    return list;
+  }, [announcements, searchQuery, activeCategory, activeClassFilter, sortFilter]);
+
+  const isFilterActive =
+    searchQuery.trim().length > 0 ||
+    activeCategory !== "Semua" ||
+    activeClassFilter !== "Semua" ||
+    sortFilter !== "terbaru";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
+      {/* Navigation Header */}
       <Navbar />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-10">
-        {/* Top Hero Section Header Card */}
-        <div id="pengumuman-header-card" className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
-          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
-                <Megaphone className="w-3.5 h-3.5" />
-                <span>Pusat Informasi & Pengumuman Resmi PPLG</span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                Pengumuman PPLG Center
-              </h1>
-              <p className="text-sm sm:text-base text-slate-600 font-medium max-w-2xl">
-                Temukan jadwal ujian, pemberitahuan akademik, info kegiatan OSIS &amp; jurusan SMK Negeri 2 Surakarta terkini secara lengkap.
-              </p>
-            </div>
-
-            {canCreateAnnouncement && (
-              <button
-                onClick={handleOpenCreateModal}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#2C1EE8] hover:bg-blue-700 active:bg-blue-800 text-white font-black text-xs sm:text-sm shadow-md shadow-blue-500/25 transition-all duration-200 cursor-pointer shrink-0 active:scale-[0.98]"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Buat Pengumuman Baru</span>
-              </button>
-            )}
-          </div>
-
-          {/* Search Bar & Category Controls */}
-          <div className="mt-8 pt-8 border-t border-slate-100 space-y-4">
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-              {/* Live Search Bar */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Cari pengumuman, kata kunci, atau pembuat..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200/90 rounded-2xl pl-11 pr-4 py-2.5 text-xs sm:text-sm font-bold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 transition-all shadow-2xs"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Filter Kelas Selector (for Admin/Teacher) */}
-              {!isStudent && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none shrink-0">
-                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0">
-                    <Filter className="w-3.5 h-3.5" /> Target Kelas:
-                  </span>
-                  <select
-                    value={selectedClassFilter}
-                    onChange={(e) => setSelectedClassFilter(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-800 outline-none focus:border-[#2C1EE8] cursor-pointer"
-                  >
-                    <option value="Semua">Semua Kelas PPLG</option>
-                    {OFFICIAL_PPLG_CLASSES.filter((c) => c !== "Semua Kelas").map((cls) => (
-                      <option key={cls} value={cls}>
-                        {cls}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+      {/* Main Container */}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-6">
+        {/* Top Direct Action & Filter Toolbar */}
+        <div className="bg-white px-5 py-3.5 sm:py-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+          {/* Search & Category Filter Group */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari judul pengumuman, kategori, atau materi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs sm:text-sm text-slate-900 placeholder-slate-400 font-medium transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+                  aria-label="Clear Search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
 
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pt-2 pb-1 scrollbar-none">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
-                    selectedCategory === cat
-                      ? "bg-[#2C1EE8] text-white shadow-sm shadow-blue-500/20"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200/80"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-
-        {/* Main Grid Catalog */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black uppercase text-slate-900 tracking-wider">
-              {selectedCategory === "Semua" ? "Daftar Pengumuman Resmi" : `Kategori: ${selectedCategory}`}
-            </h2>
-            <span className="text-xs font-bold text-slate-500">
-              {filteredAnnouncements.length} Pengumuman ditemukan
-            </span>
-          </div>
-
-          {isLoading ? (
-            <div className="text-center py-20 text-slate-400 font-bold text-sm bg-white rounded-3xl border border-slate-200/80">
-              Memuat pengumuman...
-            </div>
-          ) : filteredAnnouncements.length === 0 ? (
-            <div className="py-6 w-full flex justify-center">
-              <ErrorFallback
-                statusCode="EMPTY"
-                title="Belum Ada Pengumuman"
-                description="Tidak ada pengumuman yang sesuai dengan filter atau kata kunci pencarian Anda."
-                primaryAction={{ label: "Kembali ke Beranda", href: "/" }}
-                showHomeButton={false}
-                fullPage={false}
-              />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredAnnouncements.map((ann) => {
-                const cover = getCoverImage(ann);
-                const categoryBadge = getCategoryBadgeStyle(ann.category);
-                const formattedDateStr = formatDate(ann.createdAt);
-
-                return (
-                  <div
-                    key={ann.id}
-                    onClick={() => router.push(`/pengumuman/${ann.id}`)}
-                    className="bg-white rounded-[28px] border border-slate-200/80 shadow-xs hover:shadow-xl hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 flex flex-col justify-between overflow-hidden group cursor-pointer"
-                  >
-                    <div>
-                      {/* Cover Thumbnail Image */}
-                      <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
-                        <Image
-                          src={cover}
-                          alt={ann.title}
-                          fill
-                          unoptimized
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        {/* Overlay Badges */}
-                        <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-xl text-[11px] font-black border shadow-2xs ${categoryBadge}`}>
-                            {ann.category || "Pengumuman"}
-                          </span>
-                        </div>
-                        {ann.isPinned && (
-                          <div className="absolute top-3 right-3">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black bg-amber-500 text-white shadow-sm">
-                              <Pin className="w-3 h-3 fill-current" />
-                              Disematkan
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Card Details Body */}
-                      <div className="p-6 space-y-3.5">
-                        {/* Target Class & Author metadata */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] font-extrabold">
-                            <Sparkles className="w-3 h-3 text-blue-300" />
-                            <span>{ann.createdByUserName || "Pengelola"}</span>
-                          </span>
-
-                          {ann.targetClasses && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#2C1EE8] border border-blue-100 text-[11px] font-bold">
-                              <Users className="w-3 h-3" />
-                              <span>{ann.targetClasses}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Title */}
-                        <h3 className="text-lg font-black text-slate-900 tracking-tight leading-snug line-clamp-2 group-hover:text-[#2C1EE8] transition-colors">
-                          {ann.title}
-                        </h3>
-
-                        {/* Content Excerpt Snippet */}
-                        <p className="text-xs text-slate-600 font-medium line-clamp-2 leading-relaxed">
-                          {ann.content || ann.summary || "Klik untuk membaca detail pengumuman selengkapnya."}
-                        </p>
-
-                        {/* Dates Banner if applicable */}
-                        {(ann.publishStart || ann.publishEnd) && (
-                          <div className="space-y-1 text-[11px] font-semibold text-slate-500 pt-1">
-                            {ann.publishStart && (
-                              <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 w-fit">
-                                <Clock className="w-3 h-3" />
-                                <span>Mulai: {new Date(ann.publishStart).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
-                              </div>
-                            )}
-                            {ann.publishEnd && (
-                              <div className="flex items-center gap-1.5 text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100 w-fit">
-                                <Calendar className="w-3 h-3" />
-                                <span>Berakhir: {new Date(ann.publishEnd).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className="px-6 pb-6 pt-2 flex items-center justify-between border-t border-slate-100 mt-2">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#2C1EE8] group-hover:translate-x-0.5 transition-transform">
-                        <span>Lihat Detail Pengumuman</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-
-                      {/* Admin Controls */}
-                      {canCreateAnnouncement && (
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={(e) => handleEdit(ann, e)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                            title="Edit Pengumuman"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(ann.id, e)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title="Hapus Pengumuman"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Modal Form: Buat / Edit Pengumuman */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-[28px] border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="text-xl font-black text-slate-900">
-                  {editingId ? "Edit Pengumuman" : "Buat Pengumuman Baru"}
-                </h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Isi formulir pengumuman resmi di bawah ini.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            {/* Category Filter Dropdown */}
+            <div className="relative shrink-0 min-w-[160px]">
+              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2C1EE8] pointer-events-none" />
+              <select
+                value={activeCategory}
+                onChange={(e) => setActiveCategory(e.target.value)}
+                className="w-full appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs"
               >
-                <X className="w-5 h-5" />
+                {CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat === "Semua" ? "Semua Kategori" : cat}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            </div>
+
+            {/* Target Class Dropdown */}
+            <div className="relative shrink-0 min-w-[150px]">
+              <Layers className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <select
+                value={activeClassFilter}
+                onChange={(e) => setActiveClassFilter(e.target.value)}
+                className="w-full appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs"
+              >
+                <option value="Semua">Semua Kelas</option>
+                {OFFICIAL_PPLG_CLASSES.filter((c) => c !== "Semua Kelas").map((cls) => (
+                  <option key={cls} value={cls}>
+                    {cls}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Action Buttons & Sort Filters */}
+          <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+            {/* Quick Sort Pills */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setSortFilter("terbaru")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  sortFilter === "terbaru"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Terbaru
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortFilter("populer")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  sortFilter === "populer"
+                    ? "bg-white text-[#2C1EE8] shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <TrendingUp className="w-3 h-3" />
+                <span>Populer</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortFilter("disematkan")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                  sortFilter === "disematkan"
+                    ? "bg-white text-amber-700 shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Pin className="w-3 h-3" />
+                <span>Pin</span>
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Judul Pengumuman */}
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Judul Pengumuman <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Misal: Ujian Susulan / Pengumuman Libur Akademik PPLG"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 shadow-2xs transition"
-                />
-              </div>
-
-              {/* Kategori Pengumuman */}
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Kategori Pengumuman <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 shadow-2xs transition cursor-pointer"
-                >
-                  <option value="Pengumuman">Pengumuman</option>
-                  <option value="Akademik">Akademik</option>
-                  <option value="OSIS">OSIS</option>
-                  <option value="Ekstrakurikuler">Ekstrakurikuler</option>
-                  <option value="Ujian">Ujian</option>
-                  <option value="Libur">Libur Sekolah</option>
-                  <option value="General">General</option>
-                </select>
-              </div>
-
-              {/* Target Kelas Picker (Multi-select) */}
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Target Kelas <span className="text-red-500">*</span>
-                </label>
-
-                <div className="flex flex-wrap items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl min-h-[46px]">
-                  {selectedTargetClasses.map((cls) => (
-                    <span
-                      key={cls}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#2C1EE8] text-white text-xs font-bold shadow-2xs"
-                    >
-                      <span>{cls}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveClass(cls)}
-                        className="hover:bg-blue-700 p-0.5 rounded-md cursor-pointer transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setIsClassPickerOpen(!isClassPickerOpen)}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-white border border-slate-300 hover:border-blue-600 text-slate-700 text-xs font-bold cursor-pointer transition-all shadow-2xs"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                      <span>Tambah Kelas</span>
-                    </button>
-
-                    {/* Popover List Kelas PPLG */}
-                    {isClassPickerOpen && (
-                      <div className="absolute left-0 mt-2 w-52 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 p-2 space-y-1">
-                        {OFFICIAL_PPLG_CLASSES.map((clsName) => (
-                          <button
-                            key={clsName}
-                            type="button"
-                            onClick={() => handleAddClass(clsName)}
-                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-[#2C1EE8] transition-colors flex items-center justify-between"
-                          >
-                            <span>{clsName}</span>
-                            {selectedTargetClasses.includes(clsName) && (
-                              <Check className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Tanggal & Jam Controls */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Tanggal &amp; Jam Mulai
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={formPublishStart}
-                    onChange={(e) => setFormPublishStart(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Tanggal &amp; Jam Berakhir
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={formPublishEnd}
-                    onChange={(e) => setFormPublishEnd(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-bold text-slate-800 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 transition"
-                  />
-                </div>
-              </div>
-
-              {/* Cover Image Upload (Cloudinary Integration) */}
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Gambar Thumbnail (Cloudinary Upload)
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="text-xs font-semibold text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-blue-50 file:text-[#2C1EE8] hover:file:bg-blue-100 cursor-pointer"
-                  />
-                  {isUploadingImage && <span className="text-xs text-blue-600 font-bold">Mengunggah...</span>}
-                </div>
-                {coverImageUrl && (
-                  <div className="mt-3 relative w-32 h-20 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
-                    <Image src={resolveImageUrl(coverImageUrl)} alt="Thumbnail Preview" fill unoptimized className="object-cover" />
-                  </div>
-                )}
-              </div>
-
-              {/* Isi Pengumuman */}
-              <div>
-                <label className="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Isi Pengumuman <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  required
-                  rows={5}
-                  placeholder="Tuliskan isi pengumuman lengkap di sini..."
-                  value={formContent}
-                  onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs font-bold text-slate-800 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 shadow-2xs transition"
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+            {/* Showcase & Create Actions for Admin */}
+            {canCreateAnnouncement && (
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  onClick={() => setIsManageShowcaseOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
                 >
-                  Batal
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                  <span>Kelola Showcase</span>
                 </button>
+
                 <button
-                  type="submit"
-                  disabled={isSubmitting || isUploadingImage}
-                  className="px-6 py-2.5 rounded-xl bg-[#2C1EE8] hover:bg-blue-700 text-white text-xs font-extrabold shadow-md shadow-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
+                  type="button"
+                  onClick={handleOpenCreateModal}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#2C1EE8] text-white hover:bg-[#2013ce] active:scale-[0.98] transition shadow-xs cursor-pointer"
                 >
-                  {isSubmitting ? "Menyimpan..." : editingId ? "Perbarui Pengumuman" : "Kirim Pengumuman"}
+                  <Plus className="w-4 h-4" />
+                  <span>Buat Pengumuman</span>
                 </button>
               </div>
-            </form>
+            )}
           </div>
         </div>
-      )}
 
+        {/* Featured Showcase Slider with Smooth Collapse/Expand Transition */}
+        <AnimatePresence>
+          {!isFilterActive && (announcements.length > 0 || isLoading) && (
+            <motion.div
+              key="announcement-showcase-slider"
+              initial={{ opacity: 0, height: 0, scale: 0.98 }}
+              animate={{
+                opacity: 1,
+                height: "auto",
+                scale: 1,
+                transition: {
+                  height: { duration: 0.45, ease: [0.25, 1, 0.5, 1] },
+                  opacity: { duration: 0.3, delay: 0.1 },
+                  scale: { duration: 0.35, ease: "easeOut" },
+                },
+              }}
+              exit={{
+                opacity: 0,
+                height: 0,
+                scale: 0.97,
+                transition: {
+                  opacity: { duration: 0.2, ease: "easeIn" },
+                  scale: { duration: 0.25, ease: "easeIn" },
+                  height: { duration: 0.4, ease: [0.25, 1, 0.5, 1], delay: 0.05 },
+                },
+              }}
+              className="overflow-hidden"
+            >
+              <AnnouncementShowcaseSlider
+                isLoading={isLoading}
+                canManage={canCreateAnnouncement}
+                onOpenManageShowcase={() => setIsManageShowcaseOpen(true)}
+                refreshKey={showcaseRefreshKey}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Section: Main Announcement Catalog */}
+        <section className="w-full py-4 sm:py-6">
+          {/* Section Header */}
+          <div className="flex items-center justify-between mb-6 px-1">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                {activeCategory === "Semua" ? "Daftar Pengumuman Resmi" : `Pengumuman: ${activeCategory}`}
+              </h2>
+              {!isLoading && (
+                <span className="bg-blue-50 text-[#2C1EE8] border border-blue-200/80 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  {filteredAnnouncements.length} Pengumuman
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Grid Content */}
+          {isLoading ? (
+            <AnnouncementSkeleton count={6} />
+          ) : filteredAnnouncements.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
+              {filteredAnnouncements.map((ann) => (
+                <AnnouncementCard
+                  key={ann.id}
+                  announcement={ann}
+                  onClick={() => router.push(`/pengumuman/${ann.id}`)}
+                  canManage={canCreateAnnouncement}
+                  onEdit={(item) => handleOpenEditModal(item)}
+                  onDelete={(id) => handleDeleteAnnouncement(id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="w-full text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 shadow-2xs">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#2C1EE8] mb-3">
+                <Filter className="w-6 h-6" />
+              </div>
+              <p className="text-slate-900 font-bold text-sm">Tidak ada pengumuman yang sesuai</p>
+              <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto">
+                Coba gunakan kata kunci pencarian yang lain atau sesuaikan filter kategori dan kelas.
+              </p>
+              {isFilterActive && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveCategory("Semua");
+                    setActiveClassFilter("Semua");
+                    setSortFilter("terbaru");
+                  }}
+                  className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                >
+                  Reset Semua Filter
+                </button>
+              )}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* Footer */}
       <Footer />
+
+      {/* Create / Edit Modal Dialog */}
+      <CreateAnnouncementModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => loadAnnouncements()}
+        editData={editingAnnouncement}
+      />
+
+      {/* Manage Showcase Modal Dialog */}
+      <ManageShowcaseModal
+        isOpen={isManageShowcaseOpen}
+        onClose={() => setIsManageShowcaseOpen(false)}
+        allAnnouncements={announcements}
+        onRefresh={() => {
+          loadAnnouncements();
+          setShowcaseRefreshKey((k) => k + 1);
+        }}
+      />
+
+      {/* Login Prompt Modal */}
+      {isLoginModalOpen && (
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

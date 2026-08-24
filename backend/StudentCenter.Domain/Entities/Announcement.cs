@@ -12,6 +12,10 @@ public class Announcement
     public string? CoverImageUrl { get; set; }
     public bool IsPinned { get; set; }
     public bool IsCommentsLocked { get; set; }
+    public bool IsShowcase { get; set; }
+    public int ShowcaseOrder { get; set; }
+    public string? CustomCtaText { get; set; }
+    public string? CustomCtaUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public Guid CreatedByUserId { get; set; }

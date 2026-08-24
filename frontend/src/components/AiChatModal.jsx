@@ -350,7 +350,7 @@ export default function AiChatModal() {
           top: "auto",
           zIndex: 99999,
         }}
-        className="flex flex-col items-end pointer-events-auto select-none"
+        className="no-print print:hidden flex flex-col items-end pointer-events-auto select-none"
       >
         {/* Floating Tooltip Pills */}
         <AnimatePresence>
@@ -474,7 +474,7 @@ export default function AiChatModal() {
               maxHeight: "calc(100vh - 7rem)",
               zIndex: 99999,
             }}
-            className="w-[390px] max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-2xl border border-slate-200/90 shadow-2xl shadow-blue-600/20 rounded-[32px] flex flex-col overflow-hidden font-sans relative text-slate-900 pointer-events-auto select-none"
+            className="no-print print:hidden w-[390px] max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-2xl border border-slate-200/90 shadow-2xl shadow-blue-600/20 rounded-[32px] flex flex-col overflow-hidden font-sans relative text-slate-900 pointer-events-auto select-none"
           >
             {/* Ambient Liquid Glass Gradient Orbs */}
             <div className="absolute -top-24 -left-24 w-60 h-60 bg-blue-500/15 rounded-full blur-3xl pointer-events-none animate-pulse" />

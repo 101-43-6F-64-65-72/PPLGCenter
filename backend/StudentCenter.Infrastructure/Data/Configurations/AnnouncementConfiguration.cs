@@ -33,6 +33,20 @@ public class AnnouncementConfiguration : IEntityTypeConfiguration<Announcement>
             .IsRequired()
             .HasDefaultValue(false);
 
+        builder.Property(a => a.IsShowcase)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(a => a.ShowcaseOrder)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(a => a.CustomCtaText)
+            .HasMaxLength(100);
+
+        builder.Property(a => a.CustomCtaUrl)
+            .HasMaxLength(500);
+
         builder.Property(a => a.CreatedAt)
             .IsRequired()
             .HasDefaultValueSql("now()");
@@ -51,6 +65,7 @@ public class AnnouncementConfiguration : IEntityTypeConfiguration<Announcement>
 
         builder.HasIndex(a => a.Category);
         builder.HasIndex(a => a.IsPinned);
+        builder.HasIndex(a => a.IsShowcase);
         builder.HasIndex(a => a.CreatedAt);
     }
 }

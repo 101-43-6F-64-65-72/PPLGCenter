@@ -102,3 +102,22 @@ pre {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* Global Print Stylesheet */
+@media print {
+  @page {
+    size: landscape;
+    margin: 8mm 10mm;
+  }
+  .no-print,
+  #ai-chat-modal,
+  [id*="ai-chat"],
+  [class*="AiChat"],
+  [class*="Mascot"],
+  [class*="Toaster"],
+  button.cursor-pointer:not(.print-allow) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+}

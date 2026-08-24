@@ -51,4 +51,26 @@ public class CreateAnnouncementRequest
     /// Indicates if the announcement is pinned.
     /// </summary>
     public bool IsPinned { get; set; }
+
+    /// <summary>
+    /// Indicates if the announcement is displayed on the main showcase slider.
+    /// </summary>
+    public bool IsShowcase { get; set; }
+
+    /// <summary>
+    /// Order index in the showcase slider.
+    /// </summary>
+    public int ShowcaseOrder { get; set; }
+
+    /// <summary>
+    /// Custom call-to-action button text (optional).
+    /// </summary>
+    [MaxLength(100, ErrorMessage = "Custom CTA text cannot exceed 100 characters.")]
+    public string? CustomCtaText { get; set; }
+
+    /// <summary>
+    /// Custom call-to-action destination URL (optional).
+    /// </summary>
+    [MaxLength(500, ErrorMessage = "Custom CTA URL cannot exceed 500 characters.")]
+    public string? CustomCtaUrl { get; set; }
 }

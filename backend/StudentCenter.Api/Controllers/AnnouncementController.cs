@@ -47,6 +47,15 @@ public class AnnouncementController : ControllerBase
     }
 
     [AllowAnonymous]
+    [HttpGet("showcase")]
+    public async Task<IActionResult> GetShowcaseAnnouncements()
+    {
+        var (userId, userRole) = GetCurrentIdentity();
+        var result = await _announcementService.GetShowcaseAnnouncementsAsync(userId, userRole);
+        return Ok(ApiResponse<List<AnnouncementResponse>>.Ok("Showcase announcements retrieved successfully", result));
+    }
+
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetAnnouncement(Guid id)
     {
@@ -110,6 +119,34 @@ public class AnnouncementController : ControllerBase
                 return NotFound(ApiResponse<object>.Fail("Announcement not found"));
 
             return Ok(ApiResponse<AnnouncementResponse>.Ok("Announcement updated successfully", result));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, ApiResponse<object>.Fail(ex.Message));
+        }
+        catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+        {
+            return BadRequest(ApiResponse<object>.Fail(ex.Message));
+        }
+    }
+
+    [Authorize(Roles = "Admin,Teacher")]
+    [HttpPatch("{id:guid}/showcase")]
+    public async Task<IActionResult> ToggleShowcase(Guid id, [FromBody] ToggleShowcaseRequest request)
+    {
+        var (userId, userRole) = GetCurrentIdentity();
+        if (userId == Guid.Empty)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("User identity not found in token."));
+        }
+
+        try
+        {
+            var result = await _announcementService.ToggleShowcaseAsync(id, request, userId, userRole);
+            if (result is null)
+                return NotFound(ApiResponse<object>.Fail("Announcement not found"));
+
+            return Ok(ApiResponse<AnnouncementResponse>.Ok("Showcase setting updated successfully", result));
         }
         catch (UnauthorizedAccessException ex)
         {

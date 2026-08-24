@@ -44,7 +44,9 @@ export const API_ROUTES = {
   },
   ANNOUNCEMENTS: {
     LIST: "/api/announcements",
+    SHOWCASE: "/api/announcements/showcase",
     DETAIL: (id) => `/api/announcements/${id}`,
+    TOGGLE_SHOWCASE: (id) => `/api/announcements/${id}/showcase`,
     REACTIONS: (id) => `/api/announcements/${id}/reactions`,
     COMMENTS: (id) => `/api/announcements/${id}/comments`,
   },
@@ -52,6 +54,17 @@ export const API_ROUTES = {
     BY_ANNOUNCEMENT: (id) => `/api/announcements/${id}/comments`,
     DELETE: (announcementId, commentId) => `/api/announcements/${announcementId}/comments/${commentId}`,
     TOGGLE_LOCK: (announcementId) => `/api/announcements/${announcementId}/comments/toggle-lock`,
+  },
+  SHOWCASE_BANNERS: {
+    LIST: "/api/showcase-banners",
+    ALL: "/api/showcase-banners/all",
+    DETAIL: (id) => `/api/showcase-banners/${id}`,
+    CREATE: "/api/showcase-banners",
+    FROM_ANNOUNCEMENT: (announcementId) => `/api/showcase-banners/from-announcement/${announcementId}`,
+    UPDATE: (id) => `/api/showcase-banners/${id}`,
+    DELETE: (id) => `/api/showcase-banners/${id}`,
+    RESTORE: (id) => `/api/showcase-banners/${id}/restore`,
+    REORDER: "/api/showcase-banners/reorder",
   },
   BOOKINGS: {
     LIST: "/api/bookings",

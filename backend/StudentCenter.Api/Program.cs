@@ -68,6 +68,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
+builder.Services.AddScoped<IShowcaseBannerService, ShowcaseBannerService>();
 builder.Services.AddScoped<IAnnouncementCommentService, AnnouncementCommentService>();
 builder.Services.AddScoped<IAnnouncementReactionService, AnnouncementReactionService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();

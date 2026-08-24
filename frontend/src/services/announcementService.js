@@ -27,6 +27,26 @@ export const announcementService = {
     }
   },
 
+  async getShowcaseAnnouncements() {
+    try {
+      const response = await apiClient.get(API_ROUTES.ANNOUNCEMENTS.SHOWCASE);
+      return response || { success: true, data: [] };
+    } catch (error) {
+      console.warn("Backend API endpoint GET /announcements/showcase error:", error?.message);
+      return { success: false, data: [] };
+    }
+  },
+
+  async toggleShowcase(id, data = {}) {
+    try {
+      const response = await apiClient.patch(API_ROUTES.ANNOUNCEMENTS.TOGGLE_SHOWCASE(id), data);
+      return response;
+    } catch (error) {
+      console.warn(`Backend API endpoint PATCH /announcements/${id}/showcase error:`, error?.message);
+      throw error;
+    }
+  },
+
   async getAnnouncementById(id) {
     try {
       const response = await apiClient.get(API_ROUTES.ANNOUNCEMENTS.DETAIL(id));

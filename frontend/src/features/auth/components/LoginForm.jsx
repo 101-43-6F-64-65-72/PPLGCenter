@@ -136,7 +136,29 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
       const userData = res?.data?.user || res?.data || res?.user || res;
       setSuccessUserData(userData);
       setIsSuccess(true);
-      if (setMascotState) setMascotState("happy");
+
+      const defaultPasswords = [
+        "student123!",
+        "guru123!",
+        "admin123!",
+        "pplg123",
+        "123456",
+        "12345678",
+        "password",
+        "admin",
+      ];
+      const isDefault =
+        defaultPasswords.includes(password.toLowerCase()) ||
+        password.trim() === identifier.trim();
+
+      if (isDefault && typeof window !== "undefined") {
+        localStorage.setItem("sc_must_change_password", "true");
+        sessionStorage.removeItem("sc_dismissed_pwd_warning");
+      }
+
+      if (setMascotState) {
+        setMascotState(isDefault ? "notif" : "happy");
+      }
 
       if (onSuccess) {
         onSuccess(res);
@@ -168,6 +190,9 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
     const roleLabel =
       loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin";
     const userName = successUserData?.fullName || successUserData?.name || identifier;
+    const isUsingDefaultPassword =
+      typeof window !== "undefined" &&
+      localStorage.getItem("sc_must_change_password") === "true";
 
     const handleProceed = () => {
       let dest = callbackUrl;
@@ -177,6 +202,12 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
         else dest = "/profile";
       }
       router.push(dest);
+    };
+
+    const handleOpenChangePassword = () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("app:show-default-password-modal"));
+      }
     };
 
     return (
@@ -189,11 +220,11 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
       >
         {/* Replyz Mascot Celebration Illustration Exclusively */}
         <div className="relative p-3 bg-slate-900/90 border border-slate-700/80 rounded-3xl shadow-xl backdrop-blur-md flex items-center justify-center">
-          <BloubMascot size={110} state="happy" badge={false} />
+          <BloubMascot size={110} state={isUsingDefaultPassword ? "idle" : "happy"} badge={false} />
         </div>
 
         {/* Text Details */}
-        <div className="space-y-1 max-w-xs">
+        <div className="space-y-1.5 max-w-xs">
           <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[11px] font-black uppercase tracking-wider">
             <CheckCircle2 className="w-3.5 h-3.5" /> Login Berhasil
           </span>
@@ -203,16 +234,39 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
           <p className="text-xs text-blue-100/90 font-medium">
             Akses portal sebagai <span className="font-extrabold text-amber-300">{roleLabel}</span> PPLG Center.
           </p>
+
+          {isUsingDefaultPassword && (
+            <div className="mt-2 p-2.5 bg-amber-500/20 border border-amber-400/40 rounded-2xl text-[11px] text-amber-200 text-left flex items-start gap-2">
+              <ShieldAlert className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+              <span>
+                <strong>Peringatan Keamanan:</strong> Akunmu masih memakai password bawaan (default). Disarankan segera menggantinya.
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Action Button: User Controls When to Proceed */}
-        <div className="w-full max-w-xs pt-2">
+        {/* Action Buttons: User Controls When to Proceed */}
+        <div className="w-full max-w-xs pt-1 space-y-2">
+          {isUsingDefaultPassword && (
+            <button
+              type="button"
+              onClick={handleOpenChangePassword}
+              className="w-full py-2.5 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-lg transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <span>Ganti Password Bawaan Sekarang</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleProceed}
-            className="w-full py-3 px-5 rounded-2xl bg-white text-[#2c1ee8] hover:bg-slate-100 font-black text-sm shadow-xl transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            className={`w-full py-3 px-5 rounded-2xl font-black text-xs shadow-xl transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 ${
+              isUsingDefaultPassword
+                ? "bg-white/20 hover:bg-white/30 text-white border border-white/30"
+                : "bg-white text-[#2c1ee8] hover:bg-slate-100 text-sm"
+            }`}
           >
-            <span>Lanjutkan ke Aplikasi</span>
+            <span>{isUsingDefaultPassword ? "Lanjutkan ke Aplikasi Dulu" : "Lanjutkan ke Aplikasi"}</span>
             <Sparkles className="w-4 h-4 text-amber-500" />
           </button>
         </div>

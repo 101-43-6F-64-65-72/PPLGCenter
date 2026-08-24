@@ -1,31 +1,47 @@
+"use client";
+
 import React from "react";
 
-export const AnnouncementSkeleton = ({ count = 6 }) => {
+export function AnnouncementCardSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full animate-pulse">
-      {Array.from({ length: count }).map((_, idx) => (
-        <div
-          key={idx}
-          className="bg-white border border-gray-100 rounded-[22px] overflow-hidden shadow-sm flex flex-col justify-between"
-        >
-          <div>
-            <div className="aspect-[16/10] w-full bg-gray-200" />
-            <div className="p-5 sm:p-6 space-y-3">
-              <div className="h-3 w-1/3 bg-gray-200 rounded-full" />
-              <div className="h-5 w-5/6 bg-gray-200 rounded-lg" />
-              <div className="h-5 w-4/6 bg-gray-200 rounded-lg" />
-              <div className="h-3 w-full bg-gray-100 rounded-full mt-2" />
-              <div className="h-3 w-4/5 bg-gray-100 rounded-full" />
-            </div>
+    <div className="flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 animate-pulse">
+      <div>
+        {/* Cover Skeleton */}
+        <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-xl sm:rounded-2xl bg-slate-200 p-3 flex justify-between">
+          <div className="h-5 w-20 bg-slate-300 rounded-md" />
+          <div className="h-5 w-16 bg-slate-300 rounded-md" />
+        </div>
+
+        {/* Meta & Title Skeleton */}
+        <div className="space-y-3 mb-3">
+          <div className="flex justify-between">
+            <div className="h-3.5 w-24 bg-slate-200 rounded-md" />
+            <div className="h-3.5 w-20 bg-slate-200 rounded-md" />
           </div>
-          <div className="p-5 sm:p-6 pt-0 flex justify-between border-t border-gray-50 mt-4">
-            <div className="h-3 w-1/4 bg-gray-200 rounded-full" />
-            <div className="h-3 w-1/6 bg-gray-200 rounded-full" />
+          <div className="h-5 w-4/5 bg-slate-200 rounded-md" />
+          <div className="h-5 w-3/5 bg-slate-200 rounded-md" />
+          <div className="space-y-1.5 pt-1">
+            <div className="h-3 w-full bg-slate-100 rounded-md" />
+            <div className="h-3 w-4/5 bg-slate-100 rounded-md" />
           </div>
         </div>
+      </div>
+
+      {/* Footer Skeleton */}
+      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+        <div className="h-4 w-24 bg-slate-200 rounded-md" />
+        <div className="h-4 w-16 bg-slate-200 rounded-md" />
+      </div>
+    </div>
+  );
+}
+
+export default function AnnouncementSkeleton({ count = 6 }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 w-full">
+      {Array.from({ length: count }).map((_, idx) => (
+        <AnnouncementCardSkeleton key={idx} />
       ))}
     </div>
   );
-};
-
-export default AnnouncementSkeleton;
+}

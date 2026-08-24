@@ -154,6 +154,8 @@ public class AnnouncementService : IAnnouncementService
         var rawList = await _context.Set<Announcement>()
             .AsNoTracking()
             .Include(a => a.CreatedByUser)
+            .Include(a => a.Reactions)
+            .Include(a => a.Comments)
             .OrderByDescending(a => a.IsPinned)
             .ThenByDescending(a => a.CreatedAt)
             .ToListAsync();
@@ -189,12 +191,16 @@ public class AnnouncementService : IAnnouncementService
                 PublishEnd = a.PublishEnd,
                 CoverImageUrl = FileUrlHelper.ResolveUrl(a.CoverImageUrl),
                 IsPinned = a.IsPinned,
+                IsShowcase = a.IsShowcase,
+                ShowcaseOrder = a.ShowcaseOrder,
+                CustomCtaText = a.CustomCtaText,
+                CustomCtaUrl = a.CustomCtaUrl,
                 CreatedAt = a.CreatedAt,
                 UpdatedAt = a.UpdatedAt,
                 CreatedByUserId = a.CreatedByUserId,
                 CreatedByUserName = a.CreatedByUser != null ? a.CreatedByUser.FullName : string.Empty,
-                ReactionCount = a.Reactions.Count,
-                CommentCount = a.Comments.Count
+                ReactionCount = a.Reactions != null ? a.Reactions.Count : 0,
+                CommentCount = a.Comments != null ? a.Comments.Count : 0
             })
             .ToList();
 
@@ -205,6 +211,54 @@ public class AnnouncementService : IAnnouncementService
             PageSize = pageSize,
             TotalCount = totalCount
         };
+    }
+
+    public async Task<List<AnnouncementResponse>> GetShowcaseAnnouncementsAsync(
+        Guid? requestingUserId = null,
+        string? requestingUserRole = null,
+        Guid? requestingClassId = null)
+    {
+        var rawList = await _context.Set<Announcement>()
+            .AsNoTracking()
+            .Include(a => a.CreatedByUser)
+            .Include(a => a.Reactions)
+            .Include(a => a.Comments)
+            .Where(a => a.IsShowcase)
+            .OrderBy(a => a.ShowcaseOrder)
+            .ThenByDescending(a => a.CreatedAt)
+            .ToListAsync();
+
+        var authorizedItems = new List<Announcement>();
+        foreach (var item in rawList)
+        {
+            if (await IsUserAuthorizedForAnnouncementAsync(item, requestingUserId, requestingUserRole, requestingClassId))
+            {
+                authorizedItems.Add(item);
+            }
+        }
+
+        return authorizedItems.Select(a => new AnnouncementResponse
+        {
+            Id = a.Id,
+            Title = a.Title,
+            Content = a.Content,
+            Category = a.Category,
+            TargetClasses = a.TargetClasses,
+            PublishStart = a.PublishStart,
+            PublishEnd = a.PublishEnd,
+            CoverImageUrl = FileUrlHelper.ResolveUrl(a.CoverImageUrl),
+            IsPinned = a.IsPinned,
+            IsShowcase = a.IsShowcase,
+            ShowcaseOrder = a.ShowcaseOrder,
+            CustomCtaText = a.CustomCtaText,
+            CustomCtaUrl = a.CustomCtaUrl,
+            CreatedAt = a.CreatedAt,
+            UpdatedAt = a.UpdatedAt,
+            CreatedByUserId = a.CreatedByUserId,
+            CreatedByUserName = a.CreatedByUser != null ? a.CreatedByUser.FullName : string.Empty,
+            ReactionCount = a.Reactions != null ? a.Reactions.Count : 0,
+            CommentCount = a.Comments != null ? a.Comments.Count : 0
+        }).ToList();
     }
 
     public async Task<PagedResult<AnnouncementFeedResponse>> GetFeedAsync(
@@ -262,20 +316,22 @@ public class AnnouncementService : IAnnouncementService
                 UpdatedAt = a.UpdatedAt,
                 CreatedByUserId = a.CreatedByUserId,
                 CreatedByUserName = a.CreatedByUser != null ? a.CreatedByUser.FullName : string.Empty,
-                ReactionCount = a.Reactions.Count,
-                CommentCount = a.Comments.Count,
-                LatestComments = a.Comments
-                    .OrderByDescending(c => c.CreatedAt)
-                    .Take(3)
-                    .Select(c => new CommentResponse
-                    {
-                        Id = c.Id,
-                        Content = c.Content,
-                        CreatedAt = c.CreatedAt,
-                        AnnouncementId = c.AnnouncementId,
-                        UserId = c.UserId,
-                        UserName = c.User != null ? c.User.FullName : string.Empty
-                    })
+                ReactionCount = a.Reactions != null ? a.Reactions.Count : 0,
+                CommentCount = a.Comments != null ? a.Comments.Count : 0,
+                LatestComments = a.Comments != null
+                    ? a.Comments
+                        .OrderByDescending(c => c.CreatedAt)
+                        .Take(3)
+                        .Select(c => new CommentResponse
+                        {
+                            Id = c.Id,
+                            Content = c.Content,
+                            CreatedAt = c.CreatedAt,
+                            AnnouncementId = c.AnnouncementId,
+                            UserId = c.UserId,
+                            UserName = c.User != null ? c.User.FullName : string.Empty
+                        }).ToList()
+                    : new List<CommentResponse>()
                     .ToList()
             })
             .ToList();
@@ -320,6 +376,10 @@ public class AnnouncementService : IAnnouncementService
             PublishEnd = announcement.PublishEnd,
             CoverImageUrl = FileUrlHelper.ResolveUrl(announcement.CoverImageUrl),
             IsPinned = announcement.IsPinned,
+            IsShowcase = announcement.IsShowcase,
+            ShowcaseOrder = announcement.ShowcaseOrder,
+            CustomCtaText = announcement.CustomCtaText,
+            CustomCtaUrl = announcement.CustomCtaUrl,
             CreatedAt = announcement.CreatedAt,
             UpdatedAt = announcement.UpdatedAt,
             CreatedByUserId = announcement.CreatedByUserId,
@@ -407,6 +467,10 @@ public class AnnouncementService : IAnnouncementService
             PublishEnd = request.PublishEnd,
             CoverImageUrl = request.CoverImageUrl,
             IsPinned = request.IsPinned,
+            IsShowcase = request.IsShowcase,
+            ShowcaseOrder = request.ShowcaseOrder,
+            CustomCtaText = request.CustomCtaText,
+            CustomCtaUrl = request.CustomCtaUrl,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             CreatedByUserId = userId
@@ -453,6 +517,10 @@ public class AnnouncementService : IAnnouncementService
             PublishEnd = announcement.PublishEnd,
             CoverImageUrl = announcement.CoverImageUrl,
             IsPinned = announcement.IsPinned,
+            IsShowcase = announcement.IsShowcase,
+            ShowcaseOrder = announcement.ShowcaseOrder,
+            CustomCtaText = announcement.CustomCtaText,
+            CustomCtaUrl = announcement.CustomCtaUrl,
             CreatedAt = announcement.CreatedAt,
             UpdatedAt = announcement.UpdatedAt,
             CreatedByUserId = announcement.CreatedByUserId,
@@ -549,6 +617,10 @@ public class AnnouncementService : IAnnouncementService
         announcement.PublishEnd = request.PublishEnd;
         announcement.CoverImageUrl = request.CoverImageUrl;
         announcement.IsPinned = request.IsPinned;
+        announcement.IsShowcase = request.IsShowcase;
+        announcement.ShowcaseOrder = request.ShowcaseOrder;
+        announcement.CustomCtaText = request.CustomCtaText;
+        announcement.CustomCtaUrl = request.CustomCtaUrl;
         announcement.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -564,6 +636,54 @@ public class AnnouncementService : IAnnouncementService
             PublishEnd = announcement.PublishEnd,
             CoverImageUrl = announcement.CoverImageUrl,
             IsPinned = announcement.IsPinned,
+            IsShowcase = announcement.IsShowcase,
+            ShowcaseOrder = announcement.ShowcaseOrder,
+            CustomCtaText = announcement.CustomCtaText,
+            CustomCtaUrl = announcement.CustomCtaUrl,
+            CreatedAt = announcement.CreatedAt,
+            UpdatedAt = announcement.UpdatedAt,
+            CreatedByUserId = announcement.CreatedByUserId,
+            CreatedByUserName = announcement.CreatedByUser != null ? announcement.CreatedByUser.FullName : string.Empty
+        };
+    }
+
+    public async Task<AnnouncementResponse?> ToggleShowcaseAsync(Guid id, ToggleShowcaseRequest request, Guid requestingUserId = default, string requestingUserRole = "Admin")
+    {
+        var announcement = await _context.Set<Announcement>()
+            .Include(a => a.CreatedByUser)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (announcement is null)
+            return null;
+
+        if (string.Equals(requestingUserRole, "Student", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new UnauthorizedAccessException("Students are not allowed to manage showcase.");
+        }
+
+        announcement.IsShowcase = request.IsShowcase;
+        announcement.ShowcaseOrder = request.ShowcaseOrder;
+        if (request.CustomCtaText != null) announcement.CustomCtaText = request.CustomCtaText;
+        if (request.CustomCtaUrl != null) announcement.CustomCtaUrl = request.CustomCtaUrl;
+        announcement.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return new AnnouncementResponse
+        {
+            Id = announcement.Id,
+            Title = announcement.Title,
+            Content = announcement.Content,
+            Category = announcement.Category,
+            TargetClasses = announcement.TargetClasses,
+            PublishStart = announcement.PublishStart,
+            PublishEnd = announcement.PublishEnd,
+            CoverImageUrl = announcement.CoverImageUrl,
+            IsPinned = announcement.IsPinned,
+            IsShowcase = announcement.IsShowcase,
+            ShowcaseOrder = announcement.ShowcaseOrder,
+            CustomCtaText = announcement.CustomCtaText,
+            CustomCtaUrl = announcement.CustomCtaUrl,
             CreatedAt = announcement.CreatedAt,
             UpdatedAt = announcement.UpdatedAt,
             CreatedByUserId = announcement.CreatedByUserId,

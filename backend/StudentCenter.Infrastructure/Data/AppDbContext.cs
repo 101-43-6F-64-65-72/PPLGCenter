@@ -27,6 +27,7 @@ public class AppDbContext : DbContext
 
     // Content & activity
     public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<ShowcaseBanner> ShowcaseBanners => Set<ShowcaseBanner>();
     public DbSet<AnnouncementComment> AnnouncementComments => Set<AnnouncementComment>();
     public DbSet<AnnouncementReaction> AnnouncementReactions => Set<AnnouncementReaction>();
     public DbSet<Material> Materials => Set<Material>();

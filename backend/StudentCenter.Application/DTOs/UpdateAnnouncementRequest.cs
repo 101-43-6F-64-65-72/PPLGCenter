@@ -23,4 +23,14 @@ public class UpdateAnnouncementRequest
     public string? CoverImageUrl { get; set; }
 
     public bool IsPinned { get; set; }
+
+    public bool IsShowcase { get; set; }
+
+    public int ShowcaseOrder { get; set; }
+
+    [MaxLength(100, ErrorMessage = "Custom CTA text cannot exceed 100 characters.")]
+    public string? CustomCtaText { get; set; }
+
+    [MaxLength(500, ErrorMessage = "Custom CTA URL cannot exceed 500 characters.")]
+    public string? CustomCtaUrl { get; set; }
 }
