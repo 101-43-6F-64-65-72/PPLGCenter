@@ -121,7 +121,7 @@ const formatPinnedMessagePreview = (text) => {
   return text;
 };
 
-export default function KomunitasPage() {
+function KomunitasContent() {
   const { isAuthenticated, user, role } = useAuth();
   const searchParams = useSearchParams();
   const urlGroupId = searchParams?.get("groupId") || searchParams?.get("id");
@@ -2532,5 +2532,19 @@ export default function KomunitasPage() {
 
 
     </div>
+  );
+}
+
+export default function KomunitasPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#2C1EE8]"></div>
+        </div>
+      }
+    >
+      <KomunitasContent />
+    </React.Suspense>
   );
 }
