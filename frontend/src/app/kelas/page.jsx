@@ -37,6 +37,7 @@ import {
   MapPin,
   Search,
   Printer,
+  GraduationCap,
 } from "lucide-react";
 
 function KelasPage() {
@@ -147,9 +148,10 @@ function KelasPage() {
   const [assignTarget, setAssignTarget] = useState({ name: "", type: "StudentPosition", divisionId: null });
   const [addDivModalOpen, setAddDivModalOpen] = useState(false);
 
-  const userRole = (role || user?.role || "").toLowerCase();
-  const isAdmin = userRole === "admin";
-  const isTeacher = userRole === "teacher" || userRole === "guru";
+  const userRole = (role || user?.role || "").toString().toLowerCase();
+  const isStudent = userRole === "student" || user?.role === 2 || userRole === "2" || userRole === "siswa";
+  const isAdmin = userRole === "admin" || user?.role === 0 || userRole === "0";
+  const isTeacher = userRole === "teacher" || userRole === "guru" || user?.role === 1 || userRole === "1";
   const canManage = isAdmin || isTeacher;
 
   const selectedClass = classes.find((c) => String(c.id || c.Id) === String(selectedClassId));
@@ -174,25 +176,48 @@ function KelasPage() {
     }
   }, []);
 
-  const fetchClasses = async () => {
+  const fetchClasses = useCallback(async () => {
     try {
       const res = await schoolClassService.getClasses();
       const items = res?.items || res?.data?.items || res || [];
-      setClasses(items);
+      
+      let filteredItems = items;
+      if (isStudent) {
+        const userClassId = user?.classId || user?.ClassId || user?.studentProfile?.classId;
+        const userClassName =
+          user?.className ||
+          user?.ClassName ||
+          user?.studentProfile?.schoolClass?.name ||
+          user?.studentProfile?.className;
 
-      if (items.length > 0 && !selectedClassId) {
-        const userClassId = user?.classId || user?.studentProfile?.classId || user?.ClassId;
-        const matchingUserClass = items.find((c) => String(c.id || c.Id) === String(userClassId));
+        const myClassList = items.filter((c) => {
+          const cId = c.id || c.Id;
+          const cName = (c.name || c.Name || "").toLowerCase().trim();
+          const matchesId = userClassId && String(cId) === String(userClassId);
+          const matchesName = userClassName && cName === userClassName.toLowerCase().trim();
+          return matchesId || matchesName;
+        });
+
+        if (myClassList.length > 0) {
+          filteredItems = myClassList;
+        }
+      }
+
+      setClasses(filteredItems);
+
+      if (filteredItems.length > 0) {
+        const userClassId = user?.classId || user?.ClassId || user?.studentProfile?.classId;
+        const matchingUserClass = filteredItems.find((c) => String(c.id || c.Id) === String(userClassId));
         if (matchingUserClass) {
           setSelectedClassId(matchingUserClass.id || matchingUserClass.Id);
         } else {
-          setSelectedClassId(items[0].id || items[0].Id);
+          setSelectedClassId(filteredItems[0].id || filteredItems[0].Id);
         }
       }
     } catch (err) {
       console.error("Failed to load school classes:", err);
     }
-  };
+  }, [user, isStudent]);
 
   const loadClassDetails = useCallback(async (classId) => {
     if (!classId) return;
@@ -234,7 +259,7 @@ function KelasPage() {
 
   useEffect(() => {
     fetchClasses();
-  }, []);
+  }, [fetchClasses]);
 
   useEffect(() => {
     if (selectedClassId) {
@@ -562,29 +587,36 @@ function KelasPage() {
             </h1>
           </div>
 
-          {/* Class Switcher */}
-          <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-200/80 shrink-0">
-            {classes.map((c) => {
-              const cId = c.id || c.Id;
-              const cName = c.name || c.Name;
-              const isSelected = String(cId) === String(selectedClassId);
+          {/* Class Switcher or Registered Student Class Badge */}
+          {isStudent || classes.length <= 1 ? (
+            <div className="flex items-center gap-2 bg-blue-50/90 border border-blue-200/80 px-4 py-2.5 rounded-2xl text-xs font-bold text-[#2C1EE8] shrink-0">
+              <GraduationCap className="w-4 h-4 text-[#2C1EE8]" />
+              <span>Kelas Terdaftar: <strong>{selectedClassName || "Kelas Anda"}</strong></span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-200/80 shrink-0">
+              {classes.map((c) => {
+                const cId = c.id || c.Id;
+                const cName = c.name || c.Name;
+                const isSelected = String(cId) === String(selectedClassId);
 
-              return (
-                <button
-                  key={cId}
-                  type="button"
-                  onClick={() => setSelectedClassId(cId)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-[#2C1EE8] text-white shadow-xs"
-                      : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-200/60"
-                  }`}
-                >
-                  {cName}
-                </button>
-              );
-            })}
-          </div>
+                return (
+                  <button
+                    key={cId}
+                    type="button"
+                    onClick={() => setSelectedClassId(cId)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-[#2C1EE8] text-white shadow-xs"
+                        : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-200/60"
+                    }`}
+                  >
+                    {cName}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Toolbar Tabs */}
