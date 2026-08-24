@@ -505,7 +505,7 @@ export default function ScheduleModal({
               {/* RIGHT COLUMN: Facility Image / 3D Model Viewer */}
               <div className="md:col-span-5 h-[340px] sm:h-[400px] relative rounded-3xl overflow-hidden border border-slate-200 bg-slate-50 flex flex-col shadow-2xs">
                 {model3dUrl && (
-                  <div className="flex items-center gap-1.5 p-3 bg-white border-b border-slate-200 shrink-0 z-20">
+                  <div className="hidden sm:flex items-center gap-1.5 p-3 bg-white border-b border-slate-200 shrink-0 z-20">
                     <button
                       type="button"
                       onClick={() => setActiveRightTab("image")}

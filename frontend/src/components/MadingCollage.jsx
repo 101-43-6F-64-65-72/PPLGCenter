@@ -95,18 +95,18 @@ export default function MadingCollage({ articles = [] }) {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent" />
 
           {/* Top Floating Glass Badge */}
-          <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-white/90 backdrop-blur-md text-slate-900 border border-white/60 text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs">
-            <span className="relative flex h-2 w-2">
+          <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-10 flex items-center gap-1.5 sm:gap-2 bg-white/90 backdrop-blur-md text-slate-900 border border-white/60 text-[10px] sm:text-xs font-bold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl shadow-xs">
+            <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2c1ee8] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2c1ee8]"></span>
             </span>
-            <Newspaper className="w-3.5 h-3.5 text-[#2c1ee8]" />
-            <span className="truncate max-w-[160px]">{topCard.label}</span>
+            <Newspaper className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" />
+            <span className="truncate max-w-[130px] sm:max-w-[160px]">{topCard.label}</span>
           </div>
 
           {/* Bottom Card Title Overlay */}
-          <div className="absolute bottom-4 left-4 right-4 z-10 text-white">
-            <p className="text-sm font-bold leading-tight line-clamp-1 group-hover:text-blue-200 transition-colors">
+          <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 z-10 text-white">
+            <p className="text-xs sm:text-sm font-bold leading-tight line-clamp-1 group-hover:text-blue-200 transition-colors">
               {topCard.title}
             </p>
           </div>
@@ -129,9 +129,9 @@ export default function MadingCollage({ articles = [] }) {
             unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent" />
-          <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-slate-900 border border-white/60 text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-xs">
-            <BellRing className="w-3.5 h-3.5 text-[#2c1ee8]" />
-            <span className="truncate max-w-[150px]">{bottomCard.label}</span>
+          <div className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-slate-900 border border-white/60 text-[10px] sm:text-[11px] font-bold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg shadow-xs">
+            <BellRing className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" />
+            <span className="truncate max-w-[120px] sm:max-w-[150px]">{bottomCard.label}</span>
           </div>
         </motion.div>
       </motion.div>

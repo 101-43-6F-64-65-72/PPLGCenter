@@ -85,39 +85,39 @@ export default function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="lg:col-span-6 flex flex-col items-start"
         >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#2c1ee8] text-xs font-mono font-bold uppercase tracking-wider mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" />
-            <span>PPLG CENTER — SMKN 2 SURAKARTA</span>
+          <div className="inline-flex items-center gap-2 px-3 sm:px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-[#2c1ee8] text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider mb-3.5 sm:mb-4 max-w-full">
+            <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" />
+            <span className="truncate">PPLG CENTER — SMKN 2 SURAKARTA</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-5">
+          <h1 className="text-2xl sm:text-4xl lg:text-[3.25rem] font-extrabold tracking-tight text-slate-900 leading-[1.18] sm:leading-[1.12] mb-4 sm:mb-5">
             Pusat Talenta & Inovasi{" "}
             <span className="text-[#2c1ee8] underline decoration-blue-500/40 decoration-wavy decoration-2 underline-offset-4">
               Pengembangan Perangkat Lunak & Gim
             </span>
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl text-left font-normal">
+          <p className="text-sm sm:text-base lg:text-lg text-slate-600 leading-relaxed mb-6 sm:mb-8 max-w-xl text-left font-normal">
             Platform ekosistem pembelajaran modern jurusan PPLG SMKN 2 Surakarta: fasilitas workstation 3D, laboratorium komputasi, jadwal praktik, dan mading digital kejuruan.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-10">
-            <PrimaryButton text="Jelajahi Portal" href="/jadwal" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-8 sm:mb-10 w-full sm:w-auto">
+            <PrimaryButton text="Jelajahi Portal" href="/jadwal" className="w-full sm:w-auto text-center justify-center" />
             <Link
               href="/fasilitas"
-              className="inline-flex items-center justify-center font-semibold text-sm sm:text-base px-6 py-3.5 rounded-2xl border border-slate-200/90 text-slate-800 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 cursor-pointer shadow-2xs active:scale-[0.97] select-none"
+              className="inline-flex items-center justify-center font-semibold text-sm sm:text-base px-6 py-3.5 rounded-2xl border border-slate-200/90 text-slate-800 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 cursor-pointer shadow-2xs active:scale-[0.97] select-none text-center"
             >
               Katalog Fasilitas
             </Link>
           </div>
 
           {/* Integrated Highlights / Stats Grid */}
-          <div className="w-full grid grid-cols-3 gap-3 sm:gap-4 border-t border-slate-200/80 pt-6">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 border-t border-slate-200/80 pt-5 sm:pt-6">
             {HERO_STATS.map((stat, idx) => {
               const IconComp = stat.icon;
               return (
-                <div key={idx} className="flex flex-col items-start gap-1.5 p-2 rounded-xl hover:bg-slate-50/80 transition-colors">
-                  <div className="flex items-center gap-1.5 text-slate-900 text-xs font-semibold">
+                <div key={idx} className="flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-2 sm:gap-1.5 p-2.5 sm:p-2 rounded-xl bg-slate-50/70 sm:bg-transparent border border-slate-200/50 sm:border-0 hover:bg-slate-50/80 transition-colors">
+                  <div className="flex items-center gap-2 sm:gap-1.5 text-slate-900 text-xs font-semibold min-w-0">
                     <div className="p-1 rounded-md bg-blue-50 text-[#2c1ee8] border border-blue-100 shrink-0">
                       <IconComp className="w-3.5 h-3.5" />
                     </div>
@@ -125,7 +125,7 @@ export default function Hero() {
                       {stat.title}
                     </span>
                   </div>
-                  <span className="text-[11px] sm:text-xs text-slate-500 truncate pl-0.5">
+                  <span className="text-[11px] sm:text-xs text-slate-500 truncate sm:pl-0.5 shrink-0 sm:shrink">
                     {stat.subtitle}
                   </span>
                 </div>

@@ -472,12 +472,13 @@ export default function VerticalFacilitySlider({
         </div>
 
         {/* ========================================================= */}
-        {/* RIGHT COLUMN: Clean Pure 3D Canvas (5/12 column width)     */}
+        {/* RIGHT COLUMN: 3D Canvas (Desktop) / Clean Photo (Mobile)  */}
         {/* ========================================================= */}
-        <div className="lg:col-span-5 relative h-[320px] sm:h-[360px] lg:h-[380px] w-full bg-transparent flex items-center justify-center overflow-hidden">
+        {/* DESKTOP (lg:flex): Clean Pure 3D Canvas */}
+        <div className="hidden lg:flex lg:col-span-5 relative h-[380px] w-full bg-transparent items-center justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeIndex}
+              key={`3d-${activeIndex}`}
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.03 }}
@@ -492,6 +493,41 @@ export default function VerticalFacilitySlider({
               ) : (
                 <Empty3DPlaceholder item={activeItem} />
               )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* MOBILE (lg:hidden): Lightweight Crisp Image Showcase without 3D WebGL */}
+        <div className="lg:hidden relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-2xs">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`mobile-img-${activeIndex}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="w-full h-full relative"
+            >
+              <img
+                src={activeItem?.imageSrc || activeItem?.imageUrl || "/images/tempat/lapangansmkn2ska.jpg"}
+                alt={displayTitle}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent pointer-events-none" />
+              <div className="absolute bottom-3 left-3.5 right-3.5 text-white flex items-center justify-between">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-white/90 text-slate-900 px-2 py-0.5 rounded-md inline-block mb-1 shadow-2xs">
+                    {displayCategory}
+                  </span>
+                  <p className="text-xs sm:text-sm font-bold truncate text-white drop-shadow-xs">
+                    {displayTitle}
+                  </p>
+                </div>
+                <div className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-blue-200 bg-slate-900/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/20">
+                  <MapPin className="w-3 h-3 text-blue-300" />
+                  <span className="truncate max-w-[100px]">{displayLocation}</span>
+                </div>
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>

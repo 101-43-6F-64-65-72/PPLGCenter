@@ -217,9 +217,9 @@ export default function ExtracurricularSection() {
     <section
       ref={sectionRef}
       id="komunitas"
-      className="w-full bg-slate-50/70 border-t border-slate-200/80 relative overflow-visible bg-dots-pattern select-none z-10 py-24 sm:py-32"
+      className="w-full bg-slate-50/70 border-t border-slate-200/80 relative overflow-visible bg-dots-pattern select-none z-10 py-16 sm:py-24 lg:py-32"
     >
-      <div ref={pinRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-0 min-h-[640px] flex items-center justify-center relative overflow-visible">
+      <div ref={pinRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-0 min-h-[auto] lg:min-h-[640px] flex items-center justify-center relative overflow-visible">
         
         {/* BloubAvatar — 600px watermark, z-0 (behind everything) */}
         <MorphingBlob
@@ -227,14 +227,14 @@ export default function ExtracurricularSection() {
           variant="watermark"
           className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 hidden lg:block"
         />
-        {/* Mobile: smaller 320px version */}
+        {/* Mobile: smaller 280px version */}
         <MorphingBlob
-          size={320}
+          size={280}
           variant="watermark"
-          className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 lg:hidden"
+          className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 lg:hidden opacity-30"
         />
 
-        <div className="relative max-w-7xl mx-auto min-h-[600px] w-full flex items-center justify-center overflow-visible rounded-3xl">
+        <div className="relative max-w-7xl mx-auto min-h-[auto] lg:min-h-[600px] w-full flex items-center justify-center overflow-visible rounded-3xl">
           
           {/* Desktop & Mobile Tech Stack Logos with Wide 3D Orbit Choreography */}
           <ExtracurricularCollage
@@ -246,35 +246,35 @@ export default function ExtracurricularSection() {
           {/* Centered Main Text Content (z-30) */}
           <div
             ref={textContentRef}
-            className="flex flex-col items-center text-center max-w-2xl mx-auto relative z-30 pointer-events-auto px-4"
+            className="flex flex-col items-center text-center max-w-2xl mx-auto relative z-30 pointer-events-auto px-2 sm:px-4"
           >
             {/* Section Kicker */}
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[11px] font-mono tracking-widest uppercase mb-5 shadow-2xs select-none">
-              <Users2 className="w-3.5 h-3.5 text-[#2c1ee8]" />
-              <span className="font-semibold">EKOSISTEM KOMUNITAS & GUILD PPLG</span>
+            <div className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[10px] sm:text-[11px] font-mono tracking-widest uppercase mb-4 sm:mb-5 shadow-2xs select-none max-w-full">
+              <Users2 className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" />
+              <span className="font-semibold truncate">EKOSISTEM KOMUNITAS & GUILD PPLG</span>
             </div>
 
             {/* Centered Main Heading */}
-            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.12] mb-6 drop-shadow-2xs">
+            <h2 className="text-2xl sm:text-4xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.16] sm:leading-[1.12] mb-4 sm:mb-6 drop-shadow-2xs">
               Komunitas Developer & <br />
               <span className="text-[#2c1ee8]">Circle Teknologi PPLG</span>
             </h2>
 
             {/* Centered Description */}
-            <p className="text-base sm:text-lg text-[#475569] leading-relaxed mb-8 max-w-xl font-normal">
+            <p className="text-sm sm:text-base lg:text-lg text-[#475569] leading-relaxed mb-6 sm:mb-8 max-w-xl font-normal">
               Wadah kolaborasi, belajar bersama (peer learning), dan ruang berkarya bagi siswa PPLG SMKN 2 Surakarta. Dari Web Development, Mobile Apps, Game Dev, hingga Cyber Security.
             </p>
 
             {/* Quick Highlight Badges Row */}
-            <div className="flex flex-wrap justify-center gap-3 mb-9">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
-                <Globe className="w-3.5 h-3.5 text-[#2c1ee8]" /> 6+ Circle & Guild Active
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-9">
+              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
+                <Globe className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" /> 6+ Circle & Guild Active
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
-                <Code2 className="w-3.5 h-3.5 text-[#2c1ee8]" /> Peer-to-Peer Learning
+              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
+                <Code2 className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" /> Peer-to-Peer Learning
               </span>
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" /> Project Collaboration
+              <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-800 shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" /> Project Collaboration
               </span>
             </div>
 
@@ -282,7 +282,7 @@ export default function ExtracurricularSection() {
             <div
               onMouseEnter={() => setIsCtaHovered(true)}
               onMouseLeave={() => setIsCtaHovered(false)}
-              className={`w-full sm:w-auto transform-gpu transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+              className={`w-full sm:w-auto flex justify-center transform-gpu transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
                 isCtaHovered
                   ? "relative z-50 scale-106 -translate-y-1.5 drop-shadow-[0_20px_35px_rgba(44,30,232,0.45)]"
                   : "relative z-20 scale-100"

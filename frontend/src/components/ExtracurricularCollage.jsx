@@ -131,16 +131,19 @@ export default function ExtracurricularCollage({ logosRef, innerRefs, isCtaHover
         ))}
       </div>
 
-      {/* MOBILE (lg:hidden): Grid floating tech logos around section */}
-      <div className="lg:hidden flex flex-wrap justify-center gap-5 w-full max-w-sm mx-auto mb-8 relative z-20 pointer-events-auto">
+      {/* MOBILE (lg:hidden): Clean 4-column tech badges with soft backdrop and neat layout */}
+      <div className="lg:hidden grid grid-cols-4 gap-2 sm:gap-3 w-full max-w-sm sm:max-w-md mx-auto mb-6 sm:mb-8 relative z-20 pointer-events-auto">
         {TECH_STACK_DATA.map((logo) => (
           <div
             key={`mobile-${logo.name}`}
-            className="flex items-center justify-center p-2 group"
+            className="flex flex-col items-center justify-center p-2 sm:p-2.5 rounded-2xl bg-white/85 backdrop-blur-md border border-slate-200/90 shadow-2xs group hover:border-blue-300 transition-all active:scale-95"
           >
-            <div className={`transition-transform duration-300 group-hover:scale-115 ${logo.glow}`}>
-              {logo.svg}
+            <div className={`transition-transform duration-300 group-hover:scale-110 ${logo.glow}`}>
+              {React.cloneElement(logo.svg, { className: "w-7 h-7 sm:w-9 sm:h-9" })}
             </div>
+            <span className="text-[10px] font-bold text-slate-700 mt-1 truncate max-w-full text-center">
+              {logo.name}
+            </span>
           </div>
         ))}
       </div>
