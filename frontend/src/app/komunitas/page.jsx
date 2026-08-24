@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import gsap from "gsap";
 import communityService from "@/services/communityService";
 
@@ -122,6 +123,8 @@ const formatPinnedMessagePreview = (text) => {
 
 export default function KomunitasPage() {
   const { isAuthenticated, user, role } = useAuth();
+  const searchParams = useSearchParams();
+  const urlGroupId = searchParams?.get("groupId") || searchParams?.get("id");
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const [groups, setGroups] = useState([]);
@@ -378,6 +381,18 @@ export default function KomunitasPage() {
     setInfoDrawerOpen(false);
     loadGroupDetails(group);
   };
+
+  // Automatically select group if groupId or id query parameter exists in URL
+  useEffect(() => {
+    if (urlGroupId && groups.length > 0) {
+      const match = groups.find(
+        (g) => String(g.id).toLowerCase() === String(urlGroupId).toLowerCase()
+      );
+      if (match && (!selectedGroup || String(selectedGroup.id).toLowerCase() !== String(urlGroupId).toLowerCase())) {
+        handleSelectGroup(match);
+      }
+    }
+  }, [urlGroupId, groups]);
 
   useEffect(() => {
     if (

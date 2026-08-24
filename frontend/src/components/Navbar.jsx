@@ -230,6 +230,7 @@ export default function Navbar() {
                     <NotificationBell />
                   </div>
                   <Link
+                    id="profile-nav-btn"
                     href="/profile"
                     className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 font-semibold text-xs lg:text-sm transition-all border border-slate-200 cursor-pointer shrink-0"
                   >

@@ -1,19 +1,32 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Domain.Enums;
 using StudentCenter.Infrastructure.Data;
+using System.Security.Cryptography;
 
 namespace StudentCenter.Infrastructure.Services;
 
 public class NotificationService : INotificationService
 {
     private readonly AppDbContext _context;
+    private readonly IEmailService? _emailService;
+    private readonly IConfiguration? _configuration;
+    private readonly ILogger<NotificationService>? _logger;
 
-    public NotificationService(AppDbContext context)
+    public NotificationService(
+        AppDbContext context,
+        IEmailService? emailService = null,
+        IConfiguration? configuration = null,
+        ILogger<NotificationService>? logger = null)
     {
         _context = context;
+        _emailService = emailService;
+        _configuration = configuration;
+        _logger = logger;
     }
 
     private static NotificationReferenceType ParseReferenceType(string? refType)
@@ -82,6 +95,250 @@ public class NotificationService : INotificationService
 
         _context.Set<Notification>().Add(notification);
         await _context.SaveChangesAsync();
+
+        // Asynchronously dispatch AI-processed email notification to verified EmailNotif
+        await DispatchEmailNotificationIfConfiguredAsync(notification);
+    }
+
+    private async Task DispatchEmailNotificationIfConfiguredAsync(Notification notification)
+    {
+        if (_emailService == null)
+            return;
+
+        try
+        {
+            var recipient = await _context.Users
+                .AsNoTracking()
+                .Where(u => u.Id == notification.UserId && u.IsActive)
+                .Select(u => new { u.EmailNotif, u.EmailVerifiedAt, u.FullName })
+                .FirstOrDefaultAsync();
+
+            if (recipient == null || string.IsNullOrWhiteSpace(recipient.EmailNotif) || recipient.EmailVerifiedAt == null)
+                return;
+
+            var (subject, emailHtml) = GenerateAiStyledNotificationEmail(notification, recipient.FullName);
+
+            await _emailService.SendEmailAsync(
+                to: recipient.EmailNotif,
+                subject: subject,
+                body: emailHtml,
+                isHtml: true,
+                recipientUserId: notification.UserId);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to dispatch email notification to user '{UserId}'. In-app notification was preserved.", notification.UserId);
+        }
+    }
+
+    private (string Subject, string EmailHtml) GenerateAiStyledNotificationEmail(Notification notification, string fullName)
+    {
+        var firstName = fullName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? fullName ?? "Sobat";
+        var safeFirstName = System.Net.WebUtility.HtmlEncode(firstName);
+        var safeTitle = System.Net.WebUtility.HtmlEncode(notification.Title ?? "Notifikasi PPLG Center");
+        var safeBody = System.Net.WebUtility.HtmlEncode(notification.Body ?? string.Empty);
+
+        // Classification & peer-voice copywriting without emojis
+        string categoryBadge;
+        string badgeColor;
+        string greeting;
+        string actionLabel;
+
+        switch (notification.Type)
+        {
+            case NotificationType.Assignment:
+            case NotificationType.MaterialPublished:
+                categoryBadge = "TUGAS & MATERI BARU";
+                badgeColor = "#0284c7";
+                greeting = $"Yo {safeFirstName}! Ada tugas atau materi belajar baru yang baru saja dirilis:";
+                actionLabel = "Buka Tugas di Web";
+                break;
+
+            case NotificationType.AssignmentGraded:
+            case NotificationType.GradePublished:
+            case NotificationType.GradeUpdated:
+            case NotificationType.AssessmentPublished:
+                categoryBadge = "UPDATE NILAI & HASIL";
+                badgeColor = "#16a34a";
+                greeting = $"Hai {safeFirstName}! Hasil tugas atau nilai kamu baru saja diperbarui:";
+                actionLabel = "Lihat Rekap Nilai";
+                break;
+
+            case NotificationType.AttendanceOpened:
+            case NotificationType.AttendanceClosed:
+                categoryBadge = "PRESENSI & KEHADIRAN";
+                badgeColor = "#ca8a04";
+                greeting = $"Hey {safeFirstName}! Sesi absensi kehadiran kamu sudah dibuka:";
+                actionLabel = "Isi Kehadiran Sekarang";
+                break;
+
+            case NotificationType.Announcement:
+            case NotificationType.AcademicEvent:
+            case NotificationType.ElectionOpen:
+            case NotificationType.ElectionClosingSoon:
+            case NotificationType.ElectionClosed:
+            case NotificationType.ElectionResultPublished:
+                categoryBadge = "PENGUMUMAN RESMI";
+                badgeColor = "#4f46e5";
+                greeting = $"Halo {safeFirstName}! Ada informasi dan pengumuman resmi di PPLG Center:";
+                actionLabel = "Baca Pengumuman";
+                break;
+
+            case NotificationType.Mention:
+                categoryBadge = "SEBUTAN & MENTION";
+                badgeColor = "#8b5cf6";
+                greeting = $"Hai {safeFirstName}, kamu baru saja disebut (mention) dalam komunitas:";
+                actionLabel = "Lihat Mention di Web";
+                break;
+
+            case NotificationType.DiscussionReply:
+            case NotificationType.PrivateMessage:
+            case NotificationType.AnnouncementComment:
+            case NotificationType.NewDiscussion:
+                categoryBadge = "PESAN & KOMENTAR";
+                badgeColor = "#8b5cf6";
+                greeting = $"Yo {safeFirstName}! Ada pesan atau tanggapan baru untuk kamu:";
+                actionLabel = "Buka Percakapan";
+                break;
+
+            case NotificationType.Proposal:
+            case NotificationType.ProposalSubmitted:
+            case NotificationType.ProposalApproved:
+            case NotificationType.ProposalRejected:
+            case NotificationType.ProposalRevisionRequested:
+            case NotificationType.ExtracurricularRegistrationApproved:
+            case NotificationType.ExtracurricularRegistrationRejected:
+            case NotificationType.Booking:
+                categoryBadge = "STATUS PENGAJUAN";
+                badgeColor = "#e11d48";
+                greeting = $"Hai {safeFirstName}! Ada pembaruan status pengajuan kamu:";
+                actionLabel = "Cek Status Pengajuan";
+                break;
+
+            default:
+                categoryBadge = "NOTIFIKASI SISTEM";
+                badgeColor = "#2c1ee8";
+                greeting = $"Halo {safeFirstName}! Ada pembaruan dari sistem PPLG Center:";
+                actionLabel = "Buka PPLG Center";
+                break;
+        }
+
+        var subject = $"[{categoryBadge}] {notification.Title}";
+
+        // Resolve Action URL
+        var baseUrl = _configuration?["NEXT_PUBLIC_API_BASE_URL"] 
+            ?? _configuration?["CORS__AllowedOrigins"]?.Split(',').FirstOrDefault() 
+            ?? "http://localhost:3000";
+
+        var actionUrl = !string.IsNullOrWhiteSpace(notification.ActionUrl)
+            ? (notification.ActionUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase) 
+                ? notification.ActionUrl 
+                : $"{baseUrl.TrimEnd('/')}/{notification.ActionUrl.TrimStart('/')}")
+            : $"{baseUrl.TrimEnd('/')}/notifications";
+
+        var emailHtml = $@"
+<!DOCTYPE html>
+<html lang=""id"">
+<head>
+  <meta charset=""UTF-8"" />
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+  <title>{safeTitle}</title>
+</head>
+<body style=""margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;"">
+  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""background-color: #f1f5f9; padding: 40px 16px;"">
+    <tr>
+      <td align=""center"">
+        <table role=""presentation"" width=""100%"" style=""max-width: 520px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 28px; overflow: hidden; box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07); text-align: left;"">
+          
+          <!-- Top Brand Accent Bar -->
+          <tr>
+            <td style=""height: 6px; background: linear-gradient(90deg, #2c1ee8 0%, #4f46e5 50%, #38bdf8 100%);""></td>
+          </tr>
+
+          <!-- Mascot & Header -->
+          <tr>
+            <td style=""padding: 32px 32px 16px 32px; text-align: center; border-bottom: 1px solid #f1f5f9;"">
+              
+              <!-- Happy Replyz Mascot SVG -->
+              <div style=""display: inline-block; margin-bottom: 14px;"">
+                <svg width=""68"" height=""68"" viewBox=""-100 -100 200 200"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"" style=""display: block; margin: 0 auto; filter: drop-shadow(0 8px 16px rgba(44, 30, 232, 0.15));"">
+                  <defs>
+                    <linearGradient id=""notif-mascot-grad"" x1=""-100"" y1=""-100"" x2=""100"" y2=""100"" gradientUnits=""userSpaceOnUse"">
+                      <stop offset=""0%"" stop-color=""#1e1b4b"" />
+                      <stop offset=""100%"" stop-color=""#0f172a"" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx=""0"" cy=""0"" r=""96"" fill=""url(#notif-mascot-grad)"" stroke=""#38bdf8"" stroke-width=""5"" />
+                  <g fill=""#ffffff"">
+                    <g transform=""translate(-30, -6) scale(1.5)"">
+                      <path d=""M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z"" />
+                    </g>
+                    <g transform=""translate(30, -6) scale(1.5)"">
+                      <path d=""M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z"" />
+                    </g>
+                  </g>
+                  <circle cx=""-52"" cy=""22"" r=""11"" fill=""#f472b6"" opacity=""0.4"" />
+                  <circle cx=""52"" cy=""22"" r=""11"" fill=""#f472b6"" opacity=""0.4"" />
+                </svg>
+              </div>
+
+              <!-- Category Badge -->
+              <div>
+                <span style=""display: inline-block; padding: 4px 12px; background-color: rgba(44, 30, 232, 0.08); border: 1px solid rgba(44, 30, 232, 0.2); border-radius: 9999px; color: {badgeColor}; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;"">
+                  {categoryBadge}
+                </span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body Content -->
+          <tr>
+            <td style=""padding: 24px 32px 32px 32px;"">
+              
+              <p style=""margin: 0 0 16px 0; font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.5;"">
+                {greeting}
+              </p>
+
+              <!-- Notification Card -->
+              <div style=""background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 24px;"">
+                <h3 style=""margin: 0 0 8px 0; font-size: 16px; font-weight: 800; color: #0f172a; line-height: 1.4;"">
+                  {safeTitle}
+                </h3>
+                <p style=""margin: 0; font-size: 14px; line-height: 1.6; color: #475569;"">
+                  {safeBody}
+                </p>
+              </div>
+
+              <!-- Action Button -->
+              <div style=""text-align: center; margin-bottom: 24px;"">
+                <a href=""{actionUrl}"" target=""_blank"" style=""display: inline-block; padding: 13px 28px; background-color: #2c1ee8; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800; border-radius: 14px; box-shadow: 0 4px 12px rgba(44, 30, 232, 0.25);"">
+                  {actionLabel} ➔
+                </a>
+              </div>
+
+              <p style=""margin: 0; font-size: 12px; color: #94a3b8; text-align: center; line-height: 1.5;"">
+                Notifikasi ini dikirim karena kamu menghubungkan email ini di profil PPLG Center.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style=""padding: 16px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;"">
+              <p style=""margin: 0; font-size: 11px; color: #94a3b8; font-weight: 500;"">
+                Dikirim otomatis oleh <strong>Replyz</strong> (&lt;Replyz@pplgcenter.web.id&gt;) • PPLG Center
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+
+        return (subject, emailHtml);
     }
 
     public async Task NotifyUserAsync(
@@ -140,6 +397,9 @@ public class NotificationService : INotificationService
 
         _context.Set<Notification>().Add(notification);
         await _context.SaveChangesAsync();
+
+        // Dispatch real-time email notification to recipient with verified EmailNotif
+        await DispatchEmailNotificationIfConfiguredAsync(notification);
     }
 
     public async Task NotifyUsersAsync(
@@ -226,6 +486,54 @@ public class NotificationService : INotificationService
         {
             _context.Set<Notification>().AddRange(notifications);
             await _context.SaveChangesAsync();
+
+            // Dispatch real-time batch email notifications to all recipients with verified EmailNotif
+            await DispatchBatchEmailNotificationsIfConfiguredAsync(notifications);
+        }
+    }
+
+    private async Task DispatchBatchEmailNotificationsIfConfiguredAsync(List<Notification> notifications)
+    {
+        if (_emailService == null || !notifications.Any())
+            return;
+
+        try
+        {
+            var targetUserIds = notifications.Select(n => n.UserId).Distinct().ToList();
+
+            var recipients = await _context.Users
+                .AsNoTracking()
+                .Where(u => targetUserIds.Contains(u.Id) && u.IsActive && u.EmailVerifiedAt != null && !string.IsNullOrWhiteSpace(u.EmailNotif))
+                .Select(u => new { u.Id, u.EmailNotif, u.FullName })
+                .ToDictionaryAsync(u => u.Id);
+
+            if (!recipients.Any())
+                return;
+
+            foreach (var notif in notifications)
+            {
+                if (!recipients.TryGetValue(notif.UserId, out var user) || string.IsNullOrWhiteSpace(user.EmailNotif))
+                    continue;
+
+                try
+                {
+                    var (subject, emailHtml) = GenerateAiStyledNotificationEmail(notif, user.FullName);
+                    await _emailService.SendEmailAsync(
+                        to: user.EmailNotif,
+                        subject: subject,
+                        body: emailHtml,
+                        isHtml: true,
+                        recipientUserId: notif.UserId);
+                }
+                catch (Exception sendEx)
+                {
+                    _logger?.LogWarning(sendEx, "Failed to send real-time email notification to '{Email}' for user '{UserId}'.", user.EmailNotif, notif.UserId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to dispatch batch email notifications.");
         }
     }
 

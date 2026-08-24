@@ -22,7 +22,8 @@ import {
   CalendarDays,
   Bookmark,
   Bell,
-  KeyRound
+  KeyRound,
+  Mail
 } from "lucide-react";
 
 import useAuth from "@/hooks/useAuth";
@@ -74,6 +75,7 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
     { name: "Booking Facilities", tabId: "facilities", icon: Building2, category: "MANAJEMEN" },
     { name: "Pengumuman Resmi", tabId: "pengumuman-link", path: "/pengumuman", icon: Bell, category: "MANAJEMEN" },
     { name: "Reset Password", tabId: "password-reset", icon: KeyRound, category: "MANAJEMEN" },
+    { name: "Email Debugger", path: "/admin/email-debug", icon: Mail, category: "MANAJEMEN" },
   ];
 
   if (isAdminOrPplgTeacher) {

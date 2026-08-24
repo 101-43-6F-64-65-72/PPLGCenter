@@ -116,15 +116,8 @@ export default function MorphingSvg({
             strokeOpacity={opacity * 1.4}
           />
         ) : (
-          <motion.path
+          <path
             d={BLOB_PATHS[0]}
-            animate={{ d: BLOB_PATHS }}
-            transition={{
-              duration: 12,
-              repeat: Infinity,
-              repeatType: "mirror",
-              ease: "easeInOut",
-            }}
             fill={`url(#${gradientId})`}
             stroke={startColor}
             strokeWidth="1.5"

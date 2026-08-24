@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,13 +16,15 @@ public class UserService : IUserService
 {
     private readonly AppDbContext _context;
     private readonly IJwtService _jwtService;
+    private readonly IEmailService _emailService;
     private readonly ILogger<UserService> _logger;
     private readonly PasswordHasher<User> _passwordHasher;
 
-    public UserService(AppDbContext context, IJwtService jwtService, ILogger<UserService> logger)
+    public UserService(AppDbContext context, IJwtService jwtService, IEmailService emailService, ILogger<UserService> logger)
     {
         _context = context;
         _jwtService = jwtService;
+        _emailService = emailService;
         _logger = logger;
         _passwordHasher = new PasswordHasher<User>();
     }
@@ -313,6 +317,8 @@ public class UserService : IUserService
                 Id = u.Id,
                 FullName = u.FullName,
                 Email = u.Email,
+                EmailNotif = u.EmailNotif,
+                EmailVerifiedAt = u.EmailVerifiedAt,
                 Username = u.Username,
                 NIS = u.NIS,
                 NISN = u.NISN,
@@ -364,6 +370,8 @@ public class UserService : IUserService
             Id = user.Id,
             FullName = user.FullName,
             Email = redactSensitiveData ? "[Redacted]" : user.Email,
+            EmailNotif = user.EmailNotif,
+            EmailVerifiedAt = user.EmailVerifiedAt,
             Username = user.Username,
             NIS = user.NIS,
             NISN = user.NISN,
@@ -620,4 +628,695 @@ public class UserService : IUserService
             })
             .ToListAsync();
     }
+
+    #region Tech Stack OTP Notification Email Verification
+
+    private static readonly Regex EmailFormatRegex = new(
+        @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly List<TechStackOptionDto> AvailableTechStacks = new()
+    {
+        new() { Id = "react", Name = "React", Category = "Frontend", Color = "#0284C7", Icon = "react" },
+        new() { Id = "laravel", Name = "Laravel", Category = "Backend", Color = "#E11D48", Icon = "laravel" },
+        new() { Id = "python", Name = "Python", Category = "Language", Color = "#CA8A04", Icon = "python" },
+        new() { Id = "nodejs", Name = "Node.js", Category = "Runtime", Color = "#16A34A", Icon = "nodejs" },
+        new() { Id = "docker", Name = "Docker", Category = "DevOps", Color = "#2563EB", Icon = "docker" }
+    };
+
+    private static string ComputeOtpHash(string sequence)
+    {
+        using var sha256 = SHA256.Create();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(sequence.Trim().ToUpperInvariant());
+        var hash = sha256.ComputeHash(bytes);
+        return Convert.ToHexString(hash);
+    }
+
+    public async Task<RequestNotificationOtpResponse> RequestNotificationEmailOtpAsync(Guid userId, string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return new RequestNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Alamat email tujuan wajib diisi."
+            };
+        }
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        if (normalizedEmail.Length > 254 || !EmailFormatRegex.IsMatch(normalizedEmail))
+        {
+            return new RequestNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Format alamat email tidak valid (maksimal 254 karakter)."
+            };
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return new RequestNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Pengguna tidak ditemukan."
+            };
+        }
+
+        // 1. Security Check: 3-Minute Lockout if user failed 5 attempts recently
+        var lockoutOtp = await _context.EmailVerificationOtps
+            .Where(o => o.UserId == userId && o.AttemptCount >= 5 && o.CreatedAt >= DateTime.UtcNow.AddMinutes(-3))
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (lockoutOtp != null)
+        {
+            var lockoutRemaining = 3 - (int)(DateTime.UtcNow - lockoutOtp.CreatedAt).TotalMinutes;
+            return new RequestNotificationOtpResponse
+            {
+                Success = false,
+                Message = $"Permintaan dibatasi sementara karena 5 kali salah urutan. Silakan tunggu {Math.Max(1, lockoutRemaining)} menit.",
+                CooldownSeconds = Math.Max(30, lockoutRemaining * 60)
+            };
+        }
+
+        // 2. Hourly Rate Limit: Max 15 requests per hour (per user or target email)
+        var oneHourAgo = DateTime.UtcNow.AddHours(-1);
+        var hourlyCount = await _context.EmailVerificationOtps
+            .CountAsync(o => (o.UserId == userId || o.Email.ToLower() == normalizedEmail) && o.CreatedAt >= oneHourAgo);
+
+        if (hourlyCount >= 15)
+        {
+            return new RequestNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Batas permintaan email tercapai (maksimal 15 kali per jam). Silakan coba lagi nanti.",
+                CooldownSeconds = 300
+            };
+        }
+
+        // 3. Daily Rate Limit: Max 30 requests per 24 hours
+        var oneDayAgo = DateTime.UtcNow.AddHours(-24);
+        var dailyCount = await _context.EmailVerificationOtps
+            .CountAsync(o => (o.UserId == userId || o.Email.ToLower() == normalizedEmail) && o.CreatedAt >= oneDayAgo);
+
+        if (dailyCount >= 30)
+        {
+            return new RequestNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Batas harian verifikasi email tercapai (maksimal 30 kali per 24 jam). Silakan coba lagi besok.",
+                CooldownSeconds = 1800
+            };
+        }
+
+        // 4. Cooldown Rate-limiting: 60 seconds interval
+        var recentOtp = await _context.EmailVerificationOtps
+            .Where(o => o.UserId == userId && o.CreatedAt >= DateTime.UtcNow.AddSeconds(-60))
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (recentOtp != null)
+        {
+            var secondsLeft = 60 - (int)(DateTime.UtcNow - recentOtp.CreatedAt).TotalSeconds;
+            return new RequestNotificationOtpResponse
+            {
+                Success = false,
+                Message = $"Harap tunggu {Math.Max(1, secondsLeft)} detik sebelum meminta kode tantangan stack baru.",
+                CooldownSeconds = Math.Max(1, secondsLeft),
+                TechOptions = AvailableTechStacks.OrderBy(_ => RandomNumberGenerator.GetInt32(1000)).ToList()
+            };
+        }
+
+        // Invalidate old unused OTPs for this user
+        var oldOtps = await _context.EmailVerificationOtps
+            .Where(o => o.UserId == userId && !o.IsUsed)
+            .ToListAsync();
+        foreach (var old in oldOtps)
+        {
+            old.IsUsed = true;
+        }
+
+        // Pick 3 unique tech stacks
+        var chosenStacks = AvailableTechStacks
+            .OrderBy(_ => RandomNumberGenerator.GetInt32(1000))
+            .Take(3)
+            .ToList();
+
+        var sequenceKey = string.Join("-", chosenStacks.Select(t => t.Id.ToUpperInvariant()));
+        var otpHash = ComputeOtpHash(sequenceKey);
+        var expiresAt = DateTime.UtcNow.AddMinutes(10);
+
+        var newOtp = new EmailVerificationOtp
+        {
+            UserId = userId,
+            Email = normalizedEmail,
+            OtpHash = otpHash,
+            ExpiresAt = expiresAt,
+            AttemptCount = 0,
+            IsUsed = false,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.EmailVerificationOtps.Add(newOtp);
+        await _context.SaveChangesAsync();
+
+        // Dynamic personalized & randomized variations for friendly peer tone
+        var firstName = user.FullName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? user.FullName ?? "Sobat";
+        var safeFirstName = System.Net.WebUtility.HtmlEncode(firstName);
+
+        var greetings = new[]
+        {
+            $"Yo {safeFirstName}!",
+            $"Hai {safeFirstName}!",
+            $"Halo {safeFirstName}!",
+            $"Wazzup {safeFirstName}!",
+            $"Hey {safeFirstName}!"
+        };
+        var intros = new[]
+        {
+            "Nih, Replyz udah siapin 3 combo stack buat verifikasi email notifikasi kamu di PPLG Center!",
+            "Biar kamu langsung dapet notif update tugas, nilai, sama info penting, ini dia 3 combo stack kamu:",
+            "Mau connect email notifikasi ya? Pas banget, Replyz kirimin urutan 3 teknologi buat kamu cocokin di web:",
+            "Kunci verifikasi kamu udah jadi! Susun 3 urutan teknologi ini di halaman profil ya:",
+            "Sip, biar akun kamu makin aman dan selalu dapet update, masukin 3 urutan stack ini di website:"
+        };
+        var boxHeaders = new[]
+        {
+            "COMBO STACK VERIFIKASI KAMU",
+            "3 URUTAN TECH STACK KAMU",
+            "KUNCI STACK HARI INI",
+            "URUTAN STACK RAHASIA"
+        };
+        var securityNotes = new[]
+        {
+            "Kunci ini cuma aktif <strong>10 menit</strong> ya. Jangan di-share ke siapa pun biar akunmu tetep aman!",
+            "Waktunya <strong>10 menit</strong> dari sekarang ya. Kalo gak merasa minta, abaikan aja santai.",
+            "Urutan ini bakal kadaluarsa dalam <strong>10 menit</strong>. Simpen buat diri kamu sendiri ya!"
+        };
+        var signOffs = new[]
+        {
+            "Gas langsung klik urutannya di website ya!",
+            "Langsung pilih urutan kartunya di web, see you on code!",
+            "Kalo ada kendala, Replyz selalu siap nemenin kamu!",
+            "Semangat belajarnya hari ini!"
+        };
+        var subjects = new[]
+        {
+            "Combo stack verifikasi kamu dari Replyz!",
+            "Nih combo stack buat verifikasi email kamu!",
+            "Urutan tech stack kamu udah siap, yuk verifikasi!",
+            "Kunci verifikasi email kamu ada di sini!"
+        };
+
+        var selectedGreeting = greetings[RandomNumberGenerator.GetInt32(greetings.Length)];
+        var selectedIntro = intros[RandomNumberGenerator.GetInt32(intros.Length)];
+        var selectedBoxHeader = boxHeaders[RandomNumberGenerator.GetInt32(boxHeaders.Length)];
+        var selectedSecurity = securityNotes[RandomNumberGenerator.GetInt32(securityNotes.Length)];
+        var selectedSignOff = signOffs[RandomNumberGenerator.GetInt32(signOffs.Length)];
+        var selectedSubject = subjects[RandomNumberGenerator.GetInt32(subjects.Length)];
+
+        // Build HTML Email consistent with PPLG Center web design & happy mascot
+        var emailHtml = $@"
+<!DOCTYPE html>
+<html lang=""id"">
+<head>
+  <meta charset=""UTF-8"" />
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+  <title>Verifikasi Email Notifikasi - Replyz</title>
+</head>
+<body style=""margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;"">
+  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""background-color: #f1f5f9; padding: 40px 16px;"">
+    <tr>
+      <td align=""center"">
+        <table role=""presentation"" width=""100%"" style=""max-width: 520px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 28px; overflow: hidden; box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07); text-align: left;"">
+          
+          <!-- Top Blue Accent -->
+          <tr>
+            <td style=""height: 6px; background: linear-gradient(90deg, #2c1ee8 0%, #4f46e5 50%, #38bdf8 100%);""></td>
+          </tr>
+
+          <!-- Mascot & Header -->
+          <tr>
+            <td style=""padding: 32px 32px 20px 32px; text-align: center; border-bottom: 1px solid #f1f5f9;"">
+              
+              <!-- Happy Replyz Mascot SVG -->
+              <div style=""display: inline-block; margin-bottom: 16px;"">
+                <svg width=""76"" height=""76"" viewBox=""-100 -100 200 200"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"" style=""display: block; margin: 0 auto; filter: drop-shadow(0 8px 16px rgba(44, 30, 232, 0.15));"">
+                  <!-- Circular Body -->
+                  <defs>
+                    <linearGradient id=""mascot-body-grad"" x1=""-100"" y1=""-100"" x2=""100"" y2=""100"" gradientUnits=""userSpaceOnUse"">
+                      <stop offset=""0%"" stop-color=""#1e1b4b"" />
+                      <stop offset=""100%"" stop-color=""#0f172a"" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx=""0"" cy=""0"" r=""96"" fill=""url(#mascot-body-grad)"" stroke=""#38bdf8"" stroke-width=""5"" />
+                  
+                  <!-- Happy Eyes (Left & Right Smiling Arcs) -->
+                  <g fill=""#ffffff"">
+                    <!-- Left Happy Eye -->
+                    <g transform=""translate(-30, -6) scale(1.5)"">
+                      <path d=""M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z"" />
+                    </g>
+                    <!-- Right Happy Eye -->
+                    <g transform=""translate(30, -6) scale(1.5)"">
+                      <path d=""M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z"" />
+                    </g>
+                  </g>
+
+                  <!-- Blush Cheeks -->
+                  <circle cx=""-52"" cy=""22"" r=""11"" fill=""#f472b6"" opacity=""0.4"" />
+                  <circle cx=""52"" cy=""22"" r=""11"" fill=""#f472b6"" opacity=""0.4"" />
+                </svg>
+              </div>
+
+              <!-- Title & Badge -->
+              <h1 style=""margin: 0; color: #0f172a; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;"">
+                Verifikasi Email Notifikasi
+              </h1>
+              <p style=""margin: 6px 0 0 0; color: #64748b; font-size: 13px; font-weight: 500;"">
+                Replyz • PPLG Center SMKN 2 Surakarta
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body Content -->
+          <tr>
+            <td style=""padding: 28px 32px;"">
+              <p style=""margin: 0 0 10px 0; font-size: 16px; font-weight: 800; color: #0f172a;"">
+                {selectedGreeting}
+              </p>
+              <p style=""margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;"">
+                {selectedIntro}
+              </p>
+
+              <!-- Tech Stack Challenge Box -->
+              <div style=""background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 22px 16px; text-align: center; margin-bottom: 20px;"">
+                <p style=""margin: 0 0 16px 0; font-size: 11px; font-weight: 800; color: #2c1ee8; text-transform: uppercase; letter-spacing: 0.06em;"">
+                  {selectedBoxHeader}
+                </p>
+
+                <div style=""display: flex; justify-content: center; gap: 8px; margin: 0 auto;"">
+                  <table role=""presentation"" cellspacing=""0"" cellpadding=""0"" style=""margin: 0 auto;"">
+                    <tr>
+                      <td style=""padding: 0 4px;"">
+                        <div style=""background: #ffffff; border: 2px solid {chosenStacks[0].Color}; border-radius: 14px; padding: 12px 16px; text-align: center; min-width: 84px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);"">
+                          <div style=""font-size: 10px; color: #64748b; font-weight: 800; margin-bottom: 3px;"">#1 PERTAMA</div>
+                          <div style=""font-size: 15px; color: #0f172a; font-weight: 900; letter-spacing: 0.01em;"">{chosenStacks[0].Name}</div>
+                        </div>
+                      </td>
+                      <td style=""font-size: 16px; color: #94a3b8; font-weight: 800; padding: 0 2px;"">➔</td>
+                      <td style=""padding: 0 4px;"">
+                        <div style=""background: #ffffff; border: 2px solid {chosenStacks[1].Color}; border-radius: 14px; padding: 12px 16px; text-align: center; min-width: 84px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);"">
+                          <div style=""font-size: 10px; color: #64748b; font-weight: 800; margin-bottom: 3px;"">#2 KEDUA</div>
+                          <div style=""font-size: 15px; color: #0f172a; font-weight: 900; letter-spacing: 0.01em;"">{chosenStacks[1].Name}</div>
+                        </div>
+                      </td>
+                      <td style=""font-size: 16px; color: #94a3b8; font-weight: 800; padding: 0 2px;"">➔</td>
+                      <td style=""padding: 0 4px;"">
+                        <div style=""background: #ffffff; border: 2px solid {chosenStacks[2].Color}; border-radius: 14px; padding: 12px 16px; text-align: center; min-width: 84px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);"">
+                          <div style=""font-size: 10px; color: #64748b; font-weight: 800; margin-bottom: 3px;"">#3 KETIGA</div>
+                          <div style=""font-size: 15px; color: #0f172a; font-weight: 900; letter-spacing: 0.01em;"">{chosenStacks[2].Name}</div>
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <p style=""margin: 14px 0 0 0; font-size: 11px; color: #64748b; font-weight: 500;"">
+                  Tinggal klik 3 kartu dengan urutan di atas di modal website ya!
+                </p>
+              </div>
+
+              <!-- Security Note -->
+              <div style=""background-color: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px;"">
+                <p style=""margin: 0; font-size: 12px; color: #92400e; line-height: 1.5;"">
+                  {selectedSecurity}
+                </p>
+              </div>
+
+              <p style=""margin: 0; font-size: 13px; color: #475569; line-height: 1.5;"">
+                {selectedSignOff}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style=""padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;"">
+              <p style=""margin: 0; font-size: 11px; color: #94a3b8; font-weight: 500;"">
+                Dikirim otomatis oleh <strong>Replyz</strong> (&lt;Replyz@pplgcenter.web.id&gt;) • PPLG Center
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+
+        await _emailService.SendEmailAsync(
+            to: normalizedEmail,
+            subject: selectedSubject,
+            body: emailHtml,
+            isHtml: true,
+            recipientUserId: userId,
+            createdByUserId: userId);
+
+        return new RequestNotificationOtpResponse
+        {
+            Success = true,
+            Message = "Kunci tantangan Tech Stack telah dikirim ke email Anda. Silakan cek inbox/spam!",
+            CooldownSeconds = 60,
+            ExpiresAt = expiresAt,
+            TechOptions = AvailableTechStacks.OrderBy(_ => RandomNumberGenerator.GetInt32(1000)).ToList()
+        };
+    }
+
+    public async Task<VerifyNotificationOtpResponse> VerifyNotificationEmailOtpAsync(Guid userId, string email, List<string> techStack)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return new VerifyNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Alamat email wajib diisi."
+            };
+        }
+
+        if (techStack == null || techStack.Count != 3)
+        {
+            return new VerifyNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Harap pilih tepat 3 teknologi sesuai urutan yang dikirimkan ke email Anda."
+            };
+        }
+
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return new VerifyNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Pengguna tidak ditemukan."
+            };
+        }
+
+        var activeOtp = await _context.EmailVerificationOtps
+            .Where(o => o.UserId == userId && o.Email.ToLower() == normalizedEmail && !o.IsUsed)
+            .OrderByDescending(o => o.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (activeOtp == null)
+        {
+            return new VerifyNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Kode verifikasi tidak ditemukan atau sudah pernah digunakan. Silakan minta kode baru."
+            };
+        }
+
+        if (DateTime.UtcNow > activeOtp.ExpiresAt)
+        {
+            activeOtp.IsUsed = true;
+            await _context.SaveChangesAsync();
+            return new VerifyNotificationOtpResponse
+            {
+                Success = false,
+                Message = "Kode verifikasi telah kedaluwarsa (lebih dari 10 menit). Silakan minta kode baru."
+            };
+        }
+
+        var userSequenceKey = string.Join("-", techStack.Select(t => t.Trim().ToUpperInvariant()));
+        var userHash = ComputeOtpHash(userSequenceKey);
+
+        if (userHash != activeOtp.OtpHash)
+        {
+            activeOtp.AttemptCount++;
+            var remainingAttempts = Math.Max(0, 5 - activeOtp.AttemptCount);
+
+            if (activeOtp.AttemptCount >= 5)
+            {
+                activeOtp.IsUsed = true;
+                await _context.SaveChangesAsync();
+                return new VerifyNotificationOtpResponse
+                {
+                    Success = false,
+                    Message = "Anda telah mencapai batas 5 kali kesalahan. Silakan minta kode verifikasi baru.",
+                    RemainingAttempts = 0
+                };
+            }
+
+            await _context.SaveChangesAsync();
+            return new VerifyNotificationOtpResponse
+            {
+                Success = false,
+                Message = $"Urutan Tech Stack tidak sesuai. Percobaan tersisa: {remainingAttempts}.",
+                RemainingAttempts = remainingAttempts
+            };
+        }
+
+        // Success!
+        activeOtp.IsUsed = true;
+        user.EmailNotif = normalizedEmail;
+        user.EmailVerifiedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("User '{UserId}' successfully verified notification email '{EmailNotif}'.", user.Id, user.EmailNotif);
+
+        // Send celebration / success confirmation email to the user
+        await SendVerificationSuccessEmailAsync(user.Id, user.EmailNotif, user.FullName);
+
+        return new VerifyNotificationOtpResponse
+        {
+            Success = true,
+            Message = "Email notifikasi berhasil diverifikasi dan terhubung!",
+            EmailNotif = user.EmailNotif
+        };
+    }
+
+    private async Task SendVerificationSuccessEmailAsync(Guid userId, string email, string? fullName)
+    {
+        try
+        {
+            var firstName = fullName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? fullName ?? "Sobat";
+            var safeFirstName = System.Net.WebUtility.HtmlEncode(firstName);
+            var safeEmail = System.Net.WebUtility.HtmlEncode(email);
+
+            var subjects = new[]
+            {
+                "Yeyy berhasil! Email notifikasi kamu udah resmi aktif di PPLG Center",
+                "Mantap jiwa! Email notif kamu sekarang udah terhubung sama Replyz",
+                "Kereeen! Verifikasi sukses, siap terima update terdepan PPLG Center",
+                "GG! Email notifikasi kamu udah ready 100% di portal",
+                "Woohoo! Akun & email kamu udah saling terhubung, yuk gaskeun!",
+                "Sukses besar! Notifikasi tugas & sekolah bakal langsung mendarat di sini",
+                "Selesai! Email kamu udah sah terdaftar buat notifikasi prioritas"
+            };
+
+            var greetings = new[]
+            {
+                $"Yeyyy berhasil, {safeFirstName}!",
+                $"Mantap banget, {safeFirstName}!",
+                $"Keren abis, {safeFirstName}!",
+                $"Woohoo, verifikasi sukses {safeFirstName}!",
+                $"Gokil {safeFirstName}, kombonya bener!",
+                $"Selamat {safeFirstName}, kamu berhasil!"
+            };
+
+            var intros = new[]
+            {
+                $"Urutan 3 tech stack yang kamu pilih tadi bener banget! Sekarang email <strong style=\"color: #2c1ee8;\">{safeEmail}</strong> udah resmi terhubung ke akun PPLG Center kamu.",
+                $"Tebakan dan urutan combo stack kamu tepat 100%! Replyz udah sukses ngaitin <strong style=\"color: #2c1ee8;\">{safeEmail}</strong> ke profil sekolah kamu.",
+                $"Combo 3 stack kamu klop abis! Mulai detik ini, email <strong style=\"color: #2c1ee8;\">{safeEmail}</strong> bakal jadi pintu masuk semua kabar penting dari sekolah.",
+                $"Selesai dalam sekejap! Replyz udah ngunci email <strong style=\"color: #2c1ee8;\">{safeEmail}</strong> sebagai penerima notifikasi prioritas buat kamu.",
+                $"Mantap djiwa! Sistem udah verifikasi akun kamu dan sekarang email <strong style=\"color: #2c1ee8;\">{safeEmail}</strong> siap nerima semua update sekolah secara real-time.",
+                $"Horeee! Email notifikasi <strong style=\"color: #2c1ee8;\">{safeEmail}</strong> udah aktif dan siap nemenin hari-hari belajarmu di PPLG Center."
+            };
+
+            var closers = new[]
+            {
+                "Kalo ada apa-apa atau mau ganti email, tinggal mampir ke tab profil kapan aja ya. Replyz siap nemenin perjalanan belajarmu!",
+                "Sekarang kamu bisa santai koding tanpa takut ketinggalan deadline tugas. Happy coding and have a great day!",
+                "Yuk lanjut eksplor fitur-fitur seru lainnya di web PPLG Center. Semangat terus belajarnya!",
+                "Simpan email ini ya! Notifikasi tugas, nilai, dan pengumuman sekolah bakal dikabarin Replyz lewat sini.",
+                "Stay productive, tetap semangat koding, dan jangan lupa commit tugasmu tepat waktu ya!"
+            };
+
+            var selectedSubject = subjects[RandomNumberGenerator.GetInt32(subjects.Length)];
+            var selectedGreeting = greetings[RandomNumberGenerator.GetInt32(greetings.Length)];
+            var selectedIntro = intros[RandomNumberGenerator.GetInt32(intros.Length)];
+            var selectedCloser = closers[RandomNumberGenerator.GetInt32(closers.Length)];
+
+            var emailHtml = $@"
+<!DOCTYPE html>
+<html lang=""id"">
+<head>
+  <meta charset=""UTF-8"" />
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+  <title>Verifikasi Berhasil - Replyz</title>
+</head>
+<body style=""margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;"">
+  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" style=""background-color: #f1f5f9; padding: 40px 16px;"">
+    <tr>
+      <td align=""center"">
+        <table role=""presentation"" width=""100%"" style=""max-width: 520px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 28px; overflow: hidden; box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.07); text-align: left;"">
+          
+          <!-- Top Blue Accent -->
+          <tr>
+            <td style=""height: 6px; background: linear-gradient(90deg, #10b981 0%, #2c1ee8 50%, #38bdf8 100%);""></td>
+          </tr>
+
+          <!-- Mascot & Header -->
+          <tr>
+            <td style=""padding: 32px 32px 18px 32px; text-align: center; border-bottom: 1px solid #f1f5f9;"">
+              
+              <!-- Happy Replyz Mascot SVG -->
+              <div style=""display: inline-block; margin-bottom: 14px;"">
+                <svg width=""76"" height=""76"" viewBox=""-100 -100 200 200"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"" style=""display: block; margin: 0 auto; filter: drop-shadow(0 8px 16px rgba(16, 185, 129, 0.2));"">
+                  <defs>
+                    <linearGradient id=""success-mascot-grad"" x1=""-100"" y1=""-100"" x2=""100"" y2=""100"" gradientUnits=""userSpaceOnUse"">
+                      <stop offset=""0%"" stop-color=""#064e3b"" />
+                      <stop offset=""100%"" stop-color=""#0f172a"" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx=""0"" cy=""0"" r=""96"" fill=""url(#success-mascot-grad)"" stroke=""#10b981"" stroke-width=""5"" />
+                  
+                  <!-- Happy Smiling Arc Eyes -->
+                  <g fill=""#ffffff"">
+                    <g transform=""translate(-30, -6) scale(1.5)"">
+                      <path d=""M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z"" />
+                    </g>
+                    <g transform=""translate(30, -6) scale(1.5)"">
+                      <path d=""M -13 5 C -13 -8, 13 -8, 13 5 C 8 0, -8 0, -13 5 Z"" />
+                    </g>
+                  </g>
+
+                  <!-- Cheeks -->
+                  <circle cx=""-52"" cy=""22"" r=""11"" fill=""#f472b6"" opacity=""0.45"" />
+                  <circle cx=""52"" cy=""22"" r=""11"" fill=""#f472b6"" opacity=""0.45"" />
+                </svg>
+              </div>
+
+              <!-- Status Badge -->
+              <div style=""margin-bottom: 8px;"">
+                <span style=""display: inline-block; padding: 4px 14px; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 9999px; color: #059669; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;"">
+                  Email Terhubung & Aktif
+                </span>
+              </div>
+
+              <!-- Title -->
+              <h1 style=""margin: 0; color: #0f172a; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;"">
+                Verifikasi Email Berhasil
+              </h1>
+              <p style=""margin: 6px 0 0 0; color: #64748b; font-size: 13px; font-weight: 500;"">
+                Replyz • PPLG Center SMKN 2 Surakarta
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body Content -->
+          <tr>
+            <td style=""padding: 28px 32px;"">
+              <p style=""margin: 0 0 10px 0; font-size: 16px; font-weight: 800; color: #0f172a;"">
+                {selectedGreeting}
+              </p>
+              <p style=""margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #475569;"">
+                {selectedIntro}
+              </p>
+
+              <!-- Feature Highlights Box -->
+              <div style=""background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 24px;"">
+                <p style=""margin: 0 0 12px 0; font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.04em;"">
+                  Yang akan kamu terima di email ini:
+                </p>
+                <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"">
+                  <tr>
+                    <td style=""padding: 5px 0; font-size: 13px; color: #334155; line-height: 1.5;"">
+                      <strong>Tugas & Materi Baru</strong>: Tidak akan ketinggalan deadline lagi
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style=""padding: 5px 0; font-size: 13px; color: #334155; line-height: 1.5;"">
+                      <strong>Update Rekap Nilai</strong>: Langsung dapat kabar saat dinilai guru
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style=""padding: 5px 0; font-size: 13px; color: #334155; line-height: 1.5;"">
+                      <strong>Pengumuman Sekolah</strong>: Info mading dan kegiatan resmi PPLG
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style=""padding: 5px 0; font-size: 13px; color: #334155; line-height: 1.5;"">
+                      <strong>Mention Komunitas</strong>: Tanggapan dan sebutan nama kamu
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Action Button -->
+              <div style=""text-align: center; margin-bottom: 24px;"">
+                <a href=""https://pplgcenter.web.id/profile"" target=""_blank"" style=""display: inline-block; padding: 13px 30px; background-color: #2c1ee8; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800; border-radius: 14px; box-shadow: 0 4px 14px rgba(44, 30, 232, 0.25);"">
+                  Buka Profil Saya ➔
+                </a>
+              </div>
+
+              <p style=""margin: 0; font-size: 13px; color: #475569; line-height: 1.6;"">
+                {selectedCloser}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style=""padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center;"">
+              <p style=""margin: 0; font-size: 11px; color: #94a3b8; font-weight: 500;"">
+                Dikirim otomatis oleh <strong>Replyz</strong> (&lt;Replyz@pplgcenter.web.id&gt;) • PPLG Center
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+
+            await _emailService.SendEmailAsync(
+                to: email,
+                subject: selectedSubject,
+                body: emailHtml,
+                isHtml: true,
+                recipientUserId: userId,
+                createdByUserId: userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send verification success email to '{Email}'.", email);
+        }
+    }
+
+    public async Task<bool> DeleteNotificationEmailAsync(Guid userId)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return false;
+
+        user.EmailNotif = null;
+        user.EmailVerifiedAt = null;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("User '{UserId}' removed their notification email.", user.Id);
+        return true;
+    }
+
+    #endregion
 }
+

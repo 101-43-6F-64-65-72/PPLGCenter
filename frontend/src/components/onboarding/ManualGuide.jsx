@@ -4,9 +4,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, X, Sparkles, Compass, CheckCircle2, Ban } from "lucide-react";
+import { ChevronRight, ChevronLeft, X, Sparkles, Compass, CheckCircle2, Ban, Mail } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import BloubMascot from "@/components/BloubMascot";
+import EmailOtpVerificationModal from "@/components/profile/EmailOtpVerificationModal";
 
 /**
  * Web Audio API Synthesizer for zero-latency, pleasant UI Sound Effects (SFX)
@@ -66,8 +67,8 @@ const playSoundEffect = (type = "step") => {
 const GUIDE_STEPS = [
   {
     id: "welcome",
-    title: "Kenalan Sama Replyz 👋",
-    subtitle: "Langkah 1 dari 9",
+    title: "Kenalan Sama Replyz",
+    subtitle: "Langkah 1 dari 10",
     content: "Halo! Aku Replyz, maskot dan AI Assistant di PPLG Center SMKN 2 Surakarta. Yuk kenali seluruh alur dan fitur utama di website ini!",
     emotion: "happy",
     targetId: "ai-chat-modal",
@@ -76,8 +77,8 @@ const GUIDE_STEPS = [
   },
   {
     id: "navigation",
-    title: "Bar Navigasi Utama 🧭",
-    subtitle: "Langkah 2 dari 9",
+    title: "Bar Navigasi Utama",
+    subtitle: "Langkah 2 dari 10",
     content: "Melalui bar navigasi di bagian atas, kamu bisa langsung mengakses Beranda, Kelas & Jadwal, Pengumuman Sekolah, hingga Fasilitas dengan satu klik.",
     emotion: "thinking",
     targetId: "nav-primary",
@@ -86,8 +87,8 @@ const GUIDE_STEPS = [
   },
   {
     id: "kelas",
-    title: "Kelas & Jadwal Pelajaran 📅",
-    subtitle: "Langkah 3 dari 9",
+    title: "Kelas & Jadwal Pelajaran",
+    subtitle: "Langkah 3 dari 10",
     content: "Di halaman ini kamu dapat mengecek jadwal KBM harian, struktur kepengurusan kelas, serta jadwal piket kebersihan siswa.",
     emotion: "thinking",
     targetId: "kelas-header-card",
@@ -96,8 +97,8 @@ const GUIDE_STEPS = [
   },
   {
     id: "pengumuman",
-    title: "Pengumuman PPLG Center 📢",
-    subtitle: "Langkah 4 dari 9",
+    title: "Pengumuman PPLG Center",
+    subtitle: "Langkah 4 dari 10",
     content: "Pusat berita resmi sekolah, pemberitahuan ujian akademik, serta informasi kegiatan jurusan PPLG terkini.",
     emotion: "notif",
     targetId: "pengumuman-header-card",
@@ -106,8 +107,8 @@ const GUIDE_STEPS = [
   },
   {
     id: "fasilitas",
-    title: "Katalog Sarana & Fasilitas 🏫",
-    subtitle: "Langkah 5 dari 9",
+    title: "Katalog Sarana & Fasilitas",
+    subtitle: "Langkah 5 dari 10",
     content: "Katalog reservasi lab komputer, peminjaman aula serbaguna, sarana olahraga, hingga fitur Simulasi 3D PC Lab.",
     emotion: "side",
     targetId: "fasilitas-header-card",
@@ -116,8 +117,8 @@ const GUIDE_STEPS = [
   },
   {
     id: "komunitas",
-    title: "Ruang Komunitas PPLG 🚀",
-    subtitle: "Langkah 6 dari 9",
+    title: "Ruang Komunitas PPLG",
+    subtitle: "Langkah 6 dari 10",
     content: "Tempat berkumpulnya siswa & guru PPLG untuk mempublikasikan karya di Mading Digital serta berdiskusi dalam Circle minat coding & game dev.",
     emotion: "peek",
     targetId: "komunitas-header-card",
@@ -126,8 +127,8 @@ const GUIDE_STEPS = [
   },
   {
     id: "notifications",
-    title: "Pusat Notifikasi Real-Time 🔔",
-    subtitle: "Langkah 7 dari 9",
+    title: "Pusat Notifikasi Real-Time",
+    subtitle: "Langkah 7 dari 10",
     content: "Tombol lonceng di atas memberitahumu secara instant bila ada pengumuman baru, tugas, atau balasan diskusi.",
     emotion: "notif",
     targetId: "notif_button",
@@ -135,9 +136,19 @@ const GUIDE_STEPS = [
     cardPlacement: "top-right",
   },
   {
+    id: "email_notif",
+    title: "Tautkan Email Notifikasi",
+    subtitle: "Langkah 8 dari 10",
+    content: "Hubungkan email aktifmu sekarang agar update tugas, nilai guru, dan pengumuman sekolah langsung terkirim ke kotak masukmu secara instan!",
+    emotion: "love",
+    targetId: "profile-nav-btn",
+    route: null,
+    cardPlacement: "top-right",
+  },
+  {
     id: "ai_assistant",
-    title: "Replyz AI Virtual Assistant 🤖",
-    subtitle: "Langkah 8 dari 9",
+    title: "Replyz AI Virtual Assistant",
+    subtitle: "Langkah 9 dari 10",
     content: "Cukup klik aku di pojok kanan bawah untuk bertanya atau meminta aksi otomatis seperti cari pengumuman & cek jadwal!",
     emotion: "love",
     targetId: "ai-chat-modal",
@@ -146,8 +157,8 @@ const GUIDE_STEPS = [
   },
   {
     id: "finish",
-    title: "Tur Selesai! Selamat Berkreasi! 🎉",
-    subtitle: "Langkah 9 dari 9",
+    title: "Tur Selesai! Selamat Berkreasi!",
+    subtitle: "Langkah 10 dari 10",
     content: "Selamat! Kamu sudah paham seluruh alur & fitur PPLG Center. Kamu bisa klik tombol 'Panduan manual' kapan saja jika ingin mengulang tur ini.",
     emotion: "wink",
     targetId: "ai-chat-modal",
@@ -159,14 +170,16 @@ const GUIDE_STEPS = [
 export default function ManualGuide() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, refreshUser } = useAuth();
 
   const [isPromptVisible, setIsPromptVisible] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const currentStep = GUIDE_STEPS[currentStepIndex];
+  const isEmailLinked = Boolean(user?.emailNotif && (user?.emailVerifiedAt || user?.isEmailNotifVerified));
 
   // Detect login & show non-intrusive mascot bubble at bottom-right AI location
   useEffect(() => {
@@ -249,25 +262,27 @@ export default function ManualGuide() {
     const t1 = setTimeout(updateTargetPosition, 150);
     const t2 = setTimeout(updateTargetPosition, 400);
 
-    const handleResizeOrScroll = () => updateTargetPosition();
+    const handleScrollOrResize = () => {
+      updateTargetPosition();
+    };
 
-    window.addEventListener("resize", handleResizeOrScroll);
-    window.addEventListener("scroll", handleResizeOrScroll, { capture: true });
+    window.addEventListener("scroll", handleScrollOrResize, { passive: true });
+    window.addEventListener("resize", handleScrollOrResize, { passive: true });
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
-      window.removeEventListener("resize", handleResizeOrScroll);
-      window.removeEventListener("scroll", handleResizeOrScroll, { capture: true });
+      window.removeEventListener("scroll", handleScrollOrResize);
+      window.removeEventListener("resize", handleScrollOrResize);
     };
   }, [isTourActive, currentStepIndex, pathname, updateTargetPosition]);
 
-  // Direct route navigation handling during step changes
+  // If the step has a route that isn't current, navigate to it
   useEffect(() => {
-    if (isTourActive && currentStep?.route) {
-      if (pathname !== currentStep.route) {
-        router.push(currentStep.route);
-      }
+    if (!isTourActive) return;
+
+    if (currentStep?.route && pathname !== currentStep.route) {
+      router.push(currentStep.route);
     }
   }, [isTourActive, currentStepIndex, currentStep?.route, pathname, router]);
 
@@ -287,7 +302,12 @@ export default function ManualGuide() {
       setCurrentStepIndex((prev) => prev + 1);
       playSoundEffect("step");
     } else {
-      handleCompleteTour();
+      // Finished
+      setIsTourActive(false);
+      try {
+        localStorage.setItem("sc_has_completed_manual_guide", "true");
+      } catch (e) {}
+      playSoundEffect("finish");
     }
   };
 
@@ -300,19 +320,14 @@ export default function ManualGuide() {
 
   const handleCancelTour = () => {
     setIsTourActive(false);
-  };
-
-  const handleCompleteTour = () => {
-    setIsTourActive(false);
-    playSoundEffect("finish");
     try {
       localStorage.setItem("sc_has_completed_manual_guide", "true");
     } catch (e) {}
   };
 
-  // Calculate creative placement class for the guide card based on step configuration
+  // Dynamic card placement style based on step config
   const getCardPlacementStyle = () => {
-    switch (currentStep.cardPlacement) {
+    switch (currentStep?.cardPlacement) {
       case "top-center":
         return "top-20 left-1/2 -translate-x-1/2 items-start";
       case "bottom-center":
@@ -338,13 +353,27 @@ export default function ManualGuide() {
 
   return createPortal(
     <>
+      <EmailOtpVerificationModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        initialEmail={user?.emailNotif || ""}
+        onSuccess={() => {
+          setIsEmailModalOpen(false);
+          if (refreshUser) refreshUser();
+        }}
+        onVerified={() => {
+          setIsEmailModalOpen(false);
+          if (refreshUser) refreshUser();
+        }}
+      />
+
       {/* ─────────────────────────────────────────────────────────────
-          1. NON-INTRUSIVE PROMPT BUBBLE (Matching Web App Light/Glass Aesthetic)
+          1. BOTTOM-RIGHT MASCOT PROMPT BUBBLE (AFTER LOGIN)
          ───────────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {isPromptVisible && !isTourActive && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            initial={{ opacity: 0, y: 30, scale: 0.88 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.92 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -356,7 +385,7 @@ export default function ManualGuide() {
               top: "auto",
               zIndex: 99998,
             }}
-            className="w-84 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_20px_50px_-10px_rgba(15,23,42,0.18)] rounded-[26px] p-4.5 flex flex-col gap-3 font-sans text-slate-900 ring-4 ring-blue-500/10"
+            className="w-88 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-xl border border-slate-200/90 shadow-[0_20px_50px_-10px_rgba(15,23,42,0.18)] rounded-[26px] p-4.5 flex flex-col gap-3 font-sans text-slate-900 ring-4 ring-blue-500/10"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2.5">
@@ -366,10 +395,12 @@ export default function ManualGuide() {
                 <div>
                   <span className="text-[10px] font-mono font-extrabold tracking-wider text-[#2C1EE8] uppercase bg-blue-50 px-2 py-0.5 rounded-full inline-flex items-center gap-1 mb-1 border border-blue-100">
                     <Compass className="w-3 h-3 text-[#2C1EE8]" />
-                    Panduan Manual Replyz
+                    {!isEmailLinked ? "Tautkan Email Notifikasi" : "Panduan Manual Replyz"}
                   </span>
                   <h4 className="text-xs sm:text-sm font-black text-slate-900 leading-tight">
-                    Halo! Mau tur singkat PPLG Center? 💡
+                    {!isEmailLinked
+                      ? `Halo ${user?.fullName?.split(" ")[0] || "Sobat"}! Tautkan Email Notifikasi?`
+                      : "Halo! Mau tur singkat PPLG Center?"}
                   </h4>
                 </div>
               </div>
@@ -384,25 +415,59 @@ export default function ManualGuide() {
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Aku **Replyz**, maskot & AI Assistant kamu! Biar makin mudah navigasi, ikuti panduan alur singkat ini.
+              {!isEmailLinked
+                ? "Biar kamu gak ketinggalan update tugas, nilai guru, dan pengumuman sekolah, yuk tautkan email aktifmu sekarang!"
+                : "Aku Replyz, maskot & AI Assistant kamu! Biar makin mudah navigasi, ikuti panduan alur singkat ini."}
             </p>
 
-            <div className="flex items-center gap-2 mt-1">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleStartTour}
-                className="flex-1 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Mulai Panduan</span>
-              </motion.button>
-              <button
-                onClick={handleDismissPrompt}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs py-2.5 px-3 rounded-xl transition-colors cursor-pointer"
-              >
-                Nanti Dulu
-              </button>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {!isEmailLinked ? (
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setIsPromptVisible(false);
+                      setIsEmailModalOpen(true);
+                    }}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Tautkan Email</span>
+                  </motion.button>
+                  <button
+                    onClick={handleStartTour}
+                    className="bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Tur</span>
+                  </button>
+                  <button
+                    onClick={handleDismissPrompt}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs py-2 px-2.5 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Nanti
+                  </button>
+                </>
+              ) : (
+                <>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleStartTour}
+                    className="flex-1 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-3 rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Mulai Panduan</span>
+                  </motion.button>
+                  <button
+                    onClick={handleDismissPrompt}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs py-2.5 px-3 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Nanti Dulu
+                  </button>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -504,6 +569,21 @@ export default function ManualGuide() {
                     <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
                       {currentStep.content}
                     </p>
+
+                    {currentStep.id === "email_notif" && (
+                      <div className="pt-2">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.96 }}
+                          type="button"
+                          onClick={() => setIsEmailModalOpen(true)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3.5 rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>Tautkan Email Sekarang</span>
+                        </motion.button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

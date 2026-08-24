@@ -10,10 +10,12 @@ namespace StudentCenter.Infrastructure.Services;
 public class GroupMessageService : IGroupMessageService
 {
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public GroupMessageService(AppDbContext context)
+    public GroupMessageService(AppDbContext context, INotificationService notificationService)
     {
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<PagedResult<GroupMessageResponse>> GetGroupMessagesAsync(Guid groupId, Guid currentUserId, int page, int pageSize)
@@ -134,26 +136,27 @@ public class GroupMessageService : IGroupMessageService
                     .Where(m => m.GroupId == request.GroupId && m.Status == CommunityMemberStatus.Accepted && m.UserId != senderUserId)
                     .ToListAsync();
 
-                var notifService = new NotificationService(_context);
-
                 foreach (var member in acceptedMembers)
                 {
-                    var uName = member.User?.Username;
-                    var fName = member.User?.FullName;
+                    var uName = member.User?.Username?.Trim();
+                    var fName = member.User?.FullName?.Trim();
+                    var firstName = fName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
 
-                    bool isMentionedEveryone = plainText.ToLower().Contains("@semua") || plainText.ToLower().Contains("@everyone");
+                    var lowerText = plainText.ToLowerInvariant();
+                    bool isMentionedEveryone = lowerText.Contains("@semua") || lowerText.Contains("@everyone");
                     bool isMentioned = isMentionedEveryone ||
-                                       (!string.IsNullOrEmpty(uName) && plainText.ToLower().Contains($"@{uName.ToLower()}")) ||
-                                       (!string.IsNullOrEmpty(fName) && plainText.ToLower().Contains($"@{fName.ToLower()}"));
+                                       (!string.IsNullOrEmpty(uName) && lowerText.Contains($"@{uName.ToLowerInvariant()}")) ||
+                                       (!string.IsNullOrEmpty(fName) && lowerText.Contains($"@{fName.ToLowerInvariant()}")) ||
+                                       (!string.IsNullOrEmpty(firstName) && firstName.Length >= 3 && lowerText.Contains($"@{firstName.ToLowerInvariant()}"));
 
                     if (isMentioned)
                     {
-                        var snippet = plainText.Length > 60 ? plainText.Substring(0, 60) + "..." : plainText;
+                        var snippet = plainText.Length > 150 ? plainText.Substring(0, 147) + "..." : plainText;
                         var notifTitle = isMentionedEveryone
                             ? $"{senderName} menyebut @semua di {groupName}"
                             : $"{senderName} menyebut Anda di {groupName}";
 
-                        await notifService.CreateAsync(new CreateNotificationRequest
+                        await _notificationService.CreateAsync(new CreateNotificationRequest
                         {
                             UserId = member.UserId,
                             Title = notifTitle,
@@ -161,7 +164,8 @@ public class GroupMessageService : IGroupMessageService
                             Type = NotificationType.Mention,
                             Priority = NotificationPriority.High,
                             ReferenceId = message.Id.ToString(),
-                            ReferenceType = NotificationReferenceType.Message
+                            ReferenceType = NotificationReferenceType.Message,
+                            ActionUrl = $"/komunitas?groupId={request.GroupId}"
                         });
                     }
                 }

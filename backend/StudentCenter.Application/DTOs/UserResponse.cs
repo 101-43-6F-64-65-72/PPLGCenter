@@ -5,6 +5,9 @@ public class UserResponse
     public Guid Id { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? EmailNotif { get; set; }
+    public DateTime? EmailVerifiedAt { get; set; }
+    public bool IsEmailNotifVerified => !string.IsNullOrWhiteSpace(EmailNotif) && EmailVerifiedAt.HasValue;
     public string? Username { get; set; }
     public string? NIS { get; set; }
     public string? NISN { get; set; }

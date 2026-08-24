@@ -158,8 +158,7 @@ export default function Footer() {
                   alt="Logo SMKN 2 Surakarta"
                   width={40}
                   height={40}
-                  className="object-contain"
-                  style={{ width: "auto", height: "auto" }}
+                  className="h-10 w-10 object-contain"
                   priority
                 />
               </div>

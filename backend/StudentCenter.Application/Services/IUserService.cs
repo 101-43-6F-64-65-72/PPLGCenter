@@ -14,4 +14,7 @@ public interface IUserService
     Task<UserResponse?> UpdateUserStatusAsync(Guid id, bool isActive);
     Task<bool> DeleteUserAsync(Guid id);
     Task<UserResponse?> AssignTeacherAsync(AssignTeacherRequest request);
+    Task<RequestNotificationOtpResponse> RequestNotificationEmailOtpAsync(Guid userId, string email);
+    Task<VerifyNotificationOtpResponse> VerifyNotificationEmailOtpAsync(Guid userId, string email, List<string> techStack);
+    Task<bool> DeleteNotificationEmailAsync(Guid userId);
 }

@@ -257,6 +257,17 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
       refType === "AcademicEvent" ||
       type === 6;
 
+    const isMention =
+      refType === 14 ||
+      refType === "Message" ||
+      refType === "Mention" ||
+      refType === "Community" ||
+      refType === "Group" ||
+      type === 15 || // NotificationType.Mention
+      type === 14 || // NotificationType.DiscussionReply
+      type === 16 || // NotificationType.AnnouncementComment
+      type === 17;   // NotificationType.Community
+
     if (!url) {
       if (isProposal) {
         url = refId ? `/proposal?id=${refId}` : "/proposal";
@@ -272,6 +283,8 @@ export default function NotificationItem({ notification, onMarkRead, onDelete })
         url = "/fasilitas";
       } else if (isCalendar) {
         url = "/kalender";
+      } else if (isMention) {
+        url = refId ? `/komunitas?groupId=${refId}` : "/komunitas";
       }
     }
 

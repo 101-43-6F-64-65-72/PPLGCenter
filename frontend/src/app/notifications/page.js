@@ -16,7 +16,8 @@ import {
   Edit3, 
   Trash2, 
   Users, 
-  Radio 
+  Radio,
+  Clock
 } from "lucide-react";
 import { notificationService } from "@/services/notificationService";
 import NotificationItem from "@/components/notification/NotificationItem";
@@ -87,6 +88,26 @@ export default function NotificationsPage() {
   const [submittingBroadcast, setSubmittingBroadcast] = useState(false);
   const [actionError, setActionError] = useState("");
 
+  // Safety Confirmation Modal state (2-step verification + 5s countdown)
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmStep, setConfirmStep] = useState(1); // 1 | 2
+  const [countdown, setCountdown] = useState(5);
+  const [confirmCheck1, setConfirmCheck1] = useState(false);
+  const [confirmCheck2, setConfirmCheck2] = useState(false);
+
+  // 5-second Countdown Timer Effect for Step 1
+  useEffect(() => {
+    let timer;
+    if (confirmModalOpen && confirmStep === 1 && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [confirmModalOpen, confirmStep, countdown]);
+
   // Fetch My Notifications
   const fetchNotifications = async () => {
     setLoading(true);
@@ -115,8 +136,8 @@ export default function NotificationsPage() {
     setLoadingBroadcasts(true);
     try {
       const res = await notificationService.getBroadcasts();
-      const rawItems = res?.data?.items || res?.data || (Array.isArray(res) ? res : []);
-      const items = Array.isArray(rawItems) ? rawItems : [];
+      const rawData = res?.data?.data || res?.data?.items || res?.data || res?.items || (Array.isArray(res) ? res : []);
+      const items = Array.isArray(rawData) ? rawData : [];
       setBroadcasts(items);
     } catch (err) {
       console.error("Failed to fetch broadcast list:", err?.message || err);
@@ -143,7 +164,7 @@ export default function NotificationsPage() {
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
       );
     } catch (err) {
-      console.error("Failed to mark as read:", err?.message || err);
+      console.error("Failed to mark notification as read:", err?.message || err);
     }
   };
 
@@ -180,12 +201,6 @@ export default function NotificationsPage() {
   };
 
   const openEditModal = (b) => {
-    const isCreator = user?.id && b?.createdByUserId && user.id.toLowerCase() === b.createdByUserId.toLowerCase();
-    if (!isCreator) {
-      alert(`Hanya pembuat broadcast (${b.createdByName || "pembuat asal"}) yang dapat mengedit broadcast ini.`);
-      return;
-    }
-
     setEditingBroadcast(b);
     setBroadcastForm({
       title: b.title || "",
@@ -199,8 +214,25 @@ export default function NotificationsPage() {
     setBroadcastModalOpen(true);
   };
 
-  const handleSaveBroadcast = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
+    setActionError("");
+
+    // If editing existing broadcast, execute directly
+    if (editingBroadcast) {
+      executeSaveBroadcast();
+      return;
+    }
+
+    // For new broadcast: initiate 2-step verification with 5-second countdown guard
+    setConfirmStep(1);
+    setCountdown(5);
+    setConfirmCheck1(false);
+    setConfirmCheck2(false);
+    setConfirmModalOpen(true);
+  };
+
+  const executeSaveBroadcast = async () => {
     setSubmittingBroadcast(true);
     setActionError("");
 
@@ -216,29 +248,33 @@ export default function NotificationsPage() {
     try {
       if (editingBroadcast) {
         const res = await notificationService.updateBroadcast(editingBroadcast.broadcastId, payload);
-        const isSuccess = res?.statusCode === 200 || res?.status === 200 || res?.success || res?.message?.toLowerCase()?.includes("success") || res?.message?.toLowerCase()?.includes("berhasil");
-
-        if (isSuccess) {
-          setBroadcastModalOpen(false);
-          await fetchBroadcasts();
-        } else {
-          setActionError(res?.message || "Gagal memperbarui broadcast.");
-        }
-      } else {
-        const res = await notificationService.broadcast(payload);
-        const isSuccess = res?.statusCode === 200 || res?.status === 200 || res?.success || res?.message?.toLowerCase()?.includes("success") || res?.message?.toLowerCase()?.includes("berhasil");
+        const isSuccess = res?.statusCode === 200 || res?.status === 200 || res?.success || res?.data?.success || res?.message?.toLowerCase()?.includes("success") || res?.message?.toLowerCase()?.includes("berhasil");
 
         if (isSuccess) {
           setBroadcastModalOpen(false);
           await fetchBroadcasts();
           await fetchNotifications();
         } else {
+          setActionError(res?.message || "Gagal memperbarui broadcast.");
+        }
+      } else {
+        const res = await notificationService.broadcast(payload);
+        const isSuccess = res?.statusCode === 200 || res?.status === 200 || res?.success || res?.data?.success || res?.message?.toLowerCase()?.includes("success") || res?.message?.toLowerCase()?.includes("berhasil");
+
+        if (isSuccess) {
+          setConfirmModalOpen(false);
+          setBroadcastModalOpen(false);
+          await fetchBroadcasts();
+          await fetchNotifications();
+        } else {
           setActionError(res?.message || "Gagal mengirim broadcast.");
+          setConfirmModalOpen(false);
         }
       }
     } catch (err) {
       console.error("Broadcast operation failed:", err?.message || err);
       setActionError(err?.message || err?.response?.data?.message || "Terjadi kesalahan saat mengirim broadcast.");
+      setConfirmModalOpen(false);
     } finally {
       setSubmittingBroadcast(false);
     }
@@ -246,7 +282,7 @@ export default function NotificationsPage() {
 
   const handleDeleteBroadcast = async (b) => {
     const isCreator = user?.id && b?.createdByUserId && user.id.toLowerCase() === b.createdByUserId.toLowerCase();
-    const isAdmin = role === "Admin" || user?.role === "Admin" || user?.role === 0;
+    const isAdmin = isAuthorized;
 
     if (!isCreator && !isAdmin) {
       alert("Anda tidak memiliki izin untuk menghapus broadcast ini.");
@@ -260,6 +296,7 @@ export default function NotificationsPage() {
     try {
       await notificationService.deleteBroadcast(b.broadcastId);
       await fetchBroadcasts();
+      await fetchNotifications();
     } catch (err) {
       console.error("Failed to delete broadcast:", err?.message || err);
       alert(err?.message || err?.response?.data?.message || "Gagal menghapus broadcast.");
@@ -309,7 +346,10 @@ export default function NotificationsPage() {
             <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
               <button
                 type="button"
-                onClick={() => setActiveTab("my")}
+                onClick={() => {
+                  setActiveTab("my");
+                  fetchNotifications();
+                }}
                 className={`px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 border ${
                   activeTab === "my"
                     ? "bg-slate-900 text-white border-slate-900 shadow-xs"
@@ -321,7 +361,10 @@ export default function NotificationsPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab("broadcasts")}
+                onClick={() => {
+                  setActiveTab("broadcasts");
+                  fetchBroadcasts();
+                }}
                 className={`px-3.5 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 border ${
                   activeTab === "broadcasts"
                     ? "bg-slate-900 text-white border-slate-900 shadow-xs"
@@ -571,7 +614,7 @@ export default function NotificationsPage() {
                 </div>
               )}
 
-              <form onSubmit={handleSaveBroadcast} className="space-y-4">
+              <form onSubmit={handleFormSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Judul Notifikasi *</label>
                   <input
@@ -659,12 +702,201 @@ export default function NotificationsPage() {
                     ) : (
                       <>
                         <Send className="w-3.5 h-3.5" />
-                        <span>{editingBroadcast ? "Simpan Perubahan" : "Kirim Broadcast"}</span>
+                        <span>{editingBroadcast ? "Simpan Perubahan" : "Lanjut Verifikasi Kirim"}</span>
                       </>
                     )}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* 2-Step Safety Verification Modal for Broadcast */}
+        {confirmModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-5 font-sans">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                    <Radio className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      {confirmStep === 1 ? "Verifikasi Broadcast (1/2)" : "Konfirmasi Final (2/2)"}
+                    </h3>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Perlindungan kenyamanan pengguna dan pencegahan spam
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConfirmModalOpen(false)}
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Step 1: 5-Second Cooldown & Content Preview */}
+              {confirmStep === 1 && (
+                <div className="space-y-4">
+                  <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-amber-800">
+                      Peringatan Broadcast Publik
+                    </p>
+                    <p className="leading-relaxed text-amber-800/90 font-medium">
+                      Pesan ini akan dikirimkan secara langsung ke <strong>{broadcastForm.targetRole ? `Grup ${broadcastForm.targetRole}` : "Seluruh Siswa, Guru dan Admin"}</strong> serta diteruskan ke email notifikasi masing-masing pengguna.
+                    </p>
+                  </div>
+
+                  {/* Summary Card */}
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Judul Pesan</span>
+                      <p className="font-bold text-slate-900 mt-0.5">{broadcastForm.title}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Target Penerima</span>
+                      <p className="font-semibold text-slate-700 mt-0.5">
+                        {broadcastForm.targetRole ? `Peran: ${broadcastForm.targetRole}` : "Semua Pengguna (Global)"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Isi Pesan</span>
+                      <p className="font-medium text-slate-600 mt-0.5 line-clamp-3 leading-relaxed whitespace-pre-wrap">
+                        {broadcastForm.body}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 text-center font-medium">
+                    {countdown > 0 ? (
+                      <span className="text-amber-600 font-bold">
+                        Harap tinjau ringkasan di atas. Tombol konfirmasi akan aktif dalam {countdown} detik...
+                      </span>
+                    ) : (
+                      <span className="text-emerald-600 font-bold">
+                        Waktu tunggu selesai. Silakan lanjut jika data sudah benar.
+                      </span>
+                    )}
+                  </p>
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmModalOpen(false)}
+                      className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={countdown > 0}
+                      onClick={() => setConfirmStep(2)}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                        countdown > 0
+                          ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                          : "bg-slate-900 text-white hover:bg-slate-800 shadow-sm"
+                      }`}
+                    >
+                      {countdown > 0 ? (
+                        <>
+                          <Clock className="w-3.5 h-3.5 animate-spin" />
+                          <span>Tunggu ({countdown}s)</span>
+                        </>
+                      ) : (
+                        <span>Lanjut ke Verifikasi Final</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Final Dual Verification Checkbox */}
+              {confirmStep === 2 && (
+                <div className="space-y-4">
+                  <div className="p-3.5 bg-rose-50/80 border border-rose-200 rounded-xl text-xs text-rose-900 space-y-1">
+                    <p className="font-bold text-rose-800">
+                      Verifikasi Tahap Akhir
+                    </p>
+                    <p className="leading-relaxed text-rose-700 font-medium">
+                      Tindakan ini tidak dapat dibatalkan setelah broadcast disebarkan. Berikan persetujuan akhir sebelum sistem memproses pengiriman.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-xs">
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={confirmCheck1}
+                        onChange={(e) => setConfirmCheck1(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                      />
+                      <span className="text-slate-700 font-medium leading-tight">
+                        Saya menyatakan isi judul dan pesan broadcast ini sudah benar dan tidak mengandung kesalahan.
+                      </span>
+                    </label>
+
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={confirmCheck2}
+                        onChange={(e) => setConfirmCheck2(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
+                      />
+                      <span className="text-slate-700 font-medium leading-tight">
+                        Saya memahami notifikasi ini akan segera dikirimkan ke in-app dan email seluruh penerima secara real-time.
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConfirmStep(1);
+                        setCountdown(0);
+                      }}
+                      className="px-3.5 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      Kembali
+                    </button>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmModalOpen(false)}
+                        className="px-4 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!confirmCheck1 || !confirmCheck2 || submittingBroadcast}
+                        onClick={executeSaveBroadcast}
+                        className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {submittingBroadcast ? (
+                          <>
+                            <TwinOrbitSpinner size="xs" color="white" />
+                            <span>Mengirim...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Konfirmasi & Kirim Sekarang</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         )}

@@ -1,1 +1,1 @@
-export { default } from "./page.jsx";
+// Deprecated: Active route file is page.jsx

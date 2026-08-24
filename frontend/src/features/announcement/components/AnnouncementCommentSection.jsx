@@ -396,7 +396,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                   {resolvedPhoto ? (
                     <img
                       src={resolvedPhoto}
-                      alt={author}
+                      alt={author || "Foto Pengguna"}
                       className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs border border-gray-200"
                     />
                   ) : (
@@ -478,7 +478,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                           {resolvedReplyPhoto ? (
                             <img
                               src={resolvedReplyPhoto}
-                              alt={replyAuthor}
+                              alt={replyAuthor || "Foto Pengguna"}
                               className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs border border-gray-200"
                             />
                           ) : (

@@ -129,4 +129,67 @@ public class UsersController : ControllerBase
 
         return Ok(ApiResponse<object>.Ok("User deleted successfully"));
     }
+
+    /// <summary>
+    /// Requests a Tech Stack challenge OTP to set or update notification email.
+    /// </summary>
+    [HttpPost("notification-email/request-otp")]
+    public async Task<IActionResult> RequestNotificationEmailOtp([FromBody] RequestNotificationOtpRequest request)
+    {
+        var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak valid."));
+        }
+
+        var result = await _userService.RequestNotificationEmailOtpAsync(currentUserId.Value, request.Email);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<RequestNotificationOtpResponse>.Fail(result.Message));
+        }
+
+        return Ok(ApiResponse<RequestNotificationOtpResponse>.Ok(result.Message, result));
+    }
+
+    /// <summary>
+    /// Verifies the 3-step Tech Stack challenge sequence and links the notification email.
+    /// </summary>
+    [HttpPost("notification-email/verify-otp")]
+    public async Task<IActionResult> VerifyNotificationEmailOtp([FromBody] VerifyNotificationOtpRequest request)
+    {
+        var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak valid."));
+        }
+
+        var result = await _userService.VerifyNotificationEmailOtpAsync(currentUserId.Value, request.Email, request.TechStack);
+        if (!result.Success)
+        {
+            return BadRequest(ApiResponse<VerifyNotificationOtpResponse>.Fail(result.Message));
+        }
+
+        return Ok(ApiResponse<VerifyNotificationOtpResponse>.Ok(result.Message, result));
+    }
+
+    /// <summary>
+    /// Unlinks / deletes the notification email for the authenticated user.
+    /// </summary>
+    [HttpDelete("notification-email")]
+    public async Task<IActionResult> DeleteNotificationEmail()
+    {
+        var currentUserId = _currentUserService.UserId;
+        if (!currentUserId.HasValue)
+        {
+            return Unauthorized(ApiResponse<object>.Fail("Identitas pengguna tidak valid."));
+        }
+
+        var success = await _userService.DeleteNotificationEmailAsync(currentUserId.Value);
+        if (!success)
+        {
+            return BadRequest(ApiResponse<object>.Fail("Gagal menghapus email notifikasi."));
+        }
+
+        return Ok(ApiResponse<object>.Ok("Email notifikasi berhasil dihapus."));
+    }
 }

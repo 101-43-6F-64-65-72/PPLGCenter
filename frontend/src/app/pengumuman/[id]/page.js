@@ -21,6 +21,7 @@ import { resolveImageUrl, formatDate } from "@/lib/utils";
 import RichTextEditor from "@/components/ui/RichTextEditor";
 import RichContentViewer from "@/components/ui/RichContentViewer";
 import { stripHtml } from "@/lib/sanitizer";
+import { ErrorFallback } from "@/components/ErrorFallback";
 
 export default function AnnouncementDetailPage() {
   const routeParams = useParams();
@@ -40,7 +41,7 @@ export default function AnnouncementDetailPage() {
   const [isUploadingEditCover, setIsUploadingEditCover] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
-  const { data, isLoading, refetch } = useAnnouncement(id);
+  const { data, isLoading, refetch, error } = useAnnouncement(id);
   const { data: listData } = useAnnouncements({ page: 1, pageSize: 6 });
 
   // Article reading progress bar listener
@@ -68,7 +69,7 @@ export default function AnnouncementDetailPage() {
   // Main announcement article
   const announcement = data?.data?.id ? data.data : (data?.data || data || null);
 
-  if (isLoading || !announcement) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC]">
         <Navbar />
@@ -76,6 +77,27 @@ export default function AnnouncementDetailPage() {
           <AnnouncementDetailSkeleton />
         </div>
       </div>
+    );
+  }
+
+  // Mascot Fallback when announcement is missing / deleted
+  if (!announcement || error || data?.statusCode === 404 || data?.status === 404) {
+    return (
+      <ErrorFallback
+        statusCode={404}
+        title="Pengumuman Tidak Ditemukan"
+        description="Yah, pengumuman ini sudah tidak tersedia atau telah dihapus oleh pihak admin sekolah."
+        primaryAction={{
+          label: "Kembali ke Mading Pengumuman",
+          href: "/pengumuman",
+        }}
+        secondaryAction={{
+          label: "Ke Beranda",
+          href: "/",
+        }}
+        mascotStateOverride="sad"
+        fullPage={true}
+      />
     );
   }
 
@@ -259,7 +281,7 @@ export default function AnnouncementDetailPage() {
                 <div className="relative w-full aspect-[16/8] sm:aspect-[16/7] overflow-hidden bg-slate-100">
                   <Image
                     src={coverImage}
-                    alt={announcement.title}
+                    alt={announcement.title || "Sampul Pengumuman Resmi"}
                     fill
                     className="object-cover"
                     priority
@@ -426,7 +448,7 @@ export default function AnnouncementDetailPage() {
                             <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-slate-100">
                               <Image
                                 src={getCoverImage(item)}
-                                alt={item.title}
+                                alt={item.title || "Gambar Pengumuman Terbaru"}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform"
                                 unoptimized
@@ -464,7 +486,7 @@ export default function AnnouncementDetailPage() {
                             <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-slate-100">
                               <Image
                                 src={getCoverImage(item)}
-                                alt={item.title}
+                                alt={item.title || "Gambar Pengumuman Populer"}
                                 fill
                                 className="object-cover group-hover:scale-105 transition-transform"
                                 unoptimized

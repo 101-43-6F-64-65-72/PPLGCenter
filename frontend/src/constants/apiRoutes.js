@@ -209,4 +209,15 @@ export const API_ROUTES = {
     UPCOMING: "/api/calendar/upcoming",
     DETAIL: (id) => `/api/calendar/${id}`,
   },
+  ADMIN_EMAIL: {
+    CONFIG: "/api/admin/email/config",
+    TEST: "/api/admin/email/test",
+    LOGS: "/api/admin/email/logs",
+    LOG_DETAIL: (id) => `/api/admin/email/logs/${id}`,
+  },
+  NOTIFICATION_EMAIL: {
+    REQUEST_OTP: "/api/users/notification-email/request-otp",
+    VERIFY_OTP: "/api/users/notification-email/verify-otp",
+    DELETE: "/api/users/notification-email",
+  },
 };

@@ -30,10 +30,14 @@ public class AnnouncementCommentService : IAnnouncementCommentService
         if (announcement.IsCommentsLocked)
             throw new ValidationException("Komentar pada pengumuman ini telah dikunci.");
 
+        AnnouncementComment? parentComment = null;
         if (parentCommentId.HasValue)
         {
-            var parentExists = await _context.AnnouncementComments.AnyAsync(c => c.Id == parentCommentId.Value && c.DeletedAt == null);
-            if (!parentExists)
+            parentComment = await _context.AnnouncementComments
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == parentCommentId.Value && c.DeletedAt == null);
+
+            if (parentComment == null)
                 throw new ValidationException("Komentar utama yang dituju telah dihapus.");
         }
 
@@ -54,18 +58,84 @@ public class AnnouncementCommentService : IAnnouncementCommentService
         _context.AnnouncementComments.Add(comment);
         await _context.SaveChangesAsync();
 
-        if (announcement.CreatedByUserId != userId)
+        // 1. Reply to another comment notification
+        if (parentComment != null)
         {
-            await _notificationService.NotifyUserAsync(
-                announcement.CreatedByUserId,
-                "Komentar Pengumuman Baru",
-                $"{user?.FullName ?? "Seseorang"} mengomentari pengumuman Anda '{announcement.Title}'.",
-                NotificationType.AnnouncementComment,
-                NotificationPriority.Normal,
-                announcement.Id.ToString(),
-                NotificationReferenceType.Announcement,
-                $"/mading/{announcement.Id}"
-            );
+            // Only notify parent comment owner if it's NOT the user replying to their own comment
+            if (parentComment.UserId != userId)
+            {
+                await _notificationService.NotifyUserAsync(
+                    parentComment.UserId,
+                    "Balasan Komentar Baru",
+                    $"{user?.FullName ?? "Seseorang"} membalas komentar Anda pada pengumuman '{announcement.Title}': \"{comment.Content}\"",
+                    NotificationType.DiscussionReply,
+                    NotificationPriority.Normal,
+                    announcement.Id.ToString(),
+                    NotificationReferenceType.Announcement,
+                    $"/pengumuman/{announcement.Id}"
+                );
+            }
+
+            // Also notify the announcement creator if they are neither the replier nor the parent comment author
+            if (announcement.CreatedByUserId != userId && announcement.CreatedByUserId != parentComment.UserId)
+            {
+                await _notificationService.NotifyUserAsync(
+                    announcement.CreatedByUserId,
+                    "Komentar Pengumuman Baru",
+                    $"{user?.FullName ?? "Seseorang"} mengomentari pengumuman Anda '{announcement.Title}'.",
+                    NotificationType.AnnouncementComment,
+                    NotificationPriority.Normal,
+                    announcement.Id.ToString(),
+                    NotificationReferenceType.Announcement,
+                    $"/pengumuman/{announcement.Id}"
+                );
+            }
+        }
+        else
+        {
+            // Top-level comment: notify announcement creator if it's not themselves
+            if (announcement.CreatedByUserId != userId)
+            {
+                await _notificationService.NotifyUserAsync(
+                    announcement.CreatedByUserId,
+                    "Komentar Pengumuman Baru",
+                    $"{user?.FullName ?? "Seseorang"} mengomentari pengumuman Anda '{announcement.Title}'.",
+                    NotificationType.AnnouncementComment,
+                    NotificationPriority.Normal,
+                    announcement.Id.ToString(),
+                    NotificationReferenceType.Announcement,
+                    $"/pengumuman/{announcement.Id}"
+                );
+            }
+        }
+
+        // Process @username mentions in announcement comments
+        var commentMentions = System.Text.RegularExpressions.Regex.Matches(comment.Content, @"@(\w+)")
+            .Select(m => m.Groups[1].Value)
+            .Distinct();
+
+        foreach (var username in commentMentions)
+        {
+            var mentionedUser = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Username != null && u.Username.ToLower() == username.ToLower());
+
+            if (mentionedUser != null && 
+                mentionedUser.Id != userId && 
+                mentionedUser.Id != announcement.CreatedByUserId && 
+                (parentComment == null || mentionedUser.Id != parentComment.UserId))
+            {
+                await _notificationService.NotifyUserAsync(
+                    mentionedUser.Id,
+                    "Anda Disebut dalam Komentar",
+                    $"{user?.FullName ?? "Seseorang"} menyebut Anda dalam komentar: \"{comment.Content}\"",
+                    NotificationType.Mention,
+                    NotificationPriority.High,
+                    comment.Id.ToString(),
+                    NotificationReferenceType.Announcement,
+                    $"/pengumuman/{announcement.Id}"
+                );
+            }
         }
 
         return new CommentResponse

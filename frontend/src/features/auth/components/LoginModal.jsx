@@ -21,15 +21,18 @@ try {
   } catch (e2) {}
 }
 
-const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, ref) => (
-  <div ref={ref} className={className} style={style} onClick={onClick}>
-    {children}
-  </div>
-));
+const FallbackDiv = React.forwardRef(
+  ({ children, className, style, onClick }, ref) => (
+    <div ref={ref} className={className} style={style} onClick={onClick}>
+      {children}
+    </div>
+  ),
+);
 FallbackDiv.displayName = "FallbackDiv";
 
 const MotionDiv = motionImport?.div || FallbackDiv;
-const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
+const AnimatePresenceComponent =
+  animatePresenceImport || (({ children }) => <>{children}</>);
 
 export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
   const [mascotState, setMascotState] = useState("happy");
@@ -98,7 +101,13 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
               initial={{ opacity: 0, scale: 0.82, y: 35, rotateX: 6 }}
               animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
               exit={{ opacity: 0, scale: 0.85, y: 25, rotateX: 6 }}
-              transition={{ delay: 0.25, duration: 0.45, type: "spring", stiffness: 320, damping: 26 }}
+              transition={{
+                delay: 0.25,
+                duration: 0.45,
+                type: "spring",
+                stiffness: 320,
+                damping: 26,
+              }}
               style={{ transformStyle: "preserve-3d" }}
               className="relative w-full max-w-md rounded-[36px] border border-white/25 bg-[#2c1ee8]/95 p-7 sm:p-8 text-white shadow-2xl shadow-slate-950/80 backdrop-blur-2xl font-sans my-auto pointer-events-auto overflow-visible"
               onClick={(e) => e.stopPropagation()}
@@ -153,7 +162,12 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
                 initial={{ y: 120, scale: 0.3, opacity: 0 }}
                 animate={{ y: 0, scale: 1, opacity: 1 }}
                 exit={{ y: 120, scale: 0.3, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 350, damping: 18, mass: 0.8 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 350,
+                  damping: 18,
+                  mass: 0.8,
+                }}
                 className="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 z-30 pointer-events-none hidden md:block"
               >
                 <BloubMascot size={150} state={mascotState} />

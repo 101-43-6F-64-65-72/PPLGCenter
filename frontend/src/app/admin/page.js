@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import AuthGuard from "@/components/layout/AuthGuard";
@@ -28,7 +29,8 @@ import AdminSubmissionReviewTab from "@/components/admin/AdminSubmissionReviewTa
 import AdminGradeCategoryTab from "@/components/admin/AdminGradeCategoryTab";
 import AdminGradeScaleTab from "@/components/admin/AdminGradeScaleTab";
 import PasswordResetAdminTab from "@/components/admin/PasswordResetAdminTab";
-import { ShieldAlert, Settings, Plus, Upload, GraduationCap, BookOpen, Briefcase, Layers, Calendar, Sparkles } from "lucide-react";
+import { ShieldAlert, Settings, Plus, Upload, GraduationCap, BookOpen, Briefcase, Layers, Calendar, Sparkles, Mail } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminPanelPage() {
   return (
@@ -39,6 +41,7 @@ export default function AdminPanelPage() {
 }
 
 function AdminPanelContent() {
+  const router = useRouter();
   // Active Admin Sub-Tab
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedAssignmentForReview, setSelectedAssignmentForReview] = useState(null);
@@ -88,7 +91,13 @@ function AdminPanelContent() {
               <select
                 suppressHydrationWarning={true}
                 value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value === "email-debug") {
+                    router.push("/admin/email-debug");
+                  } else {
+                    setActiveTab(e.target.value);
+                  }
+                }}
                 className="w-full bg-white border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-extrabold text-slate-800 outline-none focus:border-[#2c1ee8] focus:ring-2 focus:ring-blue-100 shadow-2xs transition"
               >
                 <option value="overview">Dashboard Overview</option>
@@ -112,6 +121,7 @@ function AdminPanelContent() {
                 <option value="facilities">Kelola Booking</option>
                 <option value="announcements">Mading & Pengumuman</option>
                 <option value="password-reset">Reset Password</option>
+                <option value="email-debug">⚡ Email Debugger</option>
               </select>
             </div>
           </div>
@@ -178,6 +188,14 @@ function AdminPanelContent() {
                     <Upload className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
                     <span>Import CSV</span>
                   </button>
+
+                  <Link
+                    href="/admin/email-debug"
+                    className="px-3.5 py-2.5 rounded-xl bg-blue-50 hover:bg-[#2C1EE8] hover:text-white text-[#2C1EE8] text-xs font-extrabold flex items-center gap-2 border border-blue-200/90 shadow-2xs transition-all duration-200 cursor-pointer group"
+                  >
+                    <Mail className="w-4 h-4 text-[#2C1EE8] group-hover:text-white transition-colors" />
+                    <span>Email Debugger</span>
+                  </Link>
                 </div>
               </div>
 

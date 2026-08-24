@@ -8,10 +8,11 @@ import AuthGuard from "@/components/layout/AuthGuard";
 import useAuth from "@/hooks/useAuth";
 import { ROLE_LABELS } from "@/constants/userRoles";
 import { Shield, LogOut, User, Lock, Mail, Phone, MapPin, CheckCircle, AlertCircle, Camera } from "@/components/common/Icons";
-import { GraduationCap, BookOpen, Award, Hash, KeyRound } from "lucide-react";
+import { GraduationCap, BookOpen, Award, Hash, KeyRound, Bell } from "lucide-react";
 import Button from "@/components/ui/Button";
 import profileService from "@/services/profileService";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
+import NotificationEmailSection from "@/components/profile/NotificationEmailSection";
 import { resolveImageUrl } from "@/lib/utils";
 import { motion, AnimatePresence } from "@/lib/motion";
 
@@ -399,6 +400,20 @@ function ProfileContent() {
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab("notification")}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${activeTab === "notification"
+                ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+            >
+              <Bell className="w-4 h-4" />
+              <span>Email Notifikasi</span>
+              {user?.emailNotif && (user?.emailVerifiedAt || user?.isEmailNotifVerified) && (
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab("password")}
               className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${activeTab === "password"
                 ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
@@ -678,7 +693,17 @@ function ProfileContent() {
             </button>
           </form>
         )}
+
+        {/* Tab 3: Email Notifikasi Tab */}
+        {activeTab === "notification" && (
+          <NotificationEmailSection user={user} onProfileUpdated={fetchProfile} />
+        )}
       </div>
+
+      {/* Persistent Notification Email Section on Profile (when on info tab) */}
+      {activeTab === "info" && (
+        <NotificationEmailSection user={user} onProfileUpdated={fetchProfile} />
+      )}
 
       {/* Manual Guide Settings Card at the bottom of Profile */}
       <ManualGuideSettingsCard />

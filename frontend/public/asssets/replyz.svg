@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     version="1.2"
+     baseProfile="tiny-ps"
+     viewBox="0 0 1000 1000"
+     width="1000"
+     height="1000">
+  <title>Replyz - PPLG Center Bot</title>
+  
+  <!-- Outer Dark Circle Badge -->
+  <circle cx="500" cy="500" r="410" fill="#0a0a0c" stroke="#f1f5f9" stroke-width="5" />
+
+  <!-- Left Thinking Pill Eye (Tilted Inquisitive) -->
+  <rect x="-44" y="-120" width="88" height="240" rx="44" fill="#ffffff" transform="translate(475, 460) rotate(-18)" />
+
+  <!-- Right Thinking Pill Eye (Smaller, Tilted) -->
+  <rect x="-36" y="-85" width="72" height="170" rx="36" fill="#ffffff" transform="translate(655, 490) rotate(9)" />
+</svg>

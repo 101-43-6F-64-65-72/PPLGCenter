@@ -23,8 +23,17 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(256);
 
+        builder.Property(u => u.EmailNotif)
+            .IsRequired(false)
+            .HasMaxLength(254);
+
+        builder.Property(u => u.EmailVerifiedAt)
+            .IsRequired(false);
+
         builder.HasIndex(u => u.Email)
             .IsUnique();
+
+        builder.HasIndex(u => u.EmailNotif);
 
         builder.Property(u => u.Username)
             .HasMaxLength(100);

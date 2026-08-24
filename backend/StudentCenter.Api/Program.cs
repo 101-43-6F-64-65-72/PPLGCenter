@@ -128,6 +128,10 @@ builder.Services.AddScoped<ILibraryService, LibraryService>();
 // CCTV Subsystem (Phase 22)
 builder.Services.AddScoped<ICctvService, CctvService>();
 
+// Email Notification Subsystem (Phase 23)
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKeyFile = Environment.GetEnvironmentVariable("JWT_SECRET__FILE");

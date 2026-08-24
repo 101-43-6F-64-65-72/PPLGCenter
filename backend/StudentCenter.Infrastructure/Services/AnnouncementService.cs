@@ -711,12 +711,21 @@ public class AnnouncementService : IAnnouncementService
             throw new UnauthorizedAccessException("You can only delete your own announcements.");
         }
 
-        // Remove child comments and reactions first to prevent Foreign Key constraint 500 errors
+        // Remove child comments and reactions first to prevent Foreign Key constraint errors
         var comments = await _context.Set<AnnouncementComment>()
             .Where(c => c.AnnouncementId == id)
             .ToListAsync();
         if (comments.Count > 0)
         {
+            var commentIds = comments.Select(c => c.Id.ToString()).ToList();
+            var commentNotifs = await _context.Set<Notification>()
+                .Where(n => commentIds.Contains(n.ReferenceId!))
+                .ToListAsync();
+            if (commentNotifs.Count > 0)
+            {
+                _context.Set<Notification>().RemoveRange(commentNotifs);
+            }
+
             _context.Set<AnnouncementComment>().RemoveRange(comments);
         }
 
@@ -726,6 +735,17 @@ public class AnnouncementService : IAnnouncementService
         if (reactions.Count > 0)
         {
             _context.Set<AnnouncementReaction>().RemoveRange(reactions);
+        }
+
+        // Remove linked notifications for this announcement
+        var announcementIdStr = id.ToString();
+        var linkedNotifications = await _context.Set<Notification>()
+            .Where(n => (n.ReferenceId == announcementIdStr && n.ReferenceType == NotificationReferenceType.Announcement) ||
+                        (n.ActionUrl != null && n.ActionUrl.Contains(announcementIdStr)))
+            .ToListAsync();
+        if (linkedNotifications.Count > 0)
+        {
+            _context.Set<Notification>().RemoveRange(linkedNotifications);
         }
 
         _context.Set<Announcement>().Remove(announcement);

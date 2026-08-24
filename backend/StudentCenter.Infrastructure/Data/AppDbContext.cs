@@ -94,6 +94,9 @@ public class AppDbContext : DbContext
     // CCTV Subsystem (Phase 22)
     public DbSet<CctvCamera> CctvCameras => Set<CctvCamera>();
 
+    // Email Notification & Logs (Phase 23)
+    public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
+    public DbSet<EmailVerificationOtp> EmailVerificationOtps => Set<EmailVerificationOtp>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
