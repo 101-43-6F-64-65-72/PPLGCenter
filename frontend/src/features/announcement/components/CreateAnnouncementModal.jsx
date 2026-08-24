@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, Plus, Check, Calendar, Users, Megaphone, AlertCircle } from "lucide-react";
+import { X, Plus, Check, Calendar, Users, Megaphone, AlertCircle, Clock } from "lucide-react";
 import announcementService from "@/services/announcementService";
 import uploadImageToCloudinary from "@/services/cloudinaryService";
 import { resolveImageUrl } from "@/lib/utils";
@@ -40,6 +40,7 @@ export default function CreateAnnouncementModal({
   const [content, setContent] = useState("");
   const [selectedTargetClasses, setSelectedTargetClasses] = useState(["Semua Kelas"]);
   const [isClassPickerOpen, setIsClassPickerOpen] = useState(false);
+  const [enableDuration, setEnableDuration] = useState(false);
   const [publishStart, setPublishStart] = useState("");
   const [publishEnd, setPublishEnd] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
@@ -69,6 +70,7 @@ export default function CreateAnnouncementModal({
       } else {
         setSelectedTargetClasses(["Semua Kelas"]);
       }
+      setEnableDuration(Boolean(editData.publishStart || editData.publishEnd));
       setPublishStart(editData.publishStart ? new Date(editData.publishStart).toISOString().slice(0, 16) : "");
       setPublishEnd(editData.publishEnd ? new Date(editData.publishEnd).toISOString().slice(0, 16) : "");
     } else {
@@ -76,6 +78,7 @@ export default function CreateAnnouncementModal({
       setCategory("Pengumuman");
       setContent("");
       setSelectedTargetClasses(["Semua Kelas"]);
+      setEnableDuration(false);
       setPublishStart("");
       setPublishEnd("");
       setCoverImageUrl("");
@@ -149,8 +152,8 @@ export default function CreateAnnouncementModal({
       content: content.trim(),
       category: category || "Pengumuman",
       targetClasses: selectedTargetClasses.join(", "),
-      publishStart: publishStart ? new Date(publishStart).toISOString() : null,
-      publishEnd: publishEnd ? new Date(publishEnd).toISOString() : null,
+      publishStart: enableDuration && publishStart ? new Date(publishStart).toISOString() : null,
+      publishEnd: enableDuration && publishEnd ? new Date(publishEnd).toISOString() : null,
       coverImageUrl: coverImageUrl || null,
       imageUrl: coverImageUrl || null,
       isPinned: isPinned,
@@ -317,31 +320,87 @@ export default function CreateAnnouncementModal({
             </div>
           </div>
 
-          {/* Tanggal & Jam Mulai & Berakhir */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Mulai Berlaku
+          {/* Durasi & Waktu Tayang (Opsional) */}
+          <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-50 text-[#2C1EE8] rounded-lg">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-800">Atur Durasi & Waktu Tayang</span>
+                  <span className="ml-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-200/60 px-1.5 py-0.5 rounded-md">
+                    Opsional
+                  </span>
+                </div>
+              </div>
+
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enableDuration}
+                  onChange={(e) => {
+                    setEnableDuration(e.target.checked);
+                    if (!e.target.checked) {
+                      setPublishStart("");
+                      setPublishEnd("");
+                    }
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2C1EE8]"></div>
               </label>
-              <input
-                type="datetime-local"
-                value={publishStart}
-                onChange={(e) => setPublishStart(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#2C1EE8] focus:bg-white transition"
-              />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Selesai / Berakhir
-              </label>
-              <input
-                type="datetime-local"
-                value={publishEnd}
-                onChange={(e) => setPublishEnd(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#2C1EE8] focus:bg-white transition"
-              />
-            </div>
+            {enableDuration && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-slate-200/70">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      Mulai Berlaku
+                    </label>
+                    {publishStart && (
+                      <button
+                        type="button"
+                        onClick={() => setPublishStart("")}
+                        className="text-[10px] font-bold text-rose-500 hover:underline cursor-pointer"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={publishStart}
+                    onChange={(e) => setPublishStart(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-[#2C1EE8] transition"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      Selesai / Berakhir
+                    </label>
+                    {publishEnd && (
+                      <button
+                        type="button"
+                        onClick={() => setPublishEnd("")}
+                        className="text-[10px] font-bold text-rose-500 hover:underline cursor-pointer"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={publishEnd}
+                    onChange={(e) => setPublishEnd(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-800 outline-none focus:border-[#2C1EE8] transition"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Cover Image Upload */}
