@@ -88,6 +88,38 @@ const safeBase64Decode = (b64) => {
   }
 };
 
+const formatPinnedMessagePreview = (text) => {
+  if (!text) return "";
+  
+  // Check if it starts with image attachment
+  const imgMatch = text.match(/^!\[Gambar\]\((.*?)\)/);
+  if (imgMatch) {
+    const caption = text.substring(imgMatch[0].length).trim();
+    return caption ? `📷 Foto: ${caption}` : "📷 Foto";
+  }
+  
+  // Check if it starts with document attachment
+  const docMatch = text.match(/^\[📄 Dokumen:\s*(.*?)\]\((.*?)\)/);
+  if (docMatch) {
+    const docName = docMatch[1];
+    const caption = text.substring(docMatch[0].length).trim();
+    const isVideo = /\.(mp4|mkv|mov|avi|webm|3gp)$/i.test(docName);
+    if (isVideo) {
+      return caption ? `🎥 Video (${docName}): ${caption}` : `🎥 Video (${docName})`;
+    }
+    return caption ? `📄 ${docName}: ${caption}` : `📄 ${docName}`;
+  }
+  
+  // Check if it starts with audio attachment
+  const audioMatch = text.match(/^\[🎙️ Pesan Suara:\s*(.*?)\]\((.*?)\)/);
+  if (audioMatch) {
+    const duration = audioMatch[1];
+    return `🎙️ Pesan Suara (${duration})`;
+  }
+  
+  return text;
+};
+
 export default function KomunitasPage() {
   const { isAuthenticated, user, role } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -117,7 +149,49 @@ export default function KomunitasPage() {
   // Chat Controls & Reactions State
   const [replyingMessage, setReplyingMessage] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
-  const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
+  const [activeMenuMsg, setActiveMenuMsg] = useState(null);
+  const [menuCoords, setMenuCoords] = useState({ x: 0, y: 0 });
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinTargetMsg, setPinTargetMsg] = useState(null);
+  const [pendingFile, setPendingFile] = useState(null);
+
+  const handleOpenMessageMenu = (e, msg) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (activeMenuMsg?.id === msg.id) {
+      setActiveMenuMsg(null);
+      return;
+    }
+
+    let x = e.clientX;
+    let y = e.clientY;
+
+    const menuWidth = 240;
+    const menuHeight = 290;
+
+    const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1024;
+    const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 768;
+
+    // Adjust horizontal position (X) to stay inside viewport
+    if (x + menuWidth > viewportWidth) {
+      x = viewportWidth - menuWidth - 12;
+    }
+    if (x < 12) {
+      x = 12;
+    }
+
+    // Adjust vertical position (Y) to stay inside viewport
+    if (y + menuHeight > viewportHeight) {
+      y = viewportHeight - menuHeight - 12;
+    }
+    if (y < 12) {
+      y = 12;
+    }
+
+    setMenuCoords({ x, y });
+    setActiveMenuMsg(msg);
+  };
 
   const popoverCardRef = useRef(null);
 
@@ -125,14 +199,14 @@ export default function KomunitasPage() {
 
   // GSAP Animation when popover menu opens
   useEffect(() => {
-    if (activeMenuMsgId && popoverCardRef.current) {
+    if (activeMenuMsg && popoverCardRef.current) {
       gsap.fromTo(
         popoverCardRef.current,
         { scale: 0.65, opacity: 0, y: -10 },
         { scale: 1, opacity: 1, y: 0, duration: 0.25, ease: "back.out(1.8)" }
       );
     }
-  }, [activeMenuMsgId]);
+  }, [activeMenuMsg]);
 
 
 
@@ -186,11 +260,21 @@ export default function KomunitasPage() {
   useEffect(() => {
     const handleDocumentClick = (e) => {
       if (e.target && e.target.closest("[data-message-action]")) return;
-      setActiveMenuMsgId(null);
+      setActiveMenuMsg(null);
     };
     document.addEventListener("click", handleDocumentClick);
     return () => document.removeEventListener("click", handleDocumentClick);
   }, []);
+
+  // Expiry check for pinned messages
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (pinnedAnnouncement?.expiry && Date.now() > pinnedAnnouncement.expiry) {
+        handleUnpinMessage();
+      }
+    }, 60000); // every minute
+    return () => clearInterval(interval);
+  }, [pinnedAnnouncement]);
 
 
   // Load pinned groups from localStorage
@@ -264,16 +348,22 @@ export default function KomunitasPage() {
         setMembers(Array.isArray(fetchedMembers) ? fetchedMembers : []);
         setMessages(sortedMsgs);
 
-        // Load pinned announcement if any message starts with [PENGUMUMAN]
-        const pinnedMsg = sortedMsgs.slice().reverse().find((m) => {
-          const text = safeBase64Decode(m.encryptedPayloadBase64);
-          return text.startsWith("📌 [PENGUMUMAN]") || text.startsWith("[PENGUMUMAN]");
-        });
-        if (pinnedMsg) {
-          setPinnedAnnouncement(safeBase64Decode(pinnedMsg.encryptedPayloadBase64));
-        } else {
-          setPinnedAnnouncement(null);
+        // Load pinned announcement from localStorage
+        let storedPin = null;
+        if (group?.id) {
+          try {
+            const stored = localStorage.getItem(`pplg_pinned_${group.id}`);
+            if (stored) {
+              const data = JSON.parse(stored);
+              if (!data.expiry || Date.now() < data.expiry) {
+                storedPin = data;
+              } else {
+                localStorage.removeItem(`pplg_pinned_${group.id}`);
+              }
+            }
+          } catch (e) {}
         }
+        setPinnedAnnouncement(storedPin);
       } catch (err) {
         console.error("Failed to load chat details:", err);
       }
@@ -387,49 +477,11 @@ export default function KomunitasPage() {
     }
   };
 
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file || !selectedGroup) return;
-
-    try {
-      setUploadingFile(true);
-      setAlertMessage(null);
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const token = localStorage.getItem("token");
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-        },
-        body: formData,
-      });
-
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.message || "Gagal mengunggah file.");
-      }
-
-      const fileUrl = json.data?.url || json.url;
-      const isImage = file.type.startsWith("image/");
-      const attachmentText = isImage ? `![Gambar](${fileUrl})` : `[📄 Dokumen: ${file.name}](${fileUrl})`;
-
-      const payloadBase64 = safeBase64Encode(attachmentText);
-      await groupMessageService.sendMessage({
-        groupId: selectedGroup.id,
-        encryptedPayloadBase64: payloadBase64,
-        nonce: "foundation-nonce-" + Date.now(),
-        recipientEnvelopes: [],
-      });
-
-      await loadGroupDetails(selectedGroup);
-    } catch (err) {
-      setAlertMessage({ type: "error", text: err?.message || "Gagal mengunggah file." });
-    } finally {
-      setUploadingFile(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
+    setPendingFile(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleMessageInputChange = (e) => {
@@ -455,9 +507,16 @@ export default function KomunitasPage() {
   };
 
   // Pin & Unpin Message Banner Handler
+  // Open modal to select pin duration
   const handlePinMessage = (msg) => {
+    setPinTargetMsg(msg);
+    setShowPinModal(true);
+  };
+
+  // Apply pin with optional expiry timestamp
+  const applyPin = (msg, expiryTimestamp) => {
     const text = safeBase64Decode(msg.encryptedPayloadBase64);
-    const pinData = { id: msg.id, sender: msg.senderName, text };
+    const pinData = { id: msg.id, sender: msg.senderName, text, startTime: Date.now(), expiry: expiryTimestamp };
     setPinnedAnnouncement(pinData);
     if (selectedGroup) {
       try {
@@ -594,11 +653,51 @@ export default function KomunitasPage() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedGroup || sendingMessage) return;
+    if (sendingMessage) return;
+
+    const messageText = newMessage.trim();
+    if (!messageText && !pendingFile) return;
+    if (!selectedGroup) return;
 
     try {
       setSendingMessage(true);
-      const payloadBase64 = safeBase64Encode(newMessage.trim());
+      setAlertMessage(null);
+
+      let payloadText = "";
+
+      if (pendingFile) {
+        setUploadingFile(true);
+        const formData = new FormData();
+        formData.append("file", pendingFile);
+
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: formData,
+        });
+
+        const json = await res.json();
+        setUploadingFile(false);
+        if (!res.ok || !json.success) {
+          throw new Error(json.message || "Gagal mengunggah file.");
+        }
+
+        const fileUrl = json.data?.url || json.url;
+        const isImage = pendingFile.type.startsWith("image/");
+        payloadText = isImage ? `![Gambar](${fileUrl})` : `[📄 Dokumen: ${pendingFile.name}](${fileUrl})`;
+
+        if (messageText) {
+          payloadText += `\n\n${messageText}`;
+        }
+        setPendingFile(null);
+      } else {
+        payloadText = messageText;
+      }
+
+      const payloadBase64 = safeBase64Encode(payloadText);
 
       if (editingMessage) {
         const res = await groupMessageService.editMessage(editingMessage.id, {
@@ -632,6 +731,7 @@ export default function KomunitasPage() {
       setAlertMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Gagal mengirim pesan." });
     } finally {
       setSendingMessage(false);
+      setUploadingFile(false);
     }
   };
 
@@ -640,13 +740,13 @@ export default function KomunitasPage() {
     setEditingMessage(msg);
     setReplyingMessage(null);
     setNewMessage(decoded);
-    setActiveMenuMsgId(null);
+    setActiveMenuMsg(null);
   };
 
   const handleStartReply = (msg) => {
     setReplyingMessage(msg);
     setEditingMessage(null);
-    setActiveMenuMsgId(null);
+    setActiveMenuMsg(null);
   };
 
   const handleDeleteForEveryone = async (msgId) => {
@@ -659,7 +759,7 @@ export default function KomunitasPage() {
           m.id === msgId ? { ...m, isDeletedForEveryone: true, encryptedPayloadBase64: deletedTextBase64 } : m
         )
       );
-      setActiveMenuMsgId(null);
+      setActiveMenuMsg(null);
     } catch (err) {
       setAlertMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Gagal menghapus pesan untuk semua orang." });
     }
@@ -669,7 +769,7 @@ export default function KomunitasPage() {
     try {
       await groupMessageService.deleteForMe(msgId);
       setMessages((prev) => prev.filter((m) => m.id !== msgId));
-      setActiveMenuMsgId(null);
+      setActiveMenuMsg(null);
     } catch (err) {
       setAlertMessage({ type: "error", text: err?.response?.data?.message || err?.message || "Gagal menghapus pesan untuk saya." });
     }
@@ -983,44 +1083,47 @@ export default function KomunitasPage() {
                     <div
                       key={group.id}
                       onClick={() => handleSelectGroup(group)}
-                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative group ${
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative group ${
                         isSelected
-                          ? "bg-blue-50/80 border-[#2C1EE8] shadow-xs"
-                          : "bg-white border-slate-200/90 hover:border-blue-200 hover:bg-slate-50/60"
+                          ? "bg-white border-[#2C1EE8] shadow-md border-l-4 border-l-[#2C1EE8] translate-x-0.5"
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 truncate">
-                          {isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 rotate-45 shrink-0" />}
-                          <span className="truncate">{group.name}</span>
-                        </h3>
-                        <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 leading-snug">
+                            {isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />}
+                            <span className="truncate">{group.name}</span>
+                          </h3>
+                          <p className="text-slate-500 text-xs mt-1 line-clamp-2 leading-relaxed">
+                            {group.description}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
                           <button
                             type="button"
                             onClick={(e) => togglePinGroup(group.id, e)}
-                            className="p-1 text-slate-400 hover:text-amber-500 transition-colors"
+                            className="p-1 text-slate-300 hover:text-amber-500 transition-colors rounded-lg hover:bg-slate-50"
                             title={isPinned ? "Lepaskan Pin" : "Sematkan Grup"}
                           >
-                            <Pin className={`w-3.5 h-3.5 ${isPinned ? "text-amber-500 fill-amber-500" : ""}`} />
+                            <Pin className={`w-3.5 h-3.5 ${isPinned ? "text-amber-500 fill-amber-500" : "opacity-0 group-hover:opacity-100"}`} />
                           </button>
-                          <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-mono font-bold">
+                          <span className="text-[10px] bg-slate-50 text-slate-600 border border-slate-100 px-2 py-0.5 rounded-full font-semibold">
                             {group.memberCount} Anggota
                           </span>
                         </div>
                       </div>
 
-                      <p className="text-slate-500 text-xs mt-1 line-clamp-1">{group.description}</p>
-
-                      <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                        <span className="text-slate-400 truncate max-w-[120px]">
-                          Oleh: <strong className="text-slate-600">{group.creatorName}</strong>
+                      <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                        <span className="truncate max-w-[140px]">
+                          Oleh: <strong className="text-slate-700 font-bold">{group.creatorName}</strong>
                         </span>
                         {isAccepted ? (
-                          <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">
-                            Anggota
+                          <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                            Terdaftar
                           </span>
                         ) : isPending ? (
-                          <span className="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md">
+                          <span className="text-amber-700 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
                             Menunggu
                           </span>
                         ) : (
@@ -1030,7 +1133,7 @@ export default function KomunitasPage() {
                               e.stopPropagation();
                               handleJoinGroup(group.id);
                             }}
-                            className="text-[#2C1EE8] font-extrabold hover:underline cursor-pointer"
+                            className="text-[#2C1EE8] font-bold hover:underline cursor-pointer bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 hover:bg-blue-100 transition-colors"
                           >
                             Gabung →
                           </button>
@@ -1044,7 +1147,7 @@ export default function KomunitasPage() {
           </div>
 
           {/* Right Column: Chat & Community Workspace */}
-          <div className={`lg:col-span-2 bg-white border border-slate-200 rounded-[28px] p-6 flex flex-col h-[650px] relative ${activeMenuMsgId !== null ? "overflow-visible z-30" : "overflow-hidden"} shadow-xs`}>
+          <div className={`lg:col-span-2 bg-white border border-slate-200 rounded-[28px] p-6 flex flex-col h-[650px] relative ${activeMenuMsg !== null ? "overflow-visible z-30" : "overflow-hidden"} shadow-xs`}>
 
             {!selectedGroup ? (
               <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs space-y-3">
@@ -1184,41 +1287,170 @@ export default function KomunitasPage() {
                     <div className="flex items-center gap-2 truncate">
                       <Pin className="w-4 h-4 text-amber-600 fill-amber-600 shrink-0" />
                       <div className="flex flex-col truncate">
-                        <span className="font-extrabold text-[10px] text-amber-800 uppercase tracking-wider">
-                          Pesan Disematkan oleh {pinnedAnnouncement.sender || "Admin"}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-extrabold text-[10px] text-amber-800 uppercase tracking-wider">
+                            Pesan Disematkan oleh {pinnedAnnouncement.sender || "Admin"}
+                          </span>
+                          {pinnedAnnouncement.expiry && (
+                            <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md font-mono shrink-0">
+                              ⏱️ sisa: {(() => {
+                                const remainingMs = pinnedAnnouncement.expiry - Date.now();
+                                if (remainingMs <= 0) return "Berakhir";
+                                const hours = Math.floor(remainingMs / (3600 * 1000));
+                                const mins = Math.floor((remainingMs % (3600 * 1000)) / (60 * 1000));
+                                if (hours > 0) {
+                                  return `${hours}j ${mins}m`;
+                                }
+                                return `${mins}m`;
+                              })()}
+                            </span>
+                          )}
+                        </div>
                         <span className="font-semibold text-slate-800 truncate">
-                          {pinnedAnnouncement.text}
+                          {formatPinnedMessagePreview(pinnedAnnouncement.text)}
                         </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      {isGroupAdmin && (
-                        <button
-                          type="button"
-                          onClick={handleUnpinMessage}
-                          className="text-amber-700 hover:text-amber-900 text-[10px] font-bold underline cursor-pointer px-1"
-                        >
-                          Lepas
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={handleUnpinMessage}
+                        className="text-rose-600 hover:text-rose-800 hover:bg-rose-50 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg border border-rose-200 cursor-pointer transition-all flex items-center gap-1 bg-white shrink-0"
+                      >
+                        <X className="w-3 h-3 shrink-0" />
+                        <span>Lepas Sematan</span>
+                      </button>
                     </div>
                   </div>
                 )}
 
                 {/* Chat Messages View */}
-                <div className={`flex flex-col flex-1 min-h-0 relative ${activeMenuMsgId !== null ? "overflow-visible" : ""}`}>
+                <div className="flex flex-col flex-1 min-h-0 relative">
                   {/* Subtle Backdrop Dim & Blur Overlay when a message is focused/active */}
-                  {activeMenuMsgId !== null && (
-                    <div
-                      onClick={() => setActiveMenuMsgId(null)}
-                      className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-30 transition-all duration-300 pointer-events-auto"
-                    />
+                  {activeMenuMsg !== null && (
+                    <>
+                      <div
+                        onClick={() => setActiveMenuMsg(null)}
+                        className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-30 transition-all duration-300 pointer-events-auto"
+                      />
+
+                      {/* GSAP Animated Floating Popover Card (Dynamic Viewport Positioning) */}
+                      <div
+                        ref={popoverCardRef}
+                        data-message-action="true"
+                        onClick={(e) => e.stopPropagation()}
+                        className="fixed bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-3 z-50 min-w-56 flex flex-col gap-2.5 font-sans"
+                        style={{
+                          left: `${menuCoords.x}px`,
+                          top: `${menuCoords.y}px`
+                        }}
+                      >
+                        {/* Real Emoji Reaction Bar */}
+                        <div className="flex items-center justify-between gap-1 bg-slate-50 border border-slate-200/60 rounded-xl p-1.5">
+                          {REACTION_EMOJIS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={() => {
+                                handleAddReaction(activeMenuMsg.id, emoji);
+                                setActiveMenuMsg(null);
+                              }}
+                              className="hover:scale-135 active:scale-95 transition-transform text-lg sm:text-xl cursor-pointer p-1 rounded-lg hover:bg-white flex items-center justify-center"
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="w-full h-px bg-slate-100" />
+
+                        {/* Action Buttons List */}
+                        <div className="flex flex-col gap-1 text-xs sm:text-sm font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleStartReply(activeMenuMsg);
+                              setActiveMenuMsg(null);
+                            }}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 text-slate-700 hover:text-[#2C1EE8] transition-colors cursor-pointer w-full text-left"
+                          >
+                            <CornerUpLeft className="w-4 h-4 text-blue-600 shrink-0" />
+                            <span>Balas Pesan</span>
+                          </button>
+
+                          {activeMenuMsg?.id === pinnedAnnouncement?.id && (!pinnedAnnouncement?.expiry || Date.now() < pinnedAnnouncement.expiry) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleUnpinMessage();
+                                setActiveMenuMsg(null);
+                              }}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
+                            >
+                              <Pin className="w-4 h-4 text-amber-600 shrink-0" />
+                              <span>Lepas Sematan</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handlePinMessage(activeMenuMsg);
+                                setActiveMenuMsg(null);
+                              }}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-slate-700 hover:text-amber-800 transition-colors cursor-pointer w-full text-left"
+                            >
+                              <Pin className="w-4 h-4 text-amber-600 shrink-0" />
+                              <span>Sematkan Pesan</span>
+                            </button>
+                          )}
+
+                          {activeMenuMsg.senderUserId === user?.id && !activeMenuMsg.isDeletedForEveryone && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleStartEdit(activeMenuMsg);
+                                setActiveMenuMsg(null);
+                              }}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
+                            >
+                              <Edit3 className="w-4 h-4 text-amber-600 shrink-0" />
+                              <span>Edit Pesan</span>
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleDeleteForMe(activeMenuMsg.id);
+                              setActiveMenuMsg(null);
+                            }}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer w-full text-left"
+                          >
+                            <EyeOff className="w-4 h-4 text-slate-500 shrink-0" />
+                            <span>Hapus untuk Saya</span>
+                          </button>
+
+                          {((activeMenuMsg.senderUserId === user?.id) || isGroupAdmin) && !activeMenuMsg.isDeletedForEveryone && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleDeleteForEveryone(activeMenuMsg.id);
+                                setActiveMenuMsg(null);
+                              }}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50 text-red-600 transition-colors cursor-pointer w-full text-left"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500 shrink-0" />
+                              <span>Hapus untuk Semua</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   <div
                     ref={chatContainerRef}
-                    className={`flex-1 space-y-3 pr-2 mb-3 ${activeMenuMsgId !== null ? "overflow-visible" : "overflow-y-auto"}`}
+                    className="flex-1 space-y-3 pr-2 mb-3 overflow-y-auto"
                   >
                     {messages.length === 0 ? (
                       <div className="text-center py-20 text-slate-400 text-xs">
@@ -1226,67 +1458,76 @@ export default function KomunitasPage() {
                         Belum ada pesan di komunitas ini. Mulai percakapan pertama!
                       </div>
                     ) : (
-                          messages
-                            .filter((msg) => {
-                              if (!chatSearchQuery) return true;
-                              const text = safeBase64Decode(msg.encryptedPayloadBase64);
-                              return text.toLowerCase().includes(chatSearchQuery.toLowerCase());
-                            })
-                            .map((msg, idx) => {
-                              const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
-                              const isMe = msg.senderUserId === user?.id;
-                              const reactions = msg.reactions || msg.Reactions || {};
-                              const userReaction = msg.userReaction || msg.UserReaction || null;
+                      messages
+                        .filter((msg) => {
+                          if (!chatSearchQuery) return true;
+                          const text = safeBase64Decode(msg.encryptedPayloadBase64);
+                          return text.toLowerCase().includes(chatSearchQuery.toLowerCase());
+                        })
+                        .map((msg, idx, arr) => {
+                          const decoded = safeBase64Decode(msg.encryptedPayloadBase64);
+                          const isMe = msg.senderUserId === user?.id;
+                          const reactions = msg.reactions || msg.Reactions || {};
+                          const userReaction = msg.userReaction || msg.UserReaction || null;
 
-                              const isImageAttachment = decoded.startsWith("![Gambar]");
-                              const imageUrl = isImageAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
+                          const isImageAttachment = decoded.startsWith("![Gambar]");
+                          const imageUrl = isImageAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
 
-                              // Check if current logged-in user or everyone is mentioned in this message
-                              const isMentionedEveryone = decoded.toLowerCase().includes("@semua") || decoded.toLowerCase().includes("@everyone");
-                              const isMentionedMe = (user?.userName && decoded.toLowerCase().includes(`@${user.userName.toLowerCase()}`)) || isMentionedEveryone;
+                          // Check if current logged-in user or everyone is mentioned in this message
+                          const isMentionedEveryone = decoded.toLowerCase().includes("@semua") || decoded.toLowerCase().includes("@everyone");
+                          const isMentionedMe = (user?.userName && decoded.toLowerCase().includes(`@${user.userName.toLowerCase()}`)) || isMentionedEveryone;
 
-                              // Smart positioning: if message is near bottom of chat, position popover ABOVE
-                              const isNearBottom = idx >= messages.length - 3;
-                              const isActive = activeMenuMsgId === msg.id;
+                          // Group consecutive messages by same sender within 3 minutes
+                          const prevMsg = idx > 0 ? arr[idx - 1] : null;
+                          const isConsecutive = prevMsg &&
+                                                prevMsg.senderUserId === msg.senderUserId &&
+                                                (new Date(msg.sentAt) - new Date(prevMsg.sentAt)) < 3 * 60 * 1000;
 
-                              return (
-                                <div
-                                  key={msg.id}
-                                  className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative transition-all duration-300 ${
-                                    isActive ? "z-50" : "z-0"
-                                  }`}
-                                >
-                                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mb-1 font-mono">
-                                    {(msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl) && (
-                                      <img
-                                        src={msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl}
-                                        alt={msg.senderName}
-                                        className="w-4 h-4 rounded-full object-cover border border-slate-200 shrink-0 shadow-2xs"
-                                      />
-                                    )}
-                                    <span className="font-bold text-slate-600">{msg.senderName}</span>
+                          const isActive = activeMenuMsg?.id === msg.id;
 
-                                    <span>•</span>
-                                    <span>
-                                      {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
+                          return (
+                            <div
+                              key={msg.id}
+                              className={`flex flex-col ${isMe ? "items-end" : "items-start"} group/msg relative transition-all duration-300 ${
+                                isConsecutive ? "mt-0.5" : "mt-3.5"
+                              } ${isActive ? "z-50" : "z-0"}`}
+                            >
+                              {/* Sender name & details: Only show if not consecutive */}
+                              {!isConsecutive && (
+                                <div className={`flex items-center gap-2 text-[10px] mb-1 font-sans ${isMe ? "justify-end" : "justify-start"}`}>
+                                  {!isMe && (
+                                    <>
+                                      {msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl ? (
+                                        <img
+                                          src={msg.senderPhotoUrl || msg.senderAvatarUrl || msg.senderPhoto || msg.SenderPhotoUrl}
+                                          alt={msg.senderName}
+                                          className="w-5 h-5 rounded-full object-cover border border-slate-200 shrink-0 shadow-2xs"
+                                        />
+                                      ) : (
+                                        <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-extrabold text-[8px] flex items-center justify-center shrink-0 border border-slate-300 uppercase select-none">
+                                          {msg.senderName.slice(0, 2)}
+                                        </div>
+                                      )}
+                                      <span className="font-extrabold text-slate-700">{msg.senderName}</span>
+                                    </>
+                                  )}
+                                  <span className="text-slate-400 text-[9px] font-mono">
+                                    {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                  {isMentionedEveryone ? (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-900 border border-purple-200 text-[8px] font-black uppercase flex items-center gap-0.5 shrink-0">
+                                      <Users className="w-2.5 h-2.5 text-purple-600" /> Mention @semua
                                     </span>
-                                    {(msg.isEdited || msg.IsEdited) && (
-                                      <span className="text-[9px] font-semibold text-amber-600 italic"> (diedit)</span>
-                                    )}
-                                    {isMentionedEveryone ? (
-                                      <span className="px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-900 border border-purple-300 text-[9px] font-black uppercase flex items-center gap-0.5 shadow-2xs">
-                                        <Users className="w-2.5 h-2.5 text-purple-700" /> Mention @semua
-                                      </span>
-                                    ) : isMentionedMe ? (
-                                      <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase flex items-center gap-0.5 shadow-2xs">
-                                        <AtSign className="w-2.5 h-2.5 text-amber-700" /> Menyebut Anda
-                                      </span>
-                                    ) : null}
-                                  </div>
-
+                                  ) : isMentionedMe ? (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-[8px] font-black uppercase flex items-center gap-0.5 shrink-0">
+                                      <AtSign className="w-2.5 h-2.5 text-amber-600" /> Menyebut Anda
+                                    </span>
+                                  ) : null}
+                                </div>
+                              )}
 
                               <div className="flex items-center gap-1.5 max-w-full">
                                 {/* Left Option Button for My Messages (Hover-only or active) */}
@@ -1294,10 +1535,7 @@ export default function KomunitasPage() {
                                   <button
                                     type="button"
                                     data-message-action="true"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
-                                    }}
+                                    onClick={(e) => handleOpenMessageMenu(e, msg)}
                                     className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
                                       isActive ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
                                     } shrink-0`}
@@ -1307,21 +1545,22 @@ export default function KomunitasPage() {
                                   </button>
                                 )}
 
-                                {/* Message Bubble Container with Scale & Highlight */}
+                                {/* Message Bubble Container with WhatsApp-style corners and floating timestamp */}
                                 <div
-                                  onContextMenu={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
-                                  }}
+                                  onContextMenu={(e) => handleOpenMessageMenu(e, msg)}
                                   className={`px-4 py-2.5 rounded-2xl max-w-md text-xs sm:text-sm font-medium relative transition-all duration-300 ease-out ${
-                                    isActive ? "scale-[1.04] shadow-2xl ring-2 ring-[#2C1EE8]/50 z-50" : "shadow-2xs"
+                                    isActive ? "scale-[1.02] shadow-xl ring-2 ring-[#2C1EE8]/50 z-50" : "shadow-3xs"
                                   } ${
                                     isMe
-                                      ? "bg-[#2C1EE8] text-white rounded-br-xs"
-                                      : "bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200/60"
+                                      ? "bg-[#2C1EE8] text-white " + (isConsecutive ? "rounded-[18px]" : "rounded-[18px] rounded-br-xs")
+                                      : "bg-slate-100 text-slate-800 border border-slate-200/60 " + (isConsecutive ? "rounded-[18px]" : "rounded-[18px] rounded-bl-xs")
                                   }`}
                                 >
+                                  {/* Pin indicator */}
+                                  {pinnedAnnouncement?.id === msg.id && (!pinnedAnnouncement?.expiry || Date.now() < pinnedAnnouncement.expiry) && (
+                                    <span className="inline-block mr-1">📌</span>
+                                  )}
+
                                   {/* Quoted Reply Card */}
                                   {((msg.replyToSenderName || msg.ReplyToSenderName) || (msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)) && (
                                     <div
@@ -1339,17 +1578,59 @@ export default function KomunitasPage() {
                                   )}
 
                                   {(() => {
-                                    const isDocAttachment = decoded.startsWith("[📄 Dokumen:");
-                                    const docUrl = isDocAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
-                                    const docName = isDocAttachment ? decoded.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] : null;
+                                    const imgMatch = decoded.match(/^!\[Gambar\]\((.*?)\)/);
+                                    const docMatch = decoded.match(/^\[📄 Dokumen:\s*(.*?)\]\((.*?)\)/);
+                                    const audioMatch = decoded.match(/^\[🎙️ Pesan Suara:\s*(.*?)\]\((.*?)\)/);
 
-                                    const isAudioAttachment = decoded.startsWith("[🎙️ Pesan Suara:");
-                                    const audioUrl = isAudioAttachment ? decoded.match(/\((.*?)\)/)?.[1] : null;
-                                    const audioDuration = isAudioAttachment ? decoded.match(/\[🎙️ Pesan Suara:\s*(.*?)\]/)?.[1] : "0:05";
+                                    let attachmentJsx = null;
+                                    let captionText = decoded;
 
-                                    if (isAudioAttachment && audioUrl) {
+                                    if (imgMatch) {
+                                      const imageUrl = imgMatch[1];
+                                      captionText = decoded.substring(imgMatch[0].length).trim();
+                                      attachmentJsx = (
+                                        <div className="rounded-xl overflow-hidden my-1 max-w-xs">
+                                          <a href={imageUrl} target="_blank" rel="noopener noreferrer">
+                                            <img
+                                              src={imageUrl}
+                                              alt="Lampiran Gambar"
+                                              className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
+                                            />
+                                          </a>
+                                        </div>
+                                      );
+                                    } else if (docMatch) {
+                                      const docName = docMatch[1];
+                                      const docUrl = docMatch[2];
+                                      captionText = decoded.substring(docMatch[0].length).trim();
+                                      attachmentJsx = (
+                                        <div
+                                          className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                                            isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-2 truncate">
+                                            <FileText className="w-4 h-4 shrink-0 text-blue-400" />
+                                            <span className="font-bold text-xs truncate">{docName || "Dokumen Lampiran"}</span>
+                                          </div>
+                                          <a
+                                            href={docUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
+                                              isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
+                                            }`}
+                                          >
+                                            Buka File
+                                          </a>
+                                        </div>
+                                      );
+                                    } else if (audioMatch) {
+                                      const audioDuration = audioMatch[1];
+                                      const audioUrl = audioMatch[2];
+                                      captionText = decoded.substring(audioMatch[0].length).trim();
                                       const isPlaying = playingAudioMsgId === msg.id;
-                                      return (
+                                      attachmentJsx = (
                                         <div className={`my-1 p-2.5 rounded-2xl border flex items-center gap-3 text-xs ${isMe ? "bg-white/15 border-white/20 text-white" : "bg-white border-slate-200 text-slate-800"}`}>
                                           <button
                                             type="button"
@@ -1386,45 +1667,6 @@ export default function KomunitasPage() {
                                       );
                                     }
 
-                                    if (isImageAttachment && imageUrl) {
-                                      return (
-                                        <div className="rounded-xl overflow-hidden my-1 max-w-xs">
-                                          <a href={imageUrl} target="_blank" rel="noopener noreferrer">
-                                            <img
-                                              src={imageUrl}
-                                              alt="Lampiran Gambar"
-                                              className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
-                                            />
-                                          </a>
-                                        </div>
-                                      );
-                                    }
-
-                                    if (isDocAttachment && docUrl) {
-                                      return (
-                                        <div
-                                          className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
-                                            isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
-                                          }`}
-                                        >
-                                          <div className="flex items-center gap-2 truncate">
-                                            <FileText className="w-4 h-4 shrink-0 text-blue-400" />
-                                            <span className="font-bold text-xs truncate">{docName || "Dokumen Lampiran"}</span>
-                                          </div>
-                                          <a
-                                            href={docUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
-                                              isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
-                                            }`}
-                                          >
-                                            Buka File
-                                          </a>
-                                        </div>
-                                      );
-                                    }
-
                                     // Parse URLs, @semua, and @fullName / @userName mention tags dynamically
                                     const mentionTargets = ["semua", "everyone"];
                                     members.forEach((m) => {
@@ -1435,208 +1677,112 @@ export default function KomunitasPage() {
                                     const escapedTargets = mentionTargets.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
                                     const pattern = `(https?:\\/\\/[^\\s]+|@(?:${escapedTargets.length > 0 ? escapedTargets.join("|") + "|" : ""}[a-zA-Z0-9_.-]+))`;
                                     const tokenRegex = new RegExp(pattern, "gi");
-                                    const parts = decoded.split(tokenRegex);
+                                    const parts = captionText.split(tokenRegex);
 
                                     return (
-                                      <p className={`whitespace-pre-wrap leading-relaxed ${msg.isDeletedForEveryone ? "italic opacity-70" : ""}`}>
-                                        {parts.map((part, idx) => {
-                                          if (!part) return null;
-                                          if (part.match(/^https?:\/\//i)) {
-                                            return (
-                                              <a
-                                                key={idx}
-                                                href={part}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={`underline font-bold hover:opacity-80 transition-opacity break-all ${
-                                                  isMe ? "text-blue-100" : "text-[#2C1EE8]"
-                                                }`}
-                                              >
-                                                {part}
-                                              </a>
-                                            );
-                                          }
-                                          if (part.toLowerCase() === "@semua" || part.toLowerCase() === "@everyone") {
-                                            return (
-                                              <span
-                                                key={idx}
-                                                className="font-black px-2 py-0.5 rounded-md border inline-flex items-center gap-1 mx-0.5 transition-transform hover:scale-105 bg-purple-100 text-purple-950 border-purple-300 shadow-2xs"
-                                              >
-                                                <Users className="w-3 h-3 text-purple-700" />
-                                                {part}
-                                              </span>
-                                            );
-                                          }
-                                          if (part.startsWith("@")) {
-                                            return (
-                                              <span
-                                                key={idx}
-                                                className={`font-extrabold px-1.5 py-0.5 rounded-md border inline-flex items-center gap-0.5 mx-0.5 transition-transform hover:scale-105 ${
-                                                  isMe
-                                                    ? "bg-white/20 text-white border-white/30 shadow-2xs"
-                                                    : "bg-blue-100/90 text-[#2C1EE8] border-blue-200/80 shadow-2xs"
-                                                }`}
-                                              >
-                                                {part}
-                                              </span>
-                                            );
-                                          }
-                                          return part;
-                                        })}
-                                      </p>
+                                      <div className="flex flex-col gap-1.5">
+                                        {attachmentJsx}
+                                        {captionText ? (
+                                          <p className={`whitespace-pre-wrap leading-relaxed ${msg.isDeletedForEveryone ? "italic opacity-70" : ""}`}>
+                                            {parts.map((part, idx) => {
+                                              if (!part) return null;
+                                              if (part.match(/^https?:\/\//i)) {
+                                                return (
+                                                  <a
+                                                    key={idx}
+                                                    href={part}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`underline font-bold hover:opacity-80 transition-opacity break-all ${
+                                                      isMe ? "text-blue-100" : "text-[#2C1EE8]"
+                                                    }`}
+                                                  >
+                                                    {part}
+                                                  </a>
+                                                );
+                                              }
+                                              if (part.toLowerCase() === "@semua" || part.toLowerCase() === "@everyone") {
+                                                return (
+                                                  <span
+                                                    key={idx}
+                                                    className="font-black px-2 py-0.5 rounded-md border inline-flex items-center gap-1 mx-0.5 transition-transform hover:scale-105 bg-purple-100 text-purple-950 border-purple-300 shadow-2xs"
+                                                  >
+                                                    <Users className="w-3 h-3 text-purple-700" />
+                                                    {part}
+                                                  </span>
+                                                );
+                                              }
+                                              if (part.startsWith("@")) {
+                                                return (
+                                                  <span
+                                                    key={idx}
+                                                    className={`font-extrabold px-1.5 py-0.5 rounded-md border inline-flex items-center gap-0.5 mx-0.5 transition-transform hover:scale-105 ${
+                                                      isMe
+                                                        ? "bg-white/20 text-white border-white/30 shadow-2xs"
+                                                        : "bg-blue-100/90 text-[#2C1EE8] border-blue-200/80 shadow-2xs"
+                                                    }`}
+                                                  >
+                                                    {part}
+                                                  </span>
+                                                );
+                                              }
+                                              return part;
+                                            })}
+                                          </p>
+                                        ) : null}
+                                      </div>
                                     );
-
-
                                   })()}
 
+                                  {/* WhatsApp-style floating timestamp inside the bubble */}
+                                  <span className={`text-[9px] opacity-60 ml-2 font-mono float-right mt-1.5 inline-block select-none ${isMe ? "text-blue-100" : "text-slate-400"}`}>
+                                    {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                    {(msg.isEdited || msg.IsEdited) && " (edited)"}
+                                  </span>
+                                </div>
 
-
-                                {/* GSAP Animated Floating Popover Card (Dynamic Placement Top vs Bottom) */}
-                                {activeMenuMsgId === msg.id && (
-                                  <div
-                                    ref={popoverCardRef}
+                                {/* Right Option Button for Other Users' Messages (Hover-only or active) */}
+                                {!isMe && !msg.isDeletedForEveryone && (
+                                  <button
+                                    type="button"
                                     data-message-action="true"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className={`absolute ${
-                                      isNearBottom ? "bottom-full mb-2" : "top-full mt-2"
-                                    } ${
-                                      isMe ? "right-0" : "left-0"
-                                    } bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-3 z-40 min-w-56 flex flex-col gap-2.5 font-sans`}
+                                    onClick={(e) => handleOpenMessageMenu(e, msg)}
+                                    className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
+                                      isActive ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
+                                    } shrink-0`}
+                                    title="Opsi & Reaksi Pesan"
                                   >
-                                    {/* Real Emoji Reaction Bar */}
-                                    <div className="flex items-center justify-between gap-1 bg-slate-50 border border-slate-200/60 rounded-xl p-1.5">
-                                      {REACTION_EMOJIS.map((emoji) => (
-                                        <button
-                                          key={emoji}
-                                          type="button"
-                                          onClick={() => {
-                                            handleAddReaction(msg.id, emoji);
-                                            setActiveMenuMsgId(null);
-                                          }}
-                                          className="hover:scale-135 active:scale-95 transition-transform text-lg sm:text-xl cursor-pointer p-1 rounded-lg hover:bg-white flex items-center justify-center"
-                                        >
-                                          {emoji}
-                                        </button>
-                                      ))}
-                                    </div>
-
-                                    <div className="w-full h-px bg-slate-100" />
-
-                                    {/* Action Buttons List */}
-                                    <div className="flex flex-col gap-1 text-xs sm:text-sm font-semibold">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          handleStartReply(msg);
-                                          setActiveMenuMsgId(null);
-                                        }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 text-slate-700 hover:text-[#2C1EE8] transition-colors cursor-pointer w-full text-left"
-                                      >
-                                        <CornerUpLeft className="w-4 h-4 text-blue-600 shrink-0" />
-                                        <span>Balas Pesan</span>
-                                      </button>
-
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          handlePinMessage(msg);
-                                          setActiveMenuMsgId(null);
-                                        }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-slate-700 hover:text-amber-800 transition-colors cursor-pointer w-full text-left"
-                                      >
-                                        <Pin className="w-4 h-4 text-amber-600 shrink-0" />
-                                        <span>Sematkan Pesan</span>
-                                      </button>
-
-                                      {isMe && !msg.isDeletedForEveryone && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            handleStartEdit(msg);
-                                            setActiveMenuMsgId(null);
-                                          }}
-                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
-                                        >
-                                          <Edit3 className="w-4 h-4 text-amber-600 shrink-0" />
-                                          <span>Edit Pesan</span>
-                                        </button>
-                                      )}
-
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          handleDeleteForMe(msg.id);
-                                          setActiveMenuMsgId(null);
-                                        }}
-                                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer w-full text-left"
-                                      >
-                                        <EyeOff className="w-4 h-4 text-slate-500 shrink-0" />
-                                        <span>Hapus untuk Saya</span>
-                                      </button>
-
-                                      {(isMe || isGroupAdmin) && !msg.isDeletedForEveryone && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            handleDeleteForEveryone(msg.id);
-                                            setActiveMenuMsgId(null);
-                                          }}
-                                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50 text-red-600 transition-colors cursor-pointer w-full text-left"
-                                        >
-                                          <Trash2 className="w-4 h-4 text-red-500 shrink-0" />
-                                          <span>Hapus untuk Semua</span>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
+                                    <MoreVertical className="w-4 h-4" />
+                                  </button>
                                 )}
                               </div>
 
-                              {/* Right Option Button for Other Users' Messages (Hover-only or active) */}
-                              {!isMe && !msg.isDeletedForEveryone && (
-                                <button
-                                  type="button"
-                                  data-message-action="true"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveMenuMsgId(activeMenuMsgId === msg.id ? null : msg.id);
-                                  }}
-                                  className={`p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 transition-all cursor-pointer ${
-                                    activeMenuMsgId === msg.id ? "opacity-100" : "opacity-0 group-hover/msg:opacity-100"
-                                  } shrink-0`}
-                                  title="Opsi & Reaksi Pesan"
-                                >
-                                  <MoreVertical className="w-4 h-4" />
-                                </button>
+                              {/* Rendered Emoji Reaction Counter Pills */}
+                              {Object.keys(reactions).length > 0 && (
+                                <div className={`flex items-center gap-1 mt-1 flex-wrap ${isMe ? "justify-end" : "justify-start"}`}>
+                                  {Object.entries(reactions).map(([emojiKey, count]) => {
+                                    if (!count || count <= 0) return null;
+                                    const isUserReacted = userReaction === emojiKey;
+                                    return (
+                                      <span
+                                        key={emojiKey}
+                                        className={`bg-white border ${
+                                          isUserReacted ? "border-blue-500 bg-blue-50/70 text-[#2C1EE8]" : "border-slate-200 text-slate-700"
+                                        } rounded-full px-2 py-0.5 text-[11px] font-bold shadow-2xs flex items-center gap-1 transition-colors`}
+                                      >
+                                        <span>{emojiKey}</span>
+                                        <span>{count}</span>
+                                      </span>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </div>
-
-                            {/* Rendered Emoji Reaction Counter Pills */}
-
-                            {Object.keys(reactions).length > 0 && (
-                              <div className="flex items-center gap-1 mt-1">
-                                {Object.entries(reactions).map(([emojiKey, count]) => {
-                                  if (!count || count <= 0) return null;
-                                  const isUserReacted = userReaction === emojiKey;
-                                  return (
-                                    <span
-                                      key={emojiKey}
-                                      className={`bg-white border ${
-                                        isUserReacted ? "border-blue-500 bg-blue-50/70 text-[#2C1EE8]" : "border-slate-200 text-slate-700"
-                                      } rounded-full px-2 py-0.5 text-[11px] font-bold shadow-2xs flex items-center gap-1 transition-colors`}
-                                    >
-                                      <span>{emojiKey}</span>
-                                      <span>{count}</span>
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            )}
-
-
-                          </div>
-                        );
-                      })
+                          );
+                        })
 
 
                     )}
@@ -1790,6 +1936,33 @@ export default function KomunitasPage() {
                       </div>
                     )}
 
+                    {/* Pending File Preview Component */}
+                    {pendingFile && (
+                      <div className="flex items-center justify-between bg-blue-50/90 border border-blue-200 rounded-xl p-2.5 mb-2 text-xs text-blue-900 shadow-2xs">
+                        <div className="flex items-center gap-2 truncate">
+                          <FileText className="w-4 h-4 text-[#2C1EE8] shrink-0" />
+                          <div className="flex flex-col truncate">
+                            <span className="font-extrabold text-[10px] text-blue-800 uppercase tracking-wider">
+                              File Terpilih (Ketik pesan di bawah sebagai caption)
+                            </span>
+                            <span className="font-semibold text-slate-800 truncate">
+                              {pendingFile.name} ({(pendingFile.size / 1024).toFixed(1)} KB)
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setPendingFile(null)}
+                            className="text-rose-600 hover:text-rose-800 hover:bg-rose-50 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg border border-rose-200 cursor-pointer transition-all flex items-center gap-1 bg-white"
+                          >
+                            <X className="w-3 h-3 shrink-0" />
+                            <span>Batal</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <form onSubmit={handleSendMessage} className="flex items-center gap-2">
 
                     <input
@@ -1831,7 +2004,7 @@ export default function KomunitasPage() {
 
                     <input
                       type="text"
-                      placeholder="Ketik pesan... (Gunakan @ untuk mention)"
+                      placeholder={pendingFile ? "Tulis keterangan / caption untuk file..." : "Ketik pesan... (Gunakan @ untuk mention)"}
                       value={newMessage}
                       onChange={handleMessageInputChange}
                       className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
@@ -1841,7 +2014,7 @@ export default function KomunitasPage() {
 
                     <button
                       type="submit"
-                      disabled={!newMessage.trim() || sendingMessage}
+                      disabled={(!newMessage.trim() && !pendingFile) || sendingMessage}
                       className="p-2.5 rounded-xl bg-[#2C1EE8] hover:bg-blue-700 text-white disabled:opacity-40 transition-all cursor-pointer shadow-xs"
                     >
                       <Send className="w-4 h-4" />
@@ -2293,6 +2466,52 @@ export default function KomunitasPage() {
           fetchInboxCount();
         }}
       />
+
+      {/* Pin Duration Modal */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white border border-slate-200 rounded-[32px] max-w-sm w-full p-6 text-slate-900 shadow-2xl space-y-4 font-sans">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Sematkan Pesan</h3>
+              <p className="text-xs text-slate-500 mt-1">Pilih berapa lama pesan ini akan disematkan:</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: "1 Jam", value: 1 * 60 * 60 * 1000 },
+                { label: "3 Jam", value: 3 * 60 * 60 * 1000 },
+                { label: "12 Jam", value: 12 * 60 * 60 * 1000 },
+                { label: "1 Hari", value: 24 * 60 * 60 * 1000 }
+              ].map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => {
+                    applyPin(pinTargetMsg, Date.now() + opt.value);
+                    setShowPinModal(false);
+                    setPinTargetMsg(null);
+                  }}
+                  className="w-full text-left px-4 py-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-100 hover:border-slate-200 transition-all flex items-center justify-between cursor-pointer"
+                >
+                  <span>{opt.label}</span>
+                  <span className="text-[10px] text-[#2C1EE8] font-bold">Pilih</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPinModal(false);
+                  setPinTargetMsg(null);
+                }}
+                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all text-center"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
 

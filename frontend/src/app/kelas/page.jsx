@@ -180,7 +180,7 @@ function KelasPage() {
     try {
       const res = await schoolClassService.getClasses();
       const items = res?.items || res?.data?.items || res || [];
-      
+
       let filteredItems = items;
       if (isStudent) {
         const userClassId = user?.classId || user?.ClassId || user?.studentProfile?.classId;
@@ -514,9 +514,8 @@ function KelasPage() {
                     return (
                       <td
                         key={`print-cell-${day}-${periodNum}`}
-                        className={`border border-slate-400 p-0.5 align-top ${
-                          isKosong ? "bg-white text-slate-400 text-center italic text-[8px]" : "bg-white"
-                        }`}
+                        className={`border border-slate-400 p-0.5 align-top ${isKosong ? "bg-white text-slate-400 text-center italic text-[8px]" : "bg-white"
+                          }`}
                       >
                         {isKosong ? (
                           <span>-</span>
@@ -605,11 +604,10 @@ function KelasPage() {
                     key={cId}
                     type="button"
                     onClick={() => setSelectedClassId(cId)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-[#2C1EE8] text-white shadow-xs"
-                        : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-200/60"
-                    }`}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${isSelected
+                      ? "bg-[#2C1EE8] text-white shadow-xs"
+                      : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-200/60"
+                      }`}
                   >
                     {cName}
                   </button>
@@ -625,11 +623,10 @@ function KelasPage() {
             <button
               type="button"
               onClick={() => setActiveTab("struktur")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === "struktur"
-                  ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-              }`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "struktur"
+                ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                }`}
             >
               <Layers className="w-3.5 h-3.5 text-[#2C1EE8]" />
               <span>Struktur Organisasi</span>
@@ -638,11 +635,10 @@ function KelasPage() {
             <button
               type="button"
               onClick={() => setActiveTab("anggota")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === "anggota"
-                  ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-              }`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "anggota"
+                ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                }`}
             >
               <Users className="w-3.5 h-3.5 text-[#2C1EE8]" />
               <span>Daftar Siswa ({classStudents.length})</span>
@@ -651,11 +647,10 @@ function KelasPage() {
             <button
               type="button"
               onClick={() => setActiveTab("jadwal")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === "jadwal"
-                  ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-              }`}
+              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "jadwal"
+                ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                }`}
             >
               <Calendar className="w-3.5 h-3.5 text-[#2C1EE8]" />
               <span>Jadwal Pelajaran</span>
@@ -665,11 +660,10 @@ function KelasPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("mingguan")}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === "mingguan"
-                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "mingguan"
+                  ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                  }`}
               >
                 <Bookmark className="w-3.5 h-3.5 text-[#2C1EE8]" />
                 <span>Agenda Rotasi</span>
@@ -975,9 +969,8 @@ function KelasPage() {
                             />
                           ) : null}
                           <div
-                            className={`w-full h-full bg-blue-50 text-[#2C1EE8] font-black text-xs flex items-center justify-center ${
-                              hasPhoto ? "hidden" : "flex"
-                            }`}
+                            className={`w-full h-full bg-blue-50 text-[#2C1EE8] font-black text-xs flex items-center justify-center ${hasPhoto ? "hidden" : "flex"
+                              }`}
                           >
                             {name?.charAt(0)?.toUpperCase() || "S"}
                           </div>
@@ -1028,11 +1021,10 @@ function KelasPage() {
                       key={day}
                       type="button"
                       onClick={() => setScheduleDayFilter(day)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                        isSelected
-                          ? "bg-[#2C1EE8] text-white shadow-xs"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      }`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${isSelected
+                        ? "bg-[#2C1EE8] text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
                     >
                       <span>{day}</span>
                       {isToday && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
@@ -1046,22 +1038,20 @@ function KelasPage() {
                 <button
                   type="button"
                   onClick={() => setScheduleMode(SCHEDULE_MODES.NORMAL)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    scheduleMode === SCHEDULE_MODES.NORMAL
-                      ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${scheduleMode === SCHEDULE_MODES.NORMAL
+                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900"
+                    }`}
                 >
                   Mode Normal
                 </button>
                 <button
                   type="button"
                   onClick={() => setScheduleMode(SCHEDULE_MODES.UPACARA)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    scheduleMode === SCHEDULE_MODES.UPACARA
-                      ? "bg-white text-blue-900 shadow-2xs border border-blue-200"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${scheduleMode === SCHEDULE_MODES.UPACARA
+                    ? "bg-white text-blue-900 shadow-2xs border border-blue-200"
+                    : "text-slate-600 hover:text-slate-900"
+                    }`}
                 >
                   Hari Upacara (Senin)
                 </button>
@@ -1099,15 +1089,13 @@ function KelasPage() {
                     return (
                       <div
                         key={day}
-                        className={`rounded-2xl p-4 space-y-2.5 transition-all ${
-                          scheduleDayFilter === "Semua"
-                            ? "min-w-[310px] sm:min-w-[330px] lg:min-w-[340px] flex-1 shrink-0"
-                            : "w-full"
-                        } ${
-                          isToday
+                        className={`rounded-2xl p-4 space-y-2.5 transition-all ${scheduleDayFilter === "Semua"
+                          ? "min-w-[310px] sm:min-w-[330px] lg:min-w-[340px] flex-1 shrink-0"
+                          : "w-full"
+                          } ${isToday
                             ? "bg-gradient-to-b from-blue-50/40 via-white to-white border-2 border-blue-200/90 shadow-2xs"
                             : "bg-white border border-slate-200/80"
-                        }`}
+                          }`}
                       >
                         {/* Day Header */}
                         <div className="pb-2 border-b border-slate-100 flex items-center justify-between">
@@ -1132,11 +1120,10 @@ function KelasPage() {
                               return (
                                 <div
                                   key={`ceremony-${idx}`}
-                                  className={`p-2 rounded-xl border text-xs text-center space-y-0.5 ${
-                                    isActiveNow
-                                      ? "bg-amber-100/90 border-amber-500 text-amber-950 font-bold shadow-2xs"
-                                      : "bg-amber-50/60 border-amber-200 text-amber-900"
-                                  }`}
+                                  className={`p-2 rounded-xl border text-xs text-center space-y-0.5 ${isActiveNow
+                                    ? "bg-amber-100/90 border-amber-500 text-amber-950 font-bold shadow-2xs"
+                                    : "bg-amber-50/60 border-amber-200 text-amber-900"
+                                    }`}
                                 >
                                   {isActiveNow && (
                                     <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-800 uppercase tracking-wider mb-0.5">
@@ -1158,11 +1145,10 @@ function KelasPage() {
                               return (
                                 <div
                                   key={`char-${idx}`}
-                                  className={`p-2 rounded-xl border text-xs text-center space-y-0.5 ${
-                                    isActiveNow
-                                      ? "bg-emerald-100/90 border-emerald-500 text-emerald-950 font-bold shadow-2xs"
-                                      : "bg-emerald-50/60 border-emerald-200 text-emerald-900"
-                                  }`}
+                                  className={`p-2 rounded-xl border text-xs text-center space-y-0.5 ${isActiveNow
+                                    ? "bg-emerald-100/90 border-emerald-500 text-emerald-950 font-bold shadow-2xs"
+                                    : "bg-emerald-50/60 border-emerald-200 text-emerald-900"
+                                    }`}
                                 >
                                   {isActiveNow && (
                                     <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-800 uppercase tracking-wider mb-0.5">
@@ -1184,11 +1170,10 @@ function KelasPage() {
                               return (
                                 <div
                                   key={`break-${idx}`}
-                                  className={`py-1 px-2.5 rounded-lg border text-[11px] font-mono flex items-center justify-between transition-all ${
-                                    isActiveNow
-                                      ? "bg-blue-50 border-[#2C1EE8] text-[#2C1EE8] font-bold"
-                                      : "bg-slate-50 border-slate-200/60 text-slate-500"
-                                  }`}
+                                  className={`py-1 px-2.5 rounded-lg border text-[11px] font-mono flex items-center justify-between transition-all ${isActiveNow
+                                    ? "bg-blue-50 border-[#2C1EE8] text-[#2C1EE8] font-bold"
+                                    : "bg-slate-50 border-slate-200/60 text-slate-500"
+                                    }`}
                                 >
                                   <span className="flex items-center gap-1.5 font-sans font-semibold">
                                     <Coffee className="w-3 h-3 text-slate-400 shrink-0" />
@@ -1241,11 +1226,10 @@ function KelasPage() {
                             return (
                               <div
                                 key={`period-${slot.period}-${idx}`}
-                                className={`p-2.5 rounded-xl border text-xs space-y-0.5 transition-all ${
-                                  isActiveNow
-                                    ? "bg-blue-50/90 border-2 border-[#2C1EE8] shadow-xs"
-                                    : "bg-white border-slate-200 hover:border-slate-300"
-                                }`}
+                                className={`p-2.5 rounded-xl border text-xs space-y-0.5 transition-all ${isActiveNow
+                                  ? "bg-blue-50/90 border-2 border-[#2C1EE8] shadow-xs"
+                                  : "bg-white border-slate-200 hover:border-slate-300"
+                                  }`}
                               >
                                 {isActiveNow && (
                                   <span className="inline-flex items-center gap-1 text-[9px] font-black text-[#2C1EE8] uppercase tracking-wider mb-0.5">
@@ -1309,22 +1293,20 @@ function KelasPage() {
                 <button
                   type="button"
                   onClick={() => setAgendaSemesterFilter("Ganjil")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    agendaSemesterFilter === "Ganjil"
-                      ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${agendaSemesterFilter === "Ganjil"
+                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900"
+                    }`}
                 >
                   Semester Ganjil
                 </button>
                 <button
                   type="button"
                   onClick={() => setAgendaSemesterFilter("Genap")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    agendaSemesterFilter === "Genap"
-                      ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${agendaSemesterFilter === "Genap"
+                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
+                    : "text-slate-600 hover:text-slate-900"
+                    }`}
                 >
                   Semester Genap
                 </button>
@@ -1365,11 +1347,10 @@ function KelasPage() {
                       return (
                         <tr
                           key={idx}
-                          className={`transition-colors ${
-                            isActiveNow
-                              ? "bg-blue-50/80 border-l-4 border-l-[#2C1EE8] font-bold"
-                              : "hover:bg-slate-50"
-                          }`}
+                          className={`transition-colors ${isActiveNow
+                            ? "bg-blue-50/80 border-l-4 border-l-[#2C1EE8] font-bold"
+                            : "hover:bg-slate-50"
+                            }`}
                         >
                           <td className="p-3 font-mono font-bold text-slate-800">
                             <div className="flex items-center gap-1.5">
@@ -1391,17 +1372,16 @@ function KelasPage() {
                           </td>
                           <td className="p-3">
                             <span
-                              className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border inline-block ${
-                                isKK
-                                  ? "bg-purple-50 text-purple-800 border-purple-200"
-                                  : isMPU
+                              className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border inline-block ${isKK
+                                ? "bg-purple-50 text-purple-800 border-purple-200"
+                                : isMPU
                                   ? "bg-blue-50 text-blue-800 border-blue-200"
                                   : isPKL
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                  : isExam
-                                  ? "bg-amber-50 text-amber-800 border-amber-200"
-                                  : "bg-slate-100 text-slate-600 border-slate-200"
-                              }`}
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                    : isExam
+                                      ? "bg-amber-50 text-amber-800 border-amber-200"
+                                      : "bg-slate-100 text-slate-600 border-slate-200"
+                                }`}
                             >
                               {row.code}
                             </span>
