@@ -14,7 +14,7 @@ export default function FacilitySection({
 }) {
   const skeletonGrid = (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
-      {Array.from({ length: 4 }).map((_, idx) => (
+      {Array.from({ length: 8 }).map((_, idx) => (
         <FacilityCardSkeleton key={idx} />
       ))}
     </div>
@@ -24,20 +24,15 @@ export default function FacilitySection({
     <section className="w-full py-6 sm:py-8">
       {/* Section Header */}
       <div className="flex items-center justify-between mb-6 px-1">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-950 uppercase">
-              {title}
-            </h2>
-            {items.length > 0 && (
-              <span className="bg-blue-50 text-[#2c1ee8] border border-blue-200/80 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                {items.length} Tempat
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-slate-600 font-normal">
-            Pilih tempat atau ruangan sekolah yang ingin Anda cek ketersediaan dan ajukan peminjaman
-          </p>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+            {title}
+          </h2>
+          {items.length > 0 && (
+            <span className="bg-blue-50 text-[#2c1ee8] border border-blue-200/80 text-xs font-bold px-2.5 py-0.5 rounded-full">
+              {items.length} Sarana
+            </span>
+          )}
         </div>
       </div>
 

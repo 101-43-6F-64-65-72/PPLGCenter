@@ -125,7 +125,7 @@ public class GroupMessageService : IGroupMessageService
             {
                 var group = await _context.CommunityGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == request.GroupId);
                 var senderUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == senderUserId);
-                var senderName = senderUser?.FullName ?? senderUser?.UserName ?? "Anggota";
+                var senderName = senderUser?.FullName ?? senderUser?.Username ?? "Anggota";
                 var groupName = group?.Name ?? "Komunitas";
 
                 var acceptedMembers = await _context.CommunityGroupMembers
@@ -138,7 +138,7 @@ public class GroupMessageService : IGroupMessageService
 
                 foreach (var member in acceptedMembers)
                 {
-                    var uName = member.User?.UserName;
+                    var uName = member.User?.Username;
                     var fName = member.User?.FullName;
 
                     bool isMentionedEveryone = plainText.ToLower().Contains("@semua") || plainText.ToLower().Contains("@everyone");
@@ -160,7 +160,7 @@ public class GroupMessageService : IGroupMessageService
                             Message = $"\"{snippet}\"",
                             Type = NotificationType.Mention,
                             Priority = NotificationPriority.High,
-                            ReferenceId = message.Id,
+                            ReferenceId = message.Id.ToString(),
                             ReferenceType = NotificationReferenceType.Message
                         });
                     }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "@/lib/motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FacilitySection from "@/components/fasilitas/FacilitySection";
@@ -8,7 +9,8 @@ import ScheduleModal from "@/components/fasilitas/ScheduleModal";
 import CartModal from "@/components/fasilitas/CartModal";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import LoginModal from "@/features/auth/components/LoginModal";
-import { Search, ShoppingBag, X, Clock, Building2, Trash2 } from "lucide-react";
+import VerticalFacilitySlider from "@/components/facilities/VerticalFacilitySlider";
+import { Search, ShoppingBag, X, Clock, Building2, Trash2, Filter, ChevronDown } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import bookingService from "@/services/bookingService";
 import useAuth from "@/hooks/useAuth";
@@ -222,9 +224,10 @@ export default function FasilitasPage() {
     if (activeTab === "lapangan") return combinedText.includes("lapangan") || combinedText.includes("olahraga");
     if (activeTab === "lab") return combinedText.includes("lab") || combinedText.includes("komputer") || combinedText.includes("laboratorium");
     if (activeTab === "barang") return combinedText.includes("barang") || combinedText.includes("peralatan") || combinedText.includes("alat") || combinedText.includes("proyektor") || combinedText.includes("printer") || combinedText.includes("kamera") || combinedText.includes("multimedia") || combinedText.includes("cctv") || combinedText.includes("sound") || combinedText.includes("speaker") || combinedText.includes("micro") || combinedText.includes("headset") || combinedText.includes("vr") || combinedText.includes("ps5") || combinedText.includes("gpu");
-
     return true;
   });
+
+  const isFilterActive = activeTab !== "semua" || searchQuery.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
@@ -232,112 +235,123 @@ export default function FasilitasPage() {
       <Navbar />
 
       {/* Main Page Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
-        {/* Top Hero Section Header Card */}
-        <div id="fasilitas-header-card" className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
-          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
-                <Building2 className="w-3.5 h-3.5" />
-                <span>SARPRAS & FASILITAS SMKN 2 SURAKARTA</span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Katalog Fasilitas, Ruangan & Peralatan
-              </h1>
-              <p className="text-sm text-slate-600 max-w-2xl">
-                Layanan peminjaman ruangan, laboratorium, aula, sarana olahraga, serta peralatan & barang sarpras sekolah secara online.
-              </p>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-6">
+        {/* Top Direct Action & Filter Toolbar */}
+        <div className="bg-white px-5 py-3.5 sm:py-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+          {/* Search & Category Filter Group */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari fasilitas, aula, lab, atau peralatan..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs sm:text-sm text-slate-900 placeholder-slate-400 font-medium transition-all"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
-            {/* Top Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto shrink-0">
-              {/* Tombol 1: Peminjaman Saya (Private to Student) */}
-              <button
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    setIsLoginModalOpen(true);
-                    return;
-                  }
-                  fetchMyBookings();
-                  setIsMyBookingsOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-all shadow-2xs cursor-pointer"
+            {/* Category Filter Dropdown */}
+            <div className="relative shrink-0 min-w-[170px]">
+              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2C1EE8] pointer-events-none" />
+              <select
+                value={activeTab}
+                onChange={(e) => setActiveTab(e.target.value)}
+                className="w-full appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs"
               >
-                <Clock className="w-4 h-4 text-[#2C1EE8]" />
-                <span>Peminjaman Saya</span>
-              </button>
-
-              {/* Tombol 2: Daftar Pinjaman Semua */}
-              <button
-                onClick={() => {
-                  fetchPublicBookings();
-                  setIsPublicBookingsOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-[#2C1EE8] text-white hover:bg-blue-700 transition-all shadow-sm cursor-pointer"
-              >
-                <Building2 className="w-4 h-4" />
-                <span>Daftar Pinjaman</span>
-              </button>
+                <option value="semua">Semua Kategori</option>
+                <option value="aula">Aula & Ruang</option>
+                <option value="lapangan">Lapangan</option>
+                <option value="lab">Laboratorium</option>
+                <option value="barang">Peralatan & Barang</option>
+                <option value="tersedia">Hanya Tersedia</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+            <button
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setIsLoginModalOpen(true);
+                  return;
+                }
+                fetchMyBookings();
+                setIsMyBookingsOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
+            >
+              <Clock className="w-4 h-4 text-[#2C1EE8]" />
+              <span>Peminjaman Saya</span>
+            </button>
+
+            <button
+              onClick={() => {
+                fetchPublicBookings();
+                setIsPublicBookingsOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#2C1EE8] text-white hover:bg-[#2013ce] transition shadow-xs cursor-pointer"
+            >
+              <Building2 className="w-4 h-4" />
+              <span>Daftar Pinjaman</span>
+            </button>
           </div>
         </div>
 
-        {/* Search & Category Filter Toolbar */}
-        <div className="bg-white p-4 sm:p-5 rounded-[28px] border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Search Input */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari fasilitas, aula, lab, atau lapangan..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs sm:text-sm text-slate-900 placeholder-slate-400 font-medium transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Filter Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {[
-              { id: "semua", label: "Semua" },
-              { id: "aula", label: "Aula & Ruang" },
-              { id: "lapangan", label: "Lapangan" },
-              { id: "lab", label: "Laboratorium" },
-              { id: "barang", label: "Peralatan & Barang" },
-              { id: "tersedia", label: "Tersedia" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3.5 py-2 rounded-xl text-[11px] font-extrabold transition-all duration-200 cursor-pointer whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "bg-[#2C1EE8] text-white shadow-2xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Featured 3D Facility Showcase Slider with Smooth Collapse/Expand Transition */}
+        <AnimatePresence>
+          {!isFilterActive && !isUnauthorized && (placesData.length > 0 || isLoading) && (
+            <motion.div
+              key="featured-3d-showcase"
+              initial={{ opacity: 0, height: 0, scale: 0.98 }}
+              animate={{
+                opacity: 1,
+                height: "auto",
+                scale: 1,
+                transition: {
+                  height: { duration: 0.45, ease: [0.25, 1, 0.5, 1] },
+                  opacity: { duration: 0.3, delay: 0.1 },
+                  scale: { duration: 0.35, ease: "easeOut" },
+                },
+              }}
+              exit={{
+                opacity: 0,
+                height: 0,
+                scale: 0.97,
+                transition: {
+                  opacity: { duration: 0.2, ease: "easeIn" },
+                  scale: { duration: 0.25, ease: "easeIn" },
+                  height: { duration: 0.4, ease: [0.25, 1, 0.5, 1], delay: 0.05 },
+                },
+              }}
+              className="overflow-hidden"
+            >
+              <VerticalFacilitySlider
+                items={placesData}
+                isLoading={isLoading}
+                onBookFacility={(item) => handleOpenModal(item)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* SECTION: TEMPAT / FASILITAS */}
         {isUnauthorized ? (
           <LoginRequiredFallback featureName="Katalog Fasilitas" />
         ) : (
           <FacilitySection
-            title="KATALOG FASILITAS & SARANA"
+            title="Daftar Sarana & Prasarana"
             type="facility"
             items={filteredPlaces}
             isLoading={isLoading}
@@ -412,8 +426,19 @@ export default function FasilitasPage() {
 
             <div className="flex-1 overflow-y-auto space-y-3 py-2">
               {loadingMyBookings ? (
-                <div className="py-12 text-center text-gray-400 animate-pulse text-xs font-bold">
-                  Memuat riwayat peminjaman Saya...
+                <div className="space-y-3 py-1">
+                  {Array.from({ length: 3 }).map((_, idx) => (
+                    <div key={idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 animate-pulse space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                        <div className="w-32 h-4 bg-slate-200 rounded-md" />
+                        <div className="w-20 h-5 bg-slate-200 rounded-full" />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="w-1/2 h-3.5 bg-slate-100 rounded-md" />
+                        <div className="w-3/4 h-3.5 bg-slate-100 rounded-md" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : myBookingsData.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 space-y-2">
@@ -502,8 +527,44 @@ export default function FasilitasPage() {
 
             <div className="flex-1 overflow-y-auto space-y-3 py-1">
               {loadingPublicBookings ? (
-                <div className="py-12 text-center text-gray-400 animate-pulse text-xs font-bold">
-                  Memuat daftar jadwal peminjaman...
+                <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white animate-pulse">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100">
+                      <tr>
+                        <th className="p-3.5">Fasilitas / Tempat</th>
+                        <th className="p-3.5">Tanggal & Waktu</th>
+                        <th className="p-3.5">Organisasi Peminjam</th>
+                        <th className="p-3.5">Status Peminjaman</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {Array.from({ length: 4 }).map((_, idx) => (
+                        <tr key={idx}>
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 bg-slate-200 rounded-md shrink-0" />
+                              <div className="w-28 h-4 bg-slate-200 rounded-md" />
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="space-y-1.5">
+                              <div className="w-20 h-3.5 bg-slate-200 rounded-md" />
+                              <div className="w-24 h-4 bg-slate-100 rounded-md" />
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="space-y-1">
+                              <div className="w-24 h-3.5 bg-slate-200 rounded-md" />
+                              <div className="w-32 h-3 bg-slate-100 rounded-md" />
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="w-20 h-6 bg-slate-100 rounded-full" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : publicBookingsData.length === 0 ? (
                 <div className="py-12 text-center text-gray-400 space-y-2">
