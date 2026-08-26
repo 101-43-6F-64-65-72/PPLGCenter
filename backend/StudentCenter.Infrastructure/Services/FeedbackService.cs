@@ -36,10 +36,10 @@ public class FeedbackService : IFeedbackService
         var feedback = new Feedback
         {
             Id = Guid.NewGuid(),
-            UserId = request.IsAnonymous ? null : userId,
+            UserId = userId,
             UserName = request.IsAnonymous ? "Anonim" : (userName ?? "Warga Sekolah"),
             UserIdentifier = request.IsAnonymous ? null : userIdentifier,
-            UserRole = request.IsAnonymous ? (userRole ?? "Student") : (userRole ?? "Student"),
+            UserRole = request.IsAnonymous ? "Anonim" : (userRole ?? "Student"),
             Category = string.IsNullOrWhiteSpace(request.Category) ? "Fitur" : request.Category.Trim(),
             Rating = Math.Clamp(request.Rating, 1, 5),
             Content = request.Content.Trim(),
@@ -268,7 +268,18 @@ public class FeedbackService : IFeedbackService
 
         return new PagedFeedbackResult
         {
-            Items = items.Select(MapToResponse).ToList(),
+            Items = items.Select(f =>
+            {
+                var resp = MapToResponse(f);
+                if (f.IsAnonymous)
+                {
+                    resp.UserId = null;
+                    resp.UserName = "Anonim";
+                    resp.UserIdentifier = null;
+                    resp.UserRole = "Anonim";
+                }
+                return resp;
+            }).ToList(),
             TotalItems = totalItems,
             Page = page,
             PageSize = pageSize,
@@ -361,8 +372,8 @@ public class FeedbackService : IFeedbackService
 
         await _context.SaveChangesAsync();
 
-        // 1. Dispatch In-App Notification if user is linked
-        if (feedback.UserId.HasValue && !feedback.IsAnonymous)
+        // 1. Dispatch In-App Notification if user is linked (Works for both regular & anonymous!)
+        if (feedback.UserId.HasValue)
         {
             try
             {
@@ -370,7 +381,7 @@ public class FeedbackService : IFeedbackService
                 await _notificationService.NotifyUserAsync(
                     feedback.UserId.Value,
                     "Umpan Balik Anda Telah Ditanggapi",
-                    $"Admin telah membalas masukan kategori '{feedback.Category}': \"{snippet}\"",
+                    $"Admin telah membalas masukan{(feedback.IsAnonymous ? " anonim" : "")} kategori '{feedback.Category}': \"{snippet}\"",
                     NotificationType.System,
                     NotificationPriority.Normal,
                     feedback.Id.ToString(),
@@ -391,8 +402,10 @@ public class FeedbackService : IFeedbackService
                 try
                 {
                     var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == feedback.UserId.Value);
-                    if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+                    var targetEmail = !string.IsNullOrWhiteSpace(user?.EmailNotif) ? user.EmailNotif : user?.Email;
+                    if (!string.IsNullOrWhiteSpace(targetEmail))
                     {
+                        var greetingName = feedback.IsAnonymous ? "Warga SMKN 2 Surakarta" : feedback.UserName;
                         var htmlBody = $@"
                         <div style='font-family: ""Plus Jakarta Sans"", Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>
                             <div style='background: linear-gradient(135deg, #2c1ee8 0%, #1e10c4 100%); padding: 28px 24px; text-align: center; color: white;'>
@@ -401,11 +414,11 @@ public class FeedbackService : IFeedbackService
                                 <p style='margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;'>PPLG Center Information & Feedback System</p>
                             </div>
                             <div style='padding: 28px 24px;'>
-                                <p style='color: #0f172a; font-size: 15px; margin-top: 0;'>Halo <strong>{feedback.UserName}</strong>,</p>
-                                <p style='color: #475569; font-size: 14px; line-height: 1.6;'>Terima kasih telah meluangkan waktu untuk menyampaikan masukan kepada kami. Berikut adalah tanggapan resmi dari tim Administrator:</p>
+                                <p style='color: #0f172a; font-size: 15px; margin-top: 0;'>Halo <strong>{greetingName}</strong>,</p>
+                                <p style='color: #475569; font-size: 14px; line-height: 1.6;'>Terima kasih telah meluangkan waktu untuk menyampaikan masukan kepada kami. Berikut adalah tanggapan resmi dari tim Administrator atas masukan{(feedback.IsAnonymous ? " (Kirim Anonim)" : "")} yang Anda kirimkan:</p>
                                 
                                 <div style='background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #94a3b8; padding: 14px 16px; margin: 18px 0; border-radius: 12px;'>
-                                    <div style='font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase;'>Masukan Anda ({feedback.Category} • {feedback.Rating}★):</div>
+                                    <div style='font-size: 11px; color: #64748b; font-weight: 800; text-transform: uppercase;'>Masukan Anda ({feedback.Category} • {feedback.Rating}★{(feedback.IsAnonymous ? " • Anonim" : "")}):</div>
                                     <p style='margin: 6px 0 0 0; font-size: 13px; color: #334155; font-style: italic; line-height: 1.5;'>""{feedback.Content}""</p>
                                 </div>
 
@@ -424,7 +437,7 @@ public class FeedbackService : IFeedbackService
                         </div>";
 
                         await _emailService.SendEmailAsync(
-                            user.Email,
+                            targetEmail,
                             "[PPLG Center] Tanggapan atas Umpan Balik Anda - SMK Negeri 2 Surakarta",
                             htmlBody,
                             isHtml: true,

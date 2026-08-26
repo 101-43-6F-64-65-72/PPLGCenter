@@ -27,6 +27,7 @@ import {
   Send,
   X,
   Mail,
+  Filter,
 } from "lucide-react";
 
 const CATEGORIES = ["Semua", "Fitur", "Bug", "UI/UX", "Apresiasi", "Lainnya"];
@@ -188,96 +189,154 @@ export default function AdminFeedbackTab() {
   const getCategoryBadge = (cat) => {
     switch (cat) {
       case "Fitur":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200"><Lightbulb className="w-3 h-3" /> Saran Fitur</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200"><Lightbulb className="w-3 h-3" /> Saran Fitur</span>;
       case "Bug":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"><Bug className="w-3 h-3" /> Laporan Bug</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200"><Bug className="w-3 h-3" /> Laporan Bug</span>;
       case "UI/UX":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><Palette className="w-3 h-3" /> Desain UI/UX</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200"><Palette className="w-3 h-3" /> Desain UI/UX</span>;
       case "Apresiasi":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-pink-50 text-pink-700 border border-pink-200"><Heart className="w-3 h-3" /> Apresiasi</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-pink-50 text-pink-700 border border-pink-200"><Heart className="w-3 h-3" /> Apresiasi</span>;
       default:
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200"><MessageSquare className="w-3 h-3" /> {cat}</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-700 border border-slate-200"><MessageSquare className="w-3 h-3" /> {cat}</span>;
     }
   };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "Pending":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300"><Clock className="w-3 h-3" /> Menunggu</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200"><Clock className="w-3 h-3" /> Menunggu</span>;
       case "Reviewed":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-300"><CheckCircle className="w-3 h-3" /> Ditinjau</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-800 border border-blue-200"><CheckCircle className="w-3 h-3" /> Ditinjau</span>;
       case "Resolved":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><CheckCircle2 className="w-3 h-3" /> Selesai</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200"><CheckCircle2 className="w-3 h-3" /> Selesai</span>;
       default:
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">{status}</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-700">{status}</span>;
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className={`p-4 rounded-2xl border text-sm font-bold flex items-center justify-between ${
+        <div className={`p-4 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between shadow-xs transition-all ${
           toastMessage.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
         }`}>
           <div className="flex items-center gap-2">
-            {toastMessage.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
+            {toastMessage.type === "success" ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
             <span>{toastMessage.text}</span>
           </div>
-          <button onClick={() => setToastMessage(null)} className="text-xs underline cursor-pointer">Tutup</button>
+          <button onClick={() => setToastMessage(null)} className="text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">✕</button>
         </div>
       )}
 
-      {/* 1. Summary Statistics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
-            <span>Total Masukan</span>
-            <MessageSquareHeart className="w-4 h-4 text-[#2c1ee8]" />
+      {/* 1. Top Metric Cards (Consistent with Admin Master Layout) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Masukan */}
+        <div
+          onClick={() => {
+            setSelectedStatus("Semua");
+            setPage(1);
+          }}
+          className={`p-5 rounded-3xl border transition-all cursor-pointer ${
+            selectedStatus === "Semua"
+              ? "bg-gradient-to-br from-[#2c1ee8] to-blue-700 text-white border-transparent shadow-lg shadow-blue-500/20"
+              : "bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className={`text-xs font-black uppercase tracking-wider ${selectedStatus === "Semua" ? "text-white/80" : "text-slate-400"}`}>
+              Total Masukan
+            </span>
+            <div className={`p-2 rounded-2xl ${selectedStatus === "Semua" ? "bg-white/20" : "bg-blue-50 text-[#2c1ee8]"}`}>
+              <MessageSquareHeart className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-2xl font-black text-slate-900">
+          <p className="text-2xl sm:text-3xl font-black">
             {summaryLoading ? "..." : summary?.totalCount || 0}
           </p>
-          <span className="text-[11px] text-slate-400 font-medium">Dari warga sekolah</span>
+          <span className={`text-[11px] font-medium mt-1 block ${selectedStatus === "Semua" ? "text-white/70" : "text-slate-400"}`}>
+            Dari Warga Sekolah
+          </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
-            <span>Rata-Rata Kepuasan</span>
-            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+        {/* Card 2: Rata-Rata Rating */}
+        <div className="p-5 rounded-3xl border border-slate-200 bg-white shadow-2xs">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-400">
+              Skor Kepuasan
+            </span>
+            <div className="p-2 rounded-2xl bg-amber-50 text-amber-500">
+              <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+            </div>
           </div>
-          <p className="text-2xl font-black text-slate-900 flex items-center gap-1.5">
+          <p className="text-2xl sm:text-3xl font-black text-slate-900 flex items-center gap-1.5">
             {summaryLoading ? "..." : `${summary?.averageRating || 5.0}`}
             <span className="text-xs text-slate-400 font-bold">/ 5.0</span>
           </p>
-          <span className="text-[11px] text-amber-600 font-bold">⭐ Skor Evaluasi</span>
+          <span className="text-[11px] font-bold text-amber-600 mt-1 block">
+            ⭐ Rating Rata-Rata
+          </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
-            <span>Belum Ditinjau</span>
-            <Clock className="w-4 h-4 text-amber-500" />
+        {/* Card 3: Menunggu Ditinjau */}
+        <div
+          onClick={() => {
+            setSelectedStatus("Pending");
+            setPage(1);
+          }}
+          className={`p-5 rounded-3xl border transition-all cursor-pointer ${
+            selectedStatus === "Pending"
+              ? "bg-gradient-to-br from-amber-500 to-orange-600 text-white border-transparent shadow-lg shadow-amber-500/20"
+              : "bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className={`text-xs font-black uppercase tracking-wider ${selectedStatus === "Pending" ? "text-white/80" : "text-slate-400"}`}>
+              Belum Ditinjau
+            </span>
+            <div className={`p-2 rounded-2xl ${selectedStatus === "Pending" ? "bg-white/20" : "bg-amber-50 text-amber-600"}`}>
+              <Clock className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-2xl font-black text-amber-600">
+          <p className="text-2xl sm:text-3xl font-black">
             {summaryLoading ? "..." : summary?.pendingCount || 0}
           </p>
-          <span className="text-[11px] text-slate-400 font-medium">Perlu tindakan</span>
+          <span className={`text-[11px] font-medium mt-1 block ${selectedStatus === "Pending" ? "text-white/70" : "text-slate-400"}`}>
+            Perlu Tindakan
+          </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider">
-            <span>Terselesaikan</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+        {/* Card 4: Selesai Ditanggapi */}
+        <div
+          onClick={() => {
+            setSelectedStatus("Resolved");
+            setPage(1);
+          }}
+          className={`p-5 rounded-3xl border transition-all cursor-pointer ${
+            selectedStatus === "Resolved"
+              ? "bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-transparent shadow-lg shadow-emerald-500/20"
+              : "bg-white border-slate-200 text-slate-800 hover:border-slate-300 shadow-2xs"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className={`text-xs font-black uppercase tracking-wider ${selectedStatus === "Resolved" ? "text-white/80" : "text-slate-400"}`}>
+              Terselesaikan
+            </span>
+            <div className={`p-2 rounded-2xl ${selectedStatus === "Resolved" ? "bg-white/20" : "bg-emerald-50 text-emerald-600"}`}>
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-2xl font-black text-emerald-600">
+          <p className="text-2xl sm:text-3xl font-black">
             {summaryLoading ? "..." : summary?.resolvedCount || 0}
           </p>
-          <span className="text-[11px] text-slate-400 font-medium">Telah ditindaklanjuti</span>
+          <span className={`text-[11px] font-medium mt-1 block ${selectedStatus === "Resolved" ? "text-white/70" : "text-slate-400"}`}>
+            Telah Diberi Balasan
+          </span>
         </div>
       </div>
 
-      {/* 2. Filter & Search Controls */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+      {/* 2. Filter & Search Controls Bar */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           {/* Search Bar */}
           <div className="relative flex-1">
@@ -289,8 +348,8 @@ export default function AdminFeedbackTab() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Cari kata kunci masukan, nama, NISN/NIP..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#2c1ee8] outline-none"
+              placeholder="Cari isi masukan, nama pengguna, NISN/NIP..."
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#2c1ee8] outline-none transition"
             />
           </div>
 
@@ -301,15 +360,15 @@ export default function AdminFeedbackTab() {
               fetchSummary();
             }}
             disabled={loading}
-            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0"
+            className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl text-xs font-black text-slate-700 flex items-center justify-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#2c1ee8]" : ""}`} />
             <span>Segarkan</span>
           </button>
         </div>
 
-        {/* Filter Pills Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 text-xs">
+        {/* Filter Dropdowns Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-xs">
           {/* Category Filter */}
           <div className="space-y-1">
             <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
@@ -321,7 +380,7 @@ export default function AdminFeedbackTab() {
                 setSelectedCategory(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:bg-white focus:border-[#2c1ee8]"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -340,7 +399,7 @@ export default function AdminFeedbackTab() {
                 setSelectedRating(Number(e.target.value));
                 setPage(1);
               }}
-              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:bg-white focus:border-[#2c1ee8]"
             >
               <option value={0}>Semua Rating</option>
               <option value={5}>⭐⭐⭐⭐⭐ (5 Bintang)</option>
@@ -362,7 +421,7 @@ export default function AdminFeedbackTab() {
                 setSelectedStatus(e.target.value);
                 setPage(1);
               }}
-              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none"
+              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:bg-white focus:border-[#2c1ee8]"
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -375,12 +434,12 @@ export default function AdminFeedbackTab() {
       {/* 3. Feedback Items List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
-            <RefreshCw className="w-6 h-6 text-blue-600 animate-spin mx-auto" />
-            <p className="text-sm font-bold text-slate-500">Memuat daftar umpan balik...</p>
+          <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3 shadow-2xs">
+            <RefreshCw className="w-6 h-6 text-[#2c1ee8] animate-spin mx-auto" />
+            <p className="text-xs font-bold text-slate-500">Memuat daftar umpan balik...</p>
           </div>
         ) : feedbacks.length === 0 ? (
-          <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-3">
+          <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3 shadow-2xs">
             <FileText className="w-10 h-10 text-slate-300 mx-auto" />
             <h3 className="text-base font-black text-slate-800">Tidak ada umpan balik yang ditemukan</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -391,7 +450,7 @@ export default function AdminFeedbackTab() {
           feedbacks.map((item) => (
             <div
               key={item.id}
-              className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 hover:border-blue-200 transition"
+              className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4 hover:border-blue-300 transition-all duration-200"
             >
               {/* Header Info */}
               <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
@@ -429,7 +488,7 @@ export default function AdminFeedbackTab() {
 
               {/* Official Admin Reply Section (if already replied) */}
               {item.adminReply && (
-                <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 space-y-1.5 text-xs">
+                <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 space-y-1.5 text-xs">
                   <div className="flex items-center justify-between text-blue-900 font-black">
                     <span className="flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" />
@@ -455,9 +514,9 @@ export default function AdminFeedbackTab() {
                 {/* Sender Tag */}
                 <div className="flex items-center gap-2 text-xs">
                   {item.isAnonymous ? (
-                    <div className="flex items-center gap-1.5 text-slate-500 font-bold bg-slate-100 px-3 py-1 rounded-full">
+                    <div className="flex items-center gap-1.5 text-slate-500 font-bold bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
                       <Shield className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Pengirim Anonim ({item.userRole || "Siswa"})</span>
+                      <span>Pengirim Anonim</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 text-blue-900 font-bold bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
@@ -616,7 +675,7 @@ export default function AdminFeedbackTab() {
                   <select
                     value={replyStatus}
                     onChange={(e) => setReplyStatus(e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none"
                   >
                     <option value="Resolved">Selesai (Resolved)</option>
                     <option value="Reviewed">Sedang Ditinjau (Reviewed)</option>
@@ -650,7 +709,7 @@ export default function AdminFeedbackTab() {
                 <button
                   type="submit"
                   disabled={isSubmittingReply || !replyText.trim()}
-                  className="px-5 py-2.5 rounded-xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-500/20 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-2xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-500/20 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingReply ? (
                     <>

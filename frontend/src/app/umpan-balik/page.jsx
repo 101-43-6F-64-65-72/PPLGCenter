@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "@/lib/motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BloubMascot from "@/components/BloubMascot";
@@ -29,31 +30,6 @@ import {
   Shield,
   MessageCircle,
 } from "lucide-react";
-
-let motionImport = null;
-let animatePresenceImport = null;
-
-try {
-  const m = require("motion/react");
-  motionImport = m.motion;
-  animatePresenceImport = m.AnimatePresence;
-} catch (e) {
-  try {
-    const f = require("framer-motion");
-    motionImport = f.motion;
-    animatePresenceImport = f.AnimatePresence;
-  } catch (e2) {}
-}
-
-const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, ref) => (
-  <div ref={ref} className={className} style={style} onClick={onClick}>
-    {children}
-  </div>
-));
-FallbackDiv.displayName = "FallbackDiv";
-
-const MotionDiv = motionImport?.div || FallbackDiv;
-const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
 
 const CATEGORIES = [
   { id: "Fitur", label: "Saran Fitur", icon: Lightbulb, color: "text-amber-500", bg: "bg-amber-50 border-amber-200" },
@@ -192,13 +168,13 @@ export default function UmpanBalikPage() {
   const getStatusBadge = (status) => {
     switch (status) {
       case "Pending":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300"><Clock className="w-3 h-3" /> Menunggu Tanggapan</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200"><Clock className="w-3 h-3" /> Menunggu Tanggapan</span>;
       case "Reviewed":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-300"><CheckCircle className="w-3 h-3" /> Sedang Ditinjau</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200"><CheckCircle className="w-3 h-3" /> Sedang Ditinjau</span>;
       case "Resolved":
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300"><CheckCircle2 className="w-3 h-3" /> Selesai Ditanggapi</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200"><CheckCircle2 className="w-3 h-3" /> Selesai Ditanggapi</span>;
       default:
-        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">{status}</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-50 text-slate-700 border border-slate-200">{status}</span>;
     }
   };
 
@@ -209,13 +185,13 @@ export default function UmpanBalikPage() {
       <main className="flex-1 pt-24 lg:pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto w-full flex flex-col justify-center space-y-6">
         {/* Navigation Tabs between Form & My History */}
         <div className="flex items-center justify-center">
-          <div className="inline-flex p-1.5 bg-slate-200/80 rounded-2xl border border-slate-300/60 shadow-inner gap-1">
+          <div className="inline-flex p-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-xs gap-1">
             <button
               onClick={() => setActiveTab("create")}
-              className={`px-5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                 activeTab === "create"
-                  ? "bg-white text-[#2c1ee8] shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-[#2c1ee8] text-white shadow-md shadow-blue-500/20 scale-[1.02]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
@@ -225,16 +201,16 @@ export default function UmpanBalikPage() {
             {isAuthenticated && (
               <button
                 onClick={() => setActiveTab("history")}
-                className={`px-5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                className={`px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                   activeTab === "history"
-                    ? "bg-white text-[#2c1ee8] shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-[#2c1ee8] text-white shadow-md shadow-blue-500/20 scale-[1.02]"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 }`}
               >
                 <History className="w-3.5 h-3.5" />
-                <span>Riwayat & Tanggapan Saya</span>
+                <span>Riwayat & Tanggapan</span>
                 {myFeedbacks.some((f) => f.adminReply) && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 )}
               </button>
             )}
@@ -243,18 +219,18 @@ export default function UmpanBalikPage() {
 
         {/* Tab 1: Form Umpan Balik */}
         {activeTab === "create" && (
-          <AnimatePresenceComponent mode="wait">
+          <AnimatePresence mode="wait">
             {!isSuccess ? (
-              <MotionDiv
+              <motion.div
                 key="form"
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.35 }}
-                className="bg-white rounded-[32px] border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6 sm:p-10 relative overflow-hidden"
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white rounded-3xl sm:rounded-[32px] border border-slate-200/80 shadow-xl shadow-slate-900/5 p-6 sm:p-10 relative overflow-hidden"
               >
                 {/* Subtle background gradient tint */}
-                <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-blue-100/50 to-transparent rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-blue-100/40 to-transparent rounded-full blur-3xl pointer-events-none" />
 
                 <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
                   {/* 1. Header with Mascot & Title */}
@@ -295,7 +271,7 @@ export default function UmpanBalikPage() {
                     <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
                       Beri Penilaian Pengalamanmu
                     </label>
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-slate-50/80 p-3 sm:p-4 rounded-2xl border border-slate-200/60">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-slate-50 p-3 sm:p-4 rounded-2xl border border-slate-200/80">
                       <div className="flex items-center gap-1.5">
                         {[1, 2, 3, 4, 5].map((starValue) => {
                           const isFilled = (hoverRating || rating) >= starValue;
@@ -312,7 +288,7 @@ export default function UmpanBalikPage() {
                               <Star
                                 className={`w-7 h-7 sm:w-8 sm:h-8 transition-colors duration-150 ${
                                   isFilled
-                                    ? "text-amber-400 fill-amber-400 drop-shadow-sm"
+                                    ? "text-amber-400 fill-amber-400 drop-shadow-xs"
                                     : "text-slate-300 hover:text-slate-400"
                                 }`}
                               />
@@ -322,7 +298,7 @@ export default function UmpanBalikPage() {
                       </div>
 
                       <div className="sm:ml-auto">
-                        <span className={`text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-white border border-slate-200 shadow-xs ${RATING_LABELS[hoverRating || rating]?.moodColor}`}>
+                        <span className={`text-xs sm:text-sm font-black px-3 py-1 rounded-full bg-white border border-slate-200 shadow-2xs ${RATING_LABELS[hoverRating || rating]?.moodColor}`}>
                           {RATING_LABELS[hoverRating || rating]?.label}
                         </span>
                       </div>
@@ -375,7 +351,7 @@ export default function UmpanBalikPage() {
                         onFocus={handleContentFocus}
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="Buat sejujur-jujurnya yaa >???<"
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#2c1ee8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-y min-h-[120px]"
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 p-4 text-sm font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:border-[#2c1ee8] focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-y min-h-[120px]"
                       />
                     </div>
                   </div>
@@ -429,18 +405,18 @@ export default function UmpanBalikPage() {
                     )}
                   </button>
                 </form>
-              </MotionDiv>
+              </motion.div>
             ) : (
               /* Post-Submission Celebration Card */
-              <MotionDiv
+              <motion.div
                 key="success"
-                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                initial={{ opacity: 0, scale: 0.92, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.45, type: "spring", stiffness: 300 }}
-                className="bg-white rounded-[32px] border border-slate-200/80 shadow-2xl p-8 sm:p-12 text-center space-y-6 max-w-lg mx-auto"
+                exit={{ opacity: 0, scale: 0.92 }}
+                transition={{ duration: 0.4 }}
+                className="bg-white rounded-3xl sm:rounded-[32px] border border-slate-200/80 shadow-2xl p-8 sm:p-12 text-center space-y-6 max-w-lg mx-auto"
               >
-                {/* Celebration Mascot */}
+                {/* Celebration Mascot (Grounded Static Box, expressive mascot) */}
                 <div className="inline-block p-4 bg-slate-900 rounded-3xl shadow-xl border border-slate-800">
                   <BloubMascot size={110} state="love" badge={false} />
                 </div>
@@ -453,8 +429,8 @@ export default function UmpanBalikPage() {
                   <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                     Terima Kasih Banyak!
                   </h2>
-                  <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                    Umpan balikmu telah diteruskan ke tim Administrator. Anda akan menerima notifikasi dan email saat admin memberikan tanggapan.
+                  <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                    Umpan balikmu telah diteruskan ke tim Administrator. Anda akan menerima notifikasi dan email saat admin memberikan tanggapan resmi.
                   </p>
                 </div>
 
@@ -479,23 +455,23 @@ export default function UmpanBalikPage() {
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
-              </MotionDiv>
+              </motion.div>
             )}
-          </AnimatePresenceComponent>
+          </AnimatePresence>
         )}
 
         {/* Tab 2: User Section - Riwayat & Tanggapan Admin */}
         {activeTab === "history" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
                 <History className="w-5 h-5 text-[#2c1ee8]" />
                 <span>Riwayat Masukan & Tanggapan Resmi</span>
               </h2>
               <button
                 onClick={fetchMyFeedbacks}
                 disabled={historyLoading}
-                className="text-xs font-bold text-blue-700 hover:text-blue-900 flex items-center gap-1 cursor-pointer"
+                className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${historyLoading ? "animate-spin" : ""}`} />
                 <span>Segarkan</span>
@@ -508,7 +484,7 @@ export default function UmpanBalikPage() {
                 <p className="text-xs font-bold text-slate-500">Memuat riwayat masukan Anda...</p>
               </div>
             ) : myFeedbacks.length === 0 ? (
-              <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3">
+              <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-3 shadow-xs">
                 <MessageSquare className="w-10 h-10 text-slate-300 mx-auto" />
                 <h3 className="text-base font-black text-slate-800">Belum Ada Masukan</h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -516,9 +492,9 @@ export default function UmpanBalikPage() {
                 </p>
                 <button
                   onClick={() => setActiveTab("create")}
-                  className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2c1ee8] text-white text-xs font-black cursor-pointer shadow-sm"
+                  className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-2xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-black cursor-pointer shadow-md shadow-blue-500/20 transition"
                 >
-                  <span>Kirim Masukan Pertama</span>
+                  <span>Kirim Masukan Sekarang</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -526,15 +502,22 @@ export default function UmpanBalikPage() {
               myFeedbacks.map((item) => (
                 <div
                   key={item.id}
-                  className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4 hover:border-blue-200 transition"
+                  className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4 hover:border-blue-200 transition"
                 >
                   {/* Top Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                         {item.category}
                       </span>
                       {getStatusBadge(item.status)}
+
+                      {item.isAnonymous && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 inline-flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          <span>Kirim Anonim</span>
+                        </span>
+                      )}
 
                       <div className="flex items-center gap-0.5 px-2 py-0.5 bg-amber-50 rounded-full border border-amber-200">
                         {[1, 2, 3, 4, 5].map((s) => (
@@ -568,7 +551,7 @@ export default function UmpanBalikPage() {
 
                   {/* Official Admin Reply (If Available) */}
                   {item.adminReply ? (
-                    <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 space-y-2">
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/90 to-indigo-50/90 border border-blue-200 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#2c1ee8] uppercase tracking-wider">
                           <Sparkles className="w-3.5 h-3.5" />
@@ -588,7 +571,7 @@ export default function UmpanBalikPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/60 text-xs text-slate-500 flex items-center gap-2">
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/60 text-xs text-slate-500 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-500 shrink-0" />
                       <span>Masukan Anda sedang dalam antrean peninjauan oleh tim Administrator.</span>
                     </div>
