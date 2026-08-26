@@ -101,6 +101,13 @@ public class AppDbContext : DbContext
     // Feedback Subsystem
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
 
+    // Daily Endless Quiz & Leaderboard Subsystem
+    public DbSet<DailyQuizTopic> DailyQuizTopics => Set<DailyQuizTopic>();
+    public DbSet<DailyTopicVote> DailyTopicVotes => Set<DailyTopicVote>();
+    public DbSet<DailyQuizQuestion> DailyQuizQuestions => Set<DailyQuizQuestion>();
+    public DbSet<QuizSession> QuizSessions => Set<QuizSession>();
+    public DbSet<UserQuizStat> UserQuizStats => Set<UserQuizStat>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

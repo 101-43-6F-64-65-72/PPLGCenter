@@ -24,7 +24,8 @@ import {
   Bell,
   KeyRound,
   Mail,
-  MessageSquareHeart
+  MessageSquareHeart,
+  Zap
 } from "lucide-react";
 
 import useAuth from "@/hooks/useAuth";
@@ -69,6 +70,7 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
     { name: "Absensi Pelajaran", tabId: "attendance", icon: CheckSquare, category: "AKADEMIK" },
     { name: "Materi Pelajaran", tabId: "materials", icon: FileText, category: "AKADEMIK" },
     { name: "Tugas & Submisi", tabId: "assignments", icon: BookOpen, category: "AKADEMIK" },
+    { name: "Kuis Harian RPL", path: "/kuis", icon: Zap, category: "AKADEMIK" },
     { name: "Kategori Penilaian", tabId: "grade-categories", icon: Award, category: "AKADEMIK" },
     { name: "Skala & Predikat", tabId: "grade-scales", icon: Award, category: "AKADEMIK" },
 

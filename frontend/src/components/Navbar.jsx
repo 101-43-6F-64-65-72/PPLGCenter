@@ -35,6 +35,7 @@ export default function Navbar() {
 
   // Secondary items contained in "Lainnya" dropdown
   const secondaryNavItems = [
+    { name: "Kuis Harian", path: "/kuis" },
     { name: "Perpustakaan", path: "/perpustakaan" },
     { name: "Komunitas PPLG", path: "/komunitas" },
     { name: "Kalender", path: "/kalender" },

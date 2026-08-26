@@ -227,4 +227,18 @@ export const API_ROUTES = {
     UPDATE_STATUS: (id) => `/api/feedback/${id}/status`,
     DELETE: (id) => `/api/feedback/${id}`,
   },
+  QUIZ: {
+    TODAY: "/api/quiz/today",
+    START: "/api/quiz/start",
+    GET_QUESTION: (sessionId) => `/api/quiz/session/${sessionId}/question`,
+    SUBMIT_ANSWER: (sessionId) => `/api/quiz/session/${sessionId}/submit`,
+    SURRENDER: (sessionId) => `/api/quiz/session/${sessionId}/surrender`,
+    DAILY_LEADERBOARD: "/api/quiz/leaderboard/daily",
+    ALL_TIME_LEADERBOARD: "/api/quiz/leaderboard/all-time",
+    PROFILE: "/api/quiz/profile",
+    TOPICS: "/api/quiz/topics",
+    PROPOSE_TOPIC: "/api/quiz/topics/propose",
+    VOTE_TOPIC: (id) => `/api/quiz/topics/${id}/vote`,
+    FINALIZE_TOPIC: "/api/quiz/topics/finalize",
+  },
 };
