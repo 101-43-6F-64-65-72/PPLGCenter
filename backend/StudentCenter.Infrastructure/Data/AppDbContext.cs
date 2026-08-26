@@ -98,6 +98,9 @@ public class AppDbContext : DbContext
     public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
     public DbSet<EmailVerificationOtp> EmailVerificationOtps => Set<EmailVerificationOtp>();
 
+    // Feedback Subsystem
+    public DbSet<Feedback> Feedbacks => Set<Feedback>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

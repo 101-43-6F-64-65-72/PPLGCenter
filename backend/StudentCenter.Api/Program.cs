@@ -128,6 +128,9 @@ builder.Services.AddScoped<ILibraryService, LibraryService>();
 // CCTV Subsystem (Phase 22)
 builder.Services.AddScoped<ICctvService, CctvService>();
 
+// Feedback Subsystem
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+
 // Email Notification Subsystem (Phase 23)
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IEmailService, EmailService>();

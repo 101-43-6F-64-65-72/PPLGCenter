@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import LoginForm from "@/features/auth/components/LoginForm";
 import { useRouter } from "next/navigation";
+import useAuth from "@/hooks/useAuth";
 
 let motionImport = null;
 
@@ -30,9 +31,16 @@ const MotionDiv = motionImport?.div || FallbackDiv;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { isAuthenticated, loading } = useAuth();
+
+  React.useEffect(() => {
+    if (!loading && isAuthenticated) {
+      router.replace("/");
+    }
+  }, [loading, isAuthenticated, router]);
 
   const handleSuccess = () => {
-    router.push("/profile");
+    router.push("/");
   };
 
   return (

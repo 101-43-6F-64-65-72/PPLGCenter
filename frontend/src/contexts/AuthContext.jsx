@@ -206,7 +206,7 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem("sc_memberships");
           localStorage.removeItem("sc_advisor_for");
         } catch (e) {}
-        window.location.href = "/login";
+        window.location.href = "/";
       }
     }
   };

@@ -9,6 +9,7 @@ const quickLinks = [
   { label: "Pengumuman Resmi", href: "/pengumuman" },
   { label: "Fasilitas", href: "/fasilitas" },
   { label: "Kalender Akademik", href: "/kalender" },
+  { label: "Kotak Umpan Balik", href: "/umpan-balik" },
 ];
 
 const contactInfo = [

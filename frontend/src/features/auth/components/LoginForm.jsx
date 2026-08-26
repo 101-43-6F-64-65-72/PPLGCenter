@@ -196,10 +196,12 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
 
     const handleProceed = () => {
       let dest = callbackUrl;
-      if (callbackUrl === "/profile" || !callbackUrl || callbackUrl === "/") {
+      if (!searchParams.get("callbackUrl")) {
         if (loginType === "Admin") dest = "/admin";
-        else if (loginType === "Teacher") dest = "/profile";
-        else dest = "/profile";
+        else dest = "/";
+      }
+      if (onSuccess) {
+        onSuccess(successUserData);
       }
       router.push(dest);
     };

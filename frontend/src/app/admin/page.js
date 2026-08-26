@@ -29,6 +29,7 @@ import AdminSubmissionReviewTab from "@/components/admin/AdminSubmissionReviewTa
 import AdminGradeCategoryTab from "@/components/admin/AdminGradeCategoryTab";
 import AdminGradeScaleTab from "@/components/admin/AdminGradeScaleTab";
 import PasswordResetAdminTab from "@/components/admin/PasswordResetAdminTab";
+import AdminFeedbackTab from "@/components/admin/AdminFeedbackTab";
 import { ShieldAlert, Settings, Plus, Upload, GraduationCap, BookOpen, Briefcase, Layers, Calendar, Sparkles, Mail } from "lucide-react";
 import Link from "next/link";
 
@@ -120,6 +121,7 @@ function AdminPanelContent() {
                 <option value="users">Kelola User</option>
                 <option value="facilities">Kelola Booking</option>
                 <option value="announcements">Mading & Pengumuman</option>
+                <option value="feedback">💬 Umpan Balik & Masukan</option>
                 <option value="password-reset">Reset Password</option>
                 <option value="email-debug">⚡ Email Debugger</option>
               </select>
@@ -228,6 +230,7 @@ function AdminPanelContent() {
           {activeTab === "users" && <AdminUsersTab />}
           {activeTab === "facilities" && <AdminFacilityTab />}
           {activeTab === "announcements" && <AdminAnnouncementsTab />}
+          {activeTab === "feedback" && <AdminFeedbackTab />}
           {activeTab === "password-reset" && <PasswordResetAdminTab />}
         </main>
       </div>

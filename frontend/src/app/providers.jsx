@@ -14,6 +14,7 @@ try {
 }
 
 import ChangeDefaultPasswordModal from "@/components/auth/ChangeDefaultPasswordModal";
+import GlobalAuthBarrier from "@/components/auth/GlobalAuthBarrier";
 import useAuth from "@/hooks/useAuth";
 
 function DefaultPasswordGuard() {
@@ -50,7 +51,9 @@ export function Providers({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {children}
+        <GlobalAuthBarrier>
+          {children}
+        </GlobalAuthBarrier>
         <AiChatModal />
         <ManualGuide />
         <DefaultPasswordGuard />

@@ -34,7 +34,7 @@ const MotionDiv = motionImport?.div || FallbackDiv;
 const AnimatePresenceComponent =
   animatePresenceImport || (({ children }) => <>{children}</>);
 
-export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
+export const LoginModal = ({ isOpen, onClose, onSuccess, mandatory = false }) => {
   const [mascotState, setMascotState] = useState("happy");
 
   // Lock body scroll and reset mascot to happy entrance when modal opens
@@ -95,7 +95,7 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
           {/* 3. LOGIN CARD OVERLAY WITH SPRING ANIMATION & GLOW ORBS */}
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 [perspective:1200px]"
-            onClick={onClose}
+            onClick={mandatory ? undefined : onClose}
           >
             <MotionDiv
               initial={{ opacity: 0, scale: 0.82, y: 35, rotateX: 6 }}
@@ -116,14 +116,16 @@ export const LoginModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="absolute -top-16 -left-16 w-60 h-60 bg-blue-400/25 rounded-full blur-3xl pointer-events-none animate-pulse rounded-[36px] overflow-hidden" />
               <div className="absolute -bottom-16 -right-16 w-60 h-60 bg-indigo-400/25 rounded-full blur-3xl pointer-events-none animate-pulse rounded-[36px] overflow-hidden" />
 
-              {/* Close Button */}
-              <button
-                onClick={onClose}
-                className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-all duration-200 cursor-pointer border border-white/20 hover:scale-110 hover:rotate-90 active:scale-95 z-20 shadow-md"
-                aria-label="Tutup Modal Login"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Close Button (Hidden when mandatory login is enforced) */}
+              {!mandatory && (
+                <button
+                  onClick={onClose}
+                  className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-all duration-200 cursor-pointer border border-white/20 hover:scale-110 hover:rotate-90 active:scale-95 z-20 shadow-md"
+                  aria-label="Tutup Modal Login"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
 
               {/* Header / Logo Branding */}
               <div className="mb-6 flex flex-row items-center gap-3.5 py-1 relative z-10">

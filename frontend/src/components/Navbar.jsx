@@ -38,6 +38,7 @@ export default function Navbar() {
     { name: "Perpustakaan", path: "/perpustakaan" },
     { name: "Komunitas PPLG", path: "/komunitas" },
     { name: "Kalender", path: "/kalender" },
+    { name: "Umpan Balik", path: "/umpan-balik" },
   ];
 
   if (isAuthenticated && isAdminOrPplgTeacher) {

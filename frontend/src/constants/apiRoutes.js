@@ -220,4 +220,11 @@ export const API_ROUTES = {
     VERIFY_OTP: "/api/users/notification-email/verify-otp",
     DELETE: "/api/users/notification-email",
   },
+  FEEDBACK: {
+    CREATE: "/api/feedback",
+    LIST: "/api/feedback",
+    SUMMARY: "/api/feedback/summary",
+    UPDATE_STATUS: (id) => `/api/feedback/${id}/status`,
+    DELETE: (id) => `/api/feedback/${id}`,
+  },
 };
