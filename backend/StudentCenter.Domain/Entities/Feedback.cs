@@ -15,6 +15,9 @@ public class Feedback
     public bool IsAnonymous { get; set; } = false;
     public string Status { get; set; } = "Pending"; // Pending, Reviewed, Resolved
     public string? AdminNotes { get; set; }
+    public string? AdminReply { get; set; } // Tanggapan resmi admin kepada pengguna
+    public DateTime? RepliedAt { get; set; }
+    public string? RepliedByAdminName { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 

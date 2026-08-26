@@ -31,6 +31,19 @@ public class UpdateFeedbackStatusRequest
     public string? AdminNotes { get; set; }
 }
 
+public class ReplyFeedbackRequest
+{
+    [Required(ErrorMessage = "Balasan admin wajib diisi")]
+    [MinLength(3, ErrorMessage = "Balasan minimal 3 karakter")]
+    [MaxLength(2000, ErrorMessage = "Balasan maksimal 2000 karakter")]
+    public string AdminReply { get; set; } = string.Empty;
+
+    [MaxLength(30)]
+    public string Status { get; set; } = "Resolved"; // Resolved or Reviewed
+
+    public bool SendEmailNotification { get; set; } = true;
+}
+
 public class FeedbackResponse
 {
     public Guid Id { get; set; }
@@ -44,6 +57,9 @@ public class FeedbackResponse
     public bool IsAnonymous { get; set; }
     public string Status { get; set; } = "Pending";
     public string? AdminNotes { get; set; }
+    public string? AdminReply { get; set; }
+    public DateTime? RepliedAt { get; set; }
+    public string? RepliedByAdminName { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 }

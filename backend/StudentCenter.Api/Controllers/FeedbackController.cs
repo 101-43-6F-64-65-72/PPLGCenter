@@ -68,7 +68,28 @@ public class FeedbackController : ControllerBase
     }
 
     /// <summary>
-    /// Ambil daftar umpan balik (HANYA ADMIN)
+    /// Ambil daftar umpan balik milik pengguna yang sedang login (User Section)
+    /// </summary>
+    [HttpGet("my")]
+    [Authorize]
+    public async Task<IActionResult> GetMyFeedbacks([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new { success = false, message = "Sesi tidak valid." });
+        }
+
+        var result = await _feedbackService.GetMyFeedbacksAsync(userId, page, pageSize);
+        return Ok(new
+        {
+            success = true,
+            data = result
+        });
+    }
+
+    /// <summary>
+    /// Ambil daftar seluruh umpan balik (HANYA ADMIN)
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin")]
@@ -99,6 +120,40 @@ public class FeedbackController : ControllerBase
         return Ok(new
         {
             success = true,
+            data = result
+        });
+    }
+
+    /// <summary>
+    /// Beri balasan resmi admin pada umpan balik (Kirim Notifikasi & Email) (HANYA ADMIN)
+    /// </summary>
+    [HttpPost("{id:guid}/reply")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ReplyFeedback(Guid id, [FromBody] ReplyFeedbackRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        Guid.TryParse(adminIdClaim, out var adminId);
+
+        var adminName = User.FindFirst(ClaimTypes.Name)?.Value 
+                        ?? User.FindFirst("name")?.Value 
+                        ?? User.FindFirst("FullName")?.Value 
+                        ?? "Administrator";
+
+        var result = await _feedbackService.ReplyFeedbackAsync(id, request, adminId, adminName);
+        if (result == null)
+        {
+            return NotFound(new { success = false, message = "Umpan balik tidak ditemukan." });
+        }
+
+        return Ok(new
+        {
+            success = true,
+            message = "Balasan berhasil dikirim kepada pengguna serta notifikasi & email telah diteruskan.",
             data = result
         });
     }

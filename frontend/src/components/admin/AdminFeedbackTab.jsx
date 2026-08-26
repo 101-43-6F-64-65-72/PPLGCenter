@@ -6,7 +6,6 @@ import {
   Star,
   Sparkles,
   Search,
-  Filter,
   RefreshCw,
   Trash2,
   CheckCircle2,
@@ -24,6 +23,10 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Reply,
+  Send,
+  X,
+  Mail,
 } from "lucide-react";
 
 const CATEGORIES = ["Semua", "Fitur", "Bug", "UI/UX", "Apresiasi", "Lainnya"];
@@ -43,6 +46,14 @@ export default function AdminFeedbackTab() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+
+  // Reply Modal States
+  const [replyModalOpen, setReplyModalOpen] = useState(false);
+  const [selectedFeedbackForReply, setSelectedFeedbackForReply] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyStatus, setReplyStatus] = useState("Resolved");
+  const [sendEmailNotification, setSendEmailNotification] = useState(true);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
   // Action states
   const [updatingId, setUpdatingId] = useState(null);
@@ -94,6 +105,50 @@ export default function AdminFeedbackTab() {
   useEffect(() => {
     fetchFeedbacks();
   }, [fetchFeedbacks]);
+
+  const handleOpenReplyModal = (item) => {
+    setSelectedFeedbackForReply(item);
+    setReplyText(item.adminReply || "");
+    setReplyStatus(item.status === "Pending" ? "Resolved" : item.status);
+    setSendEmailNotification(true);
+    setReplyModalOpen(true);
+  };
+
+  const handleCloseReplyModal = () => {
+    setReplyModalOpen(false);
+    setSelectedFeedbackForReply(null);
+    setReplyText("");
+  };
+
+  const handleSubmitReply = async (e) => {
+    e.preventDefault();
+    if (!selectedFeedbackForReply || !replyText.trim()) return;
+
+    try {
+      setIsSubmittingReply(true);
+      await feedbackService.replyFeedback(selectedFeedbackForReply.id, {
+        adminReply: replyText.trim(),
+        status: replyStatus,
+        sendEmailNotification,
+      });
+
+      setToastMessage({
+        type: "success",
+        text: `Balasan berhasil dikirim! Notifikasi in-app ${sendEmailNotification ? "dan email " : ""}telah diteruskan kepada pengguna.`,
+      });
+
+      handleCloseReplyModal();
+      fetchFeedbacks();
+      fetchSummary();
+    } catch (e) {
+      setToastMessage({
+        type: "error",
+        text: "Gagal mengirim balasan umpan balik.",
+      });
+    } finally {
+      setIsSubmittingReply(false);
+    }
+  };
 
   const handleUpdateStatus = async (id, newStatus, currentNotes = "") => {
     try {
@@ -372,6 +427,29 @@ export default function AdminFeedbackTab() {
                 </p>
               </div>
 
+              {/* Official Admin Reply Section (if already replied) */}
+              {item.adminReply && (
+                <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-200 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-blue-900 font-black">
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" />
+                      Balasan Resmi ({item.repliedByAdminName || "Administrator"}):
+                    </span>
+                    {item.repliedAt && (
+                      <span className="text-[10px] font-mono text-blue-600 font-semibold">
+                        {new Date(item.repliedAt).toLocaleString("id-ID", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-slate-800 font-medium leading-relaxed whitespace-pre-wrap">
+                    {item.adminReply}
+                  </p>
+                </div>
+              )}
+
               {/* Sender Identity & Action Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
                 {/* Sender Tag */}
@@ -395,8 +473,18 @@ export default function AdminFeedbackTab() {
                   )}
                 </div>
 
-                {/* Status Switcher & Delete Controls */}
+                {/* Status Switcher & Reply / Delete Controls */}
                 <div className="flex items-center gap-2 shrink-0">
+                  {/* Reply Button */}
+                  <button
+                    onClick={() => handleOpenReplyModal(item)}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-black shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Reply className="w-3.5 h-3.5" />
+                    <span>{item.adminReply ? "Edit Balasan" : "Beri Balasan"}</span>
+                  </button>
+
+                  {/* Status Toggle buttons */}
                   {item.status !== "Reviewed" && (
                     <button
                       onClick={() => handleUpdateStatus(item.id, "Reviewed")}
@@ -464,6 +552,120 @@ export default function AdminFeedbackTab() {
             >
               <ChevronRight className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Reply Modal */}
+      {replyModalOpen && selectedFeedbackForReply && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-blue-50 text-[#2c1ee8]">
+                  <Reply className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 leading-tight">
+                    Balas Umpan Balik
+                  </h3>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Kepada: {selectedFeedbackForReply.isAnonymous ? "Pengirim Anonim" : selectedFeedbackForReply.userName}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseReplyModal}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Original feedback preview */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+              <div className="flex items-center justify-between text-slate-500 font-bold">
+                <span>{selectedFeedbackForReply.category} • {selectedFeedbackForReply.rating}★</span>
+                <span>{new Date(selectedFeedbackForReply.createdAt).toLocaleDateString("id-ID")}</span>
+              </div>
+              <p className="text-slate-800 font-semibold italic">
+                "{selectedFeedbackForReply.content}"
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmitReply} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
+                  Isi Balasan Resmi Administrator
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Tuliskan tanggapan atau tindak lanjut dari pihak sekolah..."
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-medium text-slate-800 focus:bg-white focus:border-[#2c1ee8] outline-none resize-y min-h-[100px]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                    Ubah Status Setelah Balas
+                  </label>
+                  <select
+                    value={replyStatus}
+                    onChange={(e) => setReplyStatus(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                  >
+                    <option value="Resolved">Selesai (Resolved)</option>
+                    <option value="Reviewed">Sedang Ditinjau (Reviewed)</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center pt-4">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={sendEmailNotification}
+                      onChange={(e) => setSendEmailNotification(e.target.checked)}
+                      className="w-4 h-4 text-[#2c1ee8] rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-3.5 h-3.5 text-blue-600" />
+                      Kirim Notifikasi Email
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleCloseReplyModal}
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReply || !replyText.trim()}
+                  className="px-5 py-2.5 rounded-xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-black shadow-md shadow-blue-500/20 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingReply ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Mengirim...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Kirim Balasan & Notifikasi</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

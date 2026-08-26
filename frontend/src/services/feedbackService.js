@@ -11,6 +11,20 @@ export const feedbackService = {
   },
 
   /**
+   * Ambil daftar umpan balik milik pengguna aktif (Section Riwayat Masukan di User)
+   * @param {Object} params { page, pageSize }
+   */
+  getMyFeedbacks: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append("page", params.page);
+    if (params.pageSize) query.append("pageSize", params.pageSize);
+
+    const qs = query.toString();
+    const url = `/api/feedback/my${qs ? `?${qs}` : ""}`;
+    return await api.get(url);
+  },
+
+  /**
    * Ambil daftar semua umpan balik (Khusus Admin)
    * @param {Object} params { category, rating, status, search, page, pageSize }
    */
@@ -33,6 +47,15 @@ export const feedbackService = {
    */
   getSummary: async () => {
     return await api.get(API_ROUTES.FEEDBACK.SUMMARY);
+  },
+
+  /**
+   * Balas umpan balik secara resmi dan kirim notifikasi + email (Khusus Admin)
+   * @param {string} id 
+   * @param {Object} data { adminReply, status, sendEmailNotification }
+   */
+  replyFeedback: async (id, data) => {
+    return await api.post(`/api/feedback/${id}/reply`, data);
   },
 
   /**
