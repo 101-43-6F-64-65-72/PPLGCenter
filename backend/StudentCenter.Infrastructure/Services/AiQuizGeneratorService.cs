@@ -49,23 +49,26 @@ public class AiQuizGeneratorService : IAiQuizGeneratorService
                     ?? Environment.GetEnvironmentVariable("AI_QUIZ_MODEL") 
                     ?? "Qwen/Qwen3.8-27B";
 
-        var systemPrompt = @"You are a friendly and enthusiastic Software Engineering Teacher for SMK RPL (Rekayasa Perangkat Lunak) students.
-Create VERY EASY, fun, clear, and beginner-friendly multiple-choice questions for SMK students.
-Language: Indonesian (Bahasa Indonesia yang santai, jelas, tidak berbelit-belit, dan mudah dipahami anak SMK pemula).
-Goal: Make it encouraging and enjoyable so students easily understand the core logic and basic concepts.
-Output strictly a JSON object.";
+        var systemPrompt = @"You are a professional Senior Software Engineer and Vocational High School (SMK RPL / PPLG) Examination Board Author.
+Create high-quality, formal, and academically rigorous multiple-choice questions for vocational students (Kelas 10, 11, 12).
+
+CRITICAL LANGUAGE & FORMALITY RULES:
+1. Use standard, formal, and grammatically correct Indonesian (Bahasa Indonesia baku, formal, dan edukatif sesuai kaidah EYD/PUEBI standar ujian kejuruan sekolah).
+2. STRICTLY PROHIBITED: Do NOT use slang, colloquial Indonesian, informal words, or conversational tones (dilarang keras menggunakan bahasa gaul, kata santai, atau kata tidak baku).
+3. All 4 options (A, B, C, D) MUST be genuine, plausible, and realistic technical terms, valid code snippets, or real concepts.
+4. Output strictly a valid JSON object matching the requested schema.";
 
         var difficultyGuideline = difficulty.ToLower() switch
         {
-            "easy" => "Sangat Mudah: Pertanyaan dasar seputar istilah coding, fungsi umum, atau hal yang sering dijumpai sehari-hari di lab komputer.",
-            "medium" => "Mudah & Praktis: Potongan kode 1-3 baris yang sangat simpel (misal: if/else, variabel, tag HTML, atau SELECT SQL sederhana).",
-            "hard" => "Menantang Sederhana: Praktik baik coding sehari-hari (misal: password yang kuat, fungsi git commit, atau pencegahan error sederhana).",
-            _ => "Sangat mudah dan ramah pemula."
+            "easy" => "Tingkat Dasar (Kelas 10): Konsep fundamental, sintaks dasar yang benar, dan istilah inti RPL (misal: tipe data, selector CSS, tag HTML, perintah Git dasar). Pertanyaan jelas dan to-the-point dengan opsi istilah teknis yang nyata.",
+            "medium" => "Tingkat Menengah (Kelas 11): Pemahaman alur kode sederhana 2-5 baris (misal: tebak output if/loop/array, fungsi method, atau query SQL WHERE/JOIN). Opsi jawaban berupa output atau solusi teknis yang masuk akal.",
+            "hard" => "Tingkat Terapan & Tantangan (Kelas 12): Analisis keamanan (OWASP, SQL Injection, sanitasi data, JWT), pencegahan bug/error, best practice arsitektur REST API, dan manajemen state/basis data. Opsi jawaban membutuhkan penalaran teknis mendalam.",
+            _ => "Tingkat SMK yang aplikatif dan relevan dengan tugas praktik kejuruan."
         };
 
-        var userPrompt = $@"Buatlah tepat {count} butir soal pilihan ganda yang MUDAH, MENYENANGKAN, dan RAMAH PEMULA untuk siswa SMK RPL tentang topik: '{topic}'.
+        var userPrompt = $@"Buatlah tepat {count} butir soal pilihan ganda standar ujian resmi kejuruan SMK RPL mengenai topik: '{topic}'.
 Tingkat Kesulitan: '{difficulty}'.
-Panduan: {difficultyGuideline}
+Panduan Materi: {difficultyGuideline}
 
 Format JSON WAJIB:
 {{
@@ -73,24 +76,25 @@ Format JSON WAJIB:
     {{
       ""topic"": ""{topic}"",
       ""difficulty"": ""{difficulty.ToLower()}"",
-      ""question"": ""Pertanyaan yang ringkas, simpel, dan mudah dipahami siswa SMK"",
+      ""question"": ""Teks pertanyaan teknis formal yang spesifik dan langsung mengenai {topic}"",
       ""code_snippet"": null,
       ""options"": [
-        ""Jawaban Benar yang Jelas"",
-        ""Pengecoh 1 yang masuk akal"",
-        ""Pengecoh 2 yang jelas salah"",
-        ""Pengecoh 3 yang lucu/salah""
+        ""Opsi Jawaban Benar (Teknis & Baku)"",
+        ""Pengecoh 1 (Istilah Teknis Riil Baku)"",
+        ""Pengecoh 2 (Istilah Teknis Riil Baku)"",
+        ""Pengecoh 3 (Istilah Teknis Riil Baku)""
       ],
       ""correct_answer_index"": 0,
-      ""explanation"": ""Penjelasan singkat 1 kalimat yang mudah dipahami.""
+      ""explanation"": ""Penjelasan teknis formal dan edukatif mengapa jawaban ini benar.""
     }}
   ]
 }}
 
-Aturan:
-1. Buat pertanyaan yang MUDAH dan tidak membingungkan siswa.
-2. Gunakan kata-kata yang simpel.
-3. Soal berkaitan dengan topik '{topic}'.";
+Aturan Mutlak:
+1. Bahasa WAJIB Bahasa Indonesia baku, formal, dan rapi (tidak boleh gaul/informal).
+2. Soal HARUS 100% relevan dengan topik '{topic}'.
+3. 4 OPSI JAWABAN WAJIB SEMUANYA ISTILAH/KODE TEKNIS ASLI (Dilarang opsi lelucon/ngawur).
+4. Pengecoh harus tampak meyakinkan bagi siswa yang belum memahami konsep secara mendalam.";
 
         var requestBody = new
         {
@@ -162,8 +166,8 @@ Aturan:
 
         try
         {
-            var systemPrompt = @"You are a software engineering teacher for SMK RPL. Output strictly JSON.";
-            var userPrompt = $@"Buat {count} soal pilihan ganda tentang topik: '{topic}' tingkat '{difficulty}'. Format JSON: {{ ""questions"": [ {{ ""topic"": ""{topic}"", ""difficulty"": ""{difficulty}"", ""question"": ""..."", ""code_snippet"": null, ""options"": [""Opsi A"", ""Opsi B"", ""Opsi C"", ""Opsi D""], ""correct_answer_index"": 0, ""explanation"": ""..."" }} ] }}";
+            var systemPrompt = @"You are a professional software engineering teacher for SMK RPL. Output strictly valid JSON. All 4 options MUST be real, plausible technical concepts without any silly/joke answers.";
+            var userPrompt = $@"Buatlah {count} butir soal pilihan ganda teknis profesional untuk siswa SMK RPL mengenai topik: '{topic}' tingkat kesulitan: '{difficulty}'. 4 opsi jawaban WAJIB berupa istilah atau sintaks teknis nyata yang meyakinkan.";
 
             var reqBody = new
             {
