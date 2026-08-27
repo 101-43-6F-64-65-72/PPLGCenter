@@ -175,6 +175,15 @@ function KuisContent() {
   const [isSurrenderModalOpen, setIsSurrenderModalOpen] = useState(false);
   const [isSurrendering, setIsSurrendering] = useState(false);
 
+  // Admin Progress Modal State
+  const [adminProgress, setAdminProgress] = useState({
+    isOpen: false,
+    title: "",
+    stepText: "",
+    percent: 0,
+    isComplete: false,
+  });
+
   // Fast Mode State (Auto-advance to next question immediately on click)
   const [isFastMode, setIsFastMode] = useState(() => {
     if (typeof window !== "undefined") {
@@ -573,63 +582,79 @@ function KuisContent() {
     }
   };
 
-  // 11. Handle Reset All Quiz Data (Restart the entire flow fresh)
-  const handleResetQuizData = async () => {
-    if (!confirm("Apakah Anda yakin ingin mereset seluruh data kuis dan memulai ulang dari awal?")) return;
+  // 11. Helper to run admin actions with interactive progress bar
+  const runWithAdminProgress = async (title, taskFn) => {
+    setAdminProgress({
+      isOpen: true,
+      title: title,
+      stepText: "Menginisialisasi koneksi server...",
+      percent: 15,
+      isComplete: false,
+    });
+
+    const t1 = setTimeout(() => {
+      setAdminProgress((p) => ({ ...p, stepText: "Membersihkan data sesi & database lama...", percent: 35 }));
+    }, 400);
+
+    const t2 = setTimeout(() => {
+      setAdminProgress((p) => ({ ...p, stepText: "Menghubungi AI Engine (Bitdeer Qwen 27B) & Inisialisasi Topik...", percent: 65 }));
+    }, 900);
+
+    const t3 = setTimeout(() => {
+      setAdminProgress((p) => ({ ...p, stepText: "Men-generate Stage 1 (Starter Pack Soal #1 - #5)...", percent: 85 }));
+    }, 1500);
+
     try {
-      setInfoLoading(true);
-      const res = await quizService.resetAllQuizData();
-      const data = res?.data?.data !== undefined ? res.data.data : res?.data;
-      alert(data?.message || "Data kuis berhasil direset dan siap dimulai ulang!");
+      const res = await taskFn();
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+
+      setAdminProgress({
+        isOpen: true,
+        title: title,
+        stepText: "Selesai! Database dan soal siap dimainkan.",
+        percent: 100,
+        isComplete: true,
+      });
+
       await loadQuizInfo();
       setGamePhase("lobby");
       setCurrentSession(null);
       setCurrentQuestion(null);
       setSelectedOption(null);
       setAnswerResult(null);
+
+      setTimeout(() => {
+        setAdminProgress((p) => ({ ...p, isOpen: false }));
+      }, 1200);
+
+      return res;
     } catch (err) {
-      alert(err?.response?.data?.message || "Gagal mereset data kuis.");
-    } finally {
-      setInfoLoading(false);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      setAdminProgress((p) => ({ ...p, isOpen: false }));
+      alert(err?.response?.data?.message || err?.message || "Gagal memproses aksi admin.");
     }
   };
 
-  // 12. Handle Refresh Random Topic (Admin)
+  // 12. Handle Reset All Quiz Data (Restart the entire flow fresh)
+  const handleResetQuizData = async () => {
+    if (!confirm("Apakah Anda yakin ingin mereset seluruh data kuis dan memulai ulang dari awal?")) return;
+    await runWithAdminProgress("Reset Seluruh Data Kuis", () => quizService.resetAllQuizData());
+  };
+
+  // 13. Handle Refresh Random Topic (Admin)
   const handleRefreshRandomTopic = async () => {
     if (!confirm("Acak topik baru hari ini dan langsung generate 30 soal baru dari AI?")) return;
-    try {
-      setInfoLoading(true);
-      const res = await quizService.refreshRandomTopic();
-      const data = res?.data?.data !== undefined ? res.data.data : res?.data;
-      alert(data?.message || "Topik baru berhasil diacak dan di-generate!");
-      await loadQuizInfo();
-      setGamePhase("lobby");
-      setCurrentSession(null);
-      setCurrentQuestion(null);
-    } catch (err) {
-      alert(err?.response?.data?.message || "Gagal mengacak topik.");
-    } finally {
-      setInfoLoading(false);
-    }
+    await runWithAdminProgress("Mengacak Topik Baru Kuis", () => quizService.refreshRandomTopic());
   };
 
-  // 13. Handle Refresh Questions (Admin)
+  // 14. Handle Refresh Questions (Admin)
   const handleRefreshQuestions = async () => {
     if (!confirm("Generate ulang 30 butir soal baru dari AI untuk topik saat ini?")) return;
-    try {
-      setInfoLoading(true);
-      const res = await quizService.refreshQuestions();
-      const data = res?.data?.data !== undefined ? res.data.data : res?.data;
-      alert(data?.message || "30 Soal baru berhasil di-generate dari AI!");
-      await loadQuizInfo();
-      setGamePhase("lobby");
-      setCurrentSession(null);
-      setCurrentQuestion(null);
-    } catch (err) {
-      alert(err?.response?.data?.message || "Gagal me-refresh soal.");
-    } finally {
-      setInfoLoading(false);
-    }
+    await runWithAdminProgress("Generate Ulang Soal AI", () => quizService.refreshQuestions());
   };
 
   // Helper Badge Color based on difficulty
@@ -1578,6 +1603,101 @@ function KuisContent() {
             </div>
           </div>
         )}
+        {/* ── Admin Action Progress Modal ── */}
+        <AnimatePresence>
+          {adminProgress.isOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="w-full max-w-md bg-white border-2 border-black rounded-3xl p-6 shadow-2xl space-y-5 text-left"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-[#2c1ee8] flex items-center justify-center text-white font-bold text-xs">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
+                        {adminProgress.title}
+                      </h3>
+                      <span className="text-[11px] font-bold text-[#2c1ee8] uppercase tracking-wider">
+                        Bitdeer AI Engine (Qwen 27B)
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className="text-xl font-black text-slate-900 font-mono">
+                    {adminProgress.percent}%
+                  </span>
+                </div>
+
+                {/* Progress Bar Container */}
+                <div className="space-y-2">
+                  <div className="w-full h-3.5 bg-slate-100 border border-black rounded-full overflow-hidden p-0.5 relative">
+                    <motion.div
+                      initial={{ width: "0%" }}
+                      animate={{ width: `${adminProgress.percent}%` }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      className="h-full bg-[#2c1ee8] rounded-full"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium px-0.5">
+                    <span className="flex items-center gap-1.5 text-slate-700 font-bold">
+                      {adminProgress.isComplete ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <RefreshCw className="w-3.5 h-3.5 text-[#2c1ee8] animate-spin" />
+                      )}
+                      {adminProgress.stepText}
+                    </span>
+                    <span className="font-mono text-slate-400">
+                      {adminProgress.percent < 100 ? "Memproses..." : "Selesai!"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step Breakdown Cards */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-xs">
+                  <div className={`flex items-center justify-between ${adminProgress.percent >= 25 ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
+                    <span className="flex items-center gap-2">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${adminProgress.percent >= 25 ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>1</span>
+                      Pembersihan & Reset Database
+                    </span>
+                    {adminProgress.percent >= 25 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </div>
+
+                  <div className={`flex items-center justify-between ${adminProgress.percent >= 60 ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
+                    <span className="flex items-center gap-2">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${adminProgress.percent >= 60 ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>2</span>
+                      Inisialisasi Tema & AI Prompt (SMK RPL)
+                    </span>
+                    {adminProgress.percent >= 60 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </div>
+
+                  <div className={`flex items-center justify-between ${adminProgress.percent >= 85 ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
+                    <span className="flex items-center gap-2">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${adminProgress.percent >= 85 ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>3</span>
+                      Generate Stage 1 (Starter Soal #1 - #5)
+                    </span>
+                    {adminProgress.percent >= 85 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </div>
+
+                  <div className={`flex items-center justify-between ${adminProgress.percent >= 100 ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
+                    <span className="flex items-center gap-2">
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${adminProgress.percent >= 100 ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>4</span>
+                      Sinkronisasi Arena & Papan Skor
+                    </span>
+                    {adminProgress.percent >= 100 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </main>
 
       <Footer />
