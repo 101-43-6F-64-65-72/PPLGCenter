@@ -10,7 +10,7 @@ import CartModal from "@/components/fasilitas/CartModal";
 import LoginRequiredFallback from "@/components/common/LoginRequiredFallback";
 import LoginModal from "@/features/auth/components/LoginModal";
 import VerticalFacilitySlider from "@/components/facilities/VerticalFacilitySlider";
-import { Search, ShoppingBag, X, Clock, Building2, Trash2, Filter, ChevronDown } from "lucide-react";
+import { Search, ShoppingBag, X, Clock, Building2, Trash2, Filter, ChevronDown, Layers } from "lucide-react";
 import facilityService from "@/services/facilityService";
 import bookingService from "@/services/bookingService";
 import useAuth from "@/hooks/useAuth";
@@ -60,6 +60,15 @@ const getDefaultFacilityDescription = (title = "", category = "", existingDesc =
   }
   return "Fasilitas dan sarana prasarana resmi SMK Negeri 2 Surakarta yang dirancang mendukung kegiatan pembelajaran, keorganisasian siswa, dan kegiatan operasional sekolah secara optimal.";
 };
+
+const FACILITY_CATEGORIES = [
+  { key: "semua", label: "Semua Kategori" },
+  { key: "aula", label: "Aula & Ruang" },
+  { key: "lapangan", label: "Lapangan" },
+  { key: "lab", label: "Laboratorium" },
+  { key: "barang", label: "Peralatan & Barang" },
+  { key: "tersedia", label: "Hanya Tersedia" },
+];
 
 export default function FasilitasPage() {
   const { isAuthenticated } = useAuth();
@@ -122,7 +131,6 @@ export default function FasilitasPage() {
       setIsUnauthorized(false);
       try {
         const res = await facilityService.getFacilities({ pageSize: 100 });
-        // Normalize: res.data may be PagedResult { items, totalCount } or flat array
         const rawData = res?.data ?? res;
         const items = Array.isArray(rawData)
           ? rawData
@@ -230,111 +238,98 @@ export default function FasilitasPage() {
   const isFilterActive = activeTab !== "semua" || searchQuery.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white relative">
       {/* Navigation Header */}
       <Navbar />
 
       {/* Main Page Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-6">
-        {/* Top Direct Action & Filter Toolbar */}
-        <div className="bg-white px-5 py-3.5 sm:py-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-          {/* Search & Category Filter Group */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-5">
+        
+        {/* ── 1. Top Search, Filter & Action Bar (Direct & To-The-Point) ── */}
+        <div className="bg-white border border-slate-200 rounded-none p-3.5 sm:p-4 shadow-xs space-y-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 max-w-lg">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari fasilitas, aula, lab, atau peralatan..."
+                placeholder="Cari sarana, laboratorium, aula, atau peralatan..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs sm:text-sm text-slate-900 placeholder-slate-400 font-medium transition-all"
+                className="w-full pl-10 pr-8 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] outline-none text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-colors"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Category Filter Dropdown */}
-            <div className="relative shrink-0 min-w-[170px]">
-              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2C1EE8] pointer-events-none" />
-              <select
-                value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value)}
-                className="w-full appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs"
+            {/* Quick Action Buttons */}
+            <div className="flex items-center gap-2 shrink-0 self-start lg:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    setIsLoginModalOpen(true);
+                    return;
+                  }
+                  fetchMyBookings();
+                  setIsMyBookingsOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-none border border-slate-200 transition-colors cursor-pointer"
               >
-                <option value="semua">Semua Kategori</option>
-                <option value="aula">Aula & Ruang</option>
-                <option value="lapangan">Lapangan</option>
-                <option value="lab">Laboratorium</option>
-                <option value="barang">Peralatan & Barang</option>
-                <option value="tersedia">Hanya Tersedia</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <Clock className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                <span>Peminjaman Saya</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  fetchPublicBookings();
+                  setIsPublicBookingsOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#2C1EE8] hover:bg-[#2317be] active:bg-[#1d129f] text-white text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer shadow-xs"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Jadwal Pinjaman</span>
+              </button>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
-            <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  setIsLoginModalOpen(true);
-                  return;
-                }
-                fetchMyBookings();
-                setIsMyBookingsOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
-            >
-              <Clock className="w-4 h-4 text-[#2C1EE8]" />
-              <span>Peminjaman Saya</span>
-            </button>
-
-            <button
-              onClick={() => {
-                fetchPublicBookings();
-                setIsPublicBookingsOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#2C1EE8] text-white hover:bg-[#2013ce] transition shadow-xs cursor-pointer"
-            >
-              <Building2 className="w-4 h-4" />
-              <span>Daftar Pinjaman</span>
-            </button>
+          {/* Horizontal Category Filter Pills */}
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {FACILITY_CATEGORIES.map((cat) => {
+              const isSelected = activeTab === cat.key;
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setActiveTab(cat.key)}
+                  className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer border ${
+                    isSelected
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Featured 3D Facility Showcase Slider with Smooth Collapse/Expand Transition */}
+        {/* ── 2. Featured 3D Facility Showcase Slider (Collapsible when filtering) ── */}
         <AnimatePresence>
           {!isFilterActive && !isUnauthorized && (placesData.length > 0 || isLoading) && (
             <motion.div
               key="featured-3d-showcase"
-              initial={{ opacity: 0, height: 0, scale: 0.98 }}
-              animate={{
-                opacity: 1,
-                height: "auto",
-                scale: 1,
-                transition: {
-                  height: { duration: 0.45, ease: [0.25, 1, 0.5, 1] },
-                  opacity: { duration: 0.3, delay: 0.1 },
-                  scale: { duration: 0.35, ease: "easeOut" },
-                },
-              }}
-              exit={{
-                opacity: 0,
-                height: 0,
-                scale: 0.97,
-                transition: {
-                  opacity: { duration: 0.2, ease: "easeIn" },
-                  scale: { duration: 0.25, ease: "easeIn" },
-                  height: { duration: 0.4, ease: [0.25, 1, 0.5, 1], delay: 0.05 },
-                },
-              }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
               <VerticalFacilitySlider
@@ -346,305 +341,219 @@ export default function FasilitasPage() {
           )}
         </AnimatePresence>
 
-        {/* SECTION: TEMPAT / FASILITAS */}
+        {/* ── 3. Main Facilities Grid Section ── */}
         {isUnauthorized ? (
-          <LoginRequiredFallback featureName="Katalog Fasilitas" />
+          <div className="py-12 bg-white border border-slate-200 rounded-none shadow-xs">
+            <LoginRequiredFallback
+              title="Silakan Masuk Untuk Mengakses Layanan Fasilitas"
+              description="Informasi peminjaman dan inventaris sarana prasarana sekolah hanya dapat diakses oleh civitas akademika SMK Negeri 2 Surakarta yang terautentikasi."
+              onLoginClick={() => setIsLoginModalOpen(true)}
+            />
+          </div>
         ) : (
-          <FacilitySection
-            title="Daftar Sarana & Prasarana"
-            type="facility"
-            items={filteredPlaces}
-            isLoading={isLoading}
-            onItemAction={(item) => handleOpenModal(item)}
-            onOpen3D={(url, title) => {
-              setActive3DPath(url);
-              setActive3DTitle(title);
-              setIs3DModalOpen(true);
-            }}
-          />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <span>Daftar Fasilitas & Sarana</span>
+                <span className="text-xs font-mono font-normal text-slate-400">
+                  ({filteredPlaces.length} Sarana)
+                </span>
+              </h2>
+
+              {isFilterActive && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveTab("semua");
+                  }}
+                  className="text-xs font-bold text-[#2C1EE8] hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Reset Filter</span>
+                </button>
+              )}
+            </div>
+
+            <FacilitySection
+              title="SARANA & INVENTARIS"
+              items={filteredPlaces}
+              isLoading={isLoading}
+              onItemAction={(item) => handleOpenModal(item)}
+            />
+          </div>
         )}
       </main>
 
+      {/* Footer */}
       <Footer />
 
-      {/* Floating Bottom Cart Button */}
-      {cartItems.length > 0 && (
-        <div className="fixed bottom-6 right-6 z-40">
-          <button
-            onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-3 px-6 py-4 bg-[#2c1ee8] hover:bg-[#2013ce] text-white font-extrabold text-sm sm:text-base rounded-full shadow-2xl shadow-blue-600/40 border border-blue-400/30 transition-all duration-300 active:scale-95 cursor-pointer"
-          >
-            <div className="relative">
-              <ShoppingBag className="w-5 h-5" />
-              <span className="absolute -top-2 -right-2 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-black">
-                {cartItems.length}
-              </span>
-            </div>
-            <span>Daftar Peminjaman ({cartItems.length})</span>
-          </button>
-        </div>
+      {/* SCHEDULE BOOKING MODAL */}
+      {isModalOpen && selectedFacility && (
+        <ScheduleModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          facility={selectedFacility}
+          onAddToCart={handleAddToCart}
+        />
       )}
 
-      {/* Interactive Schedule Booking Modal */}
-      <ScheduleModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        facility={selectedFacility}
-        onAddToCart={handleAddToCart}
-      />
+      {/* CART MODAL (QUICK SUMMARY) */}
+      {isCartOpen && (
+        <CartModal
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          items={cartItems}
+          onRemoveItem={handleRemoveFromCart}
+          onClearCart={handleClearCart}
+        />
+      )}
 
-      {/* Cart Modal (Bulk Checkout Form) */}
-      <CartModal
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems}
-        onRemoveFromCart={handleRemoveFromCart}
-        onClearCart={handleClearCart}
-      />
+      {/* LOGIN MODAL */}
+      {isLoginModalOpen && (
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+        />
+      )}
 
-      {/* My Bookings History Modal */}
+      {/* ── MY BOOKINGS MODAL DRAWER (Sharp & Clean) ── */}
       {isMyBookingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4 max-h-[85vh] flex flex-col font-sans">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#2c1ee8] flex items-center justify-center font-black">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-gray-900">Peminjaman Fasilitas Saya</h3>
-                  <p className="text-xs text-gray-500">Pantau status pengajuan peminjaman tempat Anda secara real-time</p>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-none w-full max-w-2xl max-h-[85vh] flex flex-col shadow-lg">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-[#2C1EE8]" />
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Riwayat Peminjaman Saya
+                </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsMyBookingsOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3 py-2">
+            <div className="p-4 overflow-y-auto flex-1 space-y-3">
               {loadingMyBookings ? (
-                <div className="space-y-3 py-1">
-                  {Array.from({ length: 3 }).map((_, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 animate-pulse space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div className="w-32 h-4 bg-slate-200 rounded-md" />
-                        <div className="w-20 h-5 bg-slate-200 rounded-full" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="w-1/2 h-3.5 bg-slate-100 rounded-md" />
-                        <div className="w-3/4 h-3.5 bg-slate-100 rounded-md" />
-                      </div>
-                    </div>
-                  ))}
+                <div className="py-12 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Memuat data peminjaman...
                 </div>
               ) : myBookingsData.length === 0 ? (
-                <div className="py-12 text-center text-gray-400 space-y-2">
-                  <Building2 className="w-12 h-12 text-gray-300 mx-auto" />
-                  <p className="font-extrabold text-gray-700 text-sm">Belum ada peminjaman aktif</p>
-                  <p className="text-xs text-gray-400 max-w-xs mx-auto">
-                    Anda belum mengajukan peminjaman tempat. Pilih fasilitas dari katalog untuk mulai mengajukan.
-                  </p>
+                <div className="py-12 text-center text-xs text-slate-500 font-medium">
+                  Belum ada riwayat peminjaman sarana prasarana.
                 </div>
               ) : (
-                myBookingsData.map((b) => (
-                  <div key={b.id} className="p-4 rounded-2xl border border-gray-200/80 bg-gray-50/50 hover:bg-gray-50 transition space-y-2">
-                    <div className="flex items-start justify-between gap-2 border-b border-gray-100 pb-2">
-                      <div>
-                        <h4 className="font-black text-gray-900 text-sm uppercase">{b.facilityTitle}</h4>
-                        <span className="text-[11px] text-gray-400 font-medium">Tanggal: {b.date}</span>
-                      </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
-                          b.status?.includes("Disetujui")
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : b.status?.includes("Ditolak")
-                            ? "bg-rose-50 text-rose-700 border-rose-200"
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                        }`}
-                      >
-                        {b.status}
+                myBookingsData.map((b, idx) => (
+                  <div
+                    key={b.id || idx}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-none space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900">
+                        {b.facilityName || b.facility?.name || "Fasilitas"}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-none bg-blue-50 text-[#2C1EE8] border border-blue-200">
+                        {b.status || "Pending"}
                       </span>
                     </div>
-
-                    <div className="text-xs text-gray-600 space-y-1">
-                      <p><strong className="text-gray-800">Jam:</strong> <span className="text-[#2c1ee8] font-bold">{b.slotFormatted}</span></p>
-                      <p><strong className="text-gray-800">Kegiatan:</strong> {b.activityName}</p>
-                      {b.description && <p className="text-gray-500 italic text-[11px]">&quot;{b.description}&quot;</p>}
-                    </div>
-
-                    {b.status?.includes("Menunggu") && (
-                      <div className="pt-2 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (!confirm("Apakah Anda yakin ingin membatalkan pengajuan peminjaman ini?")) return;
-                            try {
-                              await bookingService.cancelBooking?.(b.id);
-                              fetchMyBookings();
-                            } catch (err) {
-                              alert("Gagal membatalkan peminjaman.");
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition cursor-pointer flex items-center gap-1"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Batalkan Pengajuan
-                        </button>
-                      </div>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Waktu: {b.bookingDate || b.startTime} {b.endTime ? `s.d ${b.endTime}` : ""}
+                    </p>
+                    {b.purpose && (
+                      <p className="text-xs text-slate-600 font-medium">
+                        Keperluan: {b.purpose}
+                      </p>
                     )}
                   </div>
                 ))
               )}
             </div>
+
+            <div className="p-3 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsMyBookingsOpen(false)}
+                className="px-4 py-1.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Public Borrowings Transparency Schedule Modal (Daftar Pinjaman Semua) */}
+      {/* ── PUBLIC BORROWINGS MODAL DRAWER (Sharp & Clean) ── */}
       {isPublicBookingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-3xl rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 max-h-[85vh] flex flex-col font-sans">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#2c1ee8] flex items-center justify-center font-black">
-                  <Building2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-gray-900">Daftar Jadwal Peminjaman Fasilitas</h3>
-                  <p className="text-xs text-gray-500">Transparansi jadwal peminjaman tempat oleh seluruh organisasi & siswa</p>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-none w-full max-w-2xl max-h-[85vh] flex flex-col shadow-lg">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-[#2C1EE8]" />
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Jadwal Pinjaman Fasilitas Publik
+                </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsPublicBookingsOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3 py-1">
+            <div className="p-4 overflow-y-auto flex-1 space-y-3">
               {loadingPublicBookings ? (
-                <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white animate-pulse">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-100">
-                      <tr>
-                        <th className="p-3.5">Fasilitas / Tempat</th>
-                        <th className="p-3.5">Tanggal & Waktu</th>
-                        <th className="p-3.5">Organisasi Peminjam</th>
-                        <th className="p-3.5">Status Peminjaman</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {Array.from({ length: 4 }).map((_, idx) => (
-                        <tr key={idx}>
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 bg-slate-200 rounded-md shrink-0" />
-                              <div className="w-28 h-4 bg-slate-200 rounded-md" />
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="space-y-1.5">
-                              <div className="w-20 h-3.5 bg-slate-200 rounded-md" />
-                              <div className="w-24 h-4 bg-slate-100 rounded-md" />
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="space-y-1">
-                              <div className="w-24 h-3.5 bg-slate-200 rounded-md" />
-                              <div className="w-32 h-3 bg-slate-100 rounded-md" />
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="w-20 h-6 bg-slate-100 rounded-full" />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="py-12 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  Memuat jadwal publik...
                 </div>
               ) : publicBookingsData.length === 0 ? (
-                <div className="py-12 text-center text-gray-400 space-y-2">
-                  <Building2 className="w-12 h-12 text-gray-300 mx-auto" />
-                  <p className="font-extrabold text-gray-700 text-sm">Belum Ada Peminjaman Terdaftar</p>
-                  <p className="text-xs text-gray-400 max-w-xs mx-auto">
-                    Saat ini belum ada jadwal peminjaman fasilitas yang tercatat di sistem.
-                  </p>
+                <div className="py-12 text-center text-xs text-slate-500 font-medium">
+                  Belum ada jadwal peminjaman sarana publik yang aktif.
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-50 text-gray-500 font-bold uppercase tracking-wider border-b border-gray-100">
-                      <tr>
-                        <th className="p-3.5">Fasilitas / Tempat</th>
-                        <th className="p-3.5">Tanggal & Waktu (Jam)</th>
-                        <th className="p-3.5">Organisasi Peminjam</th>
-                        <th className="p-3.5">Status Peminjaman</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 font-medium">
-                      {publicBookingsData.map((b) => (
-                        <tr key={b.id} className="hover:bg-slate-50/70 transition">
-                          {/* 1. Nama Fasilitas */}
-                          <td className="p-3.5 font-extrabold text-gray-900">
-                            <div className="flex items-center gap-2">
-                              <Building2 className="w-4 h-4 text-[#2c1ee8] flex-shrink-0" />
-                              <span className="uppercase">{b.facilityTitle}</span>
-                            </div>
-                          </td>
-
-                          {/* 2. Tanggal / Waktu */}
-                          <td className="p-3.5 text-gray-700">
-                            <div className="space-y-0.5">
-                              <span className="block font-bold text-gray-900">{b.date}</span>
-                              <span className="inline-block bg-blue-50 text-[#2c1ee8] px-2 py-0.5 rounded font-extrabold text-[11px]">
-                                {b.slotFormatted}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* 3. Nama Organisasi */}
-                          <td className="p-3.5 font-bold text-gray-800">
-                            <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-lg">
-                              {b.organization}
-                            </span>
-                          </td>
-
-                          {/* 4. Status */}
-                          <td className="p-3.5">
-                            <span
-                              className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold border ${
-                                b.status?.includes("Disetujui")
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                  : b.status?.includes("Ditolak")
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                                  : "bg-amber-50 text-amber-700 border-amber-200"
-                              }`}
-                            >
-                              {b.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                publicBookingsData.map((b, idx) => (
+                  <div
+                    key={b.id || idx}
+                    className="p-3 bg-slate-50 border border-slate-200 rounded-none space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900">
+                        {b.facilityName || b.facility?.name || "Fasilitas"}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-none bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        {b.status || "Terjadwal"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Peminjam: {b.userName || b.borrowerName || "Siswa / Guru"} · {b.bookingDate || b.startTime}
+                    </p>
+                    {b.purpose && (
+                      <p className="text-xs text-slate-600 font-medium">
+                        Keperluan: {b.purpose}
+                      </p>
+                    )}
+                  </div>
+                ))
               )}
+            </div>
+
+            <div className="p-3 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsPublicBookingsOpen(false)}
+                className="px-4 py-1.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Login Modal Prompt for Unauthenticated Users */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSuccess={() => setIsLoginModalOpen(false)}
-      />
     </div>
   );
 }
-

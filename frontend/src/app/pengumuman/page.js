@@ -15,7 +15,6 @@ import ManageShowcaseModal from "@/features/announcement/components/ManageShowca
 import LoginModal from "@/features/auth/components/LoginModal";
 import {
   Search,
-  Filter,
   X,
   Plus,
   TrendingUp,
@@ -196,165 +195,154 @@ export default function PengumumanPage() {
     sortFilter !== "terbaru";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white relative">
       {/* Navigation Header */}
       <Navbar />
 
       {/* Main Container */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 space-y-6">
-        {/* Top Direct Action & Filter Toolbar */}
-        <div className="bg-white px-5 py-3.5 sm:py-4 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-          {/* Search & Category Filter Group */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-            {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari judul pengumuman, kategori, atau materi..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs sm:text-sm text-slate-900 placeholder-slate-400 font-medium transition-all"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full cursor-pointer"
-                  aria-label="Clear Search"
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-5">
+        
+        {/* ── 1. Top Search, Filters & Action Bar (Direct & To-The-Point) ── */}
+        <div className="bg-white border border-slate-200 rounded-none p-3.5 sm:p-4 shadow-xs space-y-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            {/* Search Input & Target Class Dropdown */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
+              {/* Search Input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari pengumuman, materi, atau topik..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-8 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] outline-none text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    aria-label="Clear Search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Target Class Dropdown */}
+              <div className="relative shrink-0 min-w-[140px]">
+                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <select
+                  value={activeClassFilter}
+                  onChange={(e) => setActiveClassFilter(e.target.value)}
+                  className="w-full appearance-none pl-8.5 pr-8 py-2 rounded-none border border-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white focus:border-[#2C1EE8] outline-none text-xs font-bold text-slate-700 cursor-pointer transition-colors"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <option value="Semua">Semua Kelas</option>
+                  {OFFICIAL_PPLG_CLASSES.filter((c) => c !== "Semua Kelas").map((cls) => (
+                    <option key={cls} value={cls}>
+                      {cls}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Quick Sort Pills & Creator Actions */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {/* Sort Pills */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-none border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setSortFilter("terbaru")}
+                  className={`px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                    sortFilter === "terbaru"
+                      ? "bg-white text-slate-900 border-slate-300 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 border-transparent"
+                  }`}
+                >
+                  Terbaru
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setSortFilter("populer")}
+                  className={`px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 border ${
+                    sortFilter === "populer"
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "text-slate-600 hover:text-slate-900 border-transparent"
+                  }`}
+                >
+                  <TrendingUp className="w-3 h-3" />
+                  <span>Populer</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortFilter("disematkan")}
+                  className={`px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 border ${
+                    sortFilter === "disematkan"
+                      ? "bg-amber-600 text-white border-amber-600"
+                      : "text-slate-600 hover:text-slate-900 border-transparent"
+                  }`}
+                >
+                  <Pin className="w-3 h-3" />
+                  <span>Disematkan</span>
+                </button>
+              </div>
+
+              {/* Creator/Admin Action Buttons */}
+              {canCreateAnnouncement && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsManageShowcaseOpen(true)}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-none border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                    <span>Showcase</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleOpenCreateModal}
+                    className="px-3.5 py-1.5 bg-[#2C1EE8] hover:bg-[#2317be] active:bg-[#1d129f] text-white text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Buat Pengumuman</span>
+                  </button>
+                </div>
               )}
-            </div>
-
-            {/* Category Filter Dropdown */}
-            <div className="relative shrink-0 min-w-[160px]">
-              <Filter className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2C1EE8] pointer-events-none" />
-              <select
-                value={activeCategory}
-                onChange={(e) => setActiveCategory(e.target.value)}
-                className="w-full appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat === "Semua" ? "Semua Kategori" : cat}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-            </div>
-
-            {/* Target Class Dropdown */}
-            <div className="relative shrink-0 min-w-[150px]">
-              <Layers className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-              <select
-                value={activeClassFilter}
-                onChange={(e) => setActiveClassFilter(e.target.value)}
-                className="w-full appearance-none pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 focus:bg-white focus:border-[#2C1EE8] focus:outline-hidden text-xs font-bold text-slate-700 cursor-pointer transition-all shadow-2xs"
-              >
-                <option value="Semua">Semua Kelas</option>
-                {OFFICIAL_PPLG_CLASSES.filter((c) => c !== "Semua Kelas").map((cls) => (
-                  <option key={cls} value={cls}>
-                    {cls}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
-          {/* Action Buttons & Sort Filters */}
-          <div className="flex items-center gap-2 shrink-0 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
-            {/* Quick Sort Pills */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setSortFilter("terbaru")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  sortFilter === "terbaru"
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                Terbaru
-              </button>
-              <button
-                type="button"
-                onClick={() => setSortFilter("populer")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  sortFilter === "populer"
-                    ? "bg-white text-[#2C1EE8] shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <TrendingUp className="w-3 h-3" />
-                <span>Populer</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSortFilter("disematkan")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                  sortFilter === "disematkan"
-                    ? "bg-white text-amber-700 shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Pin className="w-3 h-3" />
-                <span>Pin</span>
-              </button>
-            </div>
-
-            {/* Showcase & Create Actions for Admin */}
-            {canCreateAnnouncement && (
-              <div className="flex items-center gap-2">
+          {/* Horizontal Category Filter Pills */}
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {CATEGORIES.map((cat) => {
+              const isSelected = activeCategory === cat;
+              return (
                 <button
+                  key={cat}
                   type="button"
-                  onClick={() => setIsManageShowcaseOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-2xs cursor-pointer"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer border ${
+                    isSelected
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+                  }`}
                 >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                  <span>Kelola Showcase</span>
+                  {cat === "Semua" ? "Semua Kategori" : cat}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={handleOpenCreateModal}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-[#2C1EE8] text-white hover:bg-[#2013ce] active:scale-[0.98] transition shadow-xs cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Buat Pengumuman</span>
-                </button>
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
 
-        {/* Featured Showcase Slider with Smooth Collapse/Expand Transition */}
+        {/* ── 2. Featured Showcase Slider (Collapsible when filtering) ── */}
         <AnimatePresence>
           {!isFilterActive && (announcements.length > 0 || isLoading) && (
             <motion.div
               key="announcement-showcase-slider"
-              initial={{ opacity: 0, height: 0, scale: 0.98 }}
-              animate={{
-                opacity: 1,
-                height: "auto",
-                scale: 1,
-                transition: {
-                  height: { duration: 0.45, ease: [0.25, 1, 0.5, 1] },
-                  opacity: { duration: 0.3, delay: 0.1 },
-                  scale: { duration: 0.35, ease: "easeOut" },
-                },
-              }}
-              exit={{
-                opacity: 0,
-                height: 0,
-                scale: 0.97,
-                transition: {
-                  opacity: { duration: 0.2, ease: "easeIn" },
-                  scale: { duration: 0.25, ease: "easeIn" },
-                  height: { duration: 0.4, ease: [0.25, 1, 0.5, 1], delay: 0.05 },
-                },
-              }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
               <AnnouncementShowcaseSlider
@@ -367,88 +355,124 @@ export default function PengumumanPage() {
           )}
         </AnimatePresence>
 
-        {/* Section: Main Announcement Catalog */}
-        <section className="w-full py-4 sm:py-6">
-          {/* Section Header */}
-          <div className="flex items-center justify-between mb-6 px-1">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                {activeCategory === "Semua" ? "Daftar Pengumuman Resmi" : `Pengumuman: ${activeCategory}`}
-              </h2>
-              {!isLoading && (
-                <span className="bg-blue-50 text-[#2C1EE8] border border-blue-200/80 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                  {filteredAnnouncements.length} Pengumuman
-                </span>
-              )}
-            </div>
+        {/* ── 3. Main Announcement Grid Section ── */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <span>Daftar Pengumuman</span>
+              <span className="text-xs font-mono font-normal text-slate-400">
+                ({filteredAnnouncements.length})
+              </span>
+            </h2>
+
+            {isFilterActive && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveCategory("Semua");
+                  setActiveClassFilter("Semua");
+                  setSortFilter("terbaru");
+                }}
+                className="text-xs font-bold text-[#2C1EE8] hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Reset Semua Filter</span>
+              </button>
+            )}
           </div>
 
-          {/* Grid Content */}
           {isLoading ? (
-            <AnnouncementSkeleton count={6} />
-          ) : filteredAnnouncements.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
-              {filteredAnnouncements.map((ann) => (
-                <AnnouncementCard
-                  key={ann.id}
-                  announcement={ann}
-                  onClick={() => router.push(`/pengumuman/${ann.id}`)}
-                  canManage={canCreateAnnouncement}
-                  onEdit={(item) => handleOpenEditModal(item)}
-                  onDelete={(id) => handleDeleteAnnouncement(id)}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <AnnouncementSkeleton key={idx} />
               ))}
             </div>
-          ) : (
-            <div className="w-full text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 shadow-2xs">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-[#2C1EE8] mb-3">
-                <Filter className="w-6 h-6" />
+          ) : filteredAnnouncements.length === 0 ? (
+            <div className="py-20 text-center bg-white border border-dashed border-slate-300 rounded-none space-y-3">
+              <div className="w-12 h-12 bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                <Search className="w-6 h-6" />
               </div>
-              <p className="text-slate-900 font-bold text-sm">Tidak ada pengumuman yang sesuai</p>
-              <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto">
-                Coba gunakan kata kunci pencarian yang lain atau sesuaikan filter kategori dan kelas.
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-900">
+                  Tidak Ada Pengumuman Ditemukan
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Coba gunakan kata kunci lain atau ubah filter kategori dan kelas yang Anda pilih.
+                </p>
+              </div>
               {isFilterActive && (
                 <button
+                  type="button"
                   onClick={() => {
                     setSearchQuery("");
                     setActiveCategory("Semua");
                     setActiveClassFilter("Semua");
                     setSortFilter("terbaru");
                   }}
-                  className="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                  className="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
                 >
-                  Reset Semua Filter
+                  Reset Pencarian
                 </button>
               )}
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredAnnouncements.map((ann) => (
+                <AnnouncementCard
+                  key={ann.id}
+                  announcement={ann}
+                  onClick={() => router.push(`/pengumuman/${ann.id}`)}
+                  canManage={canCreateAnnouncement}
+                  onEdit={(e) => {
+                    e.stopPropagation();
+                    handleOpenEditModal(ann);
+                  }}
+                  onDelete={(e) => {
+                    e.stopPropagation();
+                    handleDeleteAnnouncement(ann.id);
+                  }}
+                />
+              ))}
+            </div>
           )}
-        </section>
+        </div>
       </main>
 
       {/* Footer */}
       <Footer />
 
-      {/* Create / Edit Modal Dialog */}
-      <CreateAnnouncementModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={() => loadAnnouncements()}
-        editData={editingAnnouncement}
-      />
+      {/* Create / Edit Announcement Modal */}
+      {isModalOpen && (
+        <CreateAnnouncementModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingAnnouncement(null);
+          }}
+          onSuccess={() => {
+            setIsModalOpen(false);
+            setEditingAnnouncement(null);
+            loadAnnouncements();
+            setShowcaseRefreshKey((k) => k + 1);
+          }}
+          initialData={editingAnnouncement}
+        />
+      )}
 
-      {/* Manage Showcase Modal Dialog */}
-      <ManageShowcaseModal
-        isOpen={isManageShowcaseOpen}
-        onClose={() => setIsManageShowcaseOpen(false)}
-        allAnnouncements={announcements}
-        onRefresh={() => {
-          loadAnnouncements();
-          setShowcaseRefreshKey((k) => k + 1);
-        }}
-      />
+      {/* Manage Showcase Modal */}
+      {isManageShowcaseOpen && (
+        <ManageShowcaseModal
+          isOpen={isManageShowcaseOpen}
+          onClose={() => setIsManageShowcaseOpen(false)}
+          onSuccess={() => {
+            setShowcaseRefreshKey((k) => k + 1);
+            loadAnnouncements();
+          }}
+        />
+      )}
 
-      {/* Login Prompt Modal */}
+      {/* Auth Login Modal Trigger */}
       {isLoginModalOpen && (
         <LoginModal
           isOpen={isLoginModalOpen}

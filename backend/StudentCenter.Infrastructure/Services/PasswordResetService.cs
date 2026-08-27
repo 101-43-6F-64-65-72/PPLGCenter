@@ -29,7 +29,7 @@ public class PasswordResetService : IPasswordResetService
                 (u.NISN != null && u.NISN.ToLower() == identifier) ||
                 (u.NIP != null && u.NIP.ToLower() == identifier) ||
                 (u.Username != null && u.Username.ToLower() == identifier) ||
-                u.Email.ToLower() == identifier);
+                (u.Email != null && u.Email.ToLower() == identifier));
 
         if (user is null)
         {
@@ -107,7 +107,7 @@ public class PasswordResetService : IPasswordResetService
                 (u.NISN != null && u.NISN.ToLower() == idLower) ||
                 (u.NIP != null && u.NIP.ToLower() == idLower) ||
                 (u.Username != null && u.Username.ToLower() == idLower) ||
-                u.Email.ToLower() == idLower);
+                (u.Email != null && u.Email.ToLower() == idLower));
 
         if (user is null) return null;
 

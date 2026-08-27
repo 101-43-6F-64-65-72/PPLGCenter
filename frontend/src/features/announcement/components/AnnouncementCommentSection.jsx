@@ -75,7 +75,6 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
-    // 300ms grace period buffer so moving mouse from button to modal never closes it
     hoverTimeoutRef.current = setTimeout(() => {
       setShowReactionPopup(false);
     }, 300);
@@ -83,7 +82,6 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
 
   // Mobile Click Handler
   const handleTriggerClick = () => {
-    // On mobile / touch screens, toggle open/close explicitly
     setShowReactionPopup((prev) => !prev);
   };
 
@@ -99,27 +97,42 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
         ? res.items
         : Array.isArray(res?.data)
         ? res.data
+        : Array.isArray(res)
+        ? res
         : [];
       setComments(items);
     } catch (err) {
-      console.error("Gagal memuat komentar pengumuman:", err);
+      console.warn("Failed to load comments:", err);
+      setComments([]);
     } finally {
       setLoadingComments(false);
     }
   }, [announcementId]);
 
-  // Fetch Reactions Breakdown & Active User Reaction
+  // Fetch Current Reactions & Current User's Selected Reaction
   const fetchReactions = useCallback(async () => {
     if (!announcementId) return;
     try {
       const res = await announcementService.getReactions(announcementId);
-      const data = res?.data || res;
-      if (data) {
-        setReactionsCount(data.counts || data.Counts || {});
-        setUserReaction(data.userReaction || data.UserReaction || null);
+      const data = res?.data || res || {};
+
+      let initialCounts = {};
+      if (data?.summary && typeof data.summary === "object") {
+        initialCounts = data.summary;
+      } else if (data?.counts && typeof data.counts === "object") {
+        initialCounts = data.counts;
+      } else if (data && typeof data === "object" && !Array.isArray(data)) {
+        Object.keys(data).forEach((k) => {
+          if (typeof data[k] === "number") {
+            initialCounts[k] = data[k];
+          }
+        });
       }
+
+      setReactionsCount(initialCounts);
+      setUserReaction(data?.userReaction || data?.currentUserReaction || null);
     } catch (err) {
-      console.error("Gagal memuat reaksi pengumuman:", err);
+      console.warn("Failed to load reactions summary:", err);
     }
   }, [announcementId]);
 
@@ -128,75 +141,95 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
     fetchReactions();
   }, [fetchComments, fetchReactions]);
 
-  // Total reactions count calculation
-  const totalReactionsCount = useMemo(() => {
-    return Object.values(reactionsCount).reduce((acc, curr) => acc + (curr || 0), 0);
-  }, [reactionsCount]);
+  // Handle Emoji Selection & Click
+  const handleReactionClick = async (reactionType) => {
+    if (!user) {
+      alert("Silakan masuk terlebih dahulu untuk memberikan reaksi.");
+      return;
+    }
+    if (submittingReaction) return;
 
-  // Unique active reactions list for top summary
-  const activeReactionsSummary = useMemo(() => {
-    return EMOJI_LIST.filter((e) => (reactionsCount[e.type] || 0) > 0);
-  }, [reactionsCount]);
+    const previousReaction = userReaction;
+    const isRemoving = previousReaction === reactionType;
 
-  // Handle Submit New Comment / Reply
+    // Optimistic UI Update
+    setUserReaction(isRemoving ? null : reactionType);
+    setReactionsCount((prev) => {
+      const next = { ...prev };
+      if (previousReaction && next[previousReaction] > 0) {
+        next[previousReaction] = Math.max(0, next[previousReaction] - 1);
+      }
+      if (!isRemoving) {
+        next[reactionType] = (next[reactionType] || 0) + 1;
+      }
+      return next;
+    });
+
+    setShowReactionPopup(false);
+    setSubmittingReaction(true);
+
+    try {
+      await announcementService.toggleReaction(announcementId, reactionType);
+    } catch (err) {
+      console.error("Reaction failed, rolling back:", err);
+      // Rollback on error
+      setUserReaction(previousReaction);
+      fetchReactions();
+    } finally {
+      setSubmittingReaction(false);
+    }
+  };
+
+  // Handle Comment Submission
   const handleSubmitComment = async (e) => {
     e.preventDefault();
-    if (!newComment.trim() || submittingComment) return;
+    if (!newComment.trim() || submittingComment || isCommentsLocked) return;
+
+    if (!user) {
+      alert("Silakan login untuk menulis komentar.");
+      return;
+    }
+
     setSubmittingComment(true);
     try {
-      await announcementService.addComment(
-        announcementId,
-        newComment.trim(),
-        replyingTo ? (replyingTo.id || replyingTo.Id) : null
-      );
+      await announcementService.addComment(announcementId, {
+        content: newComment.trim(),
+        parentCommentId: replyingTo?.id || replyingTo?.Id || null
+      });
+
       setNewComment("");
       setReplyingTo(null);
       await fetchComments();
     } catch (err) {
-      alert(err?.response?.data?.message || err?.message || "Gagal mengirimkan komentar.");
+      console.error("Failed to post comment:", err);
+      alert(err?.response?.data?.message || "Gagal mengirim komentar.");
     } finally {
       setSubmittingComment(false);
     }
   };
 
-  // Handle Delete Comment
+  // Handle Comment Deletion
   const handleDeleteComment = async (commentId) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus komentar ini?")) return;
+    if (!window.confirm("Apakah Anda yakin ingin menghapus komentar ini?")) return;
     try {
-      await announcementService.deleteComment(announcementId, commentId);
+      await announcementService.deleteComment(commentId);
       await fetchComments();
     } catch (err) {
-      alert(err?.response?.data?.message || err?.message || "Gagal menghapus komentar.");
+      console.error("Failed to delete comment:", err);
+      alert(err?.response?.data?.message || "Gagal menghapus komentar.");
     }
   };
 
-  // Handle Toggle Comments Lock
+  // Toggle Comment Section Lock / Unlock (For Teachers & Admin)
   const handleToggleLock = async () => {
+    if (!isTeacherOrAdmin) return;
+    const newLockState = !isCommentsLocked;
     try {
-      const res = await announcementService.toggleCommentsLock(announcementId);
-      setIsCommentsLocked(!!res?.isCommentsLocked);
+      await announcementService.toggleCommentsLock(announcementId, newLockState);
+      setIsCommentsLocked(newLockState);
     } catch (err) {
-      alert(err?.response?.data?.message || err?.message || "Gagal mengunci komentar.");
-    }
-  };
-
-  // Handle Reaction Selection
-  const handleReactionClick = async (type) => {
-    if (submittingReaction) return;
-    setSubmittingReaction(true);
-    setShowReactionPopup(false);
-    const isCurrent = userReaction === type;
-    try {
-      if (isCurrent) {
-        await announcementService.removeReaction(announcementId);
-      } else {
-        await announcementService.toggleReaction(announcementId, type);
-      }
-      await fetchReactions();
-    } catch (err) {
-      console.error("Gagal memperbarui reaksi:", err);
-    } finally {
-      setSubmittingReaction(false);
+      console.error("Failed to toggle lock status:", err);
+      alert("Gagal mengubah status kunci komentar.");
     }
   };
 
@@ -226,7 +259,6 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
       }
     });
 
-    // Sort replies chronologically (oldest reply first under the parent)
     Object.keys(replies).forEach((k) => {
       replies[k].sort((a, b) => new Date(a.createdAt || a.CreatedAt) - new Date(b.createdAt || b.CreatedAt));
     });
@@ -243,20 +275,28 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
     }
   };
 
+  const totalReactionsCount = useMemo(() => {
+    return Object.values(reactionsCount).reduce((acc, curr) => acc + (typeof curr === "number" ? curr : 0), 0);
+  }, [reactionsCount]);
+
+  const activeReactionsSummary = useMemo(() => {
+    return EMOJI_LIST.filter((item) => (reactionsCount[item.type] || 0) > 0);
+  }, [reactionsCount]);
+
   return (
-    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-visible flex flex-col font-sans relative">
+    <div className="bg-white border border-slate-200 rounded-none shadow-xs overflow-visible flex flex-col font-sans relative text-left">
       
       {/* ── HEADER & REACTION BAR ── */}
-      <div className="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
+      <div className="p-4 border-b border-slate-100 bg-slate-50/70">
         
-        {/* Top Summary Bar: ONLY display if totalReactionsCount > 0 or admin controls */}
+        {/* Top Summary Bar */}
         {(totalReactionsCount > 0 || isTeacherOrAdmin) && (
-          <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-600 mb-3 pb-2 border-b border-slate-100">
+          <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-600 mb-3 pb-2 border-b border-slate-200">
             {totalReactionsCount > 0 ? (
               <div className="flex items-center gap-1.5">
                 <span className="flex -space-x-1 items-center">
                   {activeReactionsSummary.map((item) => (
-                    <span key={item.type} className="text-base transform hover:scale-110 transition-transform">
+                    <span key={item.type} className="text-base">
                       {item.emoji}
                     </span>
                   ))}
@@ -273,7 +313,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
             {isTeacherOrAdmin && (
               <button
                 onClick={handleToggleLock}
-                className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                className={`p-1.5 rounded-none border transition-colors cursor-pointer ${
                   isCommentsLocked
                     ? "bg-amber-50 text-amber-700 border-amber-200"
                     : "bg-white text-slate-500 border-slate-200 hover:text-slate-800"
@@ -286,7 +326,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
           </div>
         )}
 
-        {/* Reaction Trigger Area with Hover Bridge & PC/Mobile Flow */}
+        {/* Reaction Trigger Area */}
         <div
           className="relative inline-block w-full"
           onMouseEnter={handleMouseEnter}
@@ -295,17 +335,16 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
           {/* Animated Reaction Popup Modal */}
           {showReactionPopup && (
             <>
-              {/* Invisible Hover Bridge Padding to prevent hover loss when moving cursor */}
               <div className="hidden md:block absolute -top-5 left-0 right-0 h-5 bg-transparent z-40" />
 
               {/* PC / Desktop Hover Floating Popup */}
-              <div className="hidden md:grid grid-cols-6 gap-2 absolute bottom-full left-1/2 -translate-x-1/2 mb-2.5 bg-white/95 backdrop-blur-md p-2.5 rounded-2xl shadow-xl border border-slate-200/90 z-50 animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-150 w-max max-w-[280px]">
+              <div className="hidden md:grid grid-cols-6 gap-1.5 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-white p-2.5 rounded-none shadow-lg border border-slate-200 z-50 w-max max-w-[280px]">
                 {EMOJI_LIST.map((item) => (
                   <button
                     key={item.type}
                     type="button"
                     onClick={() => handleReactionClick(item.type)}
-                    className="text-2xl hover:scale-125 hover:-translate-y-1 transition-all duration-150 ease-out cursor-pointer p-1 flex items-center justify-center rounded-lg hover:bg-blue-50/60"
+                    className="text-xl hover:scale-125 transition-transform cursor-pointer p-1 flex items-center justify-center rounded-none hover:bg-blue-50"
                     title={item.label}
                   >
                     {item.emoji}
@@ -314,9 +353,9 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
               </div>
 
               {/* Mobile Click Sheet Modal */}
-              <div className="md:hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex items-end justify-center p-4 animate-in fade-in duration-150">
+              <div className="md:hidden fixed inset-0 z-50 bg-black/50 flex items-end justify-center p-4">
                 <div
-                  className="bg-white rounded-2xl w-full p-4 border border-slate-200 shadow-2xl space-y-3 animate-in slide-in-from-bottom-6 duration-200"
+                  className="bg-white rounded-none w-full p-4 border border-slate-200 shadow-xl space-y-3"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -324,7 +363,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                     <button
                       type="button"
                       onClick={() => setShowReactionPopup(false)}
-                      className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
+                      className="p-1 text-slate-400 hover:text-slate-600"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -335,7 +374,7 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                         key={item.type}
                         type="button"
                         onClick={() => handleReactionClick(item.type)}
-                        className="text-2xl active:scale-110 transition-transform p-1.5 rounded-xl hover:bg-slate-100 flex flex-col items-center gap-1"
+                        className="text-2xl p-1.5 rounded-none hover:bg-slate-100 flex flex-col items-center gap-1"
                       >
                         <span>{item.emoji}</span>
                         <span className="text-[9px] font-semibold text-slate-500 truncate max-w-full">{item.label}</span>
@@ -350,16 +389,16 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
           {/* Main Trigger Button */}
           <button
             onClick={handleTriggerClick}
-            className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+            className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
               userReaction
-                ? "bg-blue-50 text-[#2c1ee8] border-blue-200 shadow-2xs"
+                ? "bg-blue-50 text-[#2C1EE8] border-blue-200 shadow-2xs"
                 : "bg-white hover:bg-slate-50 text-slate-700 border-slate-200"
             }`}
           >
             {currentUserEmojiObj ? (
               <span className="text-lg leading-none">{currentUserEmojiObj.emoji}</span>
             ) : (
-              <ThumbsUp className="w-4 h-4 text-[#2c1ee8]" />
+              <ThumbsUp className="w-4 h-4 text-[#2C1EE8]" />
             )}
             <span>{currentUserEmojiObj ? currentUserEmojiObj.label : "Beri Reaksi"}</span>
           </button>
@@ -370,8 +409,8 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
       {/* ── COMMENTS SCROLLABLE FEED WITH NESTED REPLIES ── */}
       <div className="p-4 max-h-[480px] sm:max-h-[540px] overflow-y-auto space-y-4">
         {loadingComments ? (
-          <div className="py-12 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+          <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2 font-bold uppercase tracking-wider">
+            <Loader2 className="w-4 h-4 animate-spin text-[#2C1EE8]" />
             Memuat komentar...
           </div>
         ) : rootComments.length > 0 ? (
@@ -392,39 +431,39 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
               <div key={c.id || c.Id} className="space-y-2">
                 {/* Root Comment Bubble */}
                 <div className="flex gap-2.5 items-start group">
-                  {/* User Avatar (Photo or Initial fallback) */}
+                  {/* User Avatar */}
                   {resolvedPhoto ? (
                     <img
                       src={resolvedPhoto}
                       alt={author || "Foto Pengguna"}
-                      className="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs border border-gray-200"
+                      className="w-7 h-7 rounded-none object-cover shrink-0 mt-0.5 border border-slate-200"
                     />
                   ) : (
-                    <div className={`w-7 h-7 rounded-full text-white font-black flex items-center justify-center text-[11px] shrink-0 mt-0.5 shadow-2xs ${isCommentAdmin ? "bg-gradient-to-br from-rose-500 to-red-600" : isCommentTeacher ? "bg-gradient-to-br from-emerald-500 to-teal-600" : "bg-gradient-to-br from-blue-600 to-indigo-700"}`}>
+                    <div className={`w-7 h-7 rounded-none text-white font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 ${isCommentAdmin ? "bg-rose-600" : isCommentTeacher ? "bg-emerald-600" : "bg-[#2C1EE8]"}`}>
                       {author.charAt(0).toUpperCase()}
                     </div>
                   )}
 
-                  {/* Facebook Comment Bubble */}
+                  {/* Comment Bubble */}
                   <div className="flex-1 min-w-0">
-                    <div className="bg-gray-100/80 hover:bg-gray-100 p-3 rounded-2xl text-xs space-y-1">
+                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-none text-xs space-y-1">
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex flex-col min-w-0">
-                          <span className="font-bold text-gray-900 truncate">{author}</span>
+                          <span className="font-bold text-slate-900 truncate">{author}</span>
                           {isCommentAdmin && (
-                            <span className="text-[10px] font-bold text-rose-600">Admin</span>
+                            <span className="text-[9.5px] font-bold uppercase text-rose-600">Admin</span>
                           )}
                           {isCommentTeacher && (
-                            <span className="text-[10px] font-bold text-emerald-600">Guru</span>
+                            <span className="text-[9.5px] font-bold uppercase text-emerald-600">Guru</span>
                           )}
                           {!isCommentAdmin && !isCommentTeacher && commentClass && (
-                            <span className="text-[10px] font-medium text-blue-600">{commentClass}</span>
+                            <span className="text-[9.5px] font-mono text-[#2C1EE8]">{commentClass}</span>
                           )}
                         </div>
                         {canDelete && (
                           <button
                             onClick={() => handleDeleteComment(c.id || c.Id)}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity cursor-pointer shrink-0"
+                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 transition-opacity cursor-pointer shrink-0"
                             title="Hapus"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -432,13 +471,13 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                         )}
                       </div>
                       
-                      <div className="text-gray-800 leading-relaxed font-normal break-words text-sm">
+                      <div className="text-slate-800 leading-relaxed font-normal break-words text-xs sm:text-sm">
                         {c.content || c.Content}
                       </div>
                     </div>
 
-                    {/* Comment Sub-bar: Timestamp & Reply */}
-                    <div className="flex items-center gap-3 pl-2.5 mt-1 text-[10px] text-gray-400 font-semibold">
+                    {/* Comment Sub-bar */}
+                    <div className="flex items-center gap-3 pl-1 mt-1 text-[10px] text-slate-400 font-medium font-mono">
                       <span>
                         {new Date(c.createdAt || c.CreatedAt).toLocaleTimeString("id-ID", {
                           hour: "2-digit",
@@ -448,92 +487,62 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
                       {user && !isCommentsLocked && (
                         <button
                           onClick={() => handleStartReply(c)}
-                          className="hover:text-blue-600 flex items-center gap-0.5 cursor-pointer"
+                          className="hover:text-[#2C1EE8] font-bold uppercase tracking-wider text-slate-600 cursor-pointer flex items-center gap-0.5"
                         >
-                          <CornerDownRight className="w-2.5 h-2.5" /> Balas
+                          <CornerDownRight className="w-2.5 h-2.5" />
+                          <span>Balas</span>
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* VISUAL NESTED REPLIES (INDENTED UNDER PARENT COMMENT) */}
+                {/* Nested Replies */}
                 {childReplies.length > 0 && (
-                  <div className="ml-5 sm:ml-7 pl-3 border-l-2 border-blue-200/60 space-y-2.5 mt-1">
-                    {childReplies.map((reply) => {
-                      const replyAuthor = reply.authorName || reply.userName || reply.UserName || "Pengguna";
-                      const canDeleteReply = isTeacherOrAdmin || (user?.id && (user.id === reply.userId || user.id === reply.UserId));
-
-                      const replyPhoto = reply.userPhotoUrl || reply.UserPhotoUrl || reply.photoUrl || reply.PhotoUrl || reply.authorPhotoUrl || reply.AuthorPhotoUrl;
-                      const resolvedReplyPhoto = replyPhoto ? resolveImageUrl(replyPhoto) : null;
-
-                      const replyRole = (reply.userRole || reply.UserRole || "").toLowerCase();
-                      const replyClass = reply.userClassName || reply.UserClassName;
-                      const isReplyTeacher = replyRole === "teacher";
-                      const isReplyAdmin = replyRole === "admin";
+                  <div className="pl-8 space-y-2 border-l-2 border-slate-100 ml-3.5">
+                    {childReplies.map((r) => {
+                      const rAuthor = r.authorName || r.userName || r.UserName || "Pengguna";
+                      const rCanDelete = isTeacherOrAdmin || (user?.id && (user.id === r.userId || user.id === r.UserId));
+                      const rPhoto = r.userPhotoUrl || r.UserPhotoUrl || r.photoUrl || r.PhotoUrl || r.authorPhotoUrl || r.AuthorPhotoUrl;
+                      const rResolvedPhoto = rPhoto ? resolveImageUrl(rPhoto) : null;
+                      const rRole = (r.userRole || r.UserRole || "").toLowerCase();
+                      const rClass = r.userClassName || r.UserClassName;
 
                       return (
-                        <div key={reply.id || reply.Id} className="flex gap-2 items-start group">
-                          {/* Nested Sub-Avatar (Photo or Initial fallback) */}
-                          {resolvedReplyPhoto ? (
+                        <div key={r.id || r.Id} className="flex gap-2 items-start group">
+                          {rResolvedPhoto ? (
                             <img
-                              src={resolvedReplyPhoto}
-                              alt={replyAuthor || "Foto Pengguna"}
-                              className="w-6 h-6 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs border border-gray-200"
+                              src={rResolvedPhoto}
+                              alt={rAuthor}
+                              className="w-6 h-6 rounded-none object-cover shrink-0 mt-0.5 border border-slate-200"
                             />
                           ) : (
-                            <div className={`w-6 h-6 rounded-full text-white font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5 shadow-2xs ${isReplyAdmin ? "bg-gradient-to-br from-rose-500 to-red-600" : isReplyTeacher ? "bg-gradient-to-br from-emerald-500 to-teal-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
-                              {replyAuthor.charAt(0).toUpperCase()}
+                            <div className="w-6 h-6 rounded-none bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[9.5px] shrink-0 mt-0.5">
+                              {rAuthor.charAt(0).toUpperCase()}
                             </div>
                           )}
-
                           <div className="flex-1 min-w-0">
-                            <div className="bg-blue-50/50 hover:bg-blue-50/80 p-2.5 rounded-2xl text-xs space-y-0.5 border border-blue-100/50">
+                            <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-none text-xs space-y-0.5">
                               <div className="flex items-start justify-between gap-1">
-                                <div className="flex flex-col min-w-0">
-                                  <span className="font-bold text-gray-900 truncate">{replyAuthor}</span>
-                                  {isReplyAdmin && (
-                                    <span className="text-[9px] font-bold text-rose-600">Admin</span>
-                                  )}
-                                  {isReplyTeacher && (
-                                    <span className="text-[9px] font-bold text-emerald-600">Guru</span>
-                                  )}
-                                  {!isReplyAdmin && !isReplyTeacher && replyClass && (
-                                    <span className="text-[9px] font-medium text-blue-600">{replyClass}</span>
-                                  )}
-                                </div>
-                                {canDeleteReply && (
+                                <span className="font-bold text-slate-900 truncate">{rAuthor}</span>
+                                {rCanDelete && (
                                   <button
-                                    onClick={() => handleDeleteComment(reply.id || reply.Id)}
-                                    className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-600 transition-opacity cursor-pointer shrink-0"
-                                    title="Hapus"
+                                    onClick={() => handleDeleteComment(r.id || r.Id)}
+                                    className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-red-600 transition-opacity cursor-pointer"
                                   >
-                                    <Trash2 className="w-2.5 h-2.5" />
+                                    <Trash2 className="w-3 h-3" />
                                   </button>
                                 )}
                               </div>
-
-                              <div className="text-gray-800 leading-normal font-normal break-words text-xs">
-                                <span className="font-semibold text-blue-600 mr-1">@{author}</span>
-                                {reply.content || reply.Content}
+                              <div className="text-slate-700 leading-relaxed font-normal break-words text-xs">
+                                {r.content || r.Content}
                               </div>
                             </div>
-
-                            <div className="flex items-center gap-2 pl-2 mt-0.5 text-[9px] text-gray-400 font-semibold">
-                              <span>
-                                {new Date(reply.createdAt || reply.CreatedAt).toLocaleTimeString("id-ID", {
-                                  hour: "2-digit",
-                                  minute: "2-digit"
-                                })}
-                              </span>
-                              {user && !isCommentsLocked && (
-                                <button
-                                  onClick={() => handleStartReply(c)}
-                                  className="hover:text-blue-600 flex items-center gap-0.5 cursor-pointer"
-                                >
-                                  <CornerDownRight className="w-2 h-2" /> Balas
-                                </button>
-                              )}
+                            <div className="pl-1 mt-0.5 text-[9.5px] text-slate-400 font-mono">
+                              {new Date(r.createdAt || r.CreatedAt).toLocaleTimeString("id-ID", {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
                             </div>
                           </div>
                         </div>
@@ -545,88 +554,63 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
             );
           })
         ) : (
-          <div className="py-8 text-center bg-gray-50/50 border border-dashed border-gray-200 rounded-2xl">
-            <MessageSquare className="w-6 h-6 text-gray-300 mx-auto mb-1.5" />
-            <p className="text-xs text-gray-500 font-medium">Belum ada komentar.</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Jadilah yang pertama berkomentar!</p>
+          <div className="py-12 text-center text-slate-400 space-y-1">
+            <MessageSquare className="w-8 h-8 text-slate-300 mx-auto" />
+            <p className="text-xs font-bold text-slate-700">Belum ada diskusi atau tanggapan</p>
+            <p className="text-[11px] text-slate-400 font-medium">Jadilah yang pertama memberikan respon pada pengumuman ini.</p>
           </div>
         )}
       </div>
 
-      {/* ── EMOJI PICKER ROW & INPUT BOX AT BOTTOM ── */}
-      <div className="p-3.5 bg-gray-50 border-t border-gray-100 space-y-2">
-        
-        {/* Large Emojis Bar for Quick Insert into Input */}
-        {!isCommentsLocked && user && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider shrink-0 mr-1">
-              Emoji:
-            </span>
-            {EMOJI_LIST.map((item) => (
-              <button
-                key={item.type}
-                type="button"
-                onClick={() => handleInsertEmoji(item.emoji)}
-                className="text-lg hover:scale-125 transition-transform p-0.5 rounded cursor-pointer shrink-0"
-                title={item.label}
-              >
-                {item.emoji}
-              </button>
-            ))}
-          </div>
-        )}
-
+      {/* ── COMMENT INPUT COMPOSER ── */}
+      <div className="p-3 border-t border-slate-100 bg-white">
         {isCommentsLocked ? (
-          <div className="p-2.5 rounded-xl bg-amber-50 text-amber-800 text-[11px] font-semibold flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span>Komentar dikunci oleh pengelola.</span>
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-none text-center text-xs font-bold text-amber-800 flex items-center justify-center gap-1.5">
+            <Lock className="w-3.5 h-3.5 text-amber-600" />
+            <span>Komentar dikunci oleh Administrator / Guru</span>
           </div>
         ) : user ? (
-          <form onSubmit={handleSubmitComment} className="space-y-1.5">
+          <form onSubmit={handleSubmitComment} className="space-y-2">
             {replyingTo && (
-              <div className="flex items-center justify-between text-[11px] bg-blue-50 text-blue-800 px-2.5 py-1 rounded-xl">
-                <span className="truncate">
-                  Membalas <strong>{replyingTo.authorName || replyingTo.userName || "Komentar"}</strong>
-                </span>
+              <div className="flex items-center justify-between px-2 py-1 bg-blue-50 border border-blue-100 rounded-none text-[11px] font-bold text-[#2C1EE8]">
+                <span>Membalas {replyingTo.authorName || replyingTo.userName || "Komentar"}...</span>
                 <button
                   type="button"
                   onClick={() => setReplyingTo(null)}
-                  className="text-gray-400 hover:text-gray-600 font-bold ml-1"
+                  className="text-slate-400 hover:text-slate-700"
                 >
-                  ✕
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="relative flex items-center">
               <input
                 ref={inputRef}
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder={replyingTo ? `Balas @${replyingTo.authorName || replyingTo.userName}...` : "Tulis komentar..."}
-                className="flex-1 px-3.5 py-2 text-xs sm:text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white"
-                required
+                placeholder={replyingTo ? "Tulis balasan Anda..." : "Tulis komentar atau tanggapan..."}
+                className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-none text-xs font-medium text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#2C1EE8] focus:bg-white transition"
               />
-
               <button
                 type="submit"
-                disabled={submittingComment || !newComment.trim()}
-                className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center disabled:opacity-50 transition-all cursor-pointer shrink-0 shadow-xs"
-                title="Kirim Komentar"
+                disabled={!newComment.trim() || submittingComment}
+                className="absolute right-1.5 p-1.5 bg-[#2C1EE8] text-white rounded-none disabled:opacity-40 hover:bg-[#2013ce] active:bg-[#1d129f] transition-colors cursor-pointer"
+                title="Kirim"
               >
                 {submittingComment ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                 )}
               </button>
             </div>
           </form>
         ) : (
-          <p className="text-[11px] text-gray-500 text-center py-1">
-            Masuk ke akun Anda untuk menulis komentar.
-          </p>
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-none text-center text-xs text-slate-600 font-medium">
+            Silakan login untuk bergabung dalam diskusi pengumuman ini.
+          </div>
         )}
       </div>
 

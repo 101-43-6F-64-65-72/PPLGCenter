@@ -72,7 +72,7 @@ function Model3DViewport({ modelUrl, title }) {
   if (hasError) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-slate-400 space-y-2">
-        <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+        <div className="w-10 h-10 rounded-none bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
           <AlertCircle className="w-5 h-5 text-amber-500" />
         </div>
         <p className="text-xs font-semibold text-slate-500">
@@ -83,86 +83,68 @@ function Model3DViewport({ modelUrl, title }) {
   }
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center select-none bg-transparent">
-      {/* Loading State */}
+    <div className="relative w-full h-full flex items-center justify-center">
       {!isLoaded && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-transparent space-y-2">
-          <div className="relative w-8 h-8">
-            <div className="absolute inset-0 rounded-full border-2 border-slate-200" />
-            <div className="absolute inset-0 rounded-full border-2 border-[#2c1ee8] border-t-transparent animate-spin" />
-          </div>
-          <span className="text-xs text-slate-400 font-medium">
-            Memuat 3D...
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-none z-10 space-y-3">
+          <div className="w-6 h-6 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin" />
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            Merender Canvas 3D...
           </span>
         </div>
       )}
 
-      {/* Clean 3D Canvas with natural camera framing */}
-      {scriptLoaded ? (
-        <model-viewer
-          ref={viewerRef}
-          src={modelUrl}
-          alt={title || "3D Model Viewport"}
-          auto-rotate=""
-          auto-rotate-delay="300"
-          rotation-per-second="10deg"
-          camera-controls=""
-          touch-action="pan-y"
-          shadow-intensity="1.0"
-          shadow-softness="0.7"
-          exposure="1.05"
-          environment-image="neutral"
-          camera-orbit="35deg 75deg 90%"
-          field-of-view="auto"
-          className="w-full h-full cursor-grab active:cursor-grabbing outline-hidden bg-transparent"
-          style={{
-            width: "100%",
-            height: "100%",
-            backgroundColor: "transparent",
-            "--poster-color": "transparent",
-          }}
-        />
-      ) : (
-        <div className="text-slate-400 text-xs">Inisialisasi 3D...</div>
-      )}
+      <model-viewer
+        ref={viewerRef}
+        src={modelUrl}
+        alt={`Pratinjau 3D ${title || "Fasilitas"}`}
+        auto-rotate
+        camera-controls
+        shadow-intensity="1.2"
+        shadow-softness="0.8"
+        exposure="1.0"
+        interaction-prompt="none"
+        style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: "transparent",
+          outline: "none",
+        }}
+      />
     </div>
   );
 }
 
 /**
- * Clean Neutral Placeholder UI when no 3D model is configured.
+ * Visual Placeholder when 3D model is unavailable
  */
 function Empty3DPlaceholder({ item }) {
-  const displayTitle = item?.title || item?.name || "Sarana Prasarana";
-  const displayCategory = item?.category || "Fasilitas";
+  const displayTitle = item?.title || item?.name || "Fasilitas";
+  const displayImage =
+    item?.imageSrc ||
+    item?.imageUrl ||
+    item?.image ||
+    "/images/tempat/lapangansmkn2ska.jpg";
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-8 text-center select-none bg-transparent">
-      <div className="flex flex-col items-center max-w-sm space-y-3">
-        <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400">
-          <Box className="w-7 h-7 stroke-[1.5]" />
-        </div>
-
-        <div className="space-y-1">
-          <span className="px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
-            {displayCategory}
-          </span>
-          <h4 className="text-sm font-bold text-slate-800">
-            Pratinjau 3D Belum Tersedia
-          </h4>
-          <p className="text-xs text-slate-500 leading-relaxed max-w-xs">
-            Model 3D interaktif untuk &quot;{displayTitle}&quot; belum tersedia. Peminjaman tetap dapat diajukan.
-          </p>
-        </div>
+    <div className="relative w-full h-full rounded-none overflow-hidden border border-slate-200 bg-slate-900 shadow-xs group">
+      <img
+        src={displayImage}
+        alt={displayTitle}
+        className="w-full h-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent" />
+      <div className="absolute bottom-4 left-4 right-4 text-white">
+        <span className="text-[10px] font-bold uppercase tracking-wider bg-[#2C1EE8] text-white px-2 py-0.5 rounded-none inline-block mb-1">
+          {item?.category || "Fasilitas"}
+        </span>
+        <h4 className="text-sm font-bold text-white truncate drop-shadow-sm uppercase">
+          {displayTitle}
+        </h4>
       </div>
     </div>
   );
 }
 
-/**
- * Vertical Synchronized Facility Slider (VerticalFacilitySlider)
- * Balanced horizontal layout (7/5 grid split) with comfortable breathing room.
- */
 export default function VerticalFacilitySlider({
   items = [],
   isLoading = false,
@@ -171,46 +153,36 @@ export default function VerticalFacilitySlider({
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef(null);
+  const isAnimatingRef = useRef(false);
   const touchStartY = useRef(null);
-  const lastScrollTime = useRef(0);
 
-  const validItems = Array.isArray(items) ? items : [];
-  const totalItems = validItems.length;
-
-  useEffect(() => {
-    if (activeIndex >= totalItems && totalItems > 0) {
-      setActiveIndex(0);
-    }
-  }, [totalItems, activeIndex]);
-
-  const activeItem = validItems[activeIndex] || null;
+  const totalItems = items.length;
+  const activeItem = items[activeIndex] || items[0] || null;
 
   const goToNext = useCallback(() => {
-    if (totalItems <= 1) return;
+    if (totalItems <= 1 || isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
     setActiveIndex((prev) => (prev + 1) % totalItems);
+    setTimeout(() => {
+      isAnimatingRef.current = false;
+    }, 280);
   }, [totalItems]);
 
   const goToPrev = useCallback(() => {
-    if (totalItems <= 1) return;
+    if (totalItems <= 1 || isAnimatingRef.current) return;
+    isAnimatingRef.current = true;
     setActiveIndex((prev) => (prev - 1 + totalItems) % totalItems);
+    setTimeout(() => {
+      isAnimatingRef.current = false;
+    }, 280);
   }, [totalItems]);
 
-  const handleWheel = useCallback(
-    (e) => {
-      const now = Date.now();
-      if (now - lastScrollTime.current < 550) return;
-
-      if (Math.abs(e.deltaY) > 35) {
-        if (e.deltaY > 0) {
-          goToNext();
-        } else {
-          goToPrev();
-        }
-        lastScrollTime.current = now;
-      }
-    },
-    [goToNext, goToPrev]
-  );
+  const handleWheel = (e) => {
+    if (totalItems <= 1 || isAnimatingRef.current) return;
+    if (Math.abs(e.deltaY) < 30) return;
+    if (e.deltaY > 0) goToNext();
+    else goToPrev();
+  };
 
   const handleTouchStart = (e) => {
     touchStartY.current = e.touches[0].clientY;
@@ -220,68 +192,31 @@ export default function VerticalFacilitySlider({
     if (touchStartY.current === null) return;
     const touchEndY = e.changedTouches[0].clientY;
     const diff = touchStartY.current - touchEndY;
-    const now = Date.now();
-
-    if (Math.abs(diff) > 40 && now - lastScrollTime.current > 500) {
-      if (diff > 0) {
-        goToNext();
-      } else {
-        goToPrev();
-      }
-      lastScrollTime.current = now;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) goToNext();
+      else goToPrev();
     }
     touchStartY.current = null;
   };
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "ArrowDown" && containerRef.current?.contains(document.activeElement)) {
-        e.preventDefault();
-        goToNext();
-      } else if (e.key === "ArrowUp" && containerRef.current?.contains(document.activeElement)) {
-        e.preventDefault();
-        goToPrev();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goToNext, goToPrev]);
-
   if (isLoading) {
     return (
-      <div className="w-full bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs animate-pulse">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Column Skeleton */}
+      <div className="w-full bg-white rounded-none border border-slate-200 p-6 sm:p-7 shadow-xs animate-pulse">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-7 space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-24 h-6 bg-slate-100 rounded-full" />
-              <div className="w-20 h-6 bg-slate-100 rounded-full" />
-            </div>
-            <div className="w-3/4 h-8 bg-slate-200 rounded-xl" />
+            <div className="w-24 h-5 bg-slate-100 rounded-none" />
+            <div className="w-3/4 h-7 bg-slate-200 rounded-none" />
             <div className="space-y-1.5">
-              <div className="w-full h-3.5 bg-slate-100 rounded-md" />
-              <div className="w-5/6 h-3.5 bg-slate-100 rounded-md" />
+              <div className="w-full h-3 bg-slate-100 rounded-none" />
+              <div className="w-5/6 h-3 bg-slate-100 rounded-none" />
             </div>
-            {/* 2x2 Specs Grid Skeleton */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="h-14 bg-slate-50 border border-slate-100 rounded-2xl" />
-              <div className="h-14 bg-slate-50 border border-slate-100 rounded-2xl" />
-              <div className="h-14 bg-slate-50 border border-slate-100 rounded-2xl" />
-              <div className="h-14 bg-slate-50 border border-slate-100 rounded-2xl" />
-            </div>
-            {/* CTA & Stepper Skeleton */}
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <div className="w-40 h-11 bg-slate-200 rounded-xl" />
-              <div className="flex items-center gap-1.5">
-                <div className="w-9 h-9 bg-slate-100 rounded-xl border border-slate-200" />
-                <div className="w-9 h-9 bg-slate-100 rounded-xl border border-slate-200" />
-              </div>
+              <div className="h-12 bg-slate-50 border border-slate-100 rounded-none" />
+              <div className="h-12 bg-slate-50 border border-slate-100 rounded-none" />
             </div>
           </div>
-
-          {/* Right Column 3D Canvas Skeleton */}
-          <div className="lg:col-span-5 relative h-[320px] sm:h-[360px] w-full bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-slate-200/60" />
+          <div className="lg:col-span-5 relative h-[300px] w-full bg-slate-50 border border-slate-100 rounded-none flex items-center justify-center">
+            <div className="w-12 h-12 rounded-none bg-slate-200/60" />
           </div>
         </div>
       </div>
@@ -292,7 +227,6 @@ export default function VerticalFacilitySlider({
     return null;
   }
 
-  // Resolve 3D model URL strictly from real data
   const raw3d =
     activeItem?.model3dUrl ||
     activeItem?.model_url ||
@@ -331,39 +265,37 @@ export default function VerticalFacilitySlider({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       aria-label="Sorotan Sarana & Pratinjau 3D"
-      className={`w-full bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs focus:outline-hidden transition-all select-none ${className}`}
+      className={`w-full bg-white border border-slate-200 rounded-none p-5 sm:p-7 shadow-xs focus:outline-none transition-all select-none ${className}`}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-center">
         
-        {/* ========================================================= */}
-        {/* LEFT COLUMN: Details Panel (7/12 column width)            */}
-        {/* ========================================================= */}
-        <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
+        {/* LEFT COLUMN: Details Panel */}
+        <div className="lg:col-span-7 flex flex-col justify-between space-y-3.5">
           
           <AnimatePresence mode="wait">
             <motion.div
               key={activeIndex}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              className="space-y-3.5"
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-3"
             >
-              {/* Top Bar: Clean Category Tag & Availability Status */}
+              {/* Category Tag & Availability Status */}
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2c1ee8] text-xs font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-none bg-[#2C1EE8] text-white text-[10px] font-black uppercase tracking-widest">
                   {displayCategory}
                 </span>
 
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wider border ${
                     isAvailable
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
-                      : "bg-rose-50 text-rose-700 border-rose-200/80"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      : "bg-rose-50 text-rose-700 border-rose-200"
                   }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
+                    className={`w-1.5 h-1.5 rounded-none ${
                       isAvailable ? "bg-emerald-500" : "bg-rose-500"
                     }`}
                   />
@@ -371,36 +303,36 @@ export default function VerticalFacilitySlider({
                 </span>
               </div>
 
-              {/* Facility Title */}
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+              {/* Title */}
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight uppercase">
                 {displayTitle}
               </h3>
 
               {/* Description */}
-              <p className="text-sm text-slate-600 leading-relaxed line-clamp-2 font-normal">
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-2 font-normal">
                 {displayDesc}
               </p>
 
-              {/* Specs & Metadata 2x2 Grid (Balanced Comfort) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {/* Specs Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                 {/* 1. Lokasi */}
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 text-[#2c1ee8] flex items-center justify-center shrink-0 shadow-2xs">
-                    <MapPin className="w-4 h-4" />
+                <div className="flex items-center gap-2.5 p-2.5 rounded-none bg-slate-50 border border-slate-200">
+                  <div className="w-7 h-7 rounded-none bg-white border border-slate-200 text-[#2C1EE8] flex items-center justify-center shrink-0">
+                    <MapPin className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">Lokasi</span>
+                    <span className="block text-[9.5px] font-bold uppercase text-slate-400 tracking-wider">Lokasi</span>
                     <span className="block text-xs font-bold text-slate-800 truncate">{displayLocation}</span>
                   </div>
                 </div>
 
-                {/* 2. Kapasitas / Unit */}
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 text-[#2c1ee8] flex items-center justify-center shrink-0 shadow-2xs">
-                    <Users className="w-4 h-4" />
+                {/* 2. Kapasitas */}
+                <div className="flex items-center gap-2.5 p-2.5 rounded-none bg-slate-50 border border-slate-200">
+                  <div className="w-7 h-7 rounded-none bg-white border border-slate-200 text-[#2C1EE8] flex items-center justify-center shrink-0">
+                    <Users className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">Kapasitas / Stok</span>
+                    <span className="block text-[9.5px] font-bold uppercase text-slate-400 tracking-wider">Kapasitas / Stok</span>
                     <span className="block text-xs font-bold text-slate-800 truncate">
                       {displayCapacity > 0 ? `${displayCapacity} ${isUnitItem ? "Unit" : "Orang"}` : "Tersedia"}
                     </span>
@@ -408,23 +340,23 @@ export default function VerticalFacilitySlider({
                 </div>
 
                 {/* 3. Pengurus */}
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 text-[#2c1ee8] flex items-center justify-center shrink-0 shadow-2xs">
-                    <UserCheck className="w-4 h-4" />
+                <div className="flex items-center gap-2.5 p-2.5 rounded-none bg-slate-50 border border-slate-200">
+                  <div className="w-7 h-7 rounded-none bg-white border border-slate-200 text-[#2C1EE8] flex items-center justify-center shrink-0">
+                    <UserCheck className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">Pengurus</span>
+                    <span className="block text-[9.5px] font-bold uppercase text-slate-400 tracking-wider">Pengurus</span>
                     <span className="block text-xs font-bold text-slate-800 truncate">{displayManager}</span>
                   </div>
                 </div>
 
                 {/* 4. Jam Layanan */}
-                <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-slate-100">
-                  <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 text-[#2c1ee8] flex items-center justify-center shrink-0 shadow-2xs">
-                    <Clock className="w-4 h-4" />
+                <div className="flex items-center gap-2.5 p-2.5 rounded-none bg-slate-50 border border-slate-200">
+                  <div className="w-7 h-7 rounded-none bg-white border border-slate-200 text-[#2C1EE8] flex items-center justify-center shrink-0">
+                    <Clock className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-[10px] font-mono font-bold uppercase text-slate-400 tracking-wider">Jam Layanan</span>
+                    <span className="block text-[9.5px] font-bold uppercase text-slate-400 tracking-wider">Jam Layanan</span>
                     <span className="block text-xs font-bold text-slate-800 truncate">{displayTime}</span>
                   </div>
                 </div>
@@ -432,29 +364,29 @@ export default function VerticalFacilitySlider({
             </motion.div>
           </AnimatePresence>
 
-          {/* Bottom Actions: CTA Button + Navigation Stepper */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-4">
+          {/* Bottom Actions */}
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
             <button
               type="button"
               disabled={!isAvailable}
               onClick={() => isAvailable && onBookFacility && onBookFacility(activeItem)}
-              className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm shadow-sm transition-all duration-200 active:scale-[0.98] ${
+              className={`inline-flex items-center justify-center gap-2 px-5 py-2 rounded-none font-bold text-xs uppercase tracking-wider transition-colors ${
                 isAvailable
-                  ? "bg-[#2c1ee8] hover:bg-[#2013ce] text-white hover:shadow-md hover:shadow-[#2c1ee8]/20 cursor-pointer"
+                  ? "bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white cursor-pointer shadow-xs"
                   : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
               }`}
             >
               <span>{isAvailable ? "Ajukan Peminjaman" : "Fasilitas Nonaktif"}</span>
-              <ArrowRight className="w-4 h-4 stroke-[2.2]" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
 
-            {/* Stepper Navigation Buttons (Icons Only) */}
-            <div className="flex items-center gap-1.5">
+            {/* Stepper Navigation */}
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={goToPrev}
                 aria-label="Previous Facility"
-                className="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                className="w-8 h-8 rounded-none bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -462,7 +394,7 @@ export default function VerticalFacilitySlider({
                 type="button"
                 onClick={goToNext}
                 aria-label="Next Facility"
-                className="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center transition active:scale-95 cursor-pointer shadow-2xs"
+                className="w-8 h-8 rounded-none bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -471,18 +403,15 @@ export default function VerticalFacilitySlider({
 
         </div>
 
-        {/* ========================================================= */}
-        {/* RIGHT COLUMN: 3D Canvas (Desktop) / Clean Photo (Mobile)  */}
-        {/* ========================================================= */}
-        {/* DESKTOP (lg:flex): Clean Pure 3D Canvas */}
-        <div className="hidden lg:flex lg:col-span-5 relative h-[380px] w-full bg-transparent items-center justify-center overflow-hidden">
+        {/* RIGHT COLUMN: 3D Canvas / Photo Showcase */}
+        <div className="hidden lg:flex lg:col-span-5 relative h-[340px] w-full bg-transparent items-center justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={`3d-${activeIndex}`}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.03 }}
-              transition={{ duration: 0.28, ease: "easeInOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
               className="w-full h-full flex items-center justify-center relative bg-transparent"
             >
               {resolvedModelUrl ? (
@@ -497,15 +426,15 @@ export default function VerticalFacilitySlider({
           </AnimatePresence>
         </div>
 
-        {/* MOBILE (lg:hidden): Lightweight Crisp Image Showcase without 3D WebGL */}
-        <div className="lg:hidden relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-2xs">
+        {/* MOBILE (lg:hidden): Lightweight Crisp Image Showcase */}
+        <div className="lg:hidden relative aspect-[16/10] sm:aspect-[16/9] w-full rounded-none overflow-hidden bg-slate-900 border border-slate-200">
           <AnimatePresence mode="wait">
             <motion.div
               key={`mobile-img-${activeIndex}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
               className="w-full h-full relative"
             >
               <img
@@ -514,16 +443,16 @@ export default function VerticalFacilitySlider({
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent pointer-events-none" />
-              <div className="absolute bottom-3 left-3.5 right-3.5 text-white flex items-center justify-between">
+              <div className="absolute bottom-3 left-3 right-3 text-white flex items-center justify-between">
                 <div className="min-w-0 pr-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-white/90 text-slate-900 px-2 py-0.5 rounded-md inline-block mb-1 shadow-2xs">
+                  <span className="text-[9.5px] font-bold uppercase tracking-wider bg-white text-slate-900 px-1.5 py-0.5 rounded-none inline-block mb-1">
                     {displayCategory}
                   </span>
-                  <p className="text-xs sm:text-sm font-bold truncate text-white drop-shadow-xs">
+                  <p className="text-xs sm:text-sm font-bold truncate text-white uppercase">
                     {displayTitle}
                   </p>
                 </div>
-                <div className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-blue-200 bg-slate-900/60 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/20">
+                <div className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-blue-200 bg-slate-900/70 px-2 py-1 rounded-none border border-white/20">
                   <MapPin className="w-3 h-3 text-blue-300" />
                   <span className="truncate max-w-[100px]">{displayLocation}</span>
                 </div>

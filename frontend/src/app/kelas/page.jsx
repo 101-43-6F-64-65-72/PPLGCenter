@@ -27,8 +27,6 @@ import {
   Calendar,
   Layers,
   Trash2,
-  Edit3,
-  Coffee,
   Bookmark,
   Check,
   X,
@@ -38,6 +36,14 @@ import {
   Search,
   Printer,
   GraduationCap,
+  Clock,
+  BookOpen,
+  Coffee,
+  Sparkles,
+  ChevronRight,
+  Shield,
+  Briefcase,
+  SlidersHorizontal,
 } from "lucide-react";
 
 function KelasPage() {
@@ -148,54 +154,44 @@ function KelasPage() {
   const [assignTarget, setAssignTarget] = useState({ name: "", type: "StudentPosition", divisionId: null });
   const [addDivModalOpen, setAddDivModalOpen] = useState(false);
 
-  const userRole = (role || user?.role || "").toString().toLowerCase();
-  const isStudent = userRole === "student" || user?.role === 2 || userRole === "2" || userRole === "siswa";
-  const isAdmin = userRole === "admin" || user?.role === 0 || userRole === "0";
-  const isTeacher = userRole === "teacher" || userRole === "guru" || user?.role === 1 || userRole === "1";
+  // Role Permissions
+  const userRoleStr = String(role || user?.role || "").toLowerCase();
+  const isAdmin = userRoleStr === "admin" || userRoleStr === "1";
+  const isTeacher = userRoleStr === "teacher" || userRoleStr === "guru" || userRoleStr === "2";
+  const isStudent = userRoleStr === "student" || userRoleStr === "siswa" || userRoleStr === "3";
   const canManage = isAdmin || isTeacher;
 
+  // Selected Class details
   const selectedClass = classes.find((c) => String(c.id || c.Id) === String(selectedClassId));
-  const selectedClassName = selectedClass?.name || selectedClass?.Name || "";
+  const selectedClassName = selectedClass?.name || selectedClass?.Name || "PPLG";
 
-  // Check if class is XI or XII (eligible for Jadwal Mingguan Agenda)
   const isUpperGradeClass =
-    selectedClassName.startsWith("XI ") ||
-    selectedClassName.startsWith("XI-") ||
-    selectedClassName.startsWith("XII ") ||
-    selectedClassName.startsWith("XII-");
+    selectedClassName.includes("11") ||
+    selectedClassName.includes("12") ||
+    selectedClassName.includes("XI") ||
+    selectedClassName.includes("XII");
 
-  // Load custom notes from localStorage on mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("pplg_custom_agenda_notes");
-      if (saved) {
-        setCustomNotes(JSON.parse(saved));
-      }
-    } catch (err) {
-      console.error("Failed to load custom agenda notes:", err);
-    }
-  }, []);
-
+  // Fetch all classes
   const fetchClasses = useCallback(async () => {
     try {
-      const res = await schoolClassService.getClasses();
-      const items = res?.items || res?.data?.items || res || [];
+      const res = schoolClassService.getAll
+        ? await schoolClassService.getAll()
+        : await schoolClassService.getAllClasses();
+      const raw = res?.data ?? res ?? [];
+      const items = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : [];
 
       let filteredItems = items;
-      if (isStudent) {
-        const userClassId = user?.classId || user?.ClassId || user?.studentProfile?.classId;
-        const userClassName =
-          user?.className ||
-          user?.ClassName ||
-          user?.studentProfile?.schoolClass?.name ||
-          user?.studentProfile?.className;
+
+      if (isStudent && user) {
+        const studentClassId = user.classId || user.ClassId || user.studentProfile?.classId;
+        const studentClassName = user.className || user.ClassName || user.studentProfile?.className;
 
         const myClassList = items.filter((c) => {
           const cId = c.id || c.Id;
-          const cName = (c.name || c.Name || "").toLowerCase().trim();
-          const matchesId = userClassId && String(cId) === String(userClassId);
-          const matchesName = userClassName && cName === userClassName.toLowerCase().trim();
-          return matchesId || matchesName;
+          const cName = c.name || c.Name;
+          if (studentClassId && String(cId) === String(studentClassId)) return true;
+          if (studentClassName && String(cName).toLowerCase() === String(studentClassName).toLowerCase()) return true;
+          return false;
         });
 
         if (myClassList.length > 0) {
@@ -339,6 +335,41 @@ function KelasPage() {
     return null;
   };
 
+  // Find currently active subject right now
+  const getCurrentActiveSubject = () => {
+    const today = getIndoDayName(currentTime);
+    if (!daysOfWeek.includes(today)) return null;
+
+    const isFriday = today === "Jumat";
+    const isMonday = today === "Senin";
+    let slots = TIME_SLOTS_NORMAL;
+    if (isFriday) slots = TIME_SLOTS_JUMAT;
+    else if (isMonday && scheduleMode === SCHEDULE_MODES.UPACARA) slots = TIME_SLOTS_UPACARA;
+
+    const dayScheds = getSchedulesForDay(today);
+
+    for (const slot of slots) {
+      if (isSlotActiveNow(today, slot.time)) {
+        if (slot.type === "ceremony") return { title: "Upacara Bendera", room: "Lapangan", teacher: "-" };
+        if (slot.type === "character") return { title: "Pembiasaan Karakter & Literasi", room: "Ruang Kelas", teacher: "-" };
+        if (slot.type === "break" || slot.type === "prayer") return { title: "Waktu Istirahat / Ibadah", room: "-", teacher: "-" };
+
+        const sched = findSchedItemForSlot(dayScheds, slot.period);
+        if (sched) {
+          return {
+            title: sched.subjectName || sched.SubjectName || sched.subjectCode || "Pelajaran Kejuruan",
+            room: sched.room || sched.Room || "Kelas",
+            teacher: sched.teacherName || sched.TeacherName || "-"
+          };
+        }
+        return { title: "Jam KBM Berlangsung", room: "Ruang Kelas", teacher: "-" };
+      }
+    }
+    return null;
+  };
+
+  const currentActiveLesson = getCurrentActiveSubject();
+
   // Weekly Agenda rows for selected XI/XII class
   const weeklyAgendaList = WEEKLY_AGENDA_DATA.filter(
     (a) => a.class === selectedClassName && a.semester === agendaSemesterFilter
@@ -374,7 +405,7 @@ function KelasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white">
       {/* Print-specific stylesheet */}
       <style jsx global>{`
         @media print {
@@ -415,10 +446,10 @@ function KelasPage() {
 
       {/* DEDICATED OFFICIAL PRINT-ONLY TIMETABLE (HIDDEN ON SCREEN, SHOWN ON PRINT) */}
       <div className="hidden print:block print-container w-full text-black">
-        <div className="border-b-2 border-black pb-2 mb-2 flex items-center justify-between">
+        <div className="border-b border-black pb-2 mb-2 flex items-center justify-between">
           <div>
-            <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-600">
-              SMK NEGERI 2 SURAKARTA · PPLG CENTER
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-600">
+              SMK NEGERI 2 SURAKARTA · REKAYASA PERANGKAT LUNAK
             </h4>
             <h1 className="text-sm font-black uppercase tracking-tight text-black mt-0.5">
               JADWAL PELAJARAN — KELAS {selectedClassName}
@@ -439,39 +470,28 @@ function KelasPage() {
         </div>
 
         {/* Printable Matrix Table */}
-        <table className="w-full border-collapse border border-slate-400 text-[9px] table-fixed">
+        <table className="w-full border-collapse border border-black text-[9px] table-fixed">
           <thead>
-            <tr className="bg-slate-100 text-slate-900 font-bold border-b border-slate-400">
-              <th className="border border-slate-400 p-1 w-14 text-center">Waktu</th>
+            <tr className="bg-slate-100 text-black font-bold border-b border-black">
+              <th className="border border-black p-1 w-14 text-center">Waktu</th>
               {daysOfWeek.map((day) => (
-                <th key={`print-th-${day}`} className="border border-slate-400 p-1 text-center uppercase tracking-wider">
+                <th key={`print-th-${day}`} className="border border-black p-1 text-center uppercase tracking-wider">
                   {day}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {TIME_SLOTS_NORMAL.map((normalSlot, slotIdx) => {
-              const isBreak = normalSlot.type === "break";
-
-              if (isBreak) {
-                return (
-                  <tr key={`print-break-${slotIdx}`} className="bg-slate-100 text-center font-bold text-[8px] text-slate-700">
-                    <td className="border border-slate-400 p-0.5 font-mono">{formatTimeRange(normalSlot.time)}</td>
-                    <td colSpan={5} className="border border-slate-400 p-0.5 uppercase tracking-widest bg-slate-100">
-                      {normalSlot.label}
-                    </td>
-                  </tr>
-                );
-              }
-
-              const periodNum = normalSlot.period;
+            {Array.from({ length: 11 }).map((_, periodIdx) => {
+              const periodNum = periodIdx + 1;
+              const refSlot = TIME_SLOTS_NORMAL.find((s) => s.period === periodNum);
+              const refTime = refSlot ? refSlot.time : `Jam ${periodNum}`;
 
               return (
-                <tr key={`print-row-${periodNum}-${slotIdx}`}>
-                  <td className="border border-slate-400 p-0.5 text-center font-mono font-bold bg-slate-50">
-                    <div className="text-[9px]">{formatTimeRange(normalSlot.time)}</div>
-                    <div className="text-[7.5px] text-slate-500">Jam {periodNum}</div>
+                <tr key={`print-tr-${periodNum}`} className="border-b border-black">
+                  <td className="border border-black p-1 font-mono font-bold text-center bg-slate-50 text-[8px]">
+                    <div>Ke-{periodNum}</div>
+                    <div className="text-slate-500 text-[7.5px] font-normal">{formatTimeRange(refTime)}</div>
                   </td>
 
                   {daysOfWeek.map((day) => {
@@ -483,57 +503,26 @@ function KelasPage() {
                     if (isFriday) daySlots = TIME_SLOTS_JUMAT;
                     else if (isMonday && scheduleMode === SCHEDULE_MODES.UPACARA) daySlots = TIME_SLOTS_UPACARA;
 
-                    const daySlot = daySlots.find((s) => s.period === periodNum);
                     const schedItem = findSchedItemForSlot(dayScheds, periodNum);
+                    const rawSubjectName = schedItem?.subjectName || schedItem?.SubjectName || schedItem?.subjectCode || "";
+                    const teacherName = schedItem?.teacherName || schedItem?.TeacherName || "";
+                    const roomName = schedItem?.room || schedItem?.Room || "";
 
-                    const rawSubjectCode =
-                      schedItem?.subjectCode ||
-                      schedItem?.SubjectCode ||
-                      schedItem?.subject?.code ||
-                      "";
-                    const rawSubjectName =
-                      schedItem?.subjectName ||
-                      schedItem?.SubjectName ||
-                      schedItem?.subject?.name ||
-                      "";
-                    const teacherName =
-                      schedItem?.teacherName ||
-                      schedItem?.TeacherName ||
-                      schedItem?.teacher?.fullName ||
-                      schedItem?.teacher?.name ||
-                      "";
-                    const roomName =
-                      schedItem?.room ||
-                      schedItem?.Room ||
-                      schedItem?.roomName ||
-                      "";
-
-                    const displaySubject = rawSubjectName || rawSubjectCode || "";
+                    const displaySubject = rawSubjectName || "";
                     const isKosong = !displaySubject || displaySubject.toLowerCase() === "kosong";
 
                     return (
                       <td
                         key={`print-cell-${day}-${periodNum}`}
-                        className={`border border-slate-400 p-0.5 align-top ${isKosong ? "bg-white text-slate-400 text-center italic text-[8px]" : "bg-white"
-                          }`}
+                        className={`border border-black p-1 align-top ${isKosong ? "bg-white text-slate-400 text-center italic text-[8px]" : "bg-white"}`}
                       >
                         {isKosong ? (
                           <span>-</span>
                         ) : (
                           <div className="space-y-0.5">
-                            <div className="font-bold text-slate-900 leading-none">
-                              {displaySubject}
-                            </div>
-                            {teacherName && (
-                              <div className="text-[8px] text-slate-700 leading-tight">
-                                {teacherName}
-                              </div>
-                            )}
-                            {roomName && (
-                              <div className="text-[7.5px] font-mono text-slate-500">
-                                [{roomName}]
-                              </div>
-                            )}
+                            <div className="font-bold text-black leading-tight">{displaySubject}</div>
+                            {teacherName && <div className="text-[8px] text-slate-700">{teacherName}</div>}
+                            {roomName && <div className="text-[7.5px] font-mono text-slate-500">[{roomName}]</div>}
                           </div>
                         )}
                       </td>
@@ -546,11 +535,11 @@ function KelasPage() {
         </table>
 
         {/* Print Footer Signatures */}
-        <div className="mt-3 pt-2 flex items-start justify-between text-[9px] text-slate-700">
+        <div className="mt-4 pt-2 flex items-start justify-between text-[9px] text-slate-700">
           <div className="text-center w-48">
             <p>Mengetahui,</p>
             <p className="font-bold">Wali Kelas {selectedClassName}</p>
-            <div className="h-8" />
+            <div className="h-10" />
             <p className="font-bold underline">
               {selectedClass?.homeroomTeacherName || activeLeadership?.homeroomTeacherName || "( ................................................ )"}
             </p>
@@ -559,7 +548,7 @@ function KelasPage() {
           <div className="text-center w-48">
             <p>Surakarta, {currentTime.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
             <p className="font-bold">Ketua Kelas</p>
-            <div className="h-8" />
+            <div className="h-10" />
             <p className="font-bold underline">
               {ketuaLeader ? ketuaLeader.name : "( ................................................ )"}
             </p>
@@ -567,92 +556,156 @@ function KelasPage() {
         </div>
       </div>
 
-      {/* STANDARD SCREEN LAYOUT */}
+      {/* ══════════════════════════════════════════════════════════════════════
+          STANDARD ULTRA-CLEAN BALANCED SCREEN LAYOUT
+          (Sharp corners, soft subtle 1px slate-200 borders, clean aesthetics)
+      ══════════════════════════════════════════════════════════════════════ */}
       <main className="no-print flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-6">
-        {/* Clean Hero Header & Class Switcher */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[#2C1EE8] text-[11px] font-extrabold uppercase tracking-wider">
-                Kelas & Akademik
-              </span>
-              <span className="text-xs font-bold text-slate-400">·</span>
-              <span className="text-xs font-bold text-slate-600">
-                Wali Kelas: <strong className="text-slate-900">{selectedClass?.homeroomTeacherName || activeLeadership?.homeroomTeacherName || "Belum Ditentukan"}</strong>
-              </span>
+        
+        {/* ── 1. Hero Header & Classroom Overview ── */}
+        <div className="bg-white border border-slate-200 rounded-none p-6 sm:p-7 shadow-xs space-y-5 text-left">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 bg-[#2C1EE8] text-white text-[10px] font-black uppercase tracking-widest rounded-none">
+                  Kelas & Akademik
+                </span>
+                <span className="text-xs font-bold text-slate-300">/</span>
+                <span className="text-xs font-semibold text-slate-500">SMK Negeri 2 Surakarta</span>
+              </div>
+
+              <div className="flex items-baseline gap-3">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight uppercase">
+                  {selectedClassName || "Kelas Siswa"}
+                </h1>
+                <span className="text-xs font-mono font-bold text-slate-400 uppercase">
+                  PPLG / RPL
+                </span>
+              </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {selectedClassName || "Kelas Siswa"}
-            </h1>
+
+            {/* Class Switcher for Admin/Teacher or Badge for Students */}
+            {isStudent || classes.length <= 1 ? (
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-none shrink-0">
+                <div className="w-8 h-8 rounded-none bg-[#2C1EE8] text-white flex items-center justify-center font-bold">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Kelas Terdaftar</span>
+                  <span className="text-xs sm:text-sm font-bold text-slate-900">{selectedClassName}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 border border-slate-200 rounded-none shrink-0">
+                {classes.map((c) => {
+                  const cId = c.id || c.Id;
+                  const cName = c.name || c.Name;
+                  const isSelected = String(cId) === String(selectedClassId);
+
+                  return (
+                    <button
+                      key={cId}
+                      type="button"
+                      onClick={() => setSelectedClassId(cId)}
+                      className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                        isSelected
+                          ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                          : "bg-white text-slate-700 hover:bg-slate-200 border-slate-200"
+                      }`}
+                    >
+                      {cName}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Class Switcher or Registered Student Class Badge */}
-          {isStudent || classes.length <= 1 ? (
-            <div className="flex items-center gap-2 bg-blue-50/90 border border-blue-200/80 px-4 py-2.5 rounded-2xl text-xs font-bold text-[#2C1EE8] shrink-0">
-              <GraduationCap className="w-4 h-4 text-[#2C1EE8]" />
-              <span>Kelas Terdaftar: <strong>{selectedClassName || "Kelas Anda"}</strong></span>
+          {/* 3 Quick Stat Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-100">
+            {/* Wali Kelas */}
+            <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-none flex items-center gap-3">
+              <div className="w-9 h-9 rounded-none bg-white border border-slate-200 flex items-center justify-center text-[#2C1EE8] shrink-0 font-bold">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Wali Kelas</span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                  {selectedClass?.homeroomTeacherName || activeLeadership?.homeroomTeacherName || "Belum Ditentukan"}
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-1.5 rounded-2xl border border-slate-200/80 shrink-0">
-              {classes.map((c) => {
-                const cId = c.id || c.Id;
-                const cName = c.name || c.Name;
-                const isSelected = String(cId) === String(selectedClassId);
 
-                return (
-                  <button
-                    key={cId}
-                    type="button"
-                    onClick={() => setSelectedClassId(cId)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${isSelected
-                      ? "bg-[#2C1EE8] text-white shadow-xs"
-                      : "bg-white text-slate-700 hover:bg-slate-200 border border-slate-200/60"
-                      }`}
-                  >
-                    {cName}
-                  </button>
-                );
-              })}
+            {/* Total Siswa */}
+            <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-none flex items-center gap-3">
+              <div className="w-9 h-9 rounded-none bg-white border border-slate-200 flex items-center justify-center text-slate-900 shrink-0 font-bold">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Anggota Terdaftar</span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 font-mono">
+                  {classStudents.length} Siswa Aktif
+                </p>
+              </div>
             </div>
-          )}
+
+            {/* Status KBM Sekarang */}
+            <div className="p-3.5 bg-slate-50/70 border border-slate-200 rounded-none flex items-center gap-3">
+              <div className="w-9 h-9 rounded-none bg-white border border-slate-200 flex items-center justify-center text-emerald-600 shrink-0 font-bold">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-pulse" />
+                  KBM Saat Ini ({getIndoDayName(currentTime)})
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                  {currentActiveLesson ? currentActiveLesson.title : "Di Luar Jam KBM / Istirahat"}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Toolbar Tabs */}
-        <div className="p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        {/* ── 2. Tab Navigation & Top Actions ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white border border-slate-200 rounded-none p-1.5 shadow-xs">
           <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"
               onClick={() => setActiveTab("struktur")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "struktur"
-                ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-                }`}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer flex items-center gap-2 border ${
+                activeTab === "struktur"
+                  ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                  : "bg-white text-slate-700 hover:bg-slate-100 border-transparent"
+              }`}
             >
-              <Layers className="w-3.5 h-3.5 text-[#2C1EE8]" />
+              <Layers className="w-3.5 h-3.5" />
               <span>Struktur Organisasi</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("anggota")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "anggota"
-                ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-                }`}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer flex items-center gap-2 border ${
+                activeTab === "anggota"
+                  ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                  : "bg-white text-slate-700 hover:bg-slate-100 border-transparent"
+              }`}
             >
-              <Users className="w-3.5 h-3.5 text-[#2C1EE8]" />
+              <Users className="w-3.5 h-3.5" />
               <span>Daftar Siswa ({classStudents.length})</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("jadwal")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "jadwal"
-                ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-                }`}
+              className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer flex items-center gap-2 border ${
+                activeTab === "jadwal"
+                  ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                  : "bg-white text-slate-700 hover:bg-slate-100 border-transparent"
+              }`}
             >
-              <Calendar className="w-3.5 h-3.5 text-[#2C1EE8]" />
+              <Calendar className="w-3.5 h-3.5" />
               <span>Jadwal Pelajaran</span>
             </button>
 
@@ -660,26 +713,28 @@ function KelasPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("mingguan")}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "mingguan"
-                  ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer flex items-center gap-2 border ${
+                  activeTab === "mingguan"
+                    ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                    : "bg-white text-slate-700 hover:bg-slate-100 border-transparent"
+                }`}
               >
-                <Bookmark className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                <Bookmark className="w-3.5 h-3.5" />
                 <span>Agenda Rotasi</span>
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Quick Action Button for active tab */}
+          <div className="flex items-center gap-1.5 self-end sm:self-auto px-1">
             {activeTab === "jadwal" && (
               <button
                 type="button"
                 onClick={handlePrintSchedule}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 hover:border-[#2C1EE8] hover:text-[#2C1EE8] transition shadow-2xs cursor-pointer"
-                title="Cetak Jadwal Pelajaran (Print / Simpan PDF)"
+                className="px-3.5 py-2 rounded-none bg-slate-900 hover:bg-[#2317be] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Cetak Jadwal Pelajaran Resmi"
               >
-                <Printer className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                <Printer className="w-3.5 h-3.5 text-blue-400" />
                 <span>Cetak Jadwal</span>
               </button>
             )}
@@ -688,7 +743,7 @@ function KelasPage() {
               <button
                 type="button"
                 onClick={() => setAddDivModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#2C1EE8] text-white text-xs font-bold hover:bg-[#2013ce] active:scale-[0.98] transition shadow-xs cursor-pointer"
+                className="px-3.5 py-2 rounded-none bg-[#2C1EE8] hover:bg-[#2317be] active:bg-[#1d129f] text-white text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <PlusCircle className="w-3.5 h-3.5" />
                 <span>Tambah Divisi</span>
@@ -697,167 +752,204 @@ function KelasPage() {
           </div>
         </div>
 
-        {/* TAB 1: STRUKTUR ORGANISASI KELAS */}
+        {/* ══════════════════════════════════════════════════════════════════════
+            TAB 1: STRUKTUR ORGANISASI KELAS (BAGAN RESMI)
+        ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "struktur" && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-7">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                Pengurus Kelas {selectedClassName}
-              </h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Bagan kepengurusan kelas dari Wali Kelas, Pengurus Inti, hingga Seksi Bidang.
-              </p>
+          <div className="bg-white border border-slate-200 rounded-none p-6 sm:p-7 shadow-xs space-y-7 text-left">
+            <div className="border-b border-slate-100 pb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-tight">
+                  Struktur Organisasi Kelas {selectedClassName}
+                </h2>
+                <p className="text-xs text-slate-500 font-medium">
+                  Hierarki kepengurusan kelas resmi dari Wali Kelas, Dewan Pengurus Inti, hingga Seksi Bidang.
+                </p>
+              </div>
+
+              <span className="text-xs font-mono font-bold text-[#2C1EE8] bg-blue-50 border border-blue-200 px-3 py-1 rounded-none self-start sm:self-auto">
+                Periode 2026/2027
+              </span>
             </div>
 
             {loading ? (
-              <div className="text-center py-16 text-slate-400 text-xs font-medium">
-                Memuat struktur kepengurusan...
+              <div className="py-20 text-center space-y-2">
+                <div className="w-5 h-5 border border-slate-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Memuat struktur organisasi...</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* 1. Wali Kelas */}
-                <div className="max-w-md mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-1.5 shadow-2xs">
-                  <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-[#2C1EE8] border border-blue-100 text-[10px] font-extrabold uppercase tracking-wider inline-block">
+              <div className="space-y-7">
+                {/* 1. Wali Kelas (Top Tier) */}
+                <div className="max-w-md mx-auto bg-white border border-slate-200 rounded-none p-4 text-center space-y-1.5 shadow-2xs">
+                  <span className="px-2.5 py-0.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-none inline-block">
                     Wali Kelas
                   </span>
-                  <h3 className="text-sm font-extrabold text-slate-900">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
                     {selectedClass?.homeroomTeacherName || activeLeadership?.homeroomTeacherName || "Belum Ditentukan"}
                   </h3>
+                  <p className="text-[11px] font-mono text-slate-500">
+                    Pembimbing Akademik & Karakter Siswa
+                  </p>
                   {canManage && (
-                    <button
-                      type="button"
-                      onClick={() => handleOpenAssign("Wali Kelas", "WaliKelas")}
-                      className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer pt-1"
-                    >
-                      {selectedClass?.homeroomTeacherName ? "Ganti Wali Kelas" : "+ Tentukan Wali Kelas"}
-                    </button>
+                    <div className="pt-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenAssign("Wali Kelas", "WaliKelas")}
+                        className="px-3 py-1 bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-800 text-xs font-bold rounded-none border border-slate-200 transition-colors cursor-pointer"
+                      >
+                        {selectedClass?.homeroomTeacherName ? "Ganti Wali Kelas" : "+ Tentukan Wali Kelas"}
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                {/* 2. Pimpinan Inti */}
-                <div className="space-y-3">
-                  <h4 className="text-center text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
-                    Pengurus Inti
+                {/* Connector Line */}
+                <div className="w-px h-5 bg-slate-300 mx-auto" />
+
+                {/* 2. Pengurus Inti: Ketua & Wakil (Executive Tier) */}
+                <div className="space-y-2.5">
+                  <h4 className="text-center text-xs font-bold uppercase tracking-widest text-slate-400">
+                    Dewan Pimpinan Inti
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
-                    {/* Ketua */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center shadow-2xs space-y-1">
-                      <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-extrabold uppercase tracking-wider inline-block">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 max-w-2xl mx-auto">
+                    {/* Ketua Kelas */}
+                    <div className="bg-white border border-slate-200 rounded-none p-4 text-center space-y-1.5 shadow-2xs relative">
+                      <span className="px-2.5 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-bold uppercase tracking-widest rounded-none inline-flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5 text-amber-700" />
                         Ketua Kelas
                       </span>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                         {ketuaLeader ? ketuaLeader.name : "Belum Ditentukan"}
                       </h4>
+                      <p className="text-[11px] font-mono text-slate-500">Penanggung Jawab Kelas</p>
                       {canManage && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenAssign("Ketua Kelas", "StudentPosition")}
-                          className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
-                        >
-                          {ketuaLeader ? "Ganti" : "+ Tentukan"}
-                        </button>
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAssign("Ketua Kelas", "StudentPosition")}
+                            className="text-xs text-[#2C1EE8] font-bold uppercase tracking-wider hover:underline cursor-pointer"
+                          >
+                            {ketuaLeader ? "Ganti Siswa" : "+ Tentukan Siswa"}
+                          </button>
+                        </div>
                       )}
                     </div>
 
-                    {/* Wakil */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-4 text-center shadow-2xs space-y-1">
-                      <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-extrabold uppercase tracking-wider inline-block">
+                    {/* Wakil Ketua Kelas */}
+                    <div className="bg-white border border-slate-200 rounded-none p-4 text-center space-y-1.5 shadow-2xs relative">
+                      <span className="px-2.5 py-0.5 bg-blue-50 text-[#2C1EE8] border border-blue-200 text-[10px] font-bold uppercase tracking-widest rounded-none inline-flex items-center gap-1.5">
+                        <Shield className="w-3.5 h-3.5 text-[#2C1EE8]" />
                         Wakil Ketua
                       </span>
-                      <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
                         {wakilLeader ? wakilLeader.name : "Belum Ditentukan"}
                       </h4>
+                      <p className="text-[11px] font-mono text-slate-500">Koordinasi & Operasional</p>
+                      {canManage && (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAssign("Wakil Ketua Kelas", "StudentPosition", wakilLeader?.divisionId)}
+                            className="text-xs text-[#2C1EE8] font-bold uppercase tracking-wider hover:underline cursor-pointer"
+                          >
+                            {wakilLeader ? "Ganti Siswa" : "+ Tentukan Siswa"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Connector Line */}
+                <div className="w-px h-5 bg-slate-300 mx-auto" />
+
+                {/* 3. Sekretaris & Bendahara (Operational Tier) */}
+                <div className="space-y-2.5">
+                  <h4 className="text-center text-xs font-bold uppercase tracking-widest text-slate-400">
+                    Administrasi & Finansial
+                  </h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-4xl mx-auto">
+                    {/* Sekretaris 1 */}
+                    <div className="bg-white border border-slate-200 rounded-none p-3 text-center space-y-1 shadow-2xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sekretaris 1</span>
+                      <p className="font-bold text-slate-900 text-xs truncate">{sekretaris1 ? sekretaris1.name : "Kosong"}</p>
                       {canManage && (
                         <button
                           type="button"
-                          onClick={() => handleOpenAssign("Wakil Ketua Kelas", "StudentPosition", wakilLeader?.divisionId)}
+                          onClick={() => handleOpenAssign("Sekretaris 1", "StudentPosition", sekretaris1?.divisionId)}
                           className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
                         >
-                          {wakilLeader ? "Ganti" : "+ Tentukan"}
+                          {sekretaris1 ? "Ganti" : "+ Tentukan"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Sekretaris 2 */}
+                    <div className="bg-white border border-slate-200 rounded-none p-3 text-center space-y-1 shadow-2xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sekretaris 2</span>
+                      <p className="font-bold text-slate-900 text-xs truncate">{sekretaris2 ? sekretaris2.name : "Kosong"}</p>
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAssign("Sekretaris 2", "StudentPosition", sekretaris2?.divisionId)}
+                          className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
+                        >
+                          {sekretaris2 ? "Ganti" : "+ Tentukan"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Bendahara 1 */}
+                    <div className="bg-white border border-slate-200 rounded-none p-3 text-center space-y-1 shadow-2xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Bendahara 1</span>
+                      <p className="font-bold text-slate-900 text-xs truncate">{bendahara1 ? bendahara1.name : "Kosong"}</p>
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAssign("Bendahara 1", "StudentPosition", bendahara1?.divisionId)}
+                          className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
+                        >
+                          {bendahara1 ? "Ganti" : "+ Tentukan"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Bendahara 2 */}
+                    <div className="bg-white border border-slate-200 rounded-none p-3 text-center space-y-1 shadow-2xs">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Bendahara 2</span>
+                      <p className="font-bold text-slate-900 text-xs truncate">{bendahara2 ? bendahara2.name : "Kosong"}</p>
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAssign("Bendahara 2", "StudentPosition", bendahara2?.divisionId)}
+                          className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
+                        >
+                          {bendahara2 ? "Ganti" : "+ Tentukan"}
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* 3. Sekretaris & Bendahara */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
-                  <div className="bg-white border border-slate-200 rounded-2xl p-3.5 text-center shadow-2xs space-y-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Sekretaris 1</span>
-                    <p className="font-extrabold text-slate-900 text-xs truncate">{sekretaris1 ? sekretaris1.name : "Kosong"}</p>
-                    {canManage && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAssign("Sekretaris 1", "StudentPosition", sekretaris1?.divisionId)}
-                        className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
-                      >
-                        {sekretaris1 ? "Ganti" : "+ Tentukan"}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="bg-white border border-slate-200 rounded-2xl p-3.5 text-center shadow-2xs space-y-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Sekretaris 2</span>
-                    <p className="font-extrabold text-slate-900 text-xs truncate">{sekretaris2 ? sekretaris2.name : "Kosong"}</p>
-                    {canManage && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAssign("Sekretaris 2", "StudentPosition", sekretaris2?.divisionId)}
-                        className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
-                      >
-                        {sekretaris2 ? "Ganti" : "+ Tentukan"}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="bg-white border border-slate-200 rounded-2xl p-3.5 text-center shadow-2xs space-y-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Bendahara 1</span>
-                    <p className="font-extrabold text-slate-900 text-xs truncate">{bendahara1 ? bendahara1.name : "Kosong"}</p>
-                    {canManage && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAssign("Bendahara 1", "StudentPosition", bendahara1?.divisionId)}
-                        className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
-                      >
-                        {bendahara1 ? "Ganti" : "+ Tentukan"}
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="bg-white border border-slate-200 rounded-2xl p-3.5 text-center shadow-2xs space-y-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Bendahara 2</span>
-                    <p className="font-extrabold text-slate-900 text-xs truncate">{bendahara2 ? bendahara2.name : "Kosong"}</p>
-                    {canManage && (
-                      <button
-                        type="button"
-                        onClick={() => handleOpenAssign("Bendahara 2", "StudentPosition", bendahara2?.divisionId)}
-                        className="text-[11px] text-[#2C1EE8] font-bold hover:underline cursor-pointer"
-                      >
-                        {bendahara2 ? "Ganti" : "+ Tentukan"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Seksi Bidang */}
+                {/* 4. Seksi Bidang & Divisi Khusus */}
                 {customDivisions.length > 0 && (
-                  <div className="space-y-3 pt-3 border-t border-slate-100">
-                    <h4 className="text-center text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <div className="space-y-3 pt-5 border-t border-slate-100">
+                    <h4 className="text-center text-xs font-bold uppercase tracking-widest text-slate-400">
                       Seksi Bidang & Divisi Khusus
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {customDivisions.map((div) => (
                         <div
                           key={div.id}
-                          className="bg-white border border-slate-200 rounded-2xl p-3.5 space-y-1.5 shadow-2xs"
+                          className="bg-white border border-slate-200 rounded-none p-3.5 space-y-1.5 shadow-2xs"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-bold text-slate-900 text-xs truncate">{div.name}</span>
+                            <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">{div.name}</span>
                             {canManage && (
                               <button
                                 type="button"
                                 onClick={() => handleDeleteDivision(div.id)}
-                                className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition cursor-pointer"
+                                className="text-slate-400 hover:text-rose-600 p-1 transition-colors cursor-pointer"
                                 title="Hapus divisi"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -865,7 +957,7 @@ function KelasPage() {
                             )}
                           </div>
                           <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                            <span className="text-slate-400 text-[11px]">Koordinator:</span>
+                            <span className="text-slate-400 font-medium text-[11px]">Koordinator:</span>
                             <span className="font-bold text-[#2C1EE8]">{div.leaderStudentName || "Belum Ditentukan"}</span>
                           </div>
                         </div>
@@ -878,34 +970,36 @@ function KelasPage() {
           </div>
         )}
 
-        {/* TAB 2: DAFTAR SISWA */}
+        {/* ══════════════════════════════════════════════════════════════════════
+            TAB 2: DAFTAR SISWA (DIREKTORI ANGGOTA KELAS)
+        ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "anggota" && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-100">
+          <div className="bg-white border border-slate-200 rounded-none p-6 sm:p-7 shadow-xs space-y-5 text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3.5 border-b border-slate-100">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Daftar Siswa ({filteredStudents.length})
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-tight">
+                  Direktori Siswa ({filteredStudents.length})
                 </h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Direktori siswa aktif terdaftar di kelas {selectedClassName}.
+                <p className="text-xs text-slate-500 font-medium">
+                  Daftar seluruh siswa aktif yang terdaftar di kelas {selectedClassName}.
                 </p>
               </div>
 
-              {/* Search */}
-              <div className="relative w-full sm:w-64">
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-72">
                 <input
                   type="text"
                   placeholder="Cari nama atau NIS..."
                   value={studentSearchQuery}
                   onChange={(e) => setStudentSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#2C1EE8] focus:bg-white transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-none pl-9 pr-8 py-2 text-xs font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors"
                 />
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 {studentSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setStudentSearchQuery("")}
-                    className="p-1 text-slate-400 hover:text-slate-600 absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                    className="p-1 text-slate-400 hover:text-slate-900 absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -914,17 +1008,18 @@ function KelasPage() {
             </div>
 
             {loading ? (
-              <div className="text-center py-16 text-slate-400 text-xs font-medium">
-                Memuat data siswa...
+              <div className="py-20 text-center space-y-2">
+                <div className="w-5 h-5 border border-slate-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Memuat direktori siswa...</p>
               </div>
             ) : filteredStudents.length === 0 ? (
-              <div className="text-center py-14 bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
-                <p className="text-xs font-bold text-slate-700">Tidak ada siswa yang sesuai</p>
+              <div className="py-16 text-center bg-slate-50 border border-dashed border-slate-300 rounded-none space-y-2">
+                <p className="text-xs sm:text-sm font-bold text-slate-700">Tidak ada siswa yang sesuai pencarian.</p>
                 {studentSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setStudentSearchQuery("")}
-                    className="mt-2 px-3 py-1.5 rounded-xl bg-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-300 cursor-pointer"
+                    className="px-4 py-2 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
                   >
                     Reset Pencarian
                   </button>
@@ -951,11 +1046,11 @@ function KelasPage() {
                   return (
                     <div
                       key={sId}
-                      className="bg-white border border-slate-200 rounded-2xl p-3.5 flex items-center gap-3 shadow-2xs hover:border-[#2C1EE8] hover:shadow-md transition-all duration-300"
+                      className="bg-white border border-slate-200 rounded-none p-3.5 flex items-center gap-3 shadow-2xs hover:border-[#2C1EE8] hover:bg-slate-50/50 transition-colors"
                     >
-                      {/* Avatar */}
+                      {/* Avatar with Absen Number */}
                       <div className="relative shrink-0">
-                        <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative">
+                        <div className="w-10 h-10 rounded-none overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center relative">
                           {hasPhoto ? (
                             <img
                               src={resolveImageUrl(photoUrl)}
@@ -969,30 +1064,31 @@ function KelasPage() {
                             />
                           ) : null}
                           <div
-                            className={`w-full h-full bg-blue-50 text-[#2C1EE8] font-black text-xs flex items-center justify-center ${hasPhoto ? "hidden" : "flex"
-                              }`}
+                            className={`w-full h-full bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center ${
+                              hasPhoto ? "hidden" : "flex"
+                            }`}
                           >
                             {name?.charAt(0)?.toUpperCase() || "S"}
                           </div>
                         </div>
 
                         <span
-                          className="absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#2C1EE8] text-white font-mono text-[9px] font-black flex items-center justify-center border-2 border-white shadow-xs z-10"
+                          className="absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] px-1 rounded-none bg-[#2C1EE8] text-white font-mono text-[9px] font-bold flex items-center justify-center shadow-none z-10"
                           title={`Absen ${idx + 1}`}
                         >
                           {idx + 1}
                         </span>
                       </div>
 
-                      {/* Student Info */}
-                      <div className="min-w-0 flex-1">
+                      {/* Student Details */}
+                      <div className="min-w-0 flex-1 space-y-0.5">
                         <h4 className="font-bold text-slate-900 text-xs truncate">{name}</h4>
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500 font-mono">
+                        <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono">
                           <span>NIS: {nis}</span>
                           {nisn && nisn !== "-" && (
                             <>
-                              <span className="text-slate-300">•</span>
-                              <span className="text-slate-400 truncate">NISN: {nisn}</span>
+                              <span>·</span>
+                              <span className="truncate">NISN: {nisn}</span>
                             </>
                           )}
                         </div>
@@ -1005,12 +1101,14 @@ function KelasPage() {
           </div>
         )}
 
-        {/* TAB 3: JADWAL PELAJARAN */}
+        {/* ══════════════════════════════════════════════════════════════════════
+            TAB 3: JADWAL PELAJARAN (LIVE TIMETABLE TRACKER)
+        ══════════════════════════════════════════════════════════════════════ */}
         {activeTab === "jadwal" && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-5">
-            {/* Header with Day Filters & Mode Switch */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-              {/* Day Filter Pills */}
+          <div className="bg-white border border-slate-200 rounded-none p-6 sm:p-7 shadow-xs space-y-5 text-left">
+            {/* Day Filter Pills & Mode Switcher */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3.5 border-b border-slate-100">
+              {/* Day Filter Buttons */}
               <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
                 {["Semua", ...daysOfWeek].map((day) => {
                   const isToday = day !== "Semua" && getIndoDayName(currentTime).toLowerCase() === day.toLowerCase();
@@ -1021,54 +1119,60 @@ function KelasPage() {
                       key={day}
                       type="button"
                       onClick={() => setScheduleDayFilter(day)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${isSelected
-                        ? "bg-[#2C1EE8] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        }`}
+                      className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer flex items-center gap-1.5 border ${
+                        isSelected
+                          ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                          : "bg-white text-slate-700 hover:bg-slate-100 border-slate-200"
+                      }`}
                     >
                       <span>{day}</span>
-                      {isToday && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                      {isToday && (
+                        <span className="w-1.5 h-1.5 rounded-none bg-emerald-500 animate-pulse" title="Hari Ini" />
+                      )}
                     </button>
                   );
                 })}
               </div>
 
               {/* Mode Toggle */}
-              <div className="p-1 bg-slate-100 rounded-xl border border-slate-200 flex items-center gap-1 self-start sm:self-auto shrink-0">
+              <div className="p-1 bg-slate-100 border border-slate-200 rounded-none flex items-center gap-1 self-start lg:self-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => setScheduleMode(SCHEDULE_MODES.NORMAL)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${scheduleMode === SCHEDULE_MODES.NORMAL
-                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                    }`}
+                  className={`px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                    scheduleMode === SCHEDULE_MODES.NORMAL
+                      ? "bg-white text-slate-900 border-slate-300 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 border-transparent"
+                  }`}
                 >
                   Mode Normal
                 </button>
                 <button
                   type="button"
                   onClick={() => setScheduleMode(SCHEDULE_MODES.UPACARA)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${scheduleMode === SCHEDULE_MODES.UPACARA
-                    ? "bg-white text-blue-900 shadow-2xs border border-blue-200"
-                    : "text-slate-600 hover:text-slate-900"
-                    }`}
+                  className={`px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                    scheduleMode === SCHEDULE_MODES.UPACARA
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "text-slate-600 hover:text-slate-900 border-transparent"
+                  }`}
                 >
                   Hari Upacara (Senin)
                 </button>
               </div>
             </div>
 
-            {/* Schedule Container */}
+            {/* Timetable List Grid */}
             {loading ? (
-              <div className="text-center py-16 text-slate-400 text-xs font-medium">
-                Memuat jadwal pelajaran...
+              <div className="py-20 text-center space-y-2">
+                <div className="w-5 h-5 border border-slate-400 border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Memuat jadwal pelajaran...</p>
               </div>
             ) : (
               <div
                 className={
                   scheduleDayFilter === "Semua"
                     ? "flex gap-4 overflow-x-auto pb-4 scrollbar-thin items-start"
-                    : "w-full max-w-3xl mx-auto"
+                    : "w-full max-w-4xl mx-auto"
                 }
               >
                 {daysOfWeek
@@ -1080,37 +1184,38 @@ function KelasPage() {
                     const isToday = getIndoDayName(currentTime).toLowerCase() === day.toLowerCase();
 
                     let timeSlots = TIME_SLOTS_NORMAL;
-                    if (isFriday) {
-                      timeSlots = TIME_SLOTS_JUMAT;
-                    } else if (isMonday && scheduleMode === SCHEDULE_MODES.UPACARA) {
-                      timeSlots = TIME_SLOTS_UPACARA;
-                    }
+                    if (isFriday) timeSlots = TIME_SLOTS_JUMAT;
+                    else if (isMonday && scheduleMode === SCHEDULE_MODES.UPACARA) timeSlots = TIME_SLOTS_UPACARA;
 
                     return (
                       <div
                         key={day}
-                        className={`rounded-2xl p-4 space-y-2.5 transition-all ${scheduleDayFilter === "Semua"
-                          ? "min-w-[310px] sm:min-w-[330px] lg:min-w-[340px] flex-1 shrink-0"
-                          : "w-full"
-                          } ${isToday
-                            ? "bg-gradient-to-b from-blue-50/40 via-white to-white border-2 border-blue-200/90 shadow-2xs"
-                            : "bg-white border border-slate-200/80"
-                          }`}
+                        className={`rounded-none p-4 space-y-2.5 transition-colors ${
+                          scheduleDayFilter === "Semua"
+                            ? "min-w-[300px] sm:min-w-[320px] flex-1 shrink-0"
+                            : "w-full"
+                        } ${
+                          isToday
+                            ? "bg-white border-2 border-[#2C1EE8] shadow-xs"
+                            : "bg-white border border-slate-200 shadow-2xs"
+                        }`}
                       >
                         {/* Day Header */}
-                        <div className="pb-2 border-b border-slate-100 flex items-center justify-between">
-                          <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                        <div className="pb-2.5 border-b border-slate-100 flex items-center justify-between">
+                          <h3 className="font-bold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
                             <span>{day}</span>
                             {isToday && (
-                              <span className="w-2 h-2 rounded-full bg-[#2C1EE8] animate-pulse" title="Hari Ini" />
+                              <span className="px-1.5 py-0.5 bg-[#2C1EE8] text-white text-[9px] font-bold uppercase rounded-none">
+                                Hari Ini
+                              </span>
                             )}
                           </h3>
-                          <span className="text-[10px] text-slate-400 font-mono font-semibold">
-                            {timeSlots.length} Slot
+                          <span className="text-[10px] text-slate-400 font-mono font-bold">
+                            {timeSlots.length} Jam Pelajaran
                           </span>
                         </div>
 
-                        {/* Slots */}
+                        {/* Slots Stack */}
                         <div className="space-y-1.5">
                           {timeSlots.map((slot, idx) => {
                             const isActiveNow = isSlotActiveNow(day, slot.time);
@@ -1120,22 +1225,25 @@ function KelasPage() {
                               return (
                                 <div
                                   key={`ceremony-${idx}`}
-                                  className={`p-2 rounded-xl border text-xs text-center space-y-0.5 ${isActiveNow
-                                    ? "bg-amber-100/90 border-amber-500 text-amber-950 font-bold shadow-2xs"
-                                    : "bg-amber-50/60 border-amber-200 text-amber-900"
-                                    }`}
+                                  className={`p-2.5 rounded-none border text-center space-y-0.5 ${
+                                    isActiveNow
+                                      ? "bg-amber-100 border-amber-500 text-amber-950 font-bold"
+                                      : "bg-amber-50/60 border-amber-200 text-amber-900"
+                                  }`}
                                 >
                                   {isActiveNow && (
-                                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-800 uppercase tracking-wider mb-0.5">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 uppercase tracking-widest mb-0.5">
+                                      <span className="w-1.5 h-1.5 rounded-none bg-amber-600 animate-ping" />
                                       Sedang Berlangsung
                                     </span>
                                   )}
-                                  <span className="font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1 text-amber-900">
-                                    <Flag className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                                  <span className="font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5">
+                                    <Flag className="w-3.5 h-3.5 text-amber-700" />
                                     <span>UPACARA BENDERA</span>
                                   </span>
-                                  <span className="text-[10px] font-mono opacity-80 block">{formatTimeRange(slot.time)}</span>
+                                  <span className="text-[10px] font-mono font-bold opacity-80 block">
+                                    {formatTimeRange(slot.time)}
+                                  </span>
                                 </div>
                               );
                             }
@@ -1145,122 +1253,109 @@ function KelasPage() {
                               return (
                                 <div
                                   key={`char-${idx}`}
-                                  className={`p-2 rounded-xl border text-xs text-center space-y-0.5 ${isActiveNow
-                                    ? "bg-emerald-100/90 border-emerald-500 text-emerald-950 font-bold shadow-2xs"
-                                    : "bg-emerald-50/60 border-emerald-200 text-emerald-900"
-                                    }`}
+                                  className={`p-2.5 rounded-none border text-center space-y-0.5 ${
+                                    isActiveNow
+                                      ? "bg-emerald-100 border-emerald-500 text-emerald-950 font-bold"
+                                      : "bg-emerald-50/60 border-emerald-200 text-emerald-900"
+                                  }`}
                                 >
                                   {isActiveNow && (
-                                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-800 uppercase tracking-wider mb-0.5">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping" />
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 uppercase tracking-widest mb-0.5">
+                                      <span className="w-1.5 h-1.5 rounded-none bg-emerald-600 animate-ping" />
                                       Sedang Berlangsung
                                     </span>
                                   )}
-                                  <span className="font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1 text-emerald-900">
-                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    <span>PENGEMBANGAN KARAKTER</span>
+                                  <span className="font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5">
+                                    <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+                                    <span>PEMBIASAAN KARAKTER & LITERASI</span>
                                   </span>
-                                  <span className="text-[10px] font-mono opacity-80 block">{formatTimeRange(slot.time)}</span>
+                                  <span className="text-[10px] font-mono font-bold opacity-80 block">
+                                    {formatTimeRange(slot.time)}
+                                  </span>
                                 </div>
                               );
                             }
 
-                            // Break / Ishoma
-                            if (slot.type === "break") {
+                            // Breaks
+                            if (slot.type === "break" || slot.type === "prayer") {
                               return (
                                 <div
                                   key={`break-${idx}`}
-                                  className={`py-1 px-2.5 rounded-lg border text-[11px] font-mono flex items-center justify-between transition-all ${isActiveNow
-                                    ? "bg-blue-50 border-[#2C1EE8] text-[#2C1EE8] font-bold"
-                                    : "bg-slate-50 border-slate-200/60 text-slate-500"
-                                    }`}
+                                  className={`p-2 rounded-none border text-center space-y-0.5 ${
+                                    isActiveNow
+                                      ? "bg-blue-50 border-blue-300 text-[#2C1EE8] font-bold"
+                                      : "bg-slate-50 border-slate-200 text-slate-600"
+                                  }`}
                                 >
-                                  <span className="flex items-center gap-1.5 font-sans font-semibold">
-                                    <Coffee className="w-3 h-3 text-slate-400 shrink-0" />
-                                    <span>{slot.label}</span>
+                                  <span className="font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5">
+                                    <Coffee className="w-3 h-3" />
+                                    <span>{slot.label || "ISTIRAHAT"}</span>
                                   </span>
-                                  <span>{formatTimeRange(slot.time)}</span>
+                                  <span className="text-[9px] font-mono opacity-80 block">
+                                    {formatTimeRange(slot.time)}
+                                  </span>
                                 </div>
                               );
                             }
 
-                            // Class Period Slot
+                            // Regular Subject Slot
                             const schedItem = findSchedItemForSlot(dayScheds, slot.period);
-                            const rawSubjectCode =
-                              schedItem?.subjectCode ||
-                              schedItem?.SubjectCode ||
-                              schedItem?.subject?.code ||
-                              "";
-                            const rawSubjectName =
-                              schedItem?.subjectName ||
-                              schedItem?.SubjectName ||
-                              schedItem?.subject?.name ||
-                              "";
-                            const teacherName =
-                              schedItem?.teacherName ||
-                              schedItem?.TeacherName ||
-                              schedItem?.teacher?.fullName ||
-                              schedItem?.teacher?.name ||
-                              "";
-                            const roomName =
-                              schedItem?.room ||
-                              schedItem?.Room ||
-                              schedItem?.roomName ||
-                              "";
+                            const rawSubjectName = schedItem?.subjectName || schedItem?.SubjectName || schedItem?.subjectCode || "";
+                            const teacherName = schedItem?.teacherName || schedItem?.TeacherName || "";
+                            const roomName = schedItem?.room || schedItem?.Room || "";
 
-                            const displaySubject = rawSubjectName || rawSubjectCode || "Kosong";
-                            const isKosong = displaySubject.toLowerCase() === "kosong";
-
-                            if (isKosong) {
-                              return (
-                                <div
-                                  key={`period-${slot.period}-${idx}`}
-                                  className="py-1 px-2.5 rounded-lg border border-dashed border-slate-200 bg-slate-50/40 text-slate-400 text-xs flex items-center justify-between"
-                                >
-                                  <span className="italic text-[11px]">Jam Kosong</span>
-                                  <span className="font-mono text-[10px]">{formatTimeRange(slot.time)}</span>
-                                </div>
-                              );
-                            }
+                            const displaySubject = rawSubjectName || "";
+                            const isKosong = !displaySubject || displaySubject.toLowerCase() === "kosong";
 
                             return (
                               <div
-                                key={`period-${slot.period}-${idx}`}
-                                className={`p-2.5 rounded-xl border text-xs space-y-0.5 transition-all ${isActiveNow
-                                  ? "bg-blue-50/90 border-2 border-[#2C1EE8] shadow-xs"
-                                  : "bg-white border-slate-200 hover:border-slate-300"
-                                  }`}
+                                key={`period-${slot.period}`}
+                                className={`p-2.5 rounded-none border transition-colors space-y-1 ${
+                                  isActiveNow
+                                    ? "bg-blue-50/50 border-2 border-[#2C1EE8]"
+                                    : "bg-white border-slate-100 hover:border-slate-300"
+                                }`}
                               >
-                                {isActiveNow && (
-                                  <span className="inline-flex items-center gap-1 text-[9px] font-black text-[#2C1EE8] uppercase tracking-wider mb-0.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[#2C1EE8] animate-ping" />
-                                    Sedang Berlangsung
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Jam Ke-{slot.period}
                                   </span>
-                                )}
 
-                                <div className="text-[10px] font-mono font-bold text-slate-400">
-                                  {formatTimeRange(slot.time)}
+                                  <div className="flex items-center gap-1">
+                                    {isActiveNow && (
+                                      <span className="px-1.5 py-0.2 bg-[#2C1EE8] text-white text-[8.5px] font-bold uppercase rounded-none flex items-center gap-1">
+                                        <span className="w-1 h-1 rounded-none bg-white animate-ping" />
+                                        Aktif
+                                      </span>
+                                    )}
+                                    <span className="text-[9.5px] font-mono font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-none">
+                                      {formatTimeRange(slot.time)}
+                                    </span>
+                                  </div>
                                 </div>
 
-                                <h4 className="font-bold text-slate-900 text-xs leading-snug">
-                                  {displaySubject}
-                                </h4>
+                                {isKosong ? (
+                                  <p className="text-xs font-semibold text-slate-300 italic">
+                                    Tidak ada mata pelajaran
+                                  </p>
+                                ) : (
+                                  <div className="space-y-0.5">
+                                    <h4 className="font-bold text-xs text-slate-900 leading-tight">
+                                      {displaySubject}
+                                    </h4>
 
-                                {(teacherName || roomName) && (
-                                  <div className="text-[11px] text-slate-500 font-medium truncate pt-0.5 flex items-center gap-1.5">
-                                    {teacherName && (
-                                      <span className="inline-flex items-center gap-1">
-                                        <User className="w-3 h-3 text-slate-400 shrink-0" />
-                                        <span>{teacherName}</span>
-                                      </span>
-                                    )}
-                                    {teacherName && roomName && <span className="text-slate-300">•</span>}
-                                    {roomName && (
-                                      <span className="inline-flex items-center gap-1 text-slate-600 font-semibold">
-                                        <MapPin className="w-3 h-3 text-emerald-600 shrink-0" />
-                                        <span>{roomName}</span>
-                                      </span>
-                                    )}
+                                    <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-500 pt-0.5">
+                                      {teacherName && (
+                                        <span className="font-medium text-slate-600 truncate">
+                                          {teacherName}
+                                        </span>
+                                      )}
+                                      {roomName && (
+                                        <span className="font-mono font-bold text-[#2C1EE8] bg-blue-50 px-1.5 py-0.2 rounded-none border border-blue-100 shrink-0">
+                                          {roomName}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 )}
                               </div>
@@ -1275,201 +1370,196 @@ function KelasPage() {
           </div>
         )}
 
-        {/* TAB 4: JADWAL MINGGUAN AGENDA (KELAS XI & XII) */}
-        {activeTab === "mingguan" && isUpperGradeClass && (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        {/* ══════════════════════════════════════════════════════════════════════
+            TAB 4: AGENDA ROTASI (KELAS XI & XII)
+        ══════════════════════════════════════════════════════════════════════ */}
+        {isUpperGradeClass && activeTab === "mingguan" && (
+          <div className="bg-white border border-slate-200 rounded-none p-6 sm:p-7 shadow-xs space-y-5 text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3.5 border-b border-slate-100">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">
-                  Agenda Rotasi Mingguan
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-tight">
+                  Agenda Rotasi & Kalender Akademik Kelas {selectedClassName}
                 </h2>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Jadwal rotasi mingguan (KK / MPU / PKL / ASAS) kalender akademik 2026/2027.
+                <p className="text-xs text-slate-500 font-medium">
+                  Jadwal rotasi mingguan pembelajaran teori, praktik proyek industri, dan PKL.
                 </p>
               </div>
 
-              {/* Semester Filter Switch */}
-              <div className="p-1 bg-slate-100 rounded-xl border border-slate-200 flex items-center gap-1 self-start sm:self-auto">
+              {/* Semester Filter */}
+              <div className="flex items-center gap-1 p-1 bg-slate-100 border border-slate-200 rounded-none self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setAgendaSemesterFilter("Ganjil")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${agendaSemesterFilter === "Ganjil"
-                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                    }`}
+                  className={`px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                    agendaSemesterFilter === "Ganjil"
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "text-slate-700 hover:bg-slate-200 border-transparent"
+                  }`}
                 >
                   Semester Ganjil
                 </button>
                 <button
                   type="button"
                   onClick={() => setAgendaSemesterFilter("Genap")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${agendaSemesterFilter === "Genap"
-                    ? "bg-white text-slate-900 shadow-2xs border border-slate-200"
-                    : "text-slate-600 hover:text-slate-900"
-                    }`}
+                  className={`px-3 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
+                    agendaSemesterFilter === "Genap"
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "text-slate-700 hover:bg-slate-200 border-transparent"
+                  }`}
                 >
                   Semester Genap
                 </button>
               </div>
             </div>
 
-            {/* Agenda Table */}
-            <div className="overflow-hidden border border-slate-200 rounded-2xl bg-white shadow-2xs">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold uppercase text-[11px] tracking-wider">
-                    <th className="p-3">Minggu</th>
-                    <th className="p-3">Bulan</th>
-                    <th className="p-3">Tanggal</th>
-                    <th className="p-3">Kode Kegiatan</th>
-                    <th className="p-3">Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {weeklyAgendaList.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="p-8 text-center text-slate-400 text-xs font-medium">
-                        Tidak ada agenda rotasi mingguan ditemukan untuk semester ini.
-                      </td>
-                    </tr>
-                  ) : (
-                    weeklyAgendaList.map((row, idx) => {
-                      const noteKey = `${selectedClassName}_${row.semester}_w${row.week}`;
-                      const noteValue = customNotes[noteKey] !== undefined ? customNotes[noteKey] : row.note;
-                      const isEditing = editingKey === noteKey;
-                      const isActiveNow = isWeeklyAgendaActiveNow(row);
+            {weeklyAgendaList.length === 0 ? (
+              <div className="py-16 text-center bg-slate-50 border border-dashed border-slate-300 rounded-none">
+                <p className="text-xs sm:text-sm font-bold text-slate-600">
+                  Belum ada data agenda rotasi mingguan untuk {selectedClassName} ({agendaSemesterFilter}).
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {weeklyAgendaList.map((row, idx) => {
+                  const weekNum = row.week ?? row.weekNumber ?? (idx + 1);
+                  const isActiveNow = isWeeklyAgendaActiveNow(row, currentTime);
+                  const noteKey = `${row.class}_${row.semester}_${weekNum}`;
+                  
+                  const getCodeDescription = (code) => {
+                    if (!code) return "Pembelajaran Reguler";
+                    const c = code.toUpperCase();
+                    if (c === "KK") return "Konsentrasi Keahlian (Praktik Produktif RPL)";
+                    if (c === "MPU") return "Mata Pelajaran Umum (Teori)";
+                    if (c === "PKL") return "Praktik Kerja Lapangan (Industri)";
+                    if (c === "ASAS") return "Asesmen Sumatif Akhir Semester";
+                    if (c === "ASAT") return "Asesmen Sumatif Akhir Tahun";
+                    if (c === "LIBUR") return "Libur Akhir Semester";
+                    if (c === "LBID") return "Libur Idulfitri / Cuti Bersama";
+                    return `Sesi ${code}`;
+                  };
 
-                      const isKK = row.code === "KK";
-                      const isMPU = row.code === "MPU";
-                      const isPKL = row.code === "PKL";
-                      const isExam = row.code === "ASAS" || row.code === "ASAT" || row.code === "PSAS" || row.code === "TKA";
+                  const defaultDescription = row.note || getCodeDescription(row.code);
+                  const currentNote = customNotes[noteKey] || defaultDescription;
+                  const isEditingThis = editingKey === noteKey;
 
-                      return (
-                        <tr
-                          key={idx}
-                          className={`transition-colors ${isActiveNow
-                            ? "bg-blue-50/80 border-l-4 border-l-[#2C1EE8] font-bold"
-                            : "hover:bg-slate-50"
-                            }`}
-                        >
-                          <td className="p-3 font-mono font-bold text-slate-800">
-                            <div className="flex items-center gap-1.5">
-                              <span className={isActiveNow ? "text-[#2C1EE8] font-black" : "text-slate-800"}>
-                                W{row.week}
-                              </span>
-                              {isActiveNow && (
-                                <span className="inline-flex items-center gap-1 text-[9px] bg-[#2C1EE8] text-white font-mono font-black px-2 py-0.5 rounded-full uppercase shadow-xs shrink-0">
-                                  Minggu Ini
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className={`p-3 font-semibold ${isActiveNow ? "text-slate-900 font-bold" : "text-slate-700"}`}>
-                            {row.month}
-                          </td>
-                          <td className={`p-3 font-mono ${isActiveNow ? "text-[#2C1EE8] font-bold" : "text-slate-500"}`}>
-                            {row.date}
-                          </td>
-                          <td className="p-3">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border inline-block ${isKK
-                                ? "bg-purple-50 text-purple-800 border-purple-200"
-                                : isMPU
-                                  ? "bg-blue-50 text-blue-800 border-blue-200"
-                                  : isPKL
-                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                    : isExam
-                                      ? "bg-amber-50 text-amber-800 border-amber-200"
-                                      : "bg-slate-100 text-slate-600 border-slate-200"
-                                }`}
-                            >
-                              {row.code}
+                  return (
+                    <div
+                      key={`agenda-${idx}`}
+                      className={`p-3.5 rounded-none border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                        isActiveNow
+                          ? "bg-blue-50/40 border-2 border-[#2C1EE8]"
+                          : "bg-white border-slate-200 shadow-2xs hover:border-slate-300"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-none bg-slate-900 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0">
+                          M{weekNum}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs sm:text-sm text-slate-900">
+                              Minggu Ke-{weekNum}
                             </span>
-                          </td>
-                          <td className="p-3 text-slate-700 text-xs">
-                            {isEditing ? (
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  type="text"
-                                  value={editingText}
-                                  onChange={(e) => setEditingText(e.target.value)}
-                                  className="bg-white border border-[#2C1EE8] text-slate-900 rounded-lg px-2.5 py-1 text-xs outline-none flex-1 font-sans"
-                                  placeholder="Ketik keterangan..."
-                                  autoFocus
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleSaveNote(noteKey)}
-                                  className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md cursor-pointer"
-                                  title="Simpan"
-                                >
-                                  <Check className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingKey(null)}
-                                  className="p-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md cursor-pointer"
-                                  title="Batal"
-                                >
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-between gap-2 group">
-                                <span className={noteValue ? "text-slate-800 font-medium" : "text-slate-400 italic"}>
-                                  {noteValue || "-"}
-                                </span>
-                                {canManage && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleStartEditNote(noteKey, noteValue)}
-                                    className="opacity-60 group-hover:opacity-100 p-0.5 text-amber-600 hover:text-amber-700 rounded cursor-pointer transition-all shrink-0"
-                                    title="Edit Keterangan"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </div>
+                            {row.code && (
+                              <span className="px-1.5 py-0.2 bg-slate-100 text-slate-700 text-[9px] font-mono font-bold uppercase rounded-none border border-slate-200">
+                                {row.code}
+                              </span>
                             )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                            {isActiveNow && (
+                              <span className="px-1.5 py-0.2 bg-[#2C1EE8] text-white text-[8.5px] font-bold uppercase rounded-none">
+                                Minggu Ini
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs font-mono font-medium text-slate-400">
+                            {row.date} {row.month} 2026
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 max-w-md sm:text-right">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Agenda / Keterangan</span>
+                        {isEditingThis ? (
+                          <div className="flex items-center gap-1.5 mt-1 justify-end">
+                            <input
+                              type="text"
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              className="px-2.5 py-1 bg-white border border-slate-300 rounded-none text-xs font-semibold text-slate-900 outline-none w-full max-w-xs focus:border-[#2C1EE8]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveNote(noteKey)}
+                              className="p-1 bg-[#2C1EE8] text-white rounded-none cursor-pointer"
+                              title="Simpan"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingKey(null)}
+                              className="p-1 bg-slate-200 text-slate-700 rounded-none cursor-pointer"
+                              title="Batal"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 sm:justify-end mt-0.5">
+                            <p className="text-xs font-medium text-slate-800">{currentNote}</p>
+                            {canManage && (
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditNote(noteKey, currentNote)}
+                                className="text-slate-400 hover:text-[#2C1EE8] p-1 transition-colors cursor-pointer"
+                                title="Edit Keterangan"
+                              >
+                                <Bookmark className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </main>
 
-      {/* Assign Position Modal */}
-      {selectedClass && (
-        <AssignPositionModal
-          isOpen={assignModalOpen}
-          onClose={() => setAssignModalOpen(false)}
-          schoolClass={selectedClass}
-          positionName={assignTarget.name}
-          positionType={assignTarget.type}
-          divisionId={assignTarget.divisionId}
-          currentLeadership={activeLeadership}
-          onSuccess={() => loadClassDetails(selectedClassId)}
-        />
-      )}
-
-      {/* Add Custom Division Modal */}
-      {selectedClass && (
-        <AddDivisionModal
-          isOpen={addDivModalOpen}
-          onClose={() => setAddDivModalOpen(false)}
-          schoolClass={selectedClass}
-          onSuccess={() => loadClassDetails(selectedClassId)}
-        />
-      )}
-
       <div className="no-print">
         <Footer />
       </div>
+
+      {/* Modals */}
+      {assignModalOpen && (
+        <AssignPositionModal
+          isOpen={assignModalOpen}
+          onClose={() => setAssignModalOpen(false)}
+          targetPosition={assignTarget.name}
+          positionType={assignTarget.type}
+          divisionId={assignTarget.divisionId}
+          classId={selectedClassId}
+          onSuccess={() => {
+            loadClassDetails(selectedClassId);
+            setAssignModalOpen(false);
+          }}
+        />
+      )}
+
+      {addDivModalOpen && (
+        <AddDivisionModal
+          isOpen={addDivModalOpen}
+          onClose={() => setAddDivModalOpen(false)}
+          classId={selectedClassId}
+          onSuccess={() => {
+            loadClassDetails(selectedClassId);
+            setAddDivModalOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

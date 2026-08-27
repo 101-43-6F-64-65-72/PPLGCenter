@@ -100,19 +100,19 @@ export default function FacilityCard({
   return (
     <div
       onClick={handleCardClick}
-      className={`group flex flex-col justify-between overflow-hidden rounded-lg border bg-white p-4 transition-all duration-200 ${
+      className={`group flex flex-col justify-between overflow-hidden rounded-none border bg-white p-3.5 transition-all duration-200 ${
         isAvailable
-          ? "border-slate-200 hover:border-[#2c1ee8] cursor-pointer"
+          ? "border-slate-200 hover:border-[#2c1ee8] hover:bg-slate-50/40 shadow-2xs cursor-pointer"
           : "border-slate-200 bg-slate-50 opacity-75 cursor-not-allowed"
       }`}
     >
       <div>
         {/* Card Cover Header */}
-        <div className="relative mb-3 aspect-[16/10] w-full overflow-hidden rounded-md border border-slate-200 bg-slate-100 p-3 flex flex-col justify-between">
+        <div className="relative mb-3 aspect-[16/10] w-full overflow-hidden rounded-none border border-slate-200/80 bg-slate-100 p-2.5 flex flex-col justify-between">
           <img
             src={imgSrc}
             alt={displayTitle}
-            className={`absolute inset-0 h-full w-full object-cover ${
+            className={`absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${
               isAvailable ? "" : "grayscale filter"
             }`}
             onError={() => {
@@ -124,20 +124,19 @@ export default function FacilityCard({
           {/* Badges Top Bar */}
           <div className="relative z-10 flex items-center justify-between gap-2">
             <span
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide border shadow-2xs ${
+              className={`inline-flex items-center gap-1 rounded-none px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
                 isAvailable
                   ? "bg-emerald-500 text-white border-emerald-600"
                   : "bg-rose-500 text-white border-rose-600"
               }`}
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              <span className="h-1.5 w-1.5 rounded-none bg-white" />
               {isAvailable ? "Tersedia" : "Nonaktif"}
             </span>
 
-            <div className="flex items-center gap-1.5">
-
+            <div className="flex items-center gap-1">
               {capacity > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white/95 px-2 py-0.5 text-[11px] font-bold text-slate-800 shadow-2xs">
+                <span className="inline-flex items-center gap-1 rounded-none border border-slate-200 bg-white/95 px-2 py-0.5 text-[10px] font-bold text-slate-800">
                   <Users className="w-3 h-3 text-[#2c1ee8]" />
                   <span>
                     {capacity}{" "}
@@ -161,7 +160,7 @@ export default function FacilityCard({
           </div>
 
           <h3
-            className={`text-base font-bold transition-colors leading-snug line-clamp-2 ${
+            className={`text-sm sm:text-base font-bold transition-colors leading-snug line-clamp-2 ${
               isAvailable
                 ? "text-slate-900 group-hover:text-[#2c1ee8]"
                 : "text-slate-600"
@@ -172,29 +171,28 @@ export default function FacilityCard({
           </h3>
 
           {/* Manager Teacher Badge */}
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 text-[11px] font-bold">
-            <UserCheck className="w-3.5 h-3.5 text-[#2c1ee8]" />
-            <span>
-              Pengurus:{" "}
-              {managerTeacherName ? managerTeacherName : "Tim Sarpras Sekolah"}
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none bg-blue-50 border border-blue-100 text-[#2c1ee8] text-[10.5px] font-bold">
+            <UserCheck className="w-3 h-3" />
+            <span className="truncate max-w-[220px]">
+              Pengurus: {managerTeacherName ? managerTeacherName : "Tim Sarpras"}
             </span>
           </div>
 
           {description && (
-            <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 mt-1 font-normal">
+            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 font-normal">
               {description}
             </p>
           )}
 
-          <div className="mt-2.5 rounded-md border border-slate-100 bg-slate-50 p-2 text-xs flex items-center justify-between text-slate-600">
-            <span className="font-medium text-slate-500">Jam Layanan</span>
-            <span className="font-bold text-slate-800">{time}</span>
+          <div className="mt-2 rounded-none border border-slate-100 bg-slate-50 p-2 text-xs flex items-center justify-between text-slate-600">
+            <span className="font-medium text-slate-400 text-[11px]">Jam Layanan</span>
+            <span className="font-bold text-slate-800 text-[11px]">{time}</span>
           </div>
         </div>
       </div>
 
       {/* Card Action Button */}
-      <div className="mt-4 pt-2 border-t border-slate-100">
+      <div className="mt-3.5 pt-2.5 border-t border-slate-100">
         <button
           type="button"
           disabled={!isAvailable}
@@ -202,9 +200,9 @@ export default function FacilityCard({
             e.stopPropagation();
             if (isAvailable) handleCardClick();
           }}
-          className={`w-full py-2 px-3 rounded-md text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+          className={`w-full py-2 px-3 rounded-none text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 ${
             isAvailable
-              ? "bg-[#2c1ee8] hover:bg-[#2013ce] text-white cursor-pointer"
+              ? "bg-[#2c1ee8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white cursor-pointer"
               : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
           }`}
         >

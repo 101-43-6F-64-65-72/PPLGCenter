@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
+using StudentCenter.Domain.Entities;
 using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Api.Controllers;

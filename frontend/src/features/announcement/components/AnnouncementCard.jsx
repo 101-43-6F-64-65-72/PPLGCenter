@@ -91,38 +91,38 @@ export default function AnnouncementCard({
   return (
     <div
       onClick={onClick}
-      className="group flex flex-col justify-between overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 transition-all duration-300 hover:border-[#2C1EE8] hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+      className="group flex flex-col justify-between overflow-hidden rounded-none border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-[#2C1EE8] hover:bg-slate-50/40 shadow-2xs cursor-pointer"
     >
       <div>
         {/* Card Cover Header */}
-        <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-xl sm:rounded-2xl border border-slate-200/80 bg-slate-100">
+        <div className="relative mb-3 aspect-[16/10] w-full overflow-hidden rounded-none border border-slate-200/80 bg-slate-100">
           <Image
             src={coverImage}
             alt={title}
             fill
             unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none" />
 
           {/* Badges Top Bar */}
-          <div className="relative z-10 flex items-center justify-between gap-2 p-3">
+          <div className="relative z-10 flex items-center justify-between gap-2 p-2.5">
             <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wide border shadow-2xs ${categoryBadgeClass}`}
+              className={`inline-flex items-center px-2 py-0.5 rounded-none text-[10px] font-black uppercase tracking-wider border ${categoryBadgeClass}`}
             >
               {category || "Pengumuman"}
             </span>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               {inShowcase && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-[#2C1EE8] text-white shadow-2xs">
-                  <span>Showcase</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-none text-[9.5px] font-bold uppercase bg-[#2C1EE8] text-white">
+                  Showcase
                 </span>
               )}
 
               {isPinned && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-amber-500 text-white shadow-2xs">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none text-[10px] font-bold uppercase bg-amber-500 text-slate-900 border border-amber-400">
                   <Pin className="w-3 h-3 fill-current" />
                   <span>Disematkan</span>
                 </span>
@@ -132,16 +132,16 @@ export default function AnnouncementCard({
         </div>
 
         {/* Announcement Meta & Title */}
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {/* Date & Target Class Header */}
           <div className="flex items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-1 text-slate-500 font-semibold">
+            <div className="flex items-center gap-1 text-slate-500 font-medium text-[11px]">
               <Calendar className="w-3.5 h-3.5 text-[#2C1EE8] shrink-0" />
               <span>{formattedDate}</span>
             </div>
 
             {targetClasses && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#2C1EE8] border border-blue-100 text-[10px] font-bold truncate max-w-[140px]">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-none bg-blue-50 text-[#2C1EE8] border border-blue-100 text-[10px] font-mono font-bold truncate max-w-[140px]">
                 <Users className="w-3 h-3 shrink-0" />
                 <span className="truncate">{targetClasses}</span>
               </span>
@@ -150,24 +150,24 @@ export default function AnnouncementCard({
 
           {/* Title */}
           <h3
-            className="text-base sm:text-lg font-bold text-slate-900 leading-snug line-clamp-2 transition-colors group-hover:text-[#2C1EE8]"
+            className="text-sm sm:text-base font-bold text-slate-900 leading-snug line-clamp-2 transition-colors group-hover:text-[#2C1EE8]"
             title={title}
           >
             {title}
           </h3>
 
           {/* Content Excerpt */}
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed line-clamp-2 font-normal">
+          <p className="text-xs text-slate-600 leading-relaxed line-clamp-2 font-normal">
             {cleanSummary}
           </p>
         </div>
       </div>
 
       {/* Footer Meta & Actions */}
-      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+      <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
         {/* Author / Engagement */}
-        <div className="flex items-center gap-2.5">
-          <span className="text-[11px] font-bold text-slate-600 truncate max-w-[120px] bg-slate-100 px-2 py-0.5 rounded-md">
+        <div className="flex items-center gap-2">
+          <span className="text-[10.5px] font-semibold text-slate-600 truncate max-w-[120px] bg-slate-100 px-1.5 py-0.5 rounded-none">
             {authorName}
           </span>
 
@@ -190,7 +190,7 @@ export default function AnnouncementCard({
         </div>
 
         {/* Right Action: Button or Admin Buttons */}
-        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {canManage && (
             <>
               <button
@@ -199,7 +199,7 @@ export default function AnnouncementCard({
                   e.stopPropagation();
                   onEdit && onEdit(announcement);
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-[#2C1EE8] hover:bg-blue-50 transition-colors cursor-pointer"
+                className="p-1 rounded-none text-slate-400 hover:text-[#2C1EE8] hover:bg-blue-50 transition-colors cursor-pointer"
                 title="Edit Pengumuman"
               >
                 <Edit className="w-3.5 h-3.5" />
@@ -210,7 +210,7 @@ export default function AnnouncementCard({
                   e.stopPropagation();
                   onDelete && onDelete(id);
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                className="p-1 rounded-none text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 title="Hapus Pengumuman"
               >
                 <Trash2 className="w-3.5 h-3.5" />

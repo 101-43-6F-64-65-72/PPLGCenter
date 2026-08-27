@@ -11,6 +11,10 @@ export const schoolClassService = {
     return this.getAll(params);
   },
 
+  async getAllClasses(params = {}) {
+    return this.getAll(params);
+  },
+
   async getById(id) {
     const res = await apiClient.get(API_ROUTES.CLASSES.DETAIL(id));
     return res?.data || res;
