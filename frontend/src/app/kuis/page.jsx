@@ -1681,7 +1681,7 @@ function KuisContent() {
                   <div className={`flex items-center justify-between ${adminProgress.percent >= 85 ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
                     <span className="flex items-center gap-2">
                       <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${adminProgress.percent >= 85 ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>3</span>
-                      Generate Stage 1 (Starter Soal #1 - #5)
+                      Generate 30 Soal AI Paralel (Easy, Medium, Hard)
                     </span>
                     {adminProgress.percent >= 85 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
                   </div>
@@ -1689,7 +1689,7 @@ function KuisContent() {
                   <div className={`flex items-center justify-between ${adminProgress.percent >= 100 ? "text-emerald-700 font-bold" : "text-slate-400"}`}>
                     <span className="flex items-center gap-2">
                       <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${adminProgress.percent >= 100 ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>4</span>
-                      Sinkronisasi Arena & Papan Skor
+                      Simpan 30 Soal Lengkap ke Database
                     </span>
                     {adminProgress.percent >= 100 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
                   </div>

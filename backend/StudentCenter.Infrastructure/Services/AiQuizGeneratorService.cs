@@ -247,137 +247,70 @@ Aturan Mutlak:
             _logger.LogInformation("Wiped {Count} previous questions for date {Date}.", existing.Count, date);
         }
 
-        _logger.LogInformation("Generating Stage 1 (Initial Starter Pool 1-5) for date {Date} topic '{Topic}'...", date, topic);
+        _logger.LogInformation("Generating all 30 Daily Quiz Questions directly for date {Date} topic '{Topic}' in parallel...", date, topic);
 
-        // 2. Stage 1: Generate Starter 5 Questions (Fast & Immediate)
-        var stage1Chunk = await GenerateQuestionsChunkAsync(topic, "easy", 5);
-        var initialPool = new List<DailyQuizQuestion>();
+        // 2. Run Easy (10), Medium (10), and Hard (10) chunks simultaneously in parallel
+        var taskEasy = GenerateQuestionsChunkAsync(topic, "easy", 10);
+        var taskMedium = GenerateQuestionsChunkAsync(topic, "medium", 10);
+        var taskHard = GenerateQuestionsChunkAsync(topic, "hard", 10);
+
+        await Task.WhenAll(taskEasy, taskMedium, taskHard);
+
+        var chunkEasy = await taskEasy;
+        var chunkMedium = await taskMedium;
+        var chunkHard = await taskHard;
+
+        var allItems = new List<DailyQuizQuestion>();
         var seenQuestions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        int currentNum = 1;
 
-        foreach (var item in stage1Chunk)
+        // Helper to add unique questions
+        void AddChunk(List<GeneratedQuestionJsonItem> chunk, string diff, int targetCount)
         {
-            var qText = item.question?.Trim();
-            if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText)) continue;
-            seenQuestions.Add(qText);
-            initialPool.Add(MapToEntity(item, date, topic, currentNum++, "easy"));
-        }
-
-        if (initialPool.Count < 5)
-        {
-            var supplements = GetFallbackQuestions(topic, "easy", 5 - initialPool.Count);
-            foreach (var item in supplements)
+            int added = 0;
+            foreach (var item in chunk)
             {
                 var qText = item.question?.Trim();
-                if (!string.IsNullOrWhiteSpace(qText) && !seenQuestions.Contains(qText))
+                if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText)) continue;
+                seenQuestions.Add(qText);
+                allItems.Add(MapToEntity(item, date, topic, allItems.Count + 1, diff));
+                added++;
+                if (added >= targetCount) break;
+            }
+
+            // If AI returned fewer than targetCount unique questions, supplement
+            if (added < targetCount)
+            {
+                var supplements = GetFallbackQuestions(topic, diff, targetCount - added);
+                foreach (var item in supplements)
                 {
-                    seenQuestions.Add(qText);
-                    initialPool.Add(MapToEntity(item, date, topic, currentNum++, "easy"));
+                    var qText = item.question?.Trim();
+                    if (!string.IsNullOrWhiteSpace(qText) && !seenQuestions.Contains(qText))
+                    {
+                        seenQuestions.Add(qText);
+                        allItems.Add(MapToEntity(item, date, topic, allItems.Count + 1, diff));
+                        added++;
+                        if (added >= targetCount) break;
+                    }
                 }
             }
         }
 
-        for (int i = 0; i < initialPool.Count; i++)
+        AddChunk(chunkEasy, "easy", 10);      // 1..10 Easy
+        AddChunk(chunkMedium, "medium", 10);  // 11..20 Medium
+        AddChunk(chunkHard, "hard", 10);      // 21..30 Hard
+
+        // Renumber sequentially 1..30
+        for (int i = 0; i < allItems.Count; i++)
         {
-            initialPool[i].QuestionNumber = i + 1;
+            allItems[i].QuestionNumber = i + 1;
         }
 
-        // Save Stage 1 immediately so HTTP response is returned immediately (< 2-3 seconds)
-        _context.DailyQuizQuestions.AddRange(initialPool);
+        // 3. Save all 30 questions directly to Database
+        _context.DailyQuizQuestions.AddRange(allItems);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Stage 1 saved ({Count} questions). Spawning background staging for questions 6-30...", initialPool.Count);
-
-        // 3. Stage 2 & 3: Background Staging for Questions 6..15 and 16..30
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<AiQuizGeneratorService>>();
-
-                // Stage 2: Questions 6-15 (Medium)
-                logger.LogInformation("Generating Stage 2 (Questions 6-15) for date {Date} topic '{Topic}'...", date, topic);
-                var stage2Chunk = await GenerateQuestionsChunkAsync(topic, "medium", 10);
-                var stage2List = new List<DailyQuizQuestion>();
-                int s2Num = 6;
-
-                foreach (var item in stage2Chunk)
-                {
-                    var qText = item.question?.Trim();
-                    if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText)) continue;
-                    seenQuestions.Add(qText);
-                    stage2List.Add(MapToEntity(item, date, topic, s2Num++, "medium"));
-                }
-
-                if (stage2List.Count < 10)
-                {
-                    var supplements = GetFallbackQuestions(topic, "medium", 10 - stage2List.Count);
-                    foreach (var item in supplements)
-                    {
-                        var qText = item.question?.Trim();
-                        if (!string.IsNullOrWhiteSpace(qText) && !seenQuestions.Contains(qText))
-                        {
-                            seenQuestions.Add(qText);
-                            stage2List.Add(MapToEntity(item, date, topic, s2Num++, "medium"));
-                        }
-                    }
-                }
-
-                for (int i = 0; i < stage2List.Count; i++)
-                {
-                    stage2List[i].QuestionNumber = 6 + i;
-                }
-
-                db.DailyQuizQuestions.AddRange(stage2List);
-                await db.SaveChangesAsync();
-                logger.LogInformation("Stage 2 saved successfully (Questions 6-15).");
-
-                // Stage 3: Questions 16-30 (Hard)
-                logger.LogInformation("Generating Stage 3 (Questions 16-30) for date {Date} topic '{Topic}'...", date, topic);
-                var stage3Chunk = await GenerateQuestionsChunkAsync(topic, "hard", 15);
-                var stage3List = new List<DailyQuizQuestion>();
-                int s3Num = 16;
-
-                foreach (var item in stage3Chunk)
-                {
-                    var qText = item.question?.Trim();
-                    if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText)) continue;
-                    seenQuestions.Add(qText);
-                    stage3List.Add(MapToEntity(item, date, topic, s3Num++, "hard"));
-                }
-
-                if (stage3List.Count < 15)
-                {
-                    var supplements = GetFallbackQuestions(topic, "hard", 15 - stage3List.Count);
-                    foreach (var item in supplements)
-                    {
-                        var qText = item.question?.Trim();
-                        if (!string.IsNullOrWhiteSpace(qText) && !seenQuestions.Contains(qText))
-                        {
-                            seenQuestions.Add(qText);
-                            stage3List.Add(MapToEntity(item, date, topic, s3Num++, "hard"));
-                        }
-                    }
-                }
-
-                for (int i = 0; i < stage3List.Count; i++)
-                {
-                    stage3List[i].QuestionNumber = 16 + i;
-                }
-
-                db.DailyQuizQuestions.AddRange(stage3List);
-                await db.SaveChangesAsync();
-                logger.LogInformation("Stage 3 saved successfully (Questions 16-30). All 30 questions ready!");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Background staging generation failed for date {Date}", date);
-            }
-        });
-
-        return initialPool;
+        _logger.LogInformation("Successfully generated and saved all {Count} questions directly for date {Date}.", allItems.Count, date);
+        return allItems;
     }
 
     public async Task<List<DailyQuizQuestion>> GenerateEndlessBatchAsync(DateOnly date, string topic, int startQuestionNumber, int count = 10)
