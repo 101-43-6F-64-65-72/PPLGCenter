@@ -78,6 +78,16 @@ export const AuthProvider = ({ children }) => {
         const userRole = userData.role || "Student";
         setRole(userRole);
 
+        if (typeof window !== "undefined") {
+          if (userData.emailNotif) {
+            localStorage.setItem("sc_cached_email_notif", userData.emailNotif);
+            localStorage.setItem("sc_cached_email_notif_verified", (userData.isEmailNotifVerified || userData.emailVerifiedAt) ? "true" : "false");
+          } else if (userData.emailNotif === null) {
+            localStorage.removeItem("sc_cached_email_notif");
+            localStorage.removeItem("sc_cached_email_notif_verified");
+          }
+        }
+
         // Fetch live supervised extracurriculars from PostgreSQL (for Teachers/Admin)
         if (userRole === "Teacher" || userRole === "Admin" || userData.role === 1) {
           try {

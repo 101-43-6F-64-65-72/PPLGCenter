@@ -167,7 +167,7 @@ export default function HomeTodaySchedule() {
   }, [dayScheduleList, currentMinutesFromMidnight]);
 
   return (
-    <section className="w-full bg-white py-12 sm:py-16 px-6 sm:px-10 lg:px-16 font-sans text-slate-900 border-t border-slate-100">
+    <section id="jadwal-hari-ini" className="w-full bg-white py-12 sm:py-16 px-6 sm:px-10 lg:px-16 font-sans text-slate-900 border-t border-slate-100">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* ─── SECTION HEADER: Clean & Direct ─── */}
         <div className="flex items-center justify-between">

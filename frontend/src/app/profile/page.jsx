@@ -13,6 +13,7 @@ import Button from "@/components/ui/Button";
 import profileService from "@/services/profileService";
 import ProfileSkeleton from "@/components/profile/ProfileSkeleton";
 import NotificationEmailSection from "@/components/profile/NotificationEmailSection";
+import ProfilePhotoCropModal from "@/components/profile/ProfilePhotoCropModal";
 import { resolveImageUrl } from "@/lib/utils";
 import { motion, AnimatePresence } from "@/lib/motion";
 
@@ -61,6 +62,10 @@ function ProfileContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // 1:1 Image Crop Modal States
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [rawCropImageSrc, setRawCropImageSrc] = useState(null);
+
   // Sync state automatically with authenticated user context
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -86,17 +91,28 @@ function ProfileContent() {
 
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  const handleAvatarChange = async (event) => {
+  const handleAvatarFileSelected = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setImageError(false);
-    setAvatarPreview(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setRawCropImageSrc(objectUrl);
+    setCropModalOpen(true);
+
+    // Reset input value so same image file can be re-selected if cancelled
+    event.target.value = "";
+  };
+
+  const handleCropComplete = async (croppedBlob, croppedFile) => {
+    setCropModalOpen(false);
     setIsUploadingAvatar(true);
-    setStatusMessage({ type: "info", text: "Mengunggah foto profil..." });
+    setAvatarPreview(URL.createObjectURL(croppedBlob));
+    setStatusMessage({ type: "info", text: "Mengunggah foto profil 1:1..." });
+
     try {
       const { uploadImageToCloudinary } = await import("@/services/cloudinaryService");
-      const uploadedUrl = await uploadImageToCloudinary(file);
+      const uploadedUrl = await uploadImageToCloudinary(croppedFile);
       if (uploadedUrl) {
         setAvatarPreview(uploadedUrl);
         let roleNum = 2;
@@ -114,7 +130,7 @@ function ProfileContent() {
 
         const res = await profileService.updateProfile(user.id, payload);
         if (res?.success || res?.data) {
-          setStatusMessage({ type: "success", text: "Foto profil berhasil diunggah dan disimpan!" });
+          setStatusMessage({ type: "success", text: "Foto profil 1:1 berhasil disimpan!" });
           await fetchProfile();
         } else {
           setStatusMessage({ type: "error", text: "Foto diunggah tapi gagal disimpan. Silakan coba lagi." });
@@ -293,7 +309,7 @@ function ProfileContent() {
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={handleAvatarChange}
+                  onChange={handleAvatarFileSelected}
                 />
               </div>
             </div>
@@ -682,6 +698,14 @@ function ProfileContent() {
 
       {/* Manual Guide Settings Card at the bottom of Profile */}
       <ManualGuideSettingsCard />
+
+      {/* 1:1 Profile Photo Interactive Crop Modal */}
+      <ProfilePhotoCropModal
+        isOpen={cropModalOpen}
+        imageSrc={rawCropImageSrc}
+        onClose={() => setCropModalOpen(false)}
+        onCropComplete={handleCropComplete}
+      />
     </div>
   );
 }

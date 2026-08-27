@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "@/lib/motion";
@@ -27,6 +27,10 @@ export default function AnnouncementShowcaseSlider({
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
+  const mouseStartXRef = useRef(null);
 
   // Load showcase banners from API
   const loadBanners = useCallback(async () => {
@@ -60,6 +64,52 @@ export default function AnnouncementShowcaseSlider({
     if (totalSlides <= 1) return;
     setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
   }, [totalSlides]);
+
+  // Touch Swipe Gesture for Mobile (Geser Slide)
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+      setIsPaused(true);
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    setIsPaused(false);
+    if (touchStartXRef.current === null) return;
+    const touchEndX = e.changedTouches[0]?.clientX || 0;
+    const touchEndY = e.changedTouches[0]?.clientY || 0;
+    const deltaX = touchEndX - touchStartXRef.current;
+    const deltaY = touchEndY - touchStartYRef.current;
+
+    // Minimum swipe threshold of 35px, prioritize horizontal over vertical scrolling
+    if (Math.abs(deltaX) > 35 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        handleNext();
+      } else {
+        handlePrev();
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
+  // Mouse Drag Gesture for Desktop
+  const handleMouseDown = (e) => {
+    mouseStartXRef.current = e.clientX;
+    setIsPaused(true);
+  };
+
+  const handleMouseUp = (e) => {
+    setIsPaused(false);
+    if (mouseStartXRef.current === null) return;
+    const deltaX = e.clientX - mouseStartXRef.current;
+    if (Math.abs(deltaX) > 50) {
+      if (deltaX < 0) handleNext();
+      else handlePrev();
+    }
+    mouseStartXRef.current = null;
+  };
 
   // Autoplay effect
   useEffect(() => {
@@ -108,7 +158,11 @@ export default function AnnouncementShowcaseSlider({
     <div
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className="relative w-full rounded-none overflow-hidden border border-slate-200 bg-slate-950 shadow-xs group select-none"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      className="relative w-full rounded-none overflow-hidden border border-slate-200 bg-slate-950 shadow-xs group select-none touch-pan-y cursor-grab active:cursor-grabbing"
     >
       {/* Background Image with Crossfade */}
       <div className="relative w-full h-[280px] sm:h-[340px] md:h-[380px]">
@@ -119,7 +173,7 @@ export default function AnnouncementShowcaseSlider({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="absolute inset-0"
+            className="absolute inset-0 pointer-events-none"
           >
             <Image
               src={coverImage}
@@ -137,9 +191,9 @@ export default function AnnouncementShowcaseSlider({
         </AnimatePresence>
 
         {/* Content Box */}
-        <div className="absolute inset-0 z-20 flex flex-col justify-between p-6 sm:p-8 md:p-9">
+        <div className="absolute inset-0 z-20 flex flex-col justify-between p-5 sm:p-8 md:p-9 pointer-events-none">
           {/* Top Header Controls */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 pointer-events-auto">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 bg-[#2C1EE8] text-white text-[10px] font-black uppercase tracking-widest rounded-none">
                 Sorotan Utama
@@ -147,27 +201,28 @@ export default function AnnouncementShowcaseSlider({
             </div>
 
             {/* Top Right: Manage Showcase Button (for Admin) & Dots */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {canManage && (
                 <button
                   onClick={onOpenManageShowcase}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-none bg-black/60 hover:bg-black/90 text-white text-[11px] font-bold border border-white/20 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-none bg-black/60 hover:bg-black/90 text-white text-[10px] sm:text-[11px] font-bold border border-white/20 transition cursor-pointer"
                   title="Atur Slide Showcase"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5 text-blue-300" />
-                  <span>Kelola Showcase</span>
+                  <span className="hidden sm:inline">Kelola Showcase</span>
+                  <span className="sm:hidden">Kelola</span>
                 </button>
               )}
 
-              {/* Slide Indicators Dots */}
+              {/* Slide Indicators Dots (Visible on both Mobile and Desktop) */}
               {totalSlides > 1 && (
-                <div className="hidden sm:flex items-center gap-1 bg-black/40 px-2.5 py-1 rounded-none border border-white/10">
+                <div className="flex items-center gap-1 bg-black/50 px-2 py-1 rounded-none border border-white/20">
                   {banners.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}
                       className={`h-1.5 transition-all duration-200 cursor-pointer rounded-none ${
-                        idx === currentIndex ? "w-5 bg-[#2C1EE8]" : "w-1.5 bg-white/40 hover:bg-white/70"
+                        idx === currentIndex ? "w-4 sm:w-5 bg-[#2C1EE8]" : "w-1.5 bg-white/40 hover:bg-white/70"
                       }`}
                       aria-label={`Slide ${idx + 1}`}
                     />
@@ -178,20 +233,23 @@ export default function AnnouncementShowcaseSlider({
           </div>
 
           {/* Bottom Headline & Action */}
-          <div className="space-y-2.5 sm:space-y-3 max-w-3xl">
+          <div className="space-y-2 sm:space-y-3 max-w-3xl pointer-events-auto">
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 font-medium">
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-blue-400" />
                 <span>{formattedDate}</span>
               </div>
+              <span className="text-[10px] font-mono text-slate-400">
+                ({currentIndex + 1}/{totalSlides})
+              </span>
             </div>
 
-            <h2 className="text-lg sm:text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight line-clamp-2 drop-shadow-md uppercase">
+            <h2 className="text-base sm:text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight line-clamp-2 drop-shadow-md uppercase">
               {currentItem?.title}
             </h2>
 
             {cleanSummary && (
-              <p className="text-xs sm:text-sm text-slate-200 font-normal leading-relaxed line-clamp-2 max-w-2xl">
+              <p className="text-[11px] sm:text-sm text-slate-200 font-normal leading-relaxed line-clamp-2 max-w-2xl">
                 {cleanSummary}
               </p>
             )}
@@ -202,13 +260,13 @@ export default function AnnouncementShowcaseSlider({
                 <button
                   type="button"
                   onClick={handleCtaClick}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-none bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs sm:text-sm uppercase tracking-wider transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-none bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs sm:text-sm uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   <span>{ctaText}</span>
                   {isExternalUrl ? (
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   ) : (
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   )}
                 </button>
               </div>
@@ -216,22 +274,22 @@ export default function AnnouncementShowcaseSlider({
           </div>
         </div>
 
-        {/* Navigation Arrow Controls (Overlay) */}
+        {/* Navigation Arrow Controls (Overlay for Mobile and Desktop) */}
         {totalSlides > 1 && (
-          <div className="absolute right-6 bottom-6 z-30 hidden sm:flex items-center gap-1.5">
+          <div className="absolute right-4 sm:right-6 bottom-4 sm:bottom-6 z-30 flex items-center gap-1">
             <button
               onClick={handlePrev}
-              className="p-2 rounded-none bg-black/50 hover:bg-black/80 text-white border border-white/20 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-none bg-black/60 hover:bg-black/90 text-white border border-white/20 transition-colors cursor-pointer"
               aria-label="Previous Banner"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={handleNext}
-              className="p-2 rounded-none bg-black/50 hover:bg-black/80 text-white border border-white/20 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-none bg-black/60 hover:bg-black/90 text-white border border-white/20 transition-colors cursor-pointer"
               aria-label="Next Banner"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         )}
