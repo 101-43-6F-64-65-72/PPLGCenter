@@ -96,6 +96,27 @@ export const quizService = {
     const url = date ? `${API_ROUTES.QUIZ.FINALIZE_TOPIC}?date=${date}` : API_ROUTES.QUIZ.FINALIZE_TOPIC;
     return await api.post(url);
   },
+
+  /**
+   * Reset seluruh database kuis dan generate topik & soal baru
+   */
+  resetAllQuizData: async () => {
+    return await api.post("/api/quiz/reset");
+  },
+
+  /**
+   * Admin: Acak topik baru hari ini & generate 30 soal AI baru
+   */
+  refreshRandomTopic: async () => {
+    return await api.post("/api/quiz/admin/refresh-topic");
+  },
+
+  /**
+   * Admin: Pertahankan topik saat ini tapi generate ulang 30 soal AI baru
+   */
+  refreshQuestions: async () => {
+    return await api.post("/api/quiz/admin/refresh-questions");
+  },
 };
 
 export default quizService;

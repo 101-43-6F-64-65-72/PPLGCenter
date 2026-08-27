@@ -1,37 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import { ArrowLeft } from "lucide-react";
 import LoginForm from "@/features/auth/components/LoginForm";
+import BloubMascot from "@/components/BloubMascot";
 import { useRouter } from "next/navigation";
 import useAuth from "@/hooks/useAuth";
-
-let motionImport = null;
-
-try {
-  const m = require("motion/react");
-  motionImport = m.motion;
-} catch (e) {
-  try {
-    const f = require("framer-motion");
-    motionImport = f.motion;
-  } catch (e2) {}
-}
-
-const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, ref) => (
-  <div ref={ref} className={className} style={style} onClick={onClick}>
-    {children}
-  </div>
-));
-FallbackDiv.displayName = "FallbackDiv";
-
-const MotionDiv = motionImport?.div || FallbackDiv;
+import gsap from "gsap";
 
 export default function LoginPage() {
   const router = useRouter();
   const { isAuthenticated, loading } = useAuth();
+
+  const [mascotState, setMascotState] = useState("idle");
+
+  const containerRef = useRef(null);
+  const leftPanelRef = useRef(null);
+  const rightPanelRef = useRef(null);
+  const bgImageRef = useRef(null);
+  const mascotRef = useRef(null);
 
   React.useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -39,99 +28,123 @@ export default function LoginPage() {
     }
   }, [loading, isAuthenticated, router]);
 
+  // GSAP Entrance Timeline Animation
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      if (bgImageRef.current) {
+        tl.fromTo(
+          bgImageRef.current,
+          { scale: 1.08, opacity: 0.7 },
+          { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" },
+          0
+        );
+      }
+
+      if (leftPanelRef.current) {
+        tl.fromTo(
+          leftPanelRef.current,
+          { xPercent: -100, opacity: 0 },
+          { xPercent: 0, opacity: 1, duration: 0.75, ease: "expo.out" },
+          0.05
+        );
+      }
+
+      if (mascotRef.current) {
+        tl.fromTo(
+          mascotRef.current,
+          { scale: 0, rotate: -25, opacity: 0 },
+          { scale: 1, rotate: 0, opacity: 1, duration: 0.85, ease: "elastic.out(1, 0.55)" },
+          0.35
+        );
+
+        gsap.to(mascotRef.current, {
+          y: "-=10",
+          duration: 2.4,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
   const handleSuccess = () => {
     router.push("/");
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-white flex flex-col justify-between overflow-hidden selection:bg-blue-100 selection:text-blue-900">
-      <Navbar />
-
-      {/* 1. TOP SPLIT PANEL (Slide in from RIGHT) */}
-      <MotionDiv
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute top-0 left-0 right-0 h-1/2 z-10 overflow-hidden bg-[#071329] border-b border-white/10"
+    <main
+      ref={containerRef}
+      className="min-h-screen w-full flex flex-col md:flex-row bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900 font-sans overflow-hidden relative"
+    >
+      {/* ─── LEFT PANEL: Pure White Background (Top-anchored layout to eliminate jumping) ─── */}
+      <section
+        ref={leftPanelRef}
+        className="w-full md:w-[400px] lg:w-[440px] xl:w-[470px] min-h-screen h-screen bg-white flex flex-col p-6 sm:p-8 lg:p-10 z-20 relative shrink-0 border-r border-slate-200 overflow-y-auto overflow-x-visible shadow-sm"
       >
-        <Image
-          src="/images/tempat/halamandepansmkn2ska.jpg"
-          alt="Halaman Depan SMK Negeri 2 Surakarta"
-          fill
-          className="object-cover object-top brightness-60"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#071329]/80 via-[#071329]/60 to-[#071329]" />
-      </MotionDiv>
+        {/* Top Back Navigation */}
+        <div className="w-full flex items-center justify-between mb-6 shrink-0">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-black transition-colors duration-200 group cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-1 text-[#2c1ee8]" />
+            <span>Kembali ke Beranda</span>
+          </Link>
+        </div>
 
-      {/* 2. BOTTOM SPLIT PANEL (Slide in from LEFT) */}
-      <MotionDiv
-        initial={{ x: "-100%" }}
-        animate={{ x: 0 }}
-        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute bottom-0 left-0 right-0 h-1/2 z-10 overflow-hidden bg-[#0a1931]"
-      >
-        <Image
-          src="/images/tempat/halamandepansmkn2ska.jpg"
-          alt="Halaman Depan SMK Negeri 2 Surakarta"
-          fill
-          className="object-cover object-bottom brightness-60"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#071329] via-[#0a1931]/80 to-[#0a1931]/60" />
-      </MotionDiv>
-
-      {/* Main Content & Login Card (Fade & Pop In after split transition) */}
-      <div className="relative z-20 w-full min-h-screen flex flex-col items-center justify-center px-4 py-24 sm:py-28">
-        <MotionDiv
-          initial={{ opacity: 0, scale: 0.9, y: 24 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-md rounded-[32px] border border-white/20 bg-[#2c1ee8]/95 p-8 text-white shadow-2xl shadow-slate-950/70 backdrop-blur-xl transition-all font-sans my-auto"
-        >
-          {/* Top Back Link */}
-          <div className="mb-6 flex justify-between items-center">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/20 transition-all cursor-pointer"
-            >
-              ← Kembali ke Beranda
-            </Link>
-          </div>
-
-          {/* Header / Logo Branding (Original Design) */}
-          <div className="mb-6 flex flex-col items-start gap-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white/15 border border-white/20 shadow-inner">
-              <Image
-                src="/images/logo.png"
-                alt="Logo SMKN 2 Surakarta"
-                width={42}
-                height={42}
-                style={{ width: "auto", height: "auto" }}
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
-                SMK NEGERI 2 SURAKARTA
-              </h1>
-              <p className="text-xs sm:text-sm text-white/80">
-                Student Center Information & Services System
-              </p>
-            </div>
-          </div>
-
-          {/* Login Form inside Suspense boundary */}
-          <React.Suspense fallback={
-            <div className="p-6 text-center text-sm font-medium text-white/80 animate-pulse">
-              Memuat formulir login...
-            </div>
-          }>
-            <LoginForm onSuccess={handleSuccess} />
+        {/* Form Container (Fixed top anchor to prevent vertical jumping) */}
+        <div className="w-full my-auto py-2 shrink-0">
+          <React.Suspense
+            fallback={
+              <div className="p-6 text-center text-xs font-medium text-slate-500 bg-slate-50 rounded animate-pulse">
+                Memuat formulir login...
+              </div>
+            }
+          >
+            <LoginForm
+              onSuccess={handleSuccess}
+              mascotState={mascotState}
+              setMascotState={setMascotState}
+            />
           </React.Suspense>
-        </MotionDiv>
-      </div>
-    </div>
+        </div>
+
+        {/* Bottom Footer */}
+        <footer className="w-full pt-4 mt-auto text-[11px] text-slate-400 shrink-0">
+          <span>&copy; {new Date().getFullYear()} PPLG SMKN 2 Surakarta</span>
+        </footer>
+
+        {/* ─── Replyz Mascot: 50% on White Left Panel & 50% on Right Image (Not Clickable) ─── */}
+        <div
+          ref={mascotRef}
+          className="absolute bottom-8 right-0 translate-x-1/2 z-30 hidden md:flex items-center justify-center pointer-events-none select-none"
+        >
+          <BloubMascot size={145} state={mascotState} badge={false} />
+        </div>
+      </section>
+
+      {/* ─── RIGHT HERO PANEL: School Building Photo ─── */}
+      <section
+        ref={rightPanelRef}
+        className="hidden md:block flex-1 min-h-screen relative bg-slate-100 overflow-hidden"
+      >
+        <div ref={bgImageRef} className="absolute inset-0 w-full h-full">
+          <Image
+            src="/images/tempat/halamandepansmkn2ska.jpg"
+            alt="Gedung SMK Negeri 2 Surakarta"
+            fill
+            sizes="70vw"
+            className="object-cover object-center"
+            priority
+          />
+        </div>
+        <div className="absolute inset-0 bg-black/5" />
+      </section>
+    </main>
   );
 }

@@ -1,47 +1,29 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import LoginForm from "./LoginForm";
 import { X } from "@/components/common/Icons";
+import { ArrowLeft } from "lucide-react";
 import BloubMascot from "@/components/BloubMascot";
-
-let motionImport = null;
-let animatePresenceImport = null;
-
-try {
-  const m = require("motion/react");
-  motionImport = m.motion;
-  animatePresenceImport = m.AnimatePresence;
-} catch (e) {
-  try {
-    const f = require("framer-motion");
-    motionImport = f.motion;
-    animatePresenceImport = f.AnimatePresence;
-  } catch (e2) {}
-}
-
-const FallbackDiv = React.forwardRef(
-  ({ children, className, style, onClick }, ref) => (
-    <div ref={ref} className={className} style={style} onClick={onClick}>
-      {children}
-    </div>
-  ),
-);
-FallbackDiv.displayName = "FallbackDiv";
-
-const MotionDiv = motionImport?.div || FallbackDiv;
-const AnimatePresenceComponent =
-  animatePresenceImport || (({ children }) => <>{children}</>);
+import LoginForm from "./LoginForm";
+import useAuth from "@/hooks/useAuth";
+import gsap from "gsap";
 
 export const LoginModal = ({ isOpen, onClose, onSuccess, mandatory = false }) => {
-  const [mascotState, setMascotState] = useState("happy");
+  const [mascotState, setMascotState] = useState("idle");
 
-  // Lock body scroll and reset mascot to happy entrance when modal opens
+  // DOM Refs for GSAP
+  const fullScreenContainerRef = useRef(null);
+  const leftPanelRef = useRef(null);
+  const rightHeroRef = useRef(null);
+  const bgImageRef = useRef(null);
+  const mascotRef = useRef(null);
+
+  // Lock body scroll when open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      setMascotState("happy");
+      setMascotState("idle");
     } else {
       document.body.style.overflow = "unset";
     }
@@ -50,135 +32,160 @@ export const LoginModal = ({ isOpen, onClose, onSuccess, mandatory = false }) =>
     };
   }, [isOpen]);
 
+  // GSAP Full Screen Entrance Animation
+  useEffect(() => {
+    if (!isOpen || !fullScreenContainerRef.current) return;
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      // 1. Right hero background zoom & fade in
+      if (bgImageRef.current) {
+        tl.fromTo(
+          bgImageRef.current,
+          { scale: 1.08, opacity: 0.7 },
+          { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" },
+          0
+        );
+      }
+
+      // 2. Left panel slide-in
+      if (leftPanelRef.current) {
+        tl.fromTo(
+          leftPanelRef.current,
+          { xPercent: -100, opacity: 0 },
+          { xPercent: 0, opacity: 1, duration: 0.75, ease: "expo.out" },
+          0.05
+        );
+      }
+
+      // 3. Large Replyz Mascot Pop-in with Elastic Overshoot
+      if (mascotRef.current) {
+        tl.fromTo(
+          mascotRef.current,
+          { scale: 0, rotate: -30, opacity: 0 },
+          { scale: 1, rotate: 0, opacity: 1, duration: 0.85, ease: "elastic.out(1, 0.55)" },
+          0.35
+        );
+
+        // Continuous subtle float
+        gsap.to(mascotRef.current, {
+          y: "-=10",
+          duration: 2.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
+    }, fullScreenContainerRef);
+
+    return () => ctx.revert();
+  }, [isOpen]);
+
+  const handleClose = () => {
+    if (leftPanelRef.current && fullScreenContainerRef.current) {
+      gsap.to(leftPanelRef.current, {
+        xPercent: -100,
+        opacity: 0,
+        duration: 0.35,
+        ease: "power2.in",
+      });
+      gsap.to(fullScreenContainerRef.current, {
+        opacity: 0,
+        duration: 0.35,
+        onComplete: onClose,
+      });
+    } else {
+      onClose();
+    }
+  };
+
+  const handleSuccess = (res) => {
+    if (onSuccess) onSuccess(res);
+    setTimeout(() => {
+      handleClose();
+    }, 1200);
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresenceComponent mode="wait">
-      {isOpen && (
-        <div className="fixed inset-0 z-50 select-none font-sans">
-          {/* 1. TOP SPLIT PANEL (Slides in smoothly from TOP with dark overlay) */}
-          <MotionDiv
-            initial={{ y: "-100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "-100%", opacity: 0 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed top-0 left-0 right-0 h-1/2 z-50 overflow-hidden bg-[#071329] border-b border-white/10"
-          >
-            <Image
-              src="/images/tempat/halamandepansmkn2ska.jpg"
-              alt="Halaman Depan SMK Negeri 2 Surakarta"
-              fill
-              sizes="100vw"
-              className="object-cover object-top brightness-60 scale-105 transition-transform duration-1000"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#071329]/95 via-[#071329]/80 to-[#071329]" />
-          </MotionDiv>
-
-          {/* 2. BOTTOM SPLIT PANEL (Slides in smoothly from BOTTOM) */}
-          <MotionDiv
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed bottom-0 left-0 right-0 h-1/2 z-50 overflow-hidden bg-[#0a1931]"
-          >
-            <Image
-              src="/images/tempat/halamandepansmkn2ska.jpg"
-              alt="Halaman Depan SMK Negeri 2 Surakarta"
-              fill
-              sizes="100vw"
-              className="object-cover object-bottom brightness-60 scale-105 transition-transform duration-1000"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#071329] via-[#0a1931]/95 to-[#0a1931]/80" />
-          </MotionDiv>
-
-          {/* 3. LOGIN CARD OVERLAY WITH SPRING ANIMATION & GLOW ORBS */}
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 [perspective:1200px]"
-            onClick={mandatory ? undefined : onClose}
-          >
-            <MotionDiv
-              initial={{ opacity: 0, scale: 0.82, y: 35, rotateX: 6 }}
-              animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
-              exit={{ opacity: 0, scale: 0.85, y: 25, rotateX: 6 }}
-              transition={{
-                delay: 0.25,
-                duration: 0.45,
-                type: "spring",
-                stiffness: 320,
-                damping: 26,
-              }}
-              style={{ transformStyle: "preserve-3d" }}
-              className="relative w-full max-w-md rounded-[36px] border border-white/25 bg-[#2c1ee8]/95 p-7 sm:p-8 text-white shadow-2xl shadow-slate-950/80 backdrop-blur-2xl font-sans my-auto pointer-events-auto overflow-visible"
-              onClick={(e) => e.stopPropagation()}
+    <div
+      ref={fullScreenContainerRef}
+      className="fixed inset-0 z-50 w-screen h-screen min-h-screen bg-white text-slate-900 flex flex-col md:flex-row select-none font-sans overflow-hidden"
+    >
+      {/* ─── LEFT FULL-HEIGHT PANEL: Pure White #ffffff ─── */}
+      <div
+        ref={leftPanelRef}
+        className="w-full md:w-[380px] lg:w-[420px] xl:w-[460px] h-full min-h-screen bg-white flex flex-col justify-between p-6 sm:p-8 lg:p-12 z-20 relative shrink-0 border-r border-slate-200 overflow-visible shadow-sm"
+      >
+        {/* Top Bar: Close / Back Action */}
+        <div className="w-full flex items-center justify-between mb-4">
+          {!mandatory ? (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-black transition-colors duration-200 group cursor-pointer"
             >
-              {/* Glowing Ambient Background Accents */}
-              <div className="absolute -top-16 -left-16 w-60 h-60 bg-blue-400/25 rounded-full blur-3xl pointer-events-none animate-pulse rounded-[36px] overflow-hidden" />
-              <div className="absolute -bottom-16 -right-16 w-60 h-60 bg-indigo-400/25 rounded-full blur-3xl pointer-events-none animate-pulse rounded-[36px] overflow-hidden" />
+              <ArrowLeft className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-x-1 text-[#2c1ee8]" />
+              <span>Kembali</span>
+            </button>
+          ) : (
+            <div />
+          )}
 
-              {/* Close Button (Hidden when mandatory login is enforced) */}
-              {!mandatory && (
-                <button
-                  onClick={onClose}
-                  className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-all duration-200 cursor-pointer border border-white/20 hover:scale-110 hover:rotate-90 active:scale-95 z-20 shadow-md"
-                  aria-label="Tutup Modal Login"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-
-              {/* Header / Logo Branding */}
-              <div className="mb-6 flex flex-row items-center gap-3.5 py-1 relative z-10">
-                <div className="flex h-15 w-15 items-center justify-center rounded-2xl bg-white/15 border border-white/30 shadow-inner backdrop-blur-md shrink-0 transition-transform duration-300 hover:scale-105">
-                  <Image
-                    src="/images/logo.png"
-                    alt="Logo SMKN 2 Surakarta"
-                    width={40}
-                    height={40}
-                    style={{ width: "auto", height: "auto" }}
-                    className="object-contain drop-shadow-md"
-                    priority
-                  />
-                </div>
-                <div>
-                  <span className="inline-block text-[10px] font-black uppercase tracking-widest text-blue-200 bg-white/15 px-2.5 py-0.5 rounded-full border border-white/20 mb-1">
-                    SMK NEGERI 2 SURAKARTA
-                  </span>
-                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
-                    Student Center
-                  </h1>
-                </div>
-              </div>
-
-              {/* Form Container */}
-              <div className="relative z-10">
-                <LoginForm
-                  onSuccess={onSuccess}
-                  mascotState={mascotState}
-                  setMascotState={setMascotState}
-                />
-              </div>
-
-              {/* 50% Below & 50% Left Overlapping Mascot on Bottom-Left Modal Corner */}
-              <MotionDiv
-                initial={{ y: 120, scale: 0.3, opacity: 0 }}
-                animate={{ y: 0, scale: 1, opacity: 1 }}
-                exit={{ y: 120, scale: 0.3, opacity: 0 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 350,
-                  damping: 18,
-                  mass: 0.8,
-                }}
-                className="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 z-30 pointer-events-none hidden md:block"
-              >
-                <BloubMascot size={150} state={mascotState} />
-              </MotionDiv>
-            </MotionDiv>
-          </div>
+          {!mandatory && (
+            <button
+              onClick={handleClose}
+              className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-black flex items-center justify-center transition-colors cursor-pointer border border-slate-300 z-30"
+              aria-label="Tutup"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-      )}
-    </AnimatePresenceComponent>
+
+        {/* Center: In-Place LoginForm with 3D Perspective Slide Transitions */}
+        <div className="w-full my-auto py-2">
+          <LoginForm
+            onSuccess={handleSuccess}
+            mascotState={mascotState}
+            setMascotState={setMascotState}
+          />
+        </div>
+
+        {/* Bottom Footer */}
+        <footer className="w-full pt-4 mt-auto text-[11px] text-slate-400">
+          <span>&copy; {new Date().getFullYear()} PPLG SMKN 2 Surakarta</span>
+        </footer>
+
+        {/* ─── Replyz Mascot: 50% on White Left Panel & 50% on Right Image (Not Clickable) ─── */}
+        <div
+          ref={mascotRef}
+          className="absolute bottom-10 right-0 translate-x-1/2 z-30 hidden md:flex items-center justify-center pointer-events-none select-none"
+        >
+          <BloubMascot size={150} state={mascotState} badge={false} />
+        </div>
+      </div>
+
+      {/* ─── RIGHT FULL-HEIGHT PANEL: Bright Natural School Hero Image ─── */}
+      <div
+        ref={rightHeroRef}
+        className="hidden md:block flex-1 h-full min-h-screen relative bg-slate-100 overflow-hidden"
+      >
+        <div ref={bgImageRef} className="absolute inset-0 w-full h-full">
+          <Image
+            src="/images/tempat/halamandepansmkn2ska.jpg"
+            alt="Gedung SMKN 2 Surakarta"
+            fill
+            sizes="70vw"
+            className="object-cover object-center"
+            priority
+          />
+        </div>
+        <div className="absolute inset-0 bg-black/5" />
+      </div>
+    </div>
   );
 };
 

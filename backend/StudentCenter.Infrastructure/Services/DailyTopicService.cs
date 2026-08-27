@@ -18,18 +18,16 @@ public class DailyTopicService : IDailyTopicService
 
     private static readonly string[] DefaultTopicsPool = new[]
     {
-        "Git Flow & Merge Conflicts Resolution",
-        "RESTful API Architecture & HTTP Status Standards",
-        "Clean Code & SOLID Principles",
-        "PostgreSQL Indexing & Query Optimization",
-        "React Component Lifecycle & State Management",
-        "Docker Containerization & CI/CD Pipelines",
-        "Cyber Security Best Practices & OWASP Top 10",
-        "Object Oriented Programming & Design Patterns (Factory, Observer, Singleton)",
-        "Asynchronous Programming & Concurrency in C# / JavaScript",
-        "Algorithm Complexity & Big-O Notation",
-        "Microservices Architecture & Event-Driven Systems",
-        "Authentication & Authorization (JWT, OAuth2, RBAC)"
+        "Dasar Pemrograman & Logika Algoritma SMK",
+        "HTML5, CSS3 & Tata Letak Web Responsif",
+        "JavaScript Fundamental & Interaktivitas DOM",
+        "Basis Data Relasional & Perintah SQL (CRUD & JOIN)",
+        "Pemrograman Berorientasi Objek (OOP: Class, Object, Inheritance)",
+        "Git Version Control & Kolaborasi Tim (Commit, Branch, Merge)",
+        "Pengembangan RESTful API & HTTP Methods",
+        "Keamanan Web Dasar (Pencegahan SQL Injection & Password Hashing)",
+        "Framework Frontend Modern (React & Komponen UI)",
+        "Debugging, Clean Code & Struktur Proyek Software SMK"
     };
 
     public DailyTopicService(AppDbContext context, ILogger<DailyTopicService> logger)
@@ -162,6 +160,46 @@ public class DailyTopicService : IDailyTopicService
         await _context.SaveChangesAsync();
 
         return MapToResponse(fallbackTopic, false);
+    }
+
+    public async Task<TopicResponse> PickRandomTopicAsync(DateOnly targetDate)
+    {
+        var existingTopics = await _context.DailyQuizTopics
+            .Where(t => t.TargetDate == targetDate)
+            .ToListAsync();
+
+        var currentSelectedName = existingTopics.FirstOrDefault(t => t.Status == "Selected")?.TopicName;
+
+        // Archive previous selected topics for today
+        foreach (var t in existingTopics)
+        {
+            t.Status = "Archived";
+        }
+
+        // Pick a random topic from pool that is different from current
+        var availablePool = DefaultTopicsPool.Where(p => p != currentSelectedName).ToArray();
+        if (availablePool.Length == 0) availablePool = DefaultTopicsPool;
+
+        var random = new Random();
+        var selectedTopicName = availablePool[random.Next(availablePool.Length)];
+
+        var newTopic = new DailyQuizTopic
+        {
+            Id = Guid.NewGuid(),
+            TargetDate = targetDate,
+            TopicName = selectedTopicName,
+            Description = "Tema acak kurikulum Rekayasa Perangkat Lunak SMK Negeri 2 Surakarta.",
+            ProposedByUserId = null,
+            ProposedByUserName = "Sistem Kurikulum RPL",
+            VotesCount = 0,
+            Status = "Selected",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.DailyQuizTopics.Add(newTopic);
+        await _context.SaveChangesAsync();
+
+        return MapToResponse(newTopic, false);
     }
 
     public async Task<string> GetSelectedTopicNameAsync(DateOnly targetDate)

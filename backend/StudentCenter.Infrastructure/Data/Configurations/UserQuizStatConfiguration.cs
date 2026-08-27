@@ -20,5 +20,8 @@ public class UserQuizStatConfiguration : IEntityTypeConfiguration<UserQuizStat>
         builder.HasIndex(u => u.UserId).IsUnique();
         builder.HasIndex(u => u.TotalScore);
         builder.HasIndex(u => u.CurrentStreak);
+
+        builder.Property(u => u.ScoreHash)
+            .HasMaxLength(128);
     }
 }

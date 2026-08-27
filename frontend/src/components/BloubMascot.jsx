@@ -43,20 +43,20 @@ export const mascotVariants = {
   },
   side: {
     path: "M -9 -11 A 9 9 0 0 1 9 -11 L 9 11 A 9 9 0 0 1 -9 11 Z",
-    leftEye: { x: -44, y: 2, rotate: 22, scaleX: 0.85, scaleY: 0.88 },
-    rightEye: { x: -6, y: 4, rotate: 18, scaleX: 0.95, scaleY: 0.95 },
+    leftEye: { x: -46, y: 2, rotate: -22, scaleX: 0.85, scaleY: 0.88 },
+    rightEye: { x: -10, y: 4, rotate: -18, scaleX: 0.95, scaleY: 0.95 },
     body: { y: 0, scaleX: 1, scaleY: 1 },
   },
   peek: {
     path: "M -10 -12 A 10 10 0 0 1 10 -12 L 10 12 A 10 10 0 0 1 -10 12 Z",
-    leftEye: { x: 6, y: -16, rotate: 10, scaleX: 1.15, scaleY: 0.05, opacity: 0.9 },
-    rightEye: { x: 48, y: -24, rotate: 16, scaleX: 0.92, scaleY: 0.92, opacity: 1 },
+    leftEye: { x: -48, y: -24, rotate: -16, scaleX: 0.92, scaleY: 0.92, opacity: 1 },
+    rightEye: { x: -6, y: -16, rotate: -10, scaleX: 1.15, scaleY: 0.05, opacity: 0.9 },
     body: { y: -4, scaleX: 0.96, scaleY: 1.04 },
   },
   notif: {
     path: "M -9.3 -11.3 A 9.3 9.3 0 0 1 9.3 -11.3 L 9.3 11.3 A 9.3 9.3 0 0 1 -9.3 11.3 Z",
-    leftEye: { x: 13.5, y: -36.5, rotate: -19, scaleX: 0.97, scaleY: 0.95 },
-    rightEye: { x: 58.8, y: -47.2, rotate: -6, scaleX: 0.81, scaleY: 0.95 },
+    leftEye: { x: -58.8, y: -47.2, rotate: 6, scaleX: 0.81, scaleY: 0.95 },
+    rightEye: { x: -13.5, y: -36.5, rotate: 19, scaleX: 0.97, scaleY: 0.95 },
     body: { y: -6, scaleX: 0.96, scaleY: 1.04 },
   },
   wink: {

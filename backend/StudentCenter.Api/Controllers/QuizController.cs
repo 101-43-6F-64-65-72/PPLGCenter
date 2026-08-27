@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
+using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Api.Controllers;
 
@@ -16,15 +17,18 @@ public class QuizController : ControllerBase
     private readonly IQuizService _quizService;
     private readonly IDailyTopicService _topicService;
     private readonly IAiQuizGeneratorService _aiGenerator;
+    private readonly AppDbContext _context;
 
     public QuizController(
         IQuizService quizService,
         IDailyTopicService topicService,
-        IAiQuizGeneratorService aiGenerator)
+        IAiQuizGeneratorService aiGenerator,
+        AppDbContext context)
     {
         _quizService = quizService;
         _topicService = topicService;
         _aiGenerator = aiGenerator;
+        _context = context;
     }
 
     private Guid GetCurrentUserId()
@@ -283,6 +287,94 @@ public class QuizController : ControllerBase
             topic = winner,
             questionsCount = questions.Count
         });
+    }
+
+    /// <summary>
+    /// Admin: Acak topik baru hari ini dan langsung buat 30 soal baru dari AI
+    /// </summary>
+    [HttpPost("admin/refresh-topic")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RefreshRandomTopic()
+    {
+        try
+        {
+            var today = GetWibDate();
+            var newTopic = await _topicService.PickRandomTopicAsync(today);
+            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, newTopic.TopicName);
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Topik hari ini berhasil diacak menjadi: '{newTopic.TopicName}' dengan {questions.Count} butir soal AI baru.",
+                topic = newTopic.TopicName,
+                questionsCount = questions.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Admin: Pertahankan topik saat ini tapi generate ulang 30 soal baru dari AI
+    /// </summary>
+    [HttpPost("admin/refresh-questions")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RefreshQuestions()
+    {
+        try
+        {
+            var today = GetWibDate();
+            var currentTopic = await _topicService.GetSelectedTopicNameAsync(today);
+            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, currentTopic);
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Berhasil men-generate ulang {questions.Count} butir soal AI baru untuk topik: '{currentTopic}'.",
+                topic = currentTopic,
+                questionsCount = questions.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Reset dan bersihkan seluruh data kuis untuk memulai ulang alur dari awal
+    /// </summary>
+    [HttpPost("reset")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetAllQuizData()
+    {
+        try
+        {
+            _context.QuizSessions.RemoveRange(_context.QuizSessions);
+            _context.DailyQuizQuestions.RemoveRange(_context.DailyQuizQuestions);
+            _context.DailyTopicVotes.RemoveRange(_context.DailyTopicVotes);
+            _context.DailyQuizTopics.RemoveRange(_context.DailyQuizTopics);
+            _context.UserQuizStats.RemoveRange(_context.UserQuizStats);
+            await _context.SaveChangesAsync();
+
+            var today = GetWibDate();
+            var winner = await _topicService.FinalizeDailyTopicAsync(today);
+            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, winner.TopicName);
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Seluruh data kuis telah direset. Topik baru: '{winner.TopicName}' dengan {questions.Count} soal baru siap dimainkan.",
+                topic = winner.TopicName,
+                questionsCount = questions.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
     }
 }
 

@@ -13,6 +13,7 @@ public class UserQuizStat
     public DateOnly? LastPlayedDate { get; set; }
     public int TotalCorrectAnswers { get; set; } = 0;
     public int TotalWrongAnswers { get; set; } = 0;
+    public string? ScoreHash { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation

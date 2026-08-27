@@ -1,63 +1,52 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { User, Lock, Eye, EyeOff } from "@/components/common/Icons";
-import { GraduationCap, BookOpen, ShieldAlert, Sparkles, CheckCircle2, Check } from "lucide-react";
+import { Eye, EyeOff, Sparkles, CheckCircle2, ShieldAlert, ArrowLeft, Clock, ShieldCheck } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import BloubMascot from "@/components/BloubMascot";
-import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
 import ErrorAlert from "@/components/common/ErrorAlert";
-import ForgotPasswordModal from "./ForgotPasswordModal";
+import apiClient from "@/lib/api";
+import gsap from "gsap";
 
-let motionImport = null;
-let animatePresenceImport = null;
-
-try {
-  const m = require("motion/react");
-  motionImport = m.motion;
-  animatePresenceImport = m.AnimatePresence;
-} catch (e) {
-  try {
-    const f = require("framer-motion");
-    motionImport = f.motion;
-    animatePresenceImport = f.AnimatePresence;
-  } catch (e2) {}
-}
-
-const FallbackDiv = React.forwardRef(({ children, className, style, onClick }, ref) => (
-  <div ref={ref} className={className} style={style} onClick={onClick}>
-    {children}
-  </div>
-));
-FallbackDiv.displayName = "FallbackDiv";
-
-const MotionDiv = motionImport?.div || FallbackDiv;
-const AnimatePresenceComponent = animatePresenceImport || (({ children }) => <>{children}</>);
-
-export const LoginForm = ({ onSuccess, setMascotState }) => {
+export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
   const { login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const callbackUrl = searchParams.get("callbackUrl") || "/profile";
+  const callbackUrl = searchParams?.get("callbackUrl") || "/";
 
-  // Login type: 'Student' | 'Teacher' | 'Admin'
+  // Current active mode: 'login' | 'forgot'
+  const [activeMode, setActiveMode] = useState("login");
+
+  // ─── LOGIN STATES ───
   const [loginType, setLoginType] = useState("Student");
-  const [isForgotOpen, setIsForgotOpen] = useState(false);
-
-  // Fields state
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [successUserData, setSuccessUserData] = useState(null);
 
-  // ─── Submitting / Loading Cycle: Inquisitive 'thinking' & 'peek' states ───
+  // ─── FORGOT PASSWORD STATES ───
+  const [forgotStep, setForgotStep] = useState("request");
+  const [forgotIdentifier, setForgotIdentifier] = useState("");
+  const [forgotReason, setForgotReason] = useState("");
+  const [forgotRequestId, setForgotRequestId] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState("");
+  const [forgotMessage, setForgotMessage] = useState("");
+
+  // DOM Refs for GSAP Transitions
+  const slidingContainerRef = useRef(null);
+  const loginViewRef = useRef(null);
+  const forgotViewRef = useRef(null);
+
+  // Mascot interaction cycle when submitting login
   useEffect(() => {
     let intervalId;
     if (isSubmitting) {
@@ -69,12 +58,77 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
         if (setMascotState) {
           setMascotState(loadingStates[stepIndex]);
         }
-      }, 650);
+      }, 500);
     }
     return () => clearInterval(intervalId);
   }, [isSubmitting, setMascotState]);
 
-  // Input Focus Handlers
+  // ─── SMOOTH GSAP SLIDE TRANSFORMS (Zero Vertical Jump) ───
+  const switchToForgot = () => {
+    setLoginError("");
+    setForgotError("");
+    setForgotMessage("");
+    if (setMascotState) setMascotState("thinking");
+
+    if (loginViewRef.current && forgotViewRef.current) {
+      const tl = gsap.timeline();
+
+      // Animate Login inputs out to the left
+      tl.to(loginViewRef.current, {
+        xPercent: -105,
+        opacity: 0,
+        duration: 0.35,
+        ease: "power2.inOut",
+        onComplete: () => {
+          setActiveMode("forgot");
+        },
+      });
+
+      // Animate Forgot inputs in from the right
+      tl.fromTo(
+        forgotViewRef.current,
+        { xPercent: 105, opacity: 0, display: "block" },
+        { xPercent: 0, opacity: 1, duration: 0.35, ease: "power2.inOut" },
+        "-=0.15"
+      );
+    } else {
+      setActiveMode("forgot");
+    }
+  };
+
+  const switchToLogin = () => {
+    setForgotError("");
+    setForgotMessage("");
+    setLoginError("");
+    if (setMascotState) setMascotState("idle");
+
+    if (loginViewRef.current && forgotViewRef.current) {
+      const tl = gsap.timeline();
+
+      // Animate Forgot inputs out to the right
+      tl.to(forgotViewRef.current, {
+        xPercent: 105,
+        opacity: 0,
+        duration: 0.35,
+        ease: "power2.inOut",
+        onComplete: () => {
+          setActiveMode("login");
+        },
+      });
+
+      // Animate Login inputs in from the left
+      tl.fromTo(
+        loginViewRef.current,
+        { xPercent: -105, opacity: 0, display: "block" },
+        { xPercent: 0, opacity: 1, duration: 0.35, ease: "power2.inOut" },
+        "-=0.15"
+      );
+    } else {
+      setActiveMode("login");
+    }
+  };
+
+  // ─── LOGIN HANDLERS ───
   const handleIdentifierFocus = () => {
     if (!isSubmitting && !isSuccess && setMascotState) {
       setMascotState("notif");
@@ -82,15 +136,28 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
   };
 
   const handleIdentifierChange = (e) => {
-    setIdentifier(e.target.value);
+    const val = e.target.value;
+    setIdentifier(val);
     if (!isSubmitting && !isSuccess && setMascotState) {
-      setMascotState("notif");
+      setMascotState(val.length > 0 ? "notif" : "idle");
+    }
+    if (val.toLowerCase().includes("admin")) {
+      setLoginType("Admin");
+    } else if (val.toLowerCase().includes("guru") || val.toLowerCase().includes("nip")) {
+      setLoginType("Teacher");
     }
   };
 
   const handlePasswordFocus = () => {
     if (isSubmitting || isSuccess || !setMascotState) return;
     setMascotState(showPassword ? "peek" : "side");
+  };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+    if (!isSubmitting && !isSuccess && setMascotState) {
+      setMascotState(showPassword ? "peek" : "closed");
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -101,30 +168,24 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setErrorMessage("");
+    setLoginError("");
 
-    // Validation
     if (!identifier.trim()) {
-      const idLabel =
-        loginType === "Student"
-          ? "NIS atau NISN"
-          : loginType === "Teacher"
-          ? "NIP atau Email"
-          : "Email atau Username Admin";
-      const msg = `${idLabel} wajib diisi`;
-      setErrorMessage(msg);
+      setLoginError("NIS / NISN / NIP wajib diisi");
       if (setMascotState) setMascotState("sad");
       return;
     }
     if (!password) {
-      setErrorMessage("Password wajib diisi");
+      setLoginError("Password wajib diisi");
       if (setMascotState) setMascotState("sad");
       return;
     }
 
     setIsSubmitting(true);
+    if (setMascotState) setMascotState("thinking");
+
     try {
       const payload = {
         loginType,
@@ -138,338 +199,556 @@ export const LoginForm = ({ onSuccess, setMascotState }) => {
       setIsSuccess(true);
 
       const defaultPasswords = [
-        "student123!",
-        "guru123!",
-        "admin123!",
-        "pplg123",
-        "123456",
-        "12345678",
-        "password",
-        "admin",
+        "student123!", "guru123!", "admin123!", "pplg123", "123456", "12345678", "password", "admin",
       ];
-      const isDefault =
-        defaultPasswords.includes(password.toLowerCase()) ||
-        password.trim() === identifier.trim();
+      const isDefault = defaultPasswords.includes(password.toLowerCase()) || password.trim() === identifier.trim();
 
       if (isDefault && typeof window !== "undefined") {
         localStorage.setItem("sc_must_change_password", "true");
-        sessionStorage.removeItem("sc_dismissed_pwd_warning");
       }
 
-      if (setMascotState) {
-        setMascotState(isDefault ? "notif" : "happy");
-      }
-
-      if (onSuccess) {
-        onSuccess(res);
-      }
+      if (setMascotState) setMascotState(isDefault ? "notif" : "love");
+      if (onSuccess) onSuccess(res);
     } catch (error) {
       const backendMessage =
         error?.response?.data?.message ||
         error?.data?.message ||
         error?.message ||
         "Gagal masuk. Silakan periksa kredensial Anda.";
-      setErrorMessage(backendMessage);
+      setLoginError(backendMessage);
       if (setMascotState) setMascotState("sad");
+
+      if (loginViewRef.current) {
+        gsap.fromTo(
+          loginViewRef.current,
+          { x: -8 },
+          { x: 8, duration: 0.08, repeat: 4, yoyo: true, ease: "sine.inOut" }
+        );
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Reset inputs when switching loginType
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    setIdentifier("");
-    setPassword("");
-    setErrorMessage("");
-  }, [loginType]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  // ─── FORGOT PASSWORD HANDLERS ───
+  const handleForgotRequest = async (e) => {
+    e.preventDefault();
+    setForgotError("");
+    setForgotMessage("");
 
-  // POST-LOGIN CELEBRATION SUCCESS SCREEN (Uses Mascot Exclusively & Doesn't Close Instantly)
+    if (!forgotIdentifier.trim()) {
+      setForgotError("NIS / NISN / NIP wajib diisi!");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const res = await apiClient.post("/api/auth/reset-password/request", {
+        identifier: forgotIdentifier.trim(),
+        reason: forgotReason.trim() || null,
+      });
+
+      const data = res?.data;
+      setForgotRequestId(data?.requestId);
+      setForgotMessage(res?.message || "Permohonan reset password berhasil diajukan.");
+      setForgotStep("pending");
+      if (setMascotState) setMascotState("notif");
+    } catch (err) {
+      setForgotError(err?.message || "Gagal mengajukan permohonan reset password.");
+      if (setMascotState) setMascotState("sad");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleCheckForgotStatus = async () => {
+    setForgotError("");
+    setForgotMessage("");
+
+    if (!forgotIdentifier.trim() && !forgotRequestId) {
+      setForgotError("Identitas akun wajib diisi.");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const endpoint = forgotIdentifier.trim()
+        ? `/api/auth/reset-password/status-by-identifier/${encodeURIComponent(forgotIdentifier.trim())}`
+        : `/api/auth/reset-password/status/${forgotRequestId}`;
+
+      const res = await apiClient.get(endpoint);
+      const data = res?.data;
+      if (data?.id) setForgotRequestId(data.id);
+
+      if (data?.isValidForReset) {
+        setForgotStep("set_new");
+        setForgotMessage("Permohonan Anda telah DISETUJUI Admin! Silakan buat password baru.");
+        if (setMascotState) setMascotState("happy");
+      } else if (data?.status === 2 || data?.statusText === "Rejected") {
+        setForgotError(`Permohonan ditolak Admin. ${data.adminNotes ? `Catatan: ${data.adminNotes}` : ""}`);
+        if (setMascotState) setMascotState("sad");
+      } else if (data?.status === 4 || data?.statusText === "Expired") {
+        setForgotError("Permohonan reset password sudah kadaluwarsa. Silakan ajukan ulang.");
+      } else if (data?.status === 3 || data?.statusText === "Consumed") {
+        setForgotError("Permohonan ini sudah digunakan. Silakan buat permohonan baru jika lupa password kembali.");
+      } else {
+        setForgotMessage("Permohonan Anda masih MENUNGGU persetujuan Admin.");
+        if (setMascotState) setMascotState("thinking");
+      }
+    } catch (err) {
+      setForgotError(err?.message || "Gagal mengecek status permohonan.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleConfirmNewPassword = async (e) => {
+    e.preventDefault();
+    setForgotError("");
+    setForgotMessage("");
+
+    if (!newPassword || newPassword.length < 6) {
+      setForgotError("Password baru minimal 6 karakter.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setForgotError("Konfirmasi password baru tidak cocok.");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      const res = await apiClient.post("/api/auth/reset-password/confirm", {
+        identifier: forgotIdentifier.trim(),
+        requestId: forgotRequestId || null,
+        newPassword,
+      });
+
+      setForgotMessage(res?.message || "Password berhasil diperbarui!");
+      setForgotStep("success");
+      if (setMascotState) setMascotState("love");
+    } catch (err) {
+      setForgotError(err?.message || "Gagal memperbarui password.");
+      if (setMascotState) setMascotState("sad");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  // ─── POST-LOGIN SUCCESS CELEBRATION ───
   if (isSuccess) {
-    const roleLabel =
-      loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin";
+    const roleLabel = loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin";
     const userName = successUserData?.fullName || successUserData?.name || identifier;
-    const isUsingDefaultPassword =
-      typeof window !== "undefined" &&
-      localStorage.getItem("sc_must_change_password") === "true";
+    const isUsingDefaultPassword = typeof window !== "undefined" && localStorage.getItem("sc_must_change_password") === "true";
 
     const handleProceed = () => {
       let dest = callbackUrl;
-      if (!searchParams.get("callbackUrl")) {
-        if (loginType === "Admin") dest = "/admin";
-        else dest = "/";
+      if (!searchParams?.get("callbackUrl")) {
+        dest = loginType === "Admin" ? "/admin" : "/";
       }
-      if (onSuccess) {
-        onSuccess(successUserData);
-      }
+      if (onSuccess) onSuccess(successUserData);
       router.push(dest);
     };
 
-    const handleOpenChangePassword = () => {
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("app:show-default-password-modal"));
-      }
-    };
-
     return (
-      <MotionDiv
-        initial={{ opacity: 0, scale: 0.9, rotateY: 90 }}
-        animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-        transition={{ duration: 0.5, type: "spring", stiffness: 300, damping: 24 }}
-        className="w-full py-4 flex flex-col items-center justify-center text-center space-y-4 font-sans"
-        style={{ transformStyle: "preserve-3d" }}
-      >
-        {/* Replyz Mascot Celebration Illustration Exclusively */}
-        <div className="relative p-3 bg-slate-900/90 border border-slate-700/80 rounded-3xl shadow-xl backdrop-blur-md flex items-center justify-center">
-          <BloubMascot size={110} state={isUsingDefaultPassword ? "idle" : "happy"} badge={false} />
+      <div className="w-full py-4 flex flex-col items-center justify-center text-center space-y-4 font-sans text-slate-900">
+        <div className="flex items-center justify-center">
+          <BloubMascot size={120} state={isUsingDefaultPassword ? "idle" : "love"} badge={false} />
         </div>
 
-        {/* Text Details */}
-        <div className="space-y-1.5 max-w-xs">
-          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[11px] font-black uppercase tracking-wider">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Login Berhasil
+        <div className="space-y-1.5 max-w-sm">
+          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-[11px] font-bold uppercase tracking-wider">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Login Berhasil
           </span>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl font-black text-black tracking-tight">
             Selamat Datang, {userName}!
           </h2>
-          <p className="text-xs text-blue-100/90 font-medium">
-            Akses portal sebagai <span className="font-extrabold text-amber-300">{roleLabel}</span> PPLG Center.
+          <p className="text-xs text-slate-700 font-medium">
+            Akses portal sebagai <span className="font-bold text-[#2c1ee8]">{roleLabel}</span> PPLG Center.
           </p>
 
           {isUsingDefaultPassword && (
-            <div className="mt-2 p-2.5 bg-amber-500/20 border border-amber-400/40 rounded-2xl text-[11px] text-amber-200 text-left flex items-start gap-2">
-              <ShieldAlert className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded text-xs text-amber-900 text-left flex items-start gap-2.5">
+              <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Peringatan Keamanan:</strong> Akunmu masih memakai password bawaan (default). Disarankan segera menggantinya.
+                <strong>Perhatian:</strong> Akun Anda masih menggunakan password default. Disarankan segera menggantinya di profil.
               </span>
             </div>
           )}
         </div>
 
-        {/* Action Buttons: User Controls When to Proceed */}
-        <div className="w-full max-w-xs pt-1 space-y-2">
-          {isUsingDefaultPassword && (
-            <button
-              type="button"
-              onClick={handleOpenChangePassword}
-              className="w-full py-2.5 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-lg transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              <span>Ganti Password Bawaan Sekarang</span>
-            </button>
-          )}
-
+        <div className="w-full max-w-xs pt-2">
           <button
             type="button"
             onClick={handleProceed}
-            className={`w-full py-3 px-5 rounded-2xl font-black text-xs shadow-xl transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 ${
-              isUsingDefaultPassword
-                ? "bg-white/20 hover:bg-white/30 text-white border border-white/30"
-                : "bg-white text-[#2c1ee8] hover:bg-slate-100 text-sm"
-            }`}
+            className="w-full py-3 px-4 bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-bold text-sm rounded-none transition-all flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wider"
           >
-            <span>{isUsingDefaultPassword ? "Lanjutkan ke Aplikasi Dulu" : "Lanjutkan ke Aplikasi"}</span>
-            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span>Lanjutkan ke Portal</span>
+            <Sparkles className="w-4 h-4" />
           </button>
         </div>
-      </MotionDiv>
+      </div>
     );
   }
 
   return (
-    <div className="w-full space-y-5 [perspective:1200px]">
-      {/* Interactive Role Selection Pills */}
-      <div className="space-y-1.5">
-        <label className="block text-[11px] font-black uppercase tracking-wider text-white/80">
-          Login Sebagai
-        </label>
-
-        <div className="grid grid-cols-3 p-1.5 bg-[#1e0873]/60 backdrop-blur-md rounded-2xl border border-white/20 gap-1 relative">
-          {[
-            { id: "Student", label: "Siswa", icon: GraduationCap },
-            { id: "Teacher", label: "Guru", icon: BookOpen },
-            { id: "Admin", label: "Admin", icon: ShieldAlert },
-          ].map((roleItem) => {
-            const isActive = loginType === roleItem.id;
-            const IconComponent = roleItem.icon;
-            return (
-              <button
-                key={roleItem.id}
-                type="button"
-                onClick={() => setLoginType(roleItem.id)}
-                className={`relative py-2.5 px-2 rounded-xl text-xs font-extrabold flex items-center justify-center transition-colors duration-200 cursor-pointer ${
-                  isActive
-                    ? roleItem.id === "Admin"
-                      ? "text-slate-950"
-                      : "text-[#2c1ee8]"
-                    : "text-white/70 hover:text-white"
-                }`}
-              >
-                {isActive && (
-                  <MotionDiv
-                    layoutId="activeRoleTab"
-                    transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                    className={`absolute inset-0 rounded-xl shadow-md ${
-                      roleItem.id === "Admin"
-                        ? "bg-amber-400 shadow-amber-500/20"
-                        : "bg-white shadow-black/20"
-                    }`}
-                  />
-                )}
-                <span className="relative z-10 flex items-center gap-1.5">
-                  <IconComponent
-                    className={`w-3.5 h-3.5 ${
-                      isActive
-                        ? roleItem.id === "Admin"
-                          ? "text-slate-950"
-                          : "text-[#2c1ee8]"
-                        : "text-white/70"
-                    }`}
-                  />
-                  <span>{roleItem.label}</span>
-                </span>
-              </button>
-            );
-          })}
+    <div className="w-full flex flex-col font-sans text-black">
+      {/* ─── SHARED STATIC HEADER (Fixed at top, never moves or jumps, unclipped logo) ─── */}
+      <div className="flex items-center gap-3.5 mb-6">
+        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible">
+          <Image
+            src="/images/logo.png"
+            alt="Logo SMKN 2 Surakarta"
+            width={56}
+            height={56}
+            className="object-contain w-auto h-auto max-h-14 max-w-14"
+            priority
+          />
+        </div>
+        <div className="flex flex-col justify-center">
+          <h1 className="text-xl sm:text-2xl font-black text-black tracking-wide uppercase leading-tight font-sans">
+            PPLG CENTER
+          </h1>
+          <p className="text-xs font-black text-black tracking-widest uppercase font-sans">
+            SMKN 2 SURAKARTA
+          </p>
         </div>
       </div>
 
-      {/* 3D ROTATION FLIP CONTAINER ON OPTION SELECT */}
-      <AnimatePresenceComponent mode="wait">
-        <MotionDiv
-          key={loginType}
-          initial={{ rotateY: -90, opacity: 0.1, scale: 0.94 }}
-          animate={{ rotateY: 0, opacity: 1, scale: 1 }}
-          exit={{ rotateY: 90, opacity: 0.1, scale: 0.94 }}
-          transition={{ duration: 0.42, type: "spring", stiffness: 280, damping: 24 }}
-          style={{ transformStyle: "preserve-3d", backfaceVisibility: "hidden" }}
-          className="w-full space-y-4"
+      {/* Hidden select for Playwright e2e */}
+      <select
+        name="loginType"
+        aria-label="Tipe Login"
+        value={loginType}
+        onChange={(e) => setLoginType(e.target.value)}
+        className="sr-only"
+      >
+        <option value="Student">Siswa</option>
+        <option value="Teacher">Guru</option>
+        <option value="Admin">Admin</option>
+      </select>
+
+      {/* ─── SLIDING FORM CONTAINER (Anchored Top for 0px Vertical Jitter) ─── */}
+      <div ref={slidingContainerRef} className="relative w-full overflow-hidden min-h-[340px]">
+        {/* ─── 1. LOGIN FORM VIEW ─── */}
+        <div
+          ref={loginViewRef}
+          className={`w-full space-y-5 absolute top-0 left-0 ${activeMode === "login" ? "block" : "hidden"}`}
         >
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-            {errorMessage && (
+          <form onSubmit={handleLoginSubmit} className="space-y-5" noValidate>
+            {loginError && (
               <ErrorAlert
                 title="Login Gagal"
-                message={errorMessage}
-                onClose={() => setErrorMessage("")}
+                message={loginError}
+                onClose={() => setLoginError("")}
               />
             )}
 
-            {/* Identifier Input */}
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-white/90">
-                {loginType === "Student"
-                  ? "NIS / NISN"
-                  : loginType === "Teacher"
-                  ? "NIP / Email"
-                  : "Email / Username Admin"}
+            {/* Field 1: NIS/NISN/NIP */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="identifier"
+                className="block text-xs font-black text-black tracking-wider uppercase font-sans"
+              >
+                NIS/NISN/NIP
               </label>
-              <Input
-                name="identifier"
-                type="text"
-                placeholder={
-                  loginType === "Student"
-                    ? "Masukkan NIS atau NISN"
-                    : loginType === "Teacher"
-                    ? "Masukkan NIP atau Email"
-                    : "Masukkan Email atau Username Admin"
-                }
-                isRequired
-                variant="dark"
-                leftIcon={<User className="w-4 h-4 text-[#2c1ee8]" />}
-                value={identifier}
-                onFocus={handleIdentifierFocus}
-                onChange={handleIdentifierChange}
-              />
+              <div className="relative w-full">
+                <input
+                  id="identifier"
+                  name="identifier"
+                  type="text"
+                  value={identifier}
+                  onFocus={handleIdentifierFocus}
+                  onChange={handleIdentifierChange}
+                  required
+                  className="w-full bg-white text-black font-semibold px-3.5 py-2.5 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm shadow-none"
+                />
+              </div>
             </div>
 
-            {/* Password Input */}
-            <div className="space-y-1">
-              <label className="block text-xs font-bold text-white/90">Password</label>
-              <Input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Masukkan password"
-                isRequired
-                variant="dark"
-                leftIcon={<Lock className="w-4 h-4 text-[#2c1ee8]" />}
-                onFocus={handlePasswordFocus}
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={togglePasswordVisibility}
-                    className="text-slate-400 hover:text-white transition-colors focus:outline-none cursor-pointer"
-                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                }
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            {/* Field 2: PASSWORD */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="password"
+                className="block text-xs font-black text-black tracking-wider uppercase font-sans"
+              >
+                PASSWORD
+              </label>
+              <div className="relative flex items-center w-full">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onFocus={handlePasswordFocus}
+                  onChange={handlePasswordChange}
+                  required
+                  className="w-full bg-white text-black font-semibold px-3.5 py-2.5 pr-10 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm shadow-none"
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-slate-700 transition-colors focus:outline-none cursor-pointer p-1"
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4 text-black" /> : <Eye className="w-4 h-4 text-black" />}
+                </button>
+              </div>
+
+              {/* "lupa" trigger */}
               <div className="flex justify-end pt-0.5">
                 <button
                   type="button"
-                  onClick={() => setIsForgotOpen(true)}
-                  className="text-xs font-semibold text-white/80 hover:text-white underline transition cursor-pointer"
+                  onClick={switchToForgot}
+                  className="text-xs text-[#2c1ee8] hover:text-[#2317be] italic transition-colors cursor-pointer font-bold"
                 >
-                  Lupa Password?
+                  lupa
                 </button>
               </div>
             </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              fullWidth
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
-              className={`font-black py-3.5 text-sm sm:text-base rounded-2xl mt-3 flex items-center justify-center gap-2 cursor-pointer transition-all duration-200 active:scale-[0.98] shadow-xl ${
-                loginType === "Admin"
-                  ? "!bg-amber-400 hover:!bg-amber-300 !text-slate-950 shadow-amber-500/20"
-                  : "!bg-white !text-[#2c1ee8] hover:!bg-slate-100 shadow-white/20"
-              }`}
-            >
-              {isSubmitting ? (
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-5 w-5 text-current"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  <span>Memverifikasi Akun...</span>
-                </div>
-              ) : (
-                `Masuk Sebagai ${
-                  loginType === "Student" ? "Siswa" : loginType === "Teacher" ? "Guru" : "Admin"
-                }`
-              )}
-            </Button>
+            {/* CTA Button: Solid Electric Royal Blue "#2c1ee8" */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-black text-base py-3 px-4 rounded-none transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center gap-2 tracking-wide font-sans shadow-none"
+              >
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Memproses...</span>
+                  </div>
+                ) : (
+                  <span className="font-black text-base">Login</span>
+                )}
+              </button>
+            </div>
           </form>
-        </MotionDiv>
-      </AnimatePresenceComponent>
+        </div>
 
-      {/* Forgot Password Modal */}
-      <ForgotPasswordModal isOpen={isForgotOpen} onClose={() => setIsForgotOpen(false)} />
+        {/* ─── 2. FORGOT PASSWORD FORM VIEW ─── */}
+        <div
+          ref={forgotViewRef}
+          className={`w-full space-y-4 absolute top-0 left-0 ${activeMode === "forgot" ? "block" : "hidden"}`}
+        >
+          {/* Sub-header navigation with back link */}
+          <div className="flex items-center justify-between pb-1">
+            <button
+              type="button"
+              onClick={switchToLogin}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2c1ee8] hover:text-[#2317be] transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Kembali ke Login</span>
+            </button>
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+              Lupa Password
+            </span>
+          </div>
+
+          {forgotError && (
+            <ErrorAlert
+              title="Perhatian"
+              message={forgotError}
+              onClose={() => setForgotError("")}
+            />
+          )}
+
+          {forgotMessage && (
+            <div className="p-3 rounded-none bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#2c1ee8] shrink-0" />
+              <span>{forgotMessage}</span>
+            </div>
+          )}
+
+          {/* STEP 1: Request Form */}
+          {forgotStep === "request" && (
+            <form onSubmit={handleForgotRequest} className="space-y-3.5">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-black tracking-wider uppercase font-sans">
+                  NIS / NISN / NIP
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type="text"
+                    placeholder="Masukkan NIS / NISN / NIP Anda"
+                    value={forgotIdentifier}
+                    onChange={(e) => setForgotIdentifier(e.target.value)}
+                    required
+                    className="w-full bg-white text-black font-semibold px-3.5 py-2.5 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-black tracking-wider uppercase font-sans">
+                  Alasan Lupa Password (Opsional)
+                </label>
+                <textarea
+                  value={forgotReason}
+                  onChange={(e) => setForgotReason(e.target.value)}
+                  placeholder="Contoh: Lupa kata sandi lama atau akun terkunci"
+                  className="w-full bg-white text-black font-medium border border-black rounded-none p-2.5 text-xs placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#2c1ee8] transition resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                className="w-full bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-black py-3 text-sm rounded-none transition-all cursor-pointer disabled:opacity-75 uppercase tracking-wider mt-1 flex items-center justify-center gap-2 font-sans"
+              >
+                {forgotLoading ? (
+                  <div className="flex items-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Mengirim Permohonan...</span>
+                  </div>
+                ) : (
+                  <span>Ajukan Reset Password</span>
+                )}
+              </button>
+
+              <div className="pt-1 text-center">
+                <button
+                  type="button"
+                  onClick={handleCheckForgotStatus}
+                  className="text-xs text-[#2c1ee8] hover:text-[#2317be] italic transition-colors cursor-pointer font-bold"
+                >
+                  Cek status persetujuan tiket sebelumnya
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 2: Pending Approval */}
+          {forgotStep === "pending" && (
+            <div className="space-y-3.5 text-center py-2">
+              <div className="w-12 h-12 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center mx-auto text-[#2c1ee8]">
+                <Clock className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="font-black text-black text-sm tracking-tight font-sans">
+                  Permohonan Menunggu Persetujuan
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5 leading-relaxed font-medium">
+                  Hubungi Admin / Guru Pembina untuk menyetujui tiket Anda.
+                </p>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-none border border-slate-300 text-left space-y-1 flex items-center justify-between">
+                <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider font-sans">
+                  Identitas Akun
+                </p>
+                <p className="font-mono text-xs text-[#2c1ee8] font-bold break-all">
+                  {forgotIdentifier}
+                </p>
+              </div>
+
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleCheckForgotStatus}
+                  disabled={forgotLoading}
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 text-xs rounded-none cursor-pointer transition-all uppercase tracking-wider flex items-center justify-center gap-2 font-sans"
+                >
+                  {forgotLoading ? "Memeriksa..." : "Cek Status Persetujuan Admin"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForgotStep("request")}
+                  className="text-xs text-slate-600 hover:text-black block mx-auto transition cursor-pointer font-bold"
+                >
+                  ← Ajukan Ulang / Ganti Identitas
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: Set New Password */}
+          {forgotStep === "set_new" && (
+            <form onSubmit={handleConfirmNewPassword} className="space-y-3">
+              <div className="p-2.5 rounded-none bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                <span>Permohonan Disetujui! Silakan buat password baru.</span>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-black text-black tracking-wider uppercase font-sans">
+                  Password Baru
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type="password"
+                    placeholder="Minimal 6 karakter"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="w-full bg-white text-black font-semibold px-3.5 py-2 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-xs font-black text-black tracking-wider uppercase font-sans">
+                  Konfirmasi Password Baru
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type="password"
+                    placeholder="Ulangi password baru"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full bg-white text-black font-semibold px-3.5 py-2 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 text-xs rounded-none transition-all cursor-pointer disabled:opacity-75 uppercase tracking-wider mt-2 font-sans"
+              >
+                {forgotLoading ? "Menyimpan..." : "Simpan Password Baru"}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 4: Success Message */}
+          {forgotStep === "success" && (
+            <div className="space-y-4 text-center py-4">
+              <div className="w-12 h-12 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center mx-auto text-emerald-600">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+
+              <div>
+                <h3 className="font-black text-black text-base tracking-tight font-sans">
+                  Password Berhasil Diperbarui!
+                </h3>
+                <p className="text-xs text-slate-600 mt-0.5 font-medium">
+                  Silakan login dengan password baru Anda.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={switchToLogin}
+                className="w-full bg-[#2c1ee8] hover:bg-[#2317be] text-white font-black py-2.5 text-xs rounded-none cursor-pointer transition-all uppercase tracking-wider font-sans"
+              >
+                Kembali ke Form Login
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using StudentCenter.Application.Services;
+using StudentCenter.Infrastructure.Data;
 
 namespace StudentCenter.Infrastructure.Services;
 
@@ -47,6 +50,7 @@ public class DailyQuizSchedulerWorker : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var topicService = scope.ServiceProvider.GetRequiredService<IDailyTopicService>();
         var aiGenerator = scope.ServiceProvider.GetRequiredService<IAiQuizGeneratorService>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var wibNow = DateTime.UtcNow.AddHours(7);
         var today = DateOnly.FromDateTime(wibNow);
@@ -76,5 +80,25 @@ public class DailyQuizSchedulerWorker : BackgroundService
                 _logger.LogWarning(ex, "Failed to finalize tomorrow's topic ({Date})", tomorrow);
             }
         }
+
+        // 3. Automated Cleanup: Hapus bank soal hari-hari lalu (TargetDate < today) agar DB tetap bersih & ringan
+        try
+        {
+            var oldQuestions = await dbContext.DailyQuizQuestions
+                .Where(q => q.TargetDate < today)
+                .ToListAsync();
+
+            if (oldQuestions.Count > 0)
+            {
+                dbContext.DailyQuizQuestions.RemoveRange(oldQuestions);
+                await dbContext.SaveChangesAsync();
+                _logger.LogInformation("Cleaned up {Count} expired quiz questions from previous days.", oldQuestions.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to cleanup expired daily quiz questions.");
+        }
     }
 }
+
