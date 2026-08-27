@@ -166,7 +166,7 @@ export default function Footer() {
               </div>
               <div className="flex flex-col leading-tight">
                 <span className="text-base font-bold text-white tracking-tight">
-                  Student Center
+                  PPLG Center
                 </span>
                 <span className="text-xs text-slate-400 font-medium">
                   SMKN 2 Surakarta
@@ -250,7 +250,7 @@ export default function Footer() {
         {/* Divider & Copyright */}
         <div className="mt-14 border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>
-            &copy; 2026 Student Center SMK Negeri 2 Surakarta. Semua Hak Cipta Dilindungi.
+            &copy; 2026 PPLG Center SMK Negeri 2 Surakarta. Semua Hak Cipta Dilindungi.
           </p>
           <div className="flex items-center gap-4 text-[11px] text-slate-400">
             <span>Portal Resmi Kesiswaan</span>
