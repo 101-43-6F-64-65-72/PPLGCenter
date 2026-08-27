@@ -50,6 +50,7 @@ import {
   Lightbulb,
   Dice5,
   Sliders,
+  Lock,
 } from "lucide-react";
 
 export default function KuisPage() {
@@ -360,29 +361,10 @@ function KuisContent() {
     }
   }, [timeLeft, gamePhase]);
 
-  // 5. Handle Start / Resume Quiz
+  // 5. Handle Start / Resume Quiz (Disabled during maintenance)
   const handleStartQuiz = async () => {
-    try {
-      setInfoLoading(true);
-      const res = await quizService.startQuiz();
-      const data = res?.data?.data !== undefined ? res.data.data : res?.data;
-
-      if (data && data.session && data.question) {
-        setCurrentSession(data.session);
-        setCurrentQuestion(data.question);
-        setSelectedOption(null);
-        setAnswerResult(null);
-        setGamePhase("playing");
-        setMascotState("happy");
-      } else {
-        startPracticeSession();
-      }
-    } catch (err) {
-      console.warn("Mulai kuis server:", err?.message || "Menggunakan Practice Engine");
-      startPracticeSession();
-    } finally {
-      setInfoLoading(false);
-    }
+    // Akses kuis dinonaktifkan sementara karena dalam masa pemeliharaan & pengembangan
+    return;
   };
 
   const startPracticeSession = () => {
@@ -789,10 +771,30 @@ function KuisContent() {
               >
                 {/* Hero / Main Quiz Info Card */}
                 <div className="bg-white rounded-none border border-slate-200 shadow-xs p-6 sm:p-8 relative text-left">
-                  <div className="space-y-3.5 max-w-2xl text-left">
+                  <div className="space-y-4 max-w-2xl text-left">
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-none bg-blue-50 text-[#2C1EE8] border border-blue-200 text-[10.5px] font-bold uppercase tracking-wider">
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>Kuis Harian Rekayasa Perangkat Lunak</span>
+                    </div>
+
+                    {/* Notice / Announcement: Under Development */}
+                    <div className="bg-amber-50 border border-amber-300 p-4 sm:p-5 flex items-start gap-3.5 text-left">
+                      <div className="p-2 bg-amber-100 border border-amber-300 text-amber-900 shrink-0">
+                        <AlertTriangle className="w-4 h-4 text-amber-700" />
+                      </div>
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-amber-200 text-amber-950 text-[10px] font-black uppercase tracking-wider">
+                            Pemberitahuan
+                          </span>
+                          <h4 className="text-xs sm:text-sm font-black text-amber-950 uppercase tracking-tight">
+                            Fitur Kuis Sedang Dalam Pengembangan
+                          </h4>
+                        </div>
+                        <p className="text-xs text-amber-900 font-normal leading-relaxed">
+                          Akses pengerjaan kuis harian untuk sementara kami tutup karena sedang dalam proses perbaikan sistem dan peningkatan fitur. Halaman kuis tetap dapat dilihat dan akan segera dibuka kembali setelah pembaruan selesai.
+                        </p>
+                      </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -820,29 +822,15 @@ function KuisContent() {
                       </span>
                     </div>
 
-                    {/* CTA Button & Fast Mode Switch */}
-                    <div className="pt-3 flex flex-col sm:flex-row items-center gap-2.5">
-                      <button
-                        onClick={handleStartQuiz}
-                        disabled={infoLoading}
-                        className="w-full sm:w-auto px-7 py-2.5 rounded-none bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-white" />
-                        <span>{quizInfo?.hasActiveSession ? "Lanjutkan Sesi Kuis" : "Mulai Kuis Sekarang"}</span>
-                      </button>
-
+                    {/* Disabled CTA Button for Maintenance */}
+                    <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5">
                       <button
                         type="button"
-                        onClick={() => setIsFastMode((prev) => !prev)}
-                        className={`w-full sm:w-auto px-4 py-2.5 rounded-none font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer border ${
-                          isFastMode
-                            ? "bg-amber-50 text-amber-900 border-amber-300"
-                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
-                        title="Mode Cepat: Langsung lanjut ke soal berikutnya setelah memilih jawaban"
+                        disabled
+                        className="w-full sm:w-auto px-6 py-2.5 rounded-none bg-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider border border-slate-300 flex items-center justify-center gap-2 cursor-not-allowed select-none"
                       >
-                        <Zap className={`w-3.5 h-3.5 ${isFastMode ? "text-amber-600 fill-amber-600" : "text-slate-400"}`} />
-                        <span>Mode Cepat: {isFastMode ? "Aktif" : "Nonaktif"}</span>
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Kuis Ditutup Sementara (Under Development)</span>
                       </button>
                     </div>
                   </div>
