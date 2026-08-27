@@ -367,7 +367,7 @@ public class QuizService : IQuizService
         try
         {
             var samuelUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.FullName.ToLower().Contains("samuel") || u.Username.ToLower().Contains("samuel"));
+                .FirstOrDefaultAsync(u => (u.FullName != null && EF.Functions.ILike(u.FullName, "%samuel%")) || (u.Username != null && EF.Functions.ILike(u.Username, "%samuel%")));
 
             if (samuelUser != null)
             {
@@ -451,7 +451,8 @@ public class QuizService : IQuizService
     public async Task<UserQuizProfileResponse> GetUserQuizStatsAsync(Guid userId)
     {
         var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-        var isSamuel = user?.FullName?.ToLower().Contains("samuel") == true || user?.Username?.ToLower().Contains("samuel") == true;
+        var isSamuel = (user?.FullName != null && user.FullName.IndexOf("samuel", StringComparison.OrdinalIgnoreCase) >= 0) 
+                    || (user?.Username != null && user.Username.IndexOf("samuel", StringComparison.OrdinalIgnoreCase) >= 0);
 
         if (isSamuel)
         {
@@ -504,7 +505,14 @@ public class QuizService : IQuizService
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.TargetDate == date && x.QuestionNumber == questionNumber);
 
-        if (q == null) return null;
+        if (q == null)
+        {
+            // Just-in-Time safeguard: in case student reaches a question before background staging finishes
+            var topic = await _topicService.GetSelectedTopicNameAsync(date);
+            var batch = await _aiGenerator.GenerateEndlessBatchAsync(date, topic, questionNumber, 5);
+            q = batch.FirstOrDefault(x => x.QuestionNumber == questionNumber);
+            if (q == null) return null;
+        }
 
         List<string> options;
         try

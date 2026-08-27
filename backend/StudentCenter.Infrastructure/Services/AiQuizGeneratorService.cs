@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
@@ -22,15 +23,18 @@ public class AiQuizGeneratorService : IAiQuizGeneratorService
     private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(60) };
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<AiQuizGeneratorService> _logger;
 
     public AiQuizGeneratorService(
         AppDbContext context,
         IConfiguration configuration,
+        IServiceScopeFactory scopeFactory,
         ILogger<AiQuizGeneratorService> logger)
     {
         _context = context;
         _configuration = configuration;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -105,7 +109,7 @@ Aturan Mutlak:
                 new { role = "user", content = userPrompt }
             },
             max_tokens = 3000,
-            temperature = 0.7,
+            temperature = 0.6,
             stream = false
         };
 
@@ -213,14 +217,12 @@ Aturan Mutlak:
     {
         if (string.IsNullOrWhiteSpace(text)) return "{}";
 
-        // If wrapped in ```json ... ```
         var match = Regex.Match(text, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.IgnoreCase);
         if (match.Success)
         {
             return match.Groups[1].Value.Trim();
         }
 
-        // Find outer curly braces
         int firstOpen = text.IndexOf('{');
         int lastClose = text.LastIndexOf('}');
         if (firstOpen >= 0 && lastClose > firstOpen)
@@ -233,7 +235,7 @@ Aturan Mutlak:
 
     public async Task<List<DailyQuizQuestion>> GenerateInitialDailyPoolAsync(DateOnly date, string topic)
     {
-        // 1. Wipe existing questions for this date to start completely fresh as requested
+        // 1. Wipe existing questions for this date to start completely fresh
         var existing = await _context.DailyQuizQuestions
             .Where(q => q.TargetDate == date)
             .ToListAsync();
@@ -242,65 +244,140 @@ Aturan Mutlak:
         {
             _context.DailyQuizQuestions.RemoveRange(existing);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Deleted {Count} old questions for date {Date} to re-generate fresh pool.", existing.Count, date);
+            _logger.LogInformation("Wiped {Count} previous questions for date {Date}.", existing.Count, date);
         }
 
-        _logger.LogInformation("Generating 30 fresh Daily Quiz Questions from AI for date {Date} topic '{Topic}'...", date, topic);
+        _logger.LogInformation("Generating Stage 1 (Initial Starter Pool 1-5) for date {Date} topic '{Topic}'...", date, topic);
 
-        // 2. Generate chunks (10 Easy, 10 Medium, 10 Hard)
-        var chunk1 = await GenerateQuestionsChunkAsync(topic, "easy", 10);
-        var chunk2 = await GenerateQuestionsChunkAsync(topic, "medium", 10);
-        var chunk3 = await GenerateQuestionsChunkAsync(topic, "hard", 10);
-
-        var allItems = new List<DailyQuizQuestion>();
+        // 2. Stage 1: Generate Starter 5 Questions (Fast & Immediate)
+        var stage1Chunk = await GenerateQuestionsChunkAsync(topic, "easy", 5);
+        var initialPool = new List<DailyQuizQuestion>();
         var seenQuestions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         int currentNum = 1;
 
-        void AddChunkItems(List<GeneratedQuestionJsonItem> chunk, string diff)
+        foreach (var item in stage1Chunk)
         {
-            foreach (var item in chunk)
-            {
-                var qText = item.question?.Trim();
-                if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText))
-                {
-                    continue;
-                }
-                seenQuestions.Add(qText);
-                allItems.Add(MapToEntity(item, date, topic, currentNum++, diff));
-            }
+            var qText = item.question?.Trim();
+            if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText)) continue;
+            seenQuestions.Add(qText);
+            initialPool.Add(MapToEntity(item, date, topic, currentNum++, "easy"));
         }
 
-        AddChunkItems(chunk1, "easy");
-        AddChunkItems(chunk2, "medium");
-        AddChunkItems(chunk3, "hard");
-
-        // If deduplication resulted in fewer than 30 questions, supplement with topic-matched questions
-        if (allItems.Count < 30)
+        if (initialPool.Count < 5)
         {
-            var supplements = GetFallbackQuestions(topic, "mixed", 30 - allItems.Count);
+            var supplements = GetFallbackQuestions(topic, "easy", 5 - initialPool.Count);
             foreach (var item in supplements)
             {
                 var qText = item.question?.Trim();
                 if (!string.IsNullOrWhiteSpace(qText) && !seenQuestions.Contains(qText))
                 {
                     seenQuestions.Add(qText);
-                    allItems.Add(MapToEntity(item, date, topic, currentNum++, item.difficulty ?? "easy"));
+                    initialPool.Add(MapToEntity(item, date, topic, currentNum++, "easy"));
                 }
             }
         }
 
-        // Sequential renumbering 1..N
-        for (int i = 0; i < allItems.Count; i++)
+        for (int i = 0; i < initialPool.Count; i++)
         {
-            allItems[i].QuestionNumber = i + 1;
+            initialPool[i].QuestionNumber = i + 1;
         }
 
-        // 3. Save to Database
-        _context.DailyQuizQuestions.AddRange(allItems);
+        // Save Stage 1 immediately so HTTP response is returned immediately (< 2-3 seconds)
+        _context.DailyQuizQuestions.AddRange(initialPool);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Successfully generated and saved {Count} fresh Daily Quiz Questions for date {Date}.", allItems.Count, date);
-        return allItems;
+        _logger.LogInformation("Stage 1 saved ({Count} questions). Spawning background staging for questions 6-30...", initialPool.Count);
+
+        // 3. Stage 2 & 3: Background Staging for Questions 6..15 and 16..30
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<AiQuizGeneratorService>>();
+
+                // Stage 2: Questions 6-15 (Medium)
+                logger.LogInformation("Generating Stage 2 (Questions 6-15) for date {Date} topic '{Topic}'...", date, topic);
+                var stage2Chunk = await GenerateQuestionsChunkAsync(topic, "medium", 10);
+                var stage2List = new List<DailyQuizQuestion>();
+                int s2Num = 6;
+
+                foreach (var item in stage2Chunk)
+                {
+                    var qText = item.question?.Trim();
+                    if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText)) continue;
+                    seenQuestions.Add(qText);
+                    stage2List.Add(MapToEntity(item, date, topic, s2Num++, "medium"));
+                }
+
+                if (stage2List.Count < 10)
+                {
+                    var supplements = GetFallbackQuestions(topic, "medium", 10 - stage2List.Count);
+                    foreach (var item in supplements)
+                    {
+                        var qText = item.question?.Trim();
+                        if (!string.IsNullOrWhiteSpace(qText) && !seenQuestions.Contains(qText))
+                        {
+                            seenQuestions.Add(qText);
+                            stage2List.Add(MapToEntity(item, date, topic, s2Num++, "medium"));
+                        }
+                    }
+                }
+
+                for (int i = 0; i < stage2List.Count; i++)
+                {
+                    stage2List[i].QuestionNumber = 6 + i;
+                }
+
+                db.DailyQuizQuestions.AddRange(stage2List);
+                await db.SaveChangesAsync();
+                logger.LogInformation("Stage 2 saved successfully (Questions 6-15).");
+
+                // Stage 3: Questions 16-30 (Hard)
+                logger.LogInformation("Generating Stage 3 (Questions 16-30) for date {Date} topic '{Topic}'...", date, topic);
+                var stage3Chunk = await GenerateQuestionsChunkAsync(topic, "hard", 15);
+                var stage3List = new List<DailyQuizQuestion>();
+                int s3Num = 16;
+
+                foreach (var item in stage3Chunk)
+                {
+                    var qText = item.question?.Trim();
+                    if (string.IsNullOrWhiteSpace(qText) || seenQuestions.Contains(qText)) continue;
+                    seenQuestions.Add(qText);
+                    stage3List.Add(MapToEntity(item, date, topic, s3Num++, "hard"));
+                }
+
+                if (stage3List.Count < 15)
+                {
+                    var supplements = GetFallbackQuestions(topic, "hard", 15 - stage3List.Count);
+                    foreach (var item in supplements)
+                    {
+                        var qText = item.question?.Trim();
+                        if (!string.IsNullOrWhiteSpace(qText) && !seenQuestions.Contains(qText))
+                        {
+                            seenQuestions.Add(qText);
+                            stage3List.Add(MapToEntity(item, date, topic, s3Num++, "hard"));
+                        }
+                    }
+                }
+
+                for (int i = 0; i < stage3List.Count; i++)
+                {
+                    stage3List[i].QuestionNumber = 16 + i;
+                }
+
+                db.DailyQuizQuestions.AddRange(stage3List);
+                await db.SaveChangesAsync();
+                logger.LogInformation("Stage 3 saved successfully (Questions 16-30). All 30 questions ready!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Background staging generation failed for date {Date}", date);
+            }
+        });
+
+        return initialPool;
     }
 
     public async Task<List<DailyQuizQuestion>> GenerateEndlessBatchAsync(DateOnly date, string topic, int startQuestionNumber, int count = 10)
@@ -430,7 +507,7 @@ Aturan Mutlak:
                 {
                     topic = topic,
                     difficulty = difficulty == "hard" ? "hard" : difficulty == "medium" ? "medium" : "easy",
-                    question = $"{q.Item1}" + (i >= securityQuestions.Length ? $" [Variasi {i + 1}]" : ""),
+                    question = $"{q.Item1}" + (i >= securityQuestions.Length ? $" [Bagian {i + 1}]" : ""),
                     code_snippet = null,
                     options = new List<string> { q.Item2, q.Item3, q.Item4, q.Item5 },
                     correct_answer_index = 0,
@@ -471,7 +548,7 @@ Aturan Mutlak:
             {
                 topic = topic,
                 difficulty = difficulty == "hard" ? "hard" : difficulty == "medium" ? "medium" : "easy",
-                question = q.Item1 + (i >= generalQuestions.Length ? $" [Variasi {i + 1}]" : ""),
+                question = q.Item1 + (i >= generalQuestions.Length ? $" [Bagian {i + 1}]" : ""),
                 code_snippet = null,
                 options = new List<string> { q.Item2, q.Item3, q.Item4, q.Item5 },
                 correct_answer_index = 0,
