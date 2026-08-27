@@ -117,6 +117,13 @@ export const quizService = {
   refreshQuestions: async () => {
     return await api.post("/api/quiz/admin/refresh-questions");
   },
+
+  /**
+   * Admin: Atur topik kustom dan generate 30 soal AI baru
+   */
+  setTopicAndGenerate: async (topicName, description = "") => {
+    return await api.post("/api/quiz/admin/set-topic-and-generate", { topicName, description });
+  },
 };
 
 export default quizService;

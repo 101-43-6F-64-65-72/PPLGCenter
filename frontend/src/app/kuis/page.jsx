@@ -45,6 +45,11 @@ import {
   Layers,
   BarChart3,
   Target,
+  Settings,
+  Wand2,
+  Lightbulb,
+  Dice5,
+  Sliders,
 } from "lucide-react";
 
 export default function KuisPage() {
@@ -183,6 +188,25 @@ function KuisContent() {
     percent: 0,
     isComplete: false,
   });
+
+  // Admin Custom Topic & Settings Modal State
+  const [isAdminSettingsModalOpen, setIsAdminSettingsModalOpen] = useState(false);
+  const [customTopicInput, setCustomTopicInput] = useState("");
+  const [customTopicDescInput, setCustomTopicDescInput] = useState("");
+
+  // Curated AI Suggestion Topics Pool (SMK RPL Kurikulum Merdeka)
+  const AI_TOPIC_SUGGESTIONS = [
+    { name: "Cyber Security & OWASP Top 10", desc: "Keamanan web, pencegahan SQL Injection, XSS, dan CSRF" },
+    { name: "RESTful API & JWT Authentication", desc: "Desain endpoint REST API, Token JWT, Middleware autentikasi" },
+    { name: "Git Branching & Workflow Kolaborasi", desc: "Git merge, conflict resolution, rebase, dan pull request" },
+    { name: "SQL Indexing, JOIN & Query Optimization", desc: "Relasi database, normalisasi data, query tuning, dan indexing" },
+    { name: "HTML5 Semantic & Modern CSS Flexbox/Grid", desc: "Struktur web semantik, tata letak responsif modern, dan UI/UX" },
+    { name: "JavaScript Asynchronous & DOM Manipulation", desc: "Event handling, async/await, fetch API, dan promise" },
+    { name: "OOP Inheritance & Clean Architecture", desc: "Pewarisan, polimorfisme, enkapsulasi, dan separation of concerns" },
+    { name: "React Hooks, State & Component Lifecycle", desc: "useState, useEffect, custom hooks, dan performa render" },
+    { name: "Clean Code & Refactoring Best Practices", desc: "Prinsip SOLID, penamaan variabel bersih, dan debugging efektif" },
+    { name: "Dasar Algoritma & Struktur Data Pemula", desc: "Array, stack, queue, sorting algoritma, dan logika percabangan" },
+  ];
 
   // Fast Mode State (Auto-advance to next question immediately on click)
   const [isFastMode, setIsFastMode] = useState(() => {
@@ -642,19 +666,37 @@ function KuisContent() {
   // 12. Handle Reset All Quiz Data (Restart the entire flow fresh)
   const handleResetQuizData = async () => {
     if (!confirm("Apakah Anda yakin ingin mereset seluruh data kuis dan memulai ulang dari awal?")) return;
+    setIsAdminSettingsModalOpen(false);
     await runWithAdminProgress("Reset Seluruh Data Kuis", () => quizService.resetAllQuizData());
   };
 
   // 13. Handle Refresh Random Topic (Admin)
   const handleRefreshRandomTopic = async () => {
-    if (!confirm("Acak topik baru hari ini dan langsung generate 30 soal baru dari AI?")) return;
+    setIsAdminSettingsModalOpen(false);
     await runWithAdminProgress("Mengacak Topik Baru Kuis", () => quizService.refreshRandomTopic());
   };
 
   // 14. Handle Refresh Questions (Admin)
   const handleRefreshQuestions = async () => {
-    if (!confirm("Generate ulang 30 butir soal baru dari AI untuk topik saat ini?")) return;
+    setIsAdminSettingsModalOpen(false);
     await runWithAdminProgress("Generate Ulang Soal AI", () => quizService.refreshQuestions());
+  };
+
+  // 15. Handle Save & Generate Custom Topic
+  const handleSaveAndGenerateCustomTopic = async (e) => {
+    if (e) e.preventDefault();
+    const topicToUse = customTopicInput.trim() || quizInfo?.topic || "Cyber Security Best Practices";
+    setIsAdminSettingsModalOpen(false);
+    await runWithAdminProgress(`Generate 30 Soal AI (${topicToUse})`, () =>
+      quizService.setTopicAndGenerate(topicToUse, customTopicDescInput.trim())
+    );
+  };
+
+  // 16. Pick Random Suggestion
+  const handlePickRandomSuggestion = () => {
+    const random = AI_TOPIC_SUGGESTIONS[Math.floor(Math.random() * AI_TOPIC_SUGGESTIONS.length)];
+    setCustomTopicInput(random.name);
+    setCustomTopicDescInput(random.desc);
   };
 
   // Helper Badge Color based on difficulty
@@ -755,52 +797,31 @@ function KuisContent() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                {/* Admin Quick Toolbar */}
+                {/* Admin Unified Control Bar */}
                 {isAdmin && (
-                  <div className="bg-white border-2 border-black rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 bg-black text-white text-[11px] font-black uppercase rounded-lg tracking-wider">
-                        Admin Controls
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-white border-2 border-black rounded-3xl shadow-xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-2.5 py-1 bg-black text-white text-[11px] font-black uppercase rounded-lg tracking-wider flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5 text-amber-400" />
+                        Admin Control
                       </span>
-                      <span className="text-xs text-slate-600 font-medium">
-                        Kontrol Cepat Soal & Topik Harian
+                      <span className="text-xs text-slate-600 font-medium hidden sm:inline">
+                        Kelola tema, saran pintar AI, dan generate soal kuis
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleRefreshRandomTopic}
-                        disabled={infoLoading}
-                        className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                        title="Acak topik hari ini & generate 30 soal baru dari AI"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Acak Topik Baru</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleRefreshQuestions}
-                        disabled={infoLoading}
-                        className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                        title="Buat ulang 30 soal AI untuk topik saat ini"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Generate Ulang Soal</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleResetQuizData}
-                        disabled={infoLoading}
-                        className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                        title="Reset seluruh sesi, leaderboard, dan data kuis"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Reset Semua</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomTopicInput(quizInfo?.topic || "");
+                        setCustomTopicDescInput(quizInfo?.topicDescription || "");
+                        setIsAdminSettingsModalOpen(true);
+                      }}
+                      className="px-4 py-2.5 bg-[#2c1ee8] hover:bg-blue-700 text-white rounded-2xl font-bold text-xs shadow-sm transition flex items-center gap-2 cursor-pointer active:scale-98 shrink-0"
+                    >
+                      <Settings className="w-4 h-4 text-blue-200" />
+                      <span>Pengaturan & Generator Kuis</span>
+                    </button>
                   </div>
                 )}
 
@@ -1456,40 +1477,18 @@ function KuisContent() {
               </div>
 
               {isAdmin && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleRefreshRandomTopic}
-                    disabled={infoLoading}
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                    title="Acak topik hari ini & generate 30 soal baru dari AI"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Acak Topik Baru</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleRefreshQuestions}
-                    disabled={infoLoading}
-                    className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                    title="Buat ulang 30 butir soal AI untuk topik aktif saat ini"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Generate Ulang Soal</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleResetQuizData}
-                    disabled={infoLoading}
-                    className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl font-bold text-xs transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                    title="Reset seluruh data sesi kuis, topik, dan generate ulang dari awal"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset Database</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomTopicInput(quizInfo?.topic || "");
+                    setCustomTopicDescInput(quizInfo?.topicDescription || "");
+                    setIsAdminSettingsModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 bg-slate-900 hover:bg-black text-white rounded-2xl font-bold text-xs shadow-sm transition flex items-center gap-2 cursor-pointer active:scale-98 shrink-0"
+                >
+                  <Settings className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Pengaturan & Generator Kuis</span>
+                </button>
               )}
             </div>
 
@@ -1694,6 +1693,149 @@ function KuisContent() {
                     {adminProgress.percent >= 100 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
                   </div>
                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+        {/* ── Admin Settings & AI Topic Generator Modal ── */}
+        <AnimatePresence>
+          {isAdminSettingsModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                className="w-full max-w-2xl bg-white border-2 border-black rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-left my-8"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#2c1ee8] flex items-center justify-center text-white font-bold shadow-md">
+                      <Settings className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">
+                        Pengaturan & Generator Kuis Harian
+                      </h3>
+                      <p className="text-xs text-slate-500 font-normal">
+                        Ketik topik mandiri, pilih rekomendasi kurikulum AI, dan buat 30 soal otomatis
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsAdminSettingsModalOpen(false)}
+                    className="p-2 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Form Input Topik */}
+                <form onSubmit={handleSaveAndGenerateCustomTopic} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Topik Materi Kuis (Bebas / Kustom)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={customTopicInput}
+                      onChange={(e) => setCustomTopicInput(e.target.value)}
+                      placeholder="Contoh: Next.js 15 Server Actions, PostgreSQL Indexing, Docker..."
+                      className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 focus:border-black text-sm font-semibold text-slate-900 outline-none transition bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Deskripsi Ringkas Materi (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      value={customTopicDescInput}
+                      onChange={(e) => setCustomTopicDescInput(e.target.value)}
+                      placeholder="Contoh: Pengujian pemahaman sintaks, logika, dan analisis error..."
+                      className="w-full px-4 py-2.5 rounded-2xl border border-slate-300 focus:border-black text-xs text-slate-700 outline-none transition bg-white"
+                    />
+                  </div>
+
+                  {/* AI Smart Suggestions Section */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#2c1ee8]" />
+                        Saran Topik Unggulan AI (Klik untuk Memilih):
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={handlePickRandomSuggestion}
+                        className="px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-[#2c1ee8] text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                        title="Pilihkan 1 topik rekomendasi secara acak"
+                      >
+                        <Dice5 className="w-3 h-3" />
+                        <span>Acak Saran AI</span>
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
+                      {AI_TOPIC_SUGGESTIONS.map((item, idx) => {
+                        const isSelected = customTopicInput.toLowerCase() === item.name.toLowerCase();
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setCustomTopicInput(item.name);
+                              setCustomTopicDescInput(item.desc);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer text-left border ${
+                              isSelected
+                                ? "bg-black text-white border-black shadow-xs font-bold"
+                                : "bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:text-[#2c1ee8]"
+                            }`}
+                          >
+                            <span>{item.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Modal Footer Actions */}
+                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200">
+                    <button
+                      type="button"
+                      onClick={handleResetQuizData}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Reset seluruh riwayat sesi, leaderboard, dan data kuis"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset Total Database</span>
+                    </button>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsAdminSettingsModalOpen(false)}
+                        className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                      >
+                        Batal
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={!customTopicInput.trim()}
+                        className="px-6 py-2.5 rounded-xl bg-[#2c1ee8] hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <Wand2 className="w-3.5 h-3.5" />
+                        <span>Simpan & Buat 30 Soal AI</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
               </motion.div>
             </div>
           )}

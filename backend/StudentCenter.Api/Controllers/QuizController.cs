@@ -344,6 +344,66 @@ public class QuizController : ControllerBase
     }
 
     /// <summary>
+    /// Admin: Atur topik kustom dan langsung generate 30 soal baru dari AI
+    /// </summary>
+    [HttpPost("admin/set-topic-and-generate")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SetTopicAndGenerate([FromBody] SetTopicAndGenerateRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.TopicName))
+        {
+            return BadRequest(new { success = false, message = "Nama topik kuis tidak boleh kosong." });
+        }
+
+        try
+        {
+            var today = GetWibDate();
+
+            // Archive old topics for today
+            var existingTopics = await _context.DailyQuizTopics
+                .Where(t => t.TargetDate == today)
+                .ToListAsync();
+
+            foreach (var t in existingTopics)
+            {
+                t.Status = "Archived";
+            }
+
+            var newTopic = new DailyQuizTopic
+            {
+                Id = Guid.NewGuid(),
+                TargetDate = today,
+                TopicName = request.TopicName.Trim(),
+                Description = string.IsNullOrWhiteSpace(request.Description) 
+                    ? "Topik kuis pilihan kurikulum Rekayasa Perangkat Lunak SMK Negeri 2 Surakarta." 
+                    : request.Description.Trim(),
+                ProposedByUserId = null,
+                ProposedByUserName = "Administrator",
+                VotesCount = 0,
+                Status = "Selected",
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.DailyQuizTopics.Add(newTopic);
+            await _context.SaveChangesAsync();
+
+            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, newTopic.TopicName);
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Topik berhasil diatur ke '{newTopic.TopicName}' dan {questions.Count} soal AI telah dibuat!",
+                topic = newTopic.TopicName,
+                questionsCount = questions.Count
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Reset dan bersihkan seluruh data kuis untuk memulai ulang alur dari awal
     /// </summary>
     [HttpPost("reset")]
@@ -381,4 +441,10 @@ public class QuizController : ControllerBase
 public class StartQuizRequest
 {
     public DateOnly? TargetDate { get; set; }
+}
+
+public class SetTopicAndGenerateRequest
+{
+    public string TopicName { get; set; } = string.Empty;
+    public string? Description { get; set; }
 }
