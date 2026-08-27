@@ -130,7 +130,9 @@ const PRACTICE_QUESTIONS = [
 
 function KuisContent() {
   const router = useRouter();
-  const { user, isAuthenticated, isTeacher, isAdmin } = useAuth();
+  const { user, isAuthenticated, role } = useAuth();
+  const isAdmin = role?.toString().toLowerCase() === "admin" || user?.role?.toString().toLowerCase() === "admin";
+  const isTeacher = role?.toString().toLowerCase() === "teacher" || user?.role?.toString().toLowerCase() === "teacher" || isAdmin;
 
   // Active Main Tab: "arena" | "leaderboard" | "teacher-voting"
   const [mainTab, setMainTab] = useState("arena");
