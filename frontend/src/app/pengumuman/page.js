@@ -229,7 +229,7 @@ export default function PengumumanPage() {
               </div>
 
               {/* Target Class Dropdown */}
-              <div className="relative shrink-0 min-w-[140px]">
+              <div className="relative shrink-0 w-full sm:w-auto sm:min-w-[140px]">
                 <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                 <select
                   value={activeClassFilter}

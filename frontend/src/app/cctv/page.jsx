@@ -125,35 +125,32 @@ export default function CctvPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white">
       <Navbar />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-6 gap-4">
-          <div>
-            <span className="inline-block px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold rounded-full mb-2">
-              Keamanan & Pemantauan Lab PPLG
-            </span>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <Camera className="w-8 h-8 text-cyan-400" />
-              <span>Sistem Pemantauan CCTV Subsystem</span>
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-4 text-left">
+        {/* Top Direct Action Toolbar */}
+        <div className="bg-white border border-slate-200 rounded-none p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 uppercase tracking-tight flex items-center gap-2">
+              <Camera className="w-4 h-4 text-[#2C1EE8]" />
+              <span>Sistem Pemantauan CCTV Laboratorium PPLG</span>
             </h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1">
+            <p className="text-xs text-slate-500 font-normal">
               Pemantauan kamera IP & WebRTC live stream lingkungan Laboratorium Rekayasa Perangkat Lunak.
             </p>
           </div>
 
           {isAdmin && (
-            <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
               <button
                 type="button"
                 onClick={handleDiscover}
                 disabled={discovering}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/30 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-none transition-colors cursor-pointer"
               >
-                <Search className="w-4 h-4" />
-                <span>{discovering ? "Pindai ONVIF..." : "Pindai Perangkat LAN"}</span>
+                <Search className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                <span>{discovering ? "Memindai..." : "Pindai LAN"}</span>
               </button>
 
               <button
@@ -162,25 +159,31 @@ export default function CctvPage() {
                   resetForm();
                   setActiveModal("add");
                 }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-cyan-600/20 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer"
               >
-                <PlusCircle className="w-4 h-4" />
-                <span>Tambah Kamera</span>
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>+ Tambah Kamera</span>
               </button>
             </div>
           )}
         </div>
 
-        {/* Global Alert */}
+        {/* Global Alert Notification */}
         {alertMessage && (
           <div
-            className={`p-4 rounded-xl text-xs sm:text-sm font-semibold border ${
+            className={`p-3 rounded-none text-xs font-semibold border flex items-center justify-between gap-3 ${
               alertMessage.type === "success"
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                : "bg-rose-50 border-rose-200 text-rose-800"
             }`}
           >
-            {alertMessage.text}
+            <span>{alertMessage.text}</span>
+            <button
+              onClick={() => setAlertMessage(null)}
+              className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -196,7 +199,10 @@ export default function CctvPage() {
             />
           </div>
         ) : loading ? (
-          <div className="py-20 text-center text-slate-500 text-xs">Memuat daftar kamera CCTV...</div>
+          <div className="py-20 text-center text-slate-400 text-xs font-bold uppercase tracking-wider">
+            <div className="w-5 h-5 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            Memuat daftar kamera CCTV...
+          </div>
         ) : cameras.length === 0 ? (
           <div className="py-6 w-full flex justify-center">
             <ErrorFallback
@@ -210,21 +216,21 @@ export default function CctvPage() {
           </div>
         ) : (
           /* Camera Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {cameras.map((cam) => (
               <div
                 key={cam.id}
-                className="bg-slate-800/50 border border-slate-700/60 rounded-2xl overflow-hidden flex flex-col shadow-xl"
+                className="bg-white border border-slate-200 rounded-none overflow-hidden flex flex-col shadow-xs"
               >
                 {/* Camera Video Stream Window */}
-                <div className="relative bg-slate-950 aspect-video flex items-center justify-center border-b border-slate-700/50 group">
+                <div className="relative bg-black aspect-video flex items-center justify-center border-b border-slate-200 group">
                   <div className="text-center p-4">
-                    <Radio className="w-8 h-8 text-cyan-400 animate-pulse mx-auto mb-2" />
-                    <span className="text-xs font-mono text-cyan-300 font-bold">Live Stream WebRTC (WHEP)</span>
-                    <p className="text-[10px] text-slate-500 font-mono mt-1">Host: {cam.host}:{cam.port}</p>
+                    <Radio className="w-6 h-6 text-[#2C1EE8] animate-pulse mx-auto mb-2" />
+                    <span className="text-xs font-mono text-white font-bold uppercase">Live Stream WebRTC (WHEP)</span>
+                    <p className="text-[10px] text-slate-400 font-mono mt-1">Host: {cam.host}:{cam.port}</p>
                   </div>
 
-                  <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 bg-slate-900/80 backdrop-blur-sm border border-slate-700 rounded-lg text-[10px] font-bold ${
+                  <div className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 bg-black/80 border border-slate-700 rounded-none text-[9.5px] font-bold font-mono ${
                     cam.status === "Online" || cam.status === 0
                       ? "text-emerald-400"
                       : cam.status === "Discovered" || cam.status === 6
@@ -233,7 +239,7 @@ export default function CctvPage() {
                       ? "text-amber-400"
                       : "text-rose-400"
                   }`}>
-                    <span className={`w-2 h-2 rounded-full ${
+                    <span className={`w-1.5 h-1.5 rounded-none ${
                       cam.status === "Online" || cam.status === 0 ? "bg-emerald-500 animate-ping" : "bg-slate-500"
                     }`} />
                     <span>
@@ -242,7 +248,7 @@ export default function CctvPage() {
                         : cam.status === 6 || cam.status === "Discovered"
                         ? "DISCOVERED"
                         : cam.status === 7 || cam.status === "PendingVerification"
-                        ? "PENDING VERIFICATION"
+                        ? "PENDING"
                         : cam.status === 8 || cam.status === "Error"
                         ? "ERROR"
                         : cam.status === 1 || cam.status === "Offline"
@@ -250,52 +256,51 @@ export default function CctvPage() {
                         : "DEGRADED"}
                     </span>
                   </div>
-
                 </div>
 
                 {/* Camera Information & Actions */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
                   <div>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-extrabold text-white text-sm">{cam.name}</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-bold text-slate-900 text-xs sm:text-sm uppercase truncate">{cam.name}</h3>
                       <span
-                        className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                        className={`text-[9.5px] px-1.5 py-0.2 rounded-none font-mono font-bold uppercase border ${
                           cam.isEnabled
-                            ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                            : "bg-slate-700 text-slate-400"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : "bg-slate-100 text-slate-500 border-slate-200"
                         }`}
                       >
                         {cam.isEnabled ? "Aktif" : "Nonaktif"}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">Lokasi: {cam.location}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 font-normal">Lokasi: {cam.location}</p>
                     {cam.description && (
-                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{cam.description}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1 font-normal">{cam.description}</p>
                     )}
                   </div>
 
                   {isAdmin && (
-                    <div className="pt-2 border-t border-slate-700/50 flex items-center justify-between">
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => handleToggle(cam.id, cam.isEnabled)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${
                           cam.isEnabled
-                            ? "bg-slate-700 hover:bg-slate-600 text-slate-300"
-                            : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                            ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
+                            : "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
                         }`}
                       >
-                        <Power className="w-3.5 h-3.5" />
+                        <Power className="w-3 h-3" />
                         <span>{cam.isEnabled ? "Matikan" : "Aktifkan"}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleDelete(cam.id)}
-                        className="p-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white transition-all cursor-pointer"
+                        className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                         title="Hapus Kamera"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   )}
@@ -308,29 +313,29 @@ export default function CctvPage() {
 
       {/* Discovery Modal */}
       {activeModal === "discover" && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 text-slate-100 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Search className="w-5 h-5 text-cyan-400" />
-              <span>Perangkat CCTV ONVIF Ditemukan di LAN</span>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-none max-w-lg w-full p-5 sm:p-6 text-slate-900 shadow-xl space-y-3 text-left">
+            <h3 className="text-base font-bold text-slate-900 uppercase flex items-center gap-2">
+              <Search className="w-4 h-4 text-[#2C1EE8]" />
+              <span>Perangkat CCTV ONVIF di LAN</span>
             </h3>
 
-            <div className="space-y-2.5 max-h-60 overflow-y-auto">
+            <div className="space-y-2 max-h-60 overflow-y-auto">
               {discoveredCameras.map((dev, idx) => (
                 <div
                   key={idx}
-                  className="p-3 bg-slate-900/80 border border-slate-700/60 rounded-xl flex items-center justify-between text-xs"
+                  className="p-2.5 bg-slate-50 border border-slate-200 rounded-none flex items-center justify-between text-xs"
                 >
                   <div>
-                    <p className="font-bold text-white">{dev.deviceName}</p>
-                    <p className="text-[10px] text-slate-400 font-mono">
+                    <p className="font-bold text-slate-900 uppercase">{dev.deviceName}</p>
+                    <p className="text-[10px] text-slate-500 font-mono">
                       {dev.manufacturer} ({dev.model}) • IP: {dev.ipAddress}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => selectDiscovered(dev)}
-                    className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] rounded-xl cursor-pointer"
+                    className="px-3 py-1 bg-[#2C1EE8] hover:bg-[#2013ce] text-white font-bold text-[10.5px] uppercase tracking-wider rounded-none cursor-pointer"
                   >
                     Pilih
                   </button>
@@ -338,11 +343,11 @@ export default function CctvPage() {
               ))}
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-none text-xs font-bold uppercase tracking-wider text-slate-700 cursor-pointer"
               >
                 Tutup
               </button>
@@ -353,96 +358,95 @@ export default function CctvPage() {
 
       {/* Add Camera Modal */}
       {activeModal === "add" && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 text-slate-100 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-white">Tambah Kamera CCTV Baru</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-none max-w-md w-full p-5 sm:p-6 text-slate-900 shadow-xl space-y-3 text-left">
+            <h3 className="text-base font-bold text-slate-900 uppercase">Tambah Kamera CCTV Baru</h3>
 
-            <form onSubmit={handleCreateCamera} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateCamera} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Nama Kamera:</label>
+                <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Nama Kamera <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Kamera Lab PPLG 1"
                   value={camName}
                   onChange={(e) => setCamName(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:border-cyan-500 focus:outline-hidden"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:border-[#2C1EE8] focus:bg-white outline-none font-semibold"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Lokasi Penempatan:</label>
+                <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Lokasi Penempatan <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
                   placeholder="Contoh: Lab Komputer A"
                   value={camLoc}
                   onChange={(e) => setCamLoc(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:border-cyan-500 focus:outline-hidden"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:border-[#2C1EE8] focus:bg-white outline-none font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
-                  <label className="block text-slate-400 mb-1 font-semibold">Host IP (Privat LAN):</label>
+                  <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Host IP (LAN) <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     required
                     placeholder="192.168.10.101"
                     value={camHost}
                     onChange={(e) => setCamHost(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:border-cyan-500 focus:outline-hidden"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 font-mono focus:border-[#2C1EE8] focus:bg-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Port RTSP:</label>
+                  <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Port RTSP</label>
                   <input
                     type="number"
                     required
                     value={camPort}
                     onChange={(e) => setCamPort(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:border-cyan-500 focus:outline-hidden"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 font-mono focus:border-[#2C1EE8] focus:bg-white outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Username Kamera:</label>
+                  <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Username</label>
                   <input
                     type="text"
                     required
                     value={camUsername}
                     onChange={(e) => setCamUsername(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:border-cyan-500 focus:outline-hidden"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 font-mono focus:border-[#2C1EE8] focus:bg-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Password Kamera:</label>
+                  <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Password</label>
                   <input
                     type="password"
-                    required
                     placeholder="••••••••"
                     value={camPassword}
                     onChange={(e) => setCamPassword(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono focus:border-cyan-500 focus:outline-hidden"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 font-mono focus:border-[#2C1EE8] focus:bg-white outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 justify-end pt-2">
+              <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setActiveModal(null)}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl font-semibold cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none font-bold uppercase tracking-wider text-xs cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-white cursor-pointer"
+                  className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white rounded-none font-bold uppercase tracking-wider text-xs cursor-pointer shadow-xs"
                 >
-                  Simpan & Verifikasi
+                  Simpan Kamera
                 </button>
               </div>
             </form>

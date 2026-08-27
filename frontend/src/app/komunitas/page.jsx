@@ -935,74 +935,66 @@ function KomunitasContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white">
       <Navbar />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-6">
-        {/* Top Header Card */}
-        <div id="komunitas-header-card" className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
-          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-4">
+        {/* Top Direct Action Toolbar */}
+        <div className="bg-white border border-slate-200 rounded-none p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+          <div className="space-y-0.5">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 uppercase tracking-tight flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#2C1EE8]" />
+              <span>Komunitas & Diskusi Siswa RPL</span>
+            </h1>
+            <p className="text-xs text-slate-500 font-normal">
+              Ruang koordinasi kelas, kelompok belajar, dan diskusi materi kejuruan.
+            </p>
+          </div>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
-                <Users className="w-3.5 h-3.5" />
-                <span>Kolaborasi & Forum Komunitas PPLG</span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Komunitas & Diskusi Siswa
-              </h1>
-              <p className="text-sm text-slate-600 max-w-2xl">
-                Wadah diskusi kelompok belajar, proyek aplikasi bersama, dan ruang koordinasi antarkelas kejuruan PPLG.
-              </p>
-            </div>
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={() => setInboxModalOpen(true)}
+                className="relative inline-flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-none transition-colors cursor-pointer"
+              >
+                <Mail className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                <span>Inbox</span>
+                {inboxCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-none bg-rose-500 text-white font-mono font-bold text-[9.5px]">
+                    {inboxCount}
+                  </span>
+                )}
+              </button>
+            )}
 
-            <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto shrink-0">
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => setInboxModalOpen(true)}
-                  className="relative inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all shadow-2xs cursor-pointer"
-                >
-                  <Mail className="w-4 h-4 text-[#2C1EE8]" />
-                  <span>Inbox Undangan</span>
-                  {inboxCount > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-rose-500 text-white font-black text-[10px] flex items-center justify-center animate-pulse">
-                      {inboxCount}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {isAuthenticated ? (
-                <button
-                  id="buat-komunitas-btn"
-                  type="button"
-                  onClick={() => setCreateModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>Buat Komunitas</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>Login untuk Bergabung</span>
-                </button>
-              )}
-            </div>
+            {isAuthenticated ? (
+              <button
+                id="buat-komunitas-btn"
+                type="button"
+                onClick={() => setCreateModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>+ Buat Komunitas</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsLoginModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Login untuk Bergabung</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Global Alert Notification */}
         {alertMessage && (
           <div
-            className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold border flex items-center justify-between gap-3 animate-fade-in ${
+            className={`p-3 rounded-none text-xs font-semibold border flex items-center justify-between gap-3 ${
               alertMessage.type === "success"
                 ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                 : "bg-rose-50 border-rose-200 text-rose-800"
@@ -1013,48 +1005,48 @@ function KomunitasContent() {
               onClick={() => setAlertMessage(null)}
               className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
 
         {/* Main 2-Column Workspace Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start text-left">
           {/* Left Column: Group Directory */}
-          <div className="lg:col-span-1 bg-white border border-slate-200 rounded-[28px] p-5 space-y-4 shadow-xs">
+          <div className="lg:col-span-1 bg-white border border-slate-200 rounded-none p-4 space-y-3 shadow-xs">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#2C1EE8]" />
+              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#2C1EE8]" />
                 <span>Daftar Komunitas</span>
               </h2>
-              <span className="text-[11px] bg-blue-50 text-[#2C1EE8] font-bold px-2.5 py-0.5 rounded-full">
+              <span className="text-[10px] bg-blue-50 text-[#2C1EE8] border border-blue-200 font-mono font-bold px-2 py-0.2 rounded-none">
                 {sortedGroups.length} Grup
               </span>
             </div>
 
             {/* Search Input Bar */}
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Cari komunitas..."
+                placeholder="Cari nama komunitas..."
                 value={searchGroupQuery}
                 onChange={(e) => setSearchGroupQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-8 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-none pl-8 pr-7 py-1.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#2C1EE8] outline-none transition-colors"
               />
               {searchGroupQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchGroupQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                 </button>
               )}
             </div>
 
             {/* Category Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
               {[
                 { id: "ALL", label: "Semua" },
                 { id: "STUDENT_GROUPS", label: "Siswa" },
@@ -1066,10 +1058,10 @@ function KomunitasContent() {
                 <button
                   key={f.id}
                   onClick={() => setCategoryFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all shrink-0 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-none text-[10.5px] font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer border ${
                     categoryFilter === f.id
-                      ? "bg-[#2C1EE8] text-white shadow-2xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"
                   }`}
                 >
                   {f.label}
@@ -1078,16 +1070,16 @@ function KomunitasContent() {
             </div>
 
             {loadingGroups ? (
-              <div className="text-slate-400 text-xs py-12 text-center font-medium">
-                <div className="w-6 h-6 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <div className="text-slate-400 text-xs py-10 text-center font-bold uppercase tracking-wider">
+                <div className="w-5 h-5 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                 Memuat komunitas...
               </div>
             ) : sortedGroups.length === 0 ? (
-              <div className="text-slate-400 text-xs py-10 text-center bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-slate-400 text-xs py-8 text-center bg-slate-50 rounded-none border border-slate-200 font-medium">
                 Belum ada grup komunitas terdaftar.
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
                 {sortedGroups.map((group) => {
                   const isAccepted = group.myStatus === "Accepted" || group.myStatus === 1;
                   const isPending = group.myStatus === "Pending" || group.myStatus === 0;
@@ -1098,47 +1090,47 @@ function KomunitasContent() {
                     <div
                       key={group.id}
                       onClick={() => handleSelectGroup(group)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative group ${
+                      className={`p-3 rounded-none border transition-colors cursor-pointer relative group ${
                         isSelected
-                          ? "bg-white border-[#2C1EE8] shadow-md border-l-4 border-l-[#2C1EE8] translate-x-0.5"
-                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs"
+                          ? "bg-blue-50/50 border-[#2C1EE8] border-l-2 border-l-[#2C1EE8]"
+                          : "bg-white border-slate-200 hover:border-slate-300"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-1.5 leading-snug">
-                            {isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />}
+                          <h3 className="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 leading-snug uppercase">
+                            {isPinned && <Pin className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
                             <span className="truncate">{group.name}</span>
                           </h3>
-                          <p className="text-slate-500 text-xs mt-1 line-clamp-2 leading-relaxed">
+                          <p className="text-slate-500 text-[11px] mt-0.5 line-clamp-2 leading-relaxed font-normal">
                             {group.description}
                           </p>
                         </div>
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <div className="flex flex-col items-end gap-1 shrink-0">
                           <button
                             type="button"
                             onClick={(e) => togglePinGroup(group.id, e)}
-                            className="p-1 text-slate-300 hover:text-amber-500 transition-colors rounded-lg hover:bg-slate-50"
+                            className="p-1 text-slate-300 hover:text-amber-500 transition-colors cursor-pointer"
                             title={isPinned ? "Lepaskan Pin" : "Sematkan Grup"}
                           >
-                            <Pin className={`w-3.5 h-3.5 ${isPinned ? "text-amber-500 fill-amber-500" : "opacity-0 group-hover:opacity-100"}`} />
+                            <Pin className={`w-3 h-3 ${isPinned ? "text-amber-500 fill-amber-500" : "opacity-0 group-hover:opacity-100"}`} />
                           </button>
-                          <span className="text-[10px] bg-slate-50 text-slate-600 border border-slate-100 px-2 py-0.5 rounded-full font-semibold">
+                          <span className="text-[9.5px] bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.2 rounded-none font-mono">
                             {group.memberCount} Anggota
                           </span>
                         </div>
                       </div>
 
-                      <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                        <span className="truncate max-w-[140px]">
-                          Oleh: <strong className="text-slate-700 font-bold">{group.creatorName}</strong>
+                      <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px] text-slate-500">
+                        <span className="truncate max-w-[130px] font-mono">
+                          Oleh: <strong className="text-slate-700">{group.creatorName}</strong>
                         </span>
                         {isAccepted ? (
-                          <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                          <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.2 rounded-none border border-emerald-200 uppercase text-[9.5px]">
                             Terdaftar
                           </span>
                         ) : isPending ? (
-                          <span className="text-amber-700 font-bold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-100">
+                          <span className="text-amber-700 font-bold bg-amber-50 px-2 py-0.2 rounded-none border border-amber-200 uppercase text-[9.5px]">
                             Menunggu
                           </span>
                         ) : (
@@ -1148,7 +1140,7 @@ function KomunitasContent() {
                               e.stopPropagation();
                               handleJoinGroup(group.id);
                             }}
-                            className="text-[#2C1EE8] font-bold hover:underline cursor-pointer bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 hover:bg-blue-100 transition-colors"
+                            className="text-[#2C1EE8] font-bold uppercase text-[9.5px] tracking-wider cursor-pointer bg-blue-50 px-2 py-0.5 rounded-none border border-blue-200 hover:bg-blue-100 transition-colors"
                           >
                             Gabung →
                           </button>
@@ -1162,31 +1154,31 @@ function KomunitasContent() {
           </div>
 
           {/* Right Column: Chat & Community Workspace */}
-          <div className={`lg:col-span-2 bg-white border border-slate-200 rounded-[28px] p-6 flex flex-col h-[650px] relative ${activeMenuMsg !== null ? "overflow-visible z-30" : "overflow-hidden"} shadow-xs`}>
+          <div className={`lg:col-span-2 bg-white border border-slate-200 rounded-none p-4 sm:p-5 flex flex-col h-[650px] relative ${activeMenuMsg !== null ? "overflow-visible z-30" : "overflow-hidden"} shadow-xs`}>
 
             {!selectedGroup ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center text-[#2C1EE8]">
-                  <MessageSquare className="w-7 h-7" />
+              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 text-xs space-y-2">
+                <div className="w-12 h-12 rounded-none bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2C1EE8]">
+                  <MessageSquare className="w-6 h-6" />
                 </div>
-                <p className="font-semibold text-slate-600 text-sm">Pilih Komunitas untuk Mulai Berdiskusi</p>
-                <p className="text-slate-400 max-w-xs text-center">
+                <p className="font-bold text-slate-700 text-xs sm:text-sm uppercase">Pilih Komunitas untuk Mulai Berdiskusi</p>
+                <p className="text-slate-400 max-w-xs text-center font-normal">
                   Klik salah satu grup di sebelah kiri untuk melihat pesan, mengirim materi, atau berkolaborasi.
                 </p>
               </div>
             ) : selectedGroup.myStatus !== "Accepted" &&
               selectedGroup.myStatus !== 1 &&
               user?.role !== "Admin" ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-600 text-xs p-6 text-center space-y-4">
-                <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center text-3xl border border-blue-100 text-[#2C1EE8]">
-                  <Lock className="w-8 h-8" />
+              <div className="flex-1 flex flex-col items-center justify-center text-slate-600 text-xs p-6 text-center space-y-3">
+                <div className="w-12 h-12 rounded-none bg-blue-50 flex items-center justify-center border border-blue-100 text-[#2C1EE8]">
+                  <Lock className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">{selectedGroup.name}</h3>
-                <p className="max-w-md text-slate-500">{selectedGroup.description}</p>
+                <h3 className="text-base font-bold text-slate-900 uppercase">{selectedGroup.name}</h3>
+                <p className="max-w-md text-slate-500 font-normal">{selectedGroup.description}</p>
                 <button
                   type="button"
                   onClick={() => handleJoinGroup(selectedGroup.id)}
-                  className="px-6 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                  className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer"
                 >
                   Minta Bergabung ke Komunitas
                 </button>
@@ -1194,17 +1186,17 @@ function KomunitasContent() {
             ) : (
               <div className="flex flex-col h-full space-y-3">
                 {/* Group Workspace Header */}
-                <div className="pb-3 border-b border-slate-100 flex items-center justify-between gap-3">
+                <div className="pb-2.5 border-b border-slate-100 flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 uppercase">
                       <span>{selectedGroup.name}</span>
                       {isGroupAdmin && (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-black uppercase">
+                        <span className="px-1.5 py-0.2 rounded-none bg-amber-50 text-amber-800 border border-amber-200 text-[9.5px] font-bold uppercase font-mono">
                           Admin Grup
                         </span>
                       )}
                     </h3>
-                    <p className="text-slate-500 text-xs line-clamp-1">{selectedGroup.description}</p>
+                    <p className="text-slate-500 text-[11px] line-clamp-1 font-normal">{selectedGroup.description}</p>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -1212,14 +1204,14 @@ function KomunitasContent() {
                     <button
                       type="button"
                       onClick={() => setIsChatSearchOpen(!isChatSearchOpen)}
-                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                      className={`p-1.5 rounded-none border transition-colors cursor-pointer ${
                         isChatSearchOpen
                           ? "bg-blue-50 border-blue-200 text-[#2C1EE8]"
                           : "bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                       }`}
                       title="Cari Pesan dalam Komunitas"
                     >
-                      <Search className="w-4 h-4" />
+                      <Search className="w-3.5 h-3.5" />
                     </button>
 
                     {/* Invite Button ONLY for Group Admins/Teachers/Global Admins */}
@@ -1227,9 +1219,9 @@ function KomunitasContent() {
                       <button
                         type="button"
                         onClick={() => setInviteModalOpen(true)}
-                        className="px-3 py-1.5 rounded-xl bg-blue-50 text-[#2C1EE8] border border-blue-200 text-xs font-bold hover:bg-blue-100 transition-all flex items-center gap-1.5 cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-none bg-blue-50 text-[#2C1EE8] border border-blue-200 text-xs font-bold uppercase tracking-wider hover:bg-blue-100 transition-colors flex items-center gap-1 cursor-pointer"
                       >
-                        <UserPlus className="w-3.5 h-3.5" />
+                        <UserPlus className="w-3 h-3" />
                         <span>Undang</span>
                       </button>
                     )}
@@ -1237,10 +1229,10 @@ function KomunitasContent() {
                     <button
                       type="button"
                       onClick={() => setInfoDrawerOpen(!infoDrawerOpen)}
-                      className="p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 transition-all cursor-pointer hover:bg-slate-100"
+                      className="p-1.5 rounded-none bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer hover:bg-slate-100"
                       title="Informasi Komunitas"
                     >
-                      <Info className="w-4 h-4" />
+                      <Info className="w-3.5 h-3.5" />
                     </button>
 
                     {/* Leave Group Button for Regular Members */}
@@ -1248,10 +1240,10 @@ function KomunitasContent() {
                       <button
                         type="button"
                         onClick={handleLeaveGroup}
-                        className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-all cursor-pointer"
+                        className="p-1.5 rounded-none bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
                         title="Keluar Komunitas"
                       >
-                        <LogOut className="w-4 h-4" />
+                        <LogOut className="w-3.5 h-3.5" />
                       </button>
                     )}
 
@@ -1263,10 +1255,10 @@ function KomunitasContent() {
                           setDeletingGroup(selectedGroup);
                           setDeleteModalOpen(true);
                         }}
-                        className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-all cursor-pointer"
+                        className="p-1.5 rounded-none bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
                         title="Hapus Komunitas"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -1274,14 +1266,14 @@ function KomunitasContent() {
 
                 {/* In-Chat Search Bar */}
                 {isChatSearchOpen && (
-                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <Search className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-none p-1.5">
+                    <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                     <input
                       type="text"
                       placeholder="Cari kata kunci pesan atau dokumen..."
                       value={chatSearchQuery}
                       onChange={(e) => setChatSearchQuery(e.target.value)}
-                      className="flex-1 bg-transparent text-xs text-slate-900 placeholder-slate-400 focus:outline-hidden font-medium"
+                      className="flex-1 bg-transparent text-xs text-slate-900 placeholder:text-slate-400 outline-none font-medium"
                     />
                     {chatSearchQuery && (
                       <button
@@ -1289,25 +1281,24 @@ function KomunitasContent() {
                         onClick={() => setChatSearchQuery("")}
                         className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-3 h-3" />
                       </button>
                     )}
                   </div>
                 )}
 
-
                 {/* Pinned Announcement Banner */}
                 {pinnedAnnouncement && (
-                  <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs text-amber-900 shadow-2xs">
+                  <div className="bg-amber-50 border border-amber-200 rounded-none p-2 flex items-center justify-between gap-2 text-xs text-amber-900">
                     <div className="flex items-center gap-2 truncate">
-                      <Pin className="w-4 h-4 text-amber-600 fill-amber-600 shrink-0" />
-                      <div className="flex flex-col truncate">
+                      <Pin className="w-3.5 h-3.5 text-amber-600 fill-amber-600 shrink-0" />
+                      <div className="flex flex-col truncate text-left">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-extrabold text-[10px] text-amber-800 uppercase tracking-wider">
+                          <span className="font-bold text-[9.5px] text-amber-800 uppercase tracking-wider">
                             Pesan Disematkan oleh {pinnedAnnouncement.sender || "Admin"}
                           </span>
                           {pinnedAnnouncement.expiry && (
-                            <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md font-mono shrink-0">
+                            <span className="text-[9.5px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded-none font-mono shrink-0">
                               ⏱️ sisa: {(() => {
                                 const remainingMs = pinnedAnnouncement.expiry - Date.now();
                                 if (remainingMs <= 0) return "Berakhir";
@@ -1321,7 +1312,7 @@ function KomunitasContent() {
                             </span>
                           )}
                         </div>
-                        <span className="font-semibold text-slate-800 truncate">
+                        <span className="font-semibold text-slate-800 truncate text-[11px]">
                           {formatPinnedMessagePreview(pinnedAnnouncement.text)}
                         </span>
                       </div>
@@ -1330,17 +1321,17 @@ function KomunitasContent() {
                       <button
                         type="button"
                         onClick={handleUnpinMessage}
-                        className="text-rose-600 hover:text-rose-800 hover:bg-rose-50 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg border border-rose-200 cursor-pointer transition-all flex items-center gap-1 bg-white shrink-0"
+                        className="text-rose-700 hover:bg-rose-50 text-[9.5px] font-bold uppercase tracking-wider px-2 py-1 rounded-none border border-rose-200 cursor-pointer transition-colors flex items-center gap-1 bg-white shrink-0"
                       >
                         <X className="w-3 h-3 shrink-0" />
-                        <span>Lepas Sematan</span>
+                        <span>Lepas</span>
                       </button>
                     </div>
                   </div>
                 )}
 
                 {/* Chat Messages View */}
-                <div className="flex flex-col flex-1 min-h-0 relative">
+                <div className="flex flex-col flex-1 min-h-0 relative text-left">
                   {/* Subtle Backdrop Dim & Blur Overlay when a message is focused/active */}
                   {activeMenuMsg !== null && (
                     <>
@@ -1354,14 +1345,14 @@ function KomunitasContent() {
                         ref={popoverCardRef}
                         data-message-action="true"
                         onClick={(e) => e.stopPropagation()}
-                        className="fixed bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-2xl p-3 z-50 min-w-56 flex flex-col gap-2.5 font-sans"
+                        className="fixed bg-white border border-slate-200 rounded-none shadow-xl p-2.5 z-50 min-w-52 flex flex-col gap-2 font-sans text-left"
                         style={{
                           left: `${menuCoords.x}px`,
                           top: `${menuCoords.y}px`
                         }}
                       >
                         {/* Real Emoji Reaction Bar */}
-                        <div className="flex items-center justify-between gap-1 bg-slate-50 border border-slate-200/60 rounded-xl p-1.5">
+                        <div className="flex items-center justify-between gap-1 bg-slate-50 border border-slate-200 rounded-none p-1">
                           {REACTION_EMOJIS.map((emoji) => (
                             <button
                               key={emoji}
@@ -1370,7 +1361,7 @@ function KomunitasContent() {
                                 handleAddReaction(activeMenuMsg.id, emoji);
                                 setActiveMenuMsg(null);
                               }}
-                              className="hover:scale-135 active:scale-95 transition-transform text-lg sm:text-xl cursor-pointer p-1 rounded-lg hover:bg-white flex items-center justify-center"
+                              className="hover:scale-125 active:scale-95 transition-transform text-base sm:text-lg cursor-pointer p-0.5 rounded-none hover:bg-white flex items-center justify-center"
                             >
                               {emoji}
                             </button>
@@ -1380,16 +1371,16 @@ function KomunitasContent() {
                         <div className="w-full h-px bg-slate-100" />
 
                         {/* Action Buttons List */}
-                        <div className="flex flex-col gap-1 text-xs sm:text-sm font-semibold">
+                        <div className="flex flex-col gap-0.5 text-xs font-semibold">
                           <button
                             type="button"
                             onClick={() => {
                               handleStartReply(activeMenuMsg);
                               setActiveMenuMsg(null);
                             }}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-blue-50 text-slate-700 hover:text-[#2C1EE8] transition-colors cursor-pointer w-full text-left"
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-none hover:bg-blue-50 text-slate-700 hover:text-[#2C1EE8] transition-colors cursor-pointer w-full text-left"
                           >
-                            <CornerUpLeft className="w-4 h-4 text-blue-600 shrink-0" />
+                            <CornerUpLeft className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                             <span>Balas Pesan</span>
                           </button>
 
@@ -1400,9 +1391,9 @@ function KomunitasContent() {
                                 handleUnpinMessage();
                                 setActiveMenuMsg(null);
                               }}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
+                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-none hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
                             >
-                              <Pin className="w-4 h-4 text-amber-600 shrink-0" />
+                              <Pin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                               <span>Lepas Sematan</span>
                             </button>
                           ) : (
@@ -1412,9 +1403,9 @@ function KomunitasContent() {
                                 handlePinMessage(activeMenuMsg);
                                 setActiveMenuMsg(null);
                               }}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-slate-700 hover:text-amber-800 transition-colors cursor-pointer w-full text-left"
+                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-none hover:bg-amber-50 text-slate-700 hover:text-amber-800 transition-colors cursor-pointer w-full text-left"
                             >
-                              <Pin className="w-4 h-4 text-amber-600 shrink-0" />
+                              <Pin className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                               <span>Sematkan Pesan</span>
                             </button>
                           )}
@@ -1426,9 +1417,9 @@ function KomunitasContent() {
                                 handleStartEdit(activeMenuMsg);
                                 setActiveMenuMsg(null);
                               }}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
+                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-none hover:bg-amber-50 text-amber-800 transition-colors cursor-pointer w-full text-left"
                             >
-                              <Edit3 className="w-4 h-4 text-amber-600 shrink-0" />
+                              <Edit3 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                               <span>Edit Pesan</span>
                             </button>
                           )}
@@ -1439,9 +1430,9 @@ function KomunitasContent() {
                               handleDeleteForMe(activeMenuMsg.id);
                               setActiveMenuMsg(null);
                             }}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer w-full text-left"
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-none hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer w-full text-left"
                           >
-                            <EyeOff className="w-4 h-4 text-slate-500 shrink-0" />
+                            <EyeOff className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                             <span>Hapus untuk Saya</span>
                           </button>
 
@@ -1452,9 +1443,9 @@ function KomunitasContent() {
                                 handleDeleteForEveryone(activeMenuMsg.id);
                                 setActiveMenuMsg(null);
                               }}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-red-50 text-red-600 transition-colors cursor-pointer w-full text-left"
+                              className="flex items-center gap-2 px-2.5 py-1.5 rounded-none hover:bg-red-50 text-red-600 transition-colors cursor-pointer w-full text-left"
                             >
-                              <Trash2 className="w-4 h-4 text-red-500 shrink-0" />
+                              <Trash2 className="w-3.5 h-3.5 text-red-500 shrink-0" />
                               <span>Hapus untuk Semua</span>
                             </button>
                           )}
@@ -1560,15 +1551,15 @@ function KomunitasContent() {
                                   </button>
                                 )}
 
-                                {/* Message Bubble Container with WhatsApp-style corners and floating timestamp */}
+                                {/* Message Bubble Container with crisp borders and floating timestamp */}
                                 <div
                                   onContextMenu={(e) => handleOpenMessageMenu(e, msg)}
-                                  className={`px-4 py-2.5 rounded-2xl max-w-md text-xs sm:text-sm font-medium relative transition-all duration-300 ease-out ${
+                                  className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-none max-w-full sm:max-w-md text-xs sm:text-sm font-medium relative transition-all duration-300 ease-out break-words overflow-hidden ${
                                     isActive ? "scale-[1.02] shadow-xl ring-2 ring-[#2C1EE8]/50 z-50" : "shadow-3xs"
                                   } ${
                                     isMe
-                                      ? "bg-[#2C1EE8] text-white " + (isConsecutive ? "rounded-[18px]" : "rounded-[18px] rounded-br-xs")
-                                      : "bg-slate-100 text-slate-800 border border-slate-200/60 " + (isConsecutive ? "rounded-[18px]" : "rounded-[18px] rounded-bl-xs")
+                                      ? "bg-[#2C1EE8] text-white"
+                                      : "bg-slate-100 text-slate-800 border border-slate-200"
                                   }`}
                                 >
                                   {/* Pin indicator */}
@@ -1579,7 +1570,7 @@ function KomunitasContent() {
                                   {/* Quoted Reply Card */}
                                   {((msg.replyToSenderName || msg.ReplyToSenderName) || (msg.replyToEncryptedPayloadBase64 || msg.ReplyToEncryptedPayloadBase64)) && (
                                     <div
-                                      className={`mb-2 p-2 rounded-xl text-[11px] border-l-3 ${
+                                      className={`mb-2 p-2 rounded-none text-[11px] border-l-2 ${
                                         isMe ? "bg-white/15 border-white/70 text-blue-100" : "bg-slate-200/80 border-[#2C1EE8] text-slate-700"
                                       }`}
                                     >
@@ -1604,12 +1595,12 @@ function KomunitasContent() {
                                       const imageUrl = imgMatch[1];
                                       captionText = decoded.substring(imgMatch[0].length).trim();
                                       attachmentJsx = (
-                                        <div className="rounded-xl overflow-hidden my-1 max-w-xs">
+                                        <div className="rounded-none overflow-hidden my-1 max-w-xs">
                                           <a href={imageUrl} target="_blank" rel="noopener noreferrer">
                                             <img
                                               src={imageUrl}
                                               alt="Lampiran Gambar"
-                                              className="object-cover w-full max-h-48 rounded-lg hover:opacity-95 transition-opacity cursor-pointer"
+                                              className="object-cover w-full max-h-48 rounded-none hover:opacity-95 transition-opacity cursor-pointer"
                                             />
                                           </a>
                                         </div>
@@ -1620,7 +1611,7 @@ function KomunitasContent() {
                                       captionText = decoded.substring(docMatch[0].length).trim();
                                       attachmentJsx = (
                                         <div
-                                          className={`my-1 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                                          className={`my-1 p-2.5 rounded-none border flex items-center justify-between gap-3 text-xs ${
                                             isMe ? "bg-white/10 border-white/20 text-white" : "bg-white border-slate-200 text-slate-900"
                                           }`}
                                         >
@@ -1632,7 +1623,7 @@ function KomunitasContent() {
                                             href={docUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold shrink-0 transition-colors ${
+                                            className={`px-2.5 py-1 rounded-none text-[11px] font-extrabold shrink-0 transition-colors ${
                                               isMe ? "bg-white text-[#2C1EE8] hover:bg-slate-100" : "bg-[#2C1EE8] text-white hover:bg-blue-700"
                                             }`}
                                           >
@@ -1646,11 +1637,11 @@ function KomunitasContent() {
                                       captionText = decoded.substring(audioMatch[0].length).trim();
                                       const isPlaying = playingAudioMsgId === msg.id;
                                       attachmentJsx = (
-                                        <div className={`my-1 p-2.5 rounded-2xl border flex items-center gap-3 text-xs ${isMe ? "bg-white/15 border-white/20 text-white" : "bg-white border-slate-200 text-slate-800"}`}>
+                                        <div className={`my-1 p-2.5 rounded-none border flex items-center gap-3 text-xs ${isMe ? "bg-white/15 border-white/20 text-white" : "bg-white border-slate-200 text-slate-800"}`}>
                                           <button
                                             type="button"
                                             onClick={() => setPlayingAudioMsgId(isPlaying ? null : msg.id)}
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer shrink-0 transition-transform active:scale-95 ${isMe ? "bg-white text-[#2C1EE8]" : "bg-[#2C1EE8] text-white"}`}
+                                            className={`w-8 h-8 rounded-none flex items-center justify-center cursor-pointer shrink-0 transition-transform active:scale-95 ${isMe ? "bg-white text-[#2C1EE8]" : "bg-[#2C1EE8] text-white"}`}
                                           >
                                             {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                                           </button>
@@ -1664,7 +1655,7 @@ function KomunitasContent() {
                                               {[40, 70, 30, 90, 60, 100, 45, 80, 50, 95, 35, 65, 85, 40].map((h, i) => (
                                                 <div
                                                   key={i}
-                                                  className={`flex-1 rounded-full transition-all duration-300 ${isPlaying ? "bg-current animate-pulse" : "opacity-40 bg-current"}`}
+                                                  className={`flex-1 rounded-none transition-all duration-300 ${isPlaying ? "bg-current animate-pulse" : "opacity-40 bg-current"}`}
                                                   style={{ height: `${isPlaying ? Math.max(25, (h + (i * 7) % 50)) : h}%` }}
                                                 />
                                               ))}
@@ -1695,10 +1686,10 @@ function KomunitasContent() {
                                     const parts = captionText.split(tokenRegex);
 
                                     return (
-                                      <div className="flex flex-col gap-1.5">
+                                      <div className="flex flex-col gap-1.5 min-w-0 max-w-full">
                                         {attachmentJsx}
                                         {captionText ? (
-                                          <p className={`whitespace-pre-wrap leading-relaxed ${msg.isDeletedForEveryone ? "italic opacity-70" : ""}`}>
+                                          <p className={`whitespace-pre-wrap leading-relaxed break-words max-w-full ${msg.isDeletedForEveryone ? "italic opacity-70" : ""}`}>
                                             {parts.map((part, idx) => {
                                               if (!part) return null;
                                               if (part.match(/^https?:\/\//i)) {
@@ -1969,7 +1960,7 @@ function KomunitasContent() {
                           <button
                             type="button"
                             onClick={() => setPendingFile(null)}
-                            className="text-rose-600 hover:text-rose-800 hover:bg-rose-50 text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg border border-rose-200 cursor-pointer transition-all flex items-center gap-1 bg-white"
+                            className="text-rose-600 hover:bg-rose-50 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-none border border-rose-200 cursor-pointer transition-colors flex items-center gap-1 bg-white"
                           >
                             <X className="w-3 h-3 shrink-0" />
                             <span>Batal</span>
@@ -1978,7 +1969,7 @@ function KomunitasContent() {
                       </div>
                     )}
 
-                    <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                    <form onSubmit={handleSendMessage} className="flex items-center gap-1.5">
 
                     <input
                       type="file"
@@ -1991,30 +1982,30 @@ function KomunitasContent() {
                       type="button"
                       disabled={uploadingFile}
                       onClick={() => fileInputRef.current?.click()}
-                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-2 rounded-none bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer disabled:opacity-50 border border-slate-200"
                       title="Lampirkan File / Gambar"
                     >
-                      <Paperclip className="w-4 h-4" />
+                      <Paperclip className="w-3.5 h-3.5" />
                     </button>
 
                     {/* Mention / Tag Button (@) */}
                     <button
                       type="button"
                       onClick={triggerMentionPicker}
-                      className="p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2C1EE8] font-black transition-colors cursor-pointer text-xs flex items-center justify-center shrink-0 border border-blue-200"
+                      className="p-2 rounded-none bg-blue-50 hover:bg-blue-100 text-[#2C1EE8] font-bold transition-colors cursor-pointer text-xs flex items-center justify-center shrink-0 border border-blue-200"
                       title="Sebut / Tag Anggota (@)"
                     >
-                      <AtSign className="w-4 h-4" />
+                      <AtSign className="w-3.5 h-3.5" />
                     </button>
 
                     {/* Voice Note Mic Button */}
                     <button
                       type="button"
                       onClick={startVoiceRecording}
-                      className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-black transition-colors cursor-pointer text-xs flex items-center justify-center shrink-0 border border-rose-200"
+                      className="p-2 rounded-none bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold transition-colors cursor-pointer text-xs flex items-center justify-center shrink-0 border border-rose-200"
                       title="Rekam Pesan Suara"
                     >
-                      <Mic className="w-4 h-4" />
+                      <Mic className="w-3.5 h-3.5" />
                     </button>
 
                     <input
@@ -2022,17 +2013,15 @@ function KomunitasContent() {
                       placeholder={pendingFile ? "Tulis keterangan / caption untuk file..." : "Ketik pesan... (Gunakan @ untuk mention)"}
                       value={newMessage}
                       onChange={handleMessageInputChange}
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#2C1EE8] focus:bg-white transition-colors font-medium outline-none"
                     />
-
-
 
                     <button
                       type="submit"
                       disabled={(!newMessage.trim() && !pendingFile) || sendingMessage}
-                      className="p-2.5 rounded-xl bg-[#2C1EE8] hover:bg-blue-700 text-white disabled:opacity-40 transition-all cursor-pointer shadow-xs"
+                      className="p-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white disabled:opacity-40 transition-colors cursor-pointer rounded-none shadow-xs"
                     >
-                      <Send className="w-4 h-4" />
+                      <Send className="w-3.5 h-3.5" />
                     </button>
                     </form>
                   </div>
@@ -2042,29 +2031,29 @@ function KomunitasContent() {
 
             {/* Slide-out Community Info Drawer */}
             {infoDrawerOpen && selectedGroup && (
-              <div className="absolute inset-y-0 right-0 w-80 bg-white border-l border-slate-200 shadow-2xl p-5 z-30 flex flex-col justify-between animate-fade-in">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <h3 className="font-bold text-slate-900 text-sm">Informasi Komunitas</h3>
+              <div className="absolute inset-y-0 right-0 w-80 bg-white border-l border-slate-200 shadow-xl p-4 z-30 flex flex-col justify-between text-left">
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+                    <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">Informasi Komunitas</h3>
                     <button
                       onClick={() => setInfoDrawerOpen(false)}
                       className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
                   <div>
-                    <h4 className="font-extrabold text-slate-900 text-base">{selectedGroup.name}</h4>
-                    <p className="text-slate-500 text-xs mt-1">{selectedGroup.description}</p>
+                    <h4 className="font-bold text-slate-900 text-sm uppercase">{selectedGroup.name}</h4>
+                    <p className="text-slate-500 text-xs mt-0.5 font-normal">{selectedGroup.description}</p>
                   </div>
 
                   {/* Drawer Sub-Tabs Selector */}
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-bold">
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-none border border-slate-200 text-xs font-bold uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => setDrawerTab("members")}
-                      className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                      className={`flex-1 py-1 rounded-none text-center transition-colors cursor-pointer ${
                         drawerTab === "members" ? "bg-white text-[#2C1EE8] shadow-2xs" : "text-slate-500 hover:text-slate-800"
                       }`}
                     >
@@ -2073,7 +2062,7 @@ function KomunitasContent() {
                     <button
                       type="button"
                       onClick={() => setDrawerTab("media")}
-                      className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                      className={`flex-1 py-1 rounded-none text-center transition-colors cursor-pointer ${
                         drawerTab === "media" ? "bg-white text-[#2C1EE8] shadow-2xs" : "text-slate-500 hover:text-slate-800"
                       }`}
                     >
@@ -2082,7 +2071,7 @@ function KomunitasContent() {
                     <button
                       type="button"
                       onClick={() => setDrawerTab("links")}
-                      className={`flex-1 py-1.5 rounded-lg text-center transition-all cursor-pointer ${
+                      className={`flex-1 py-1 rounded-none text-center transition-colors cursor-pointer ${
                         drawerTab === "links" ? "bg-white text-[#2C1EE8] shadow-2xs" : "text-slate-500 hover:text-slate-800"
                       }`}
                     >
@@ -2093,8 +2082,8 @@ function KomunitasContent() {
                   {drawerTab === "members" && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
-                        <span>Daftar Anggota:</span>
-                        <span className="font-bold text-[#2C1EE8]">{members.length} Orang</span>
+                        <span className="uppercase tracking-wider text-[11px] font-bold">Daftar Anggota:</span>
+                        <span className="font-bold text-[#2C1EE8] font-mono">{members.length} Orang</span>
                       </div>
 
                       <input
@@ -2102,7 +2091,7 @@ function KomunitasContent() {
                         placeholder="Cari anggota..."
                         value={memberSearchQuery}
                         onChange={(e) => setMemberSearchQuery(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-hidden focus:border-[#2C1EE8]"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-[#2C1EE8]"
                       />
 
                       <div className="max-h-64 overflow-y-auto space-y-1.5 pr-1">
@@ -2114,33 +2103,32 @@ function KomunitasContent() {
                           return (
                             <div
                               key={m.userId || m.id}
-                              className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-xs border border-slate-100"
+                              className="flex items-center justify-between p-2 rounded-none bg-slate-50 text-xs border border-slate-200"
                             >
-                              <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="flex items-center gap-2 min-w-0">
                                 {m.userPhotoUrl || m.userPhoto || m.photoUrl || m.avatarUrl || m.UserPhotoUrl ? (
                                   <img
                                     src={m.userPhotoUrl || m.userPhoto || m.photoUrl || m.avatarUrl || m.UserPhotoUrl}
                                     alt={m.userName}
-                                    className="w-7 h-7 rounded-lg object-cover border border-slate-200 shrink-0 shadow-2xs"
+                                    className="w-6 h-6 rounded-none object-cover border border-slate-200 shrink-0"
                                   />
                                 ) : (
-                                  <div className="w-7 h-7 rounded-lg bg-blue-100 text-[#2C1EE8] font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200 shadow-2xs">
+                                  <div className="w-6 h-6 rounded-none bg-blue-100 text-[#2C1EE8] font-bold text-[10px] flex items-center justify-center shrink-0 border border-blue-200">
                                     {(m.fullName || m.userName || "U").slice(0, 2).toUpperCase()}
                                   </div>
                                 )}
                                 <div className="min-w-0">
-                                  <p className="font-bold text-slate-900 truncate">
+                                  <p className="font-bold text-slate-900 truncate uppercase">
                                     {m.fullName || m.userName} {isMe && "(Anda)"}
                                   </p>
-                                  <p className="text-[10px] text-slate-400 font-mono">@{m.userName}</p>
+                                  <p className="text-[10px] text-slate-400 font-mono truncate">@{m.userName}</p>
                                 </div>
                               </div>
-
 
                               <div className="flex items-center gap-1 shrink-0">
                                 {isMemberPending ? (
                                   <div className="flex items-center gap-1">
-                                    <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                                    <span className="text-[9.5px] font-bold uppercase text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded-none border border-amber-200">
                                       Menunggu
                                     </span>
                                     {isGroupAdmin && (
@@ -2148,7 +2136,7 @@ function KomunitasContent() {
                                         <button
                                           type="button"
                                           onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "ACCEPT")}
-                                          className="p-1 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                          className="p-1 rounded-none bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors cursor-pointer"
                                           title="Terima Bergabung"
                                         >
                                           <Check className="w-3.5 h-3.5" />
@@ -2156,7 +2144,7 @@ function KomunitasContent() {
                                         <button
                                           type="button"
                                           onClick={() => handleManageMemberAction(m.userId, m.fullName || m.userName, "DECLINE")}
-                                          className="p-1 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
+                                          className="p-1 rounded-none bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
                                           title="Tolak Permintaan"
                                         >
                                           <X className="w-3.5 h-3.5" />
@@ -2166,7 +2154,7 @@ function KomunitasContent() {
                                   </div>
                                 ) : isMemberAdmin ? (
                                   <div className="flex items-center gap-1">
-                                    <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                                    <span className="text-[9.5px] font-bold uppercase text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded-none border border-amber-200 font-mono">
                                       Admin
                                     </span>
                                     {isGroupOwner && !isMe && (
@@ -2213,8 +2201,8 @@ function KomunitasContent() {
 
                   {drawerTab === "media" && (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold text-slate-600 block">Berkas & Foto Komunitas:</span>
-                      <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Berkas & Foto Komunitas:</span>
+                      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
                         {(() => {
                           const mediaList = messages.filter((m) => {
                             const text = safeBase64Decode(m.encryptedPayloadBase64);
@@ -2232,12 +2220,12 @@ function KomunitasContent() {
                             const fileName = isImg ? "Foto Lampiran" : text.match(/\[📄 Dokumen:\s*(.*?)\]/)?.[1] || "Dokumen";
 
                             return (
-                              <div key={m.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                              <div key={m.id} className="flex items-center justify-between p-2 rounded-none bg-slate-50 border border-slate-200 text-xs">
                                 <div className="flex items-center gap-2 truncate">
-                                  {isImg ? <ImageIcon className="w-4 h-4 text-purple-500 shrink-0" /> : <FileText className="w-4 h-4 text-blue-500 shrink-0" />}
+                                  {isImg ? <ImageIcon className="w-3.5 h-3.5 text-purple-500 shrink-0" /> : <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
                                   <div className="flex flex-col truncate">
                                     <span className="font-bold text-slate-800 truncate">{fileName}</span>
-                                    <span className="text-[10px] text-slate-400">Oleh {m.senderName}</span>
+                                    <span className="text-[10px] text-slate-400 font-mono">Oleh {m.senderName}</span>
                                   </div>
                                 </div>
                                 {fileUrl && (
@@ -2245,7 +2233,7 @@ function KomunitasContent() {
                                     href={fileUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="p-1.5 rounded-lg bg-blue-50 text-[#2C1EE8] hover:bg-blue-100 transition-colors shrink-0"
+                                    className="p-1 rounded-none bg-blue-50 text-[#2C1EE8] hover:bg-blue-100 transition-colors shrink-0"
                                     title="Buka / Unduh"
                                   >
                                     <Download className="w-3.5 h-3.5" />
@@ -2261,8 +2249,8 @@ function KomunitasContent() {
 
                   {drawerTab === "links" && (
                     <div className="space-y-2">
-                      <span className="text-xs font-bold text-slate-600 block">Tautan Web Dibagikan:</span>
-                      <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600 block">Tautan Web Dibagikan:</span>
+                      <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
                         {(() => {
                           const linkMsgs = messages.filter((m) => {
                             const text = safeBase64Decode(m.encryptedPayloadBase64);
@@ -2279,9 +2267,9 @@ function KomunitasContent() {
                             const targetUrl = urlMatch ? urlMatch[0] : "";
 
                             return (
-                              <div key={m.id} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                              <div key={m.id} className="p-2 bg-slate-50 border border-slate-200 rounded-none text-xs space-y-0.5">
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-slate-700 text-[10px]">{m.senderName}</span>
+                                  <span className="font-bold text-slate-700 text-[10px] uppercase">{m.senderName}</span>
                                   <a
                                     href={targetUrl}
                                     target="_blank"
@@ -2291,7 +2279,7 @@ function KomunitasContent() {
                                     Buka <LinkIcon className="w-3 h-3" />
                                   </a>
                                 </div>
-                                <p className="text-blue-600 font-semibold truncate break-all">{targetUrl}</p>
+                                <p className="text-blue-600 font-medium truncate break-all text-[11px]">{targetUrl}</p>
                               </div>
                             );
                           });
@@ -2306,7 +2294,7 @@ function KomunitasContent() {
                   <button
                     type="button"
                     onClick={() => setInfoDrawerOpen(false)}
-                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                    className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
                   >
                     Tutup Info
                   </button>
@@ -2319,19 +2307,19 @@ function KomunitasContent() {
 
       {/* Delete Group Modal */}
       {deleteModalOpen && deletingGroup && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-md w-full p-6 sm:p-8 text-slate-900 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2.5 text-rose-600">
-              <Trash2 className="w-6 h-6" />
-              <h3 className="text-xl font-bold text-slate-900">Hapus Komunitas?</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-none max-w-md w-full p-5 sm:p-6 text-slate-900 shadow-xl space-y-3 text-left">
+            <div className="flex items-center gap-2 text-rose-600">
+              <Trash2 className="w-5 h-5" />
+              <h3 className="text-base font-bold text-slate-900 uppercase">Hapus Komunitas?</h3>
             </div>
 
-            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              Apakah Anda yakin ingin menghapus grup <strong className="text-slate-900">"{deletingGroup.name}"</strong>{" "}
+            <p className="text-xs text-slate-600 font-normal leading-relaxed">
+              Apakah Anda yakin ingin menghapus grup <strong className="text-slate-900 font-bold">&quot;{deletingGroup.name}&quot;</strong>{" "}
               secara permanen? Seluruh riwayat percakapan dan keanggotaan akan dihapus.
             </p>
 
-            <div className="flex gap-3 justify-end pt-3 border-t border-slate-100">
+            <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => {
@@ -2339,7 +2327,7 @@ function KomunitasContent() {
                   setDeletingGroup(null);
                 }}
                 disabled={isDeleting}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
               >
                 Batal
               </button>
@@ -2347,7 +2335,7 @@ function KomunitasContent() {
                 type="button"
                 onClick={handleDeleteGroup}
                 disabled={isDeleting}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all disabled:opacity-50"
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-none shadow-xs cursor-pointer transition-colors disabled:opacity-50"
               >
                 {isDeleting ? "Menghapus..." : "Ya, Hapus Permanen"}
               </button>
@@ -2358,17 +2346,22 @@ function KomunitasContent() {
 
       {/* Create Group Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-md w-full p-6 sm:p-8 text-slate-900 shadow-2xl space-y-4">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Buat Komunitas Baru</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Buat kelompok belajar atau forum diskusi PPLG.</p>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-none max-w-md w-full p-5 sm:p-6 text-slate-900 shadow-xl space-y-3 text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="text-base font-bold text-slate-900 uppercase">Buat Komunitas Baru</h3>
+              <button
+                onClick={() => setCreateModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateGroup} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateGroup} className="space-y-3 text-xs">
               <div>
-                <label htmlFor="new-group-name" className="block text-slate-700 mb-1 font-bold">
-                  Nama Komunitas:
+                <label htmlFor="new-group-name" className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">
+                  Nama Komunitas <span className="text-rose-500">*</span>
                 </label>
                 <input
                   id="new-group-name"
@@ -2377,21 +2370,21 @@ function KomunitasContent() {
                   placeholder="Misal: Web Dev Enthusiast, Game Dev X RPL..."
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors font-semibold"
                 />
               </div>
 
               <div>
-                <label htmlFor="new-group-desc" className="block text-slate-700 mb-1 font-bold">
-                  Deskripsi:
+                <label htmlFor="new-group-desc" className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">
+                  Deskripsi Komunitas
                 </label>
                 <textarea
                   id="new-group-desc"
-                  rows="3"
+                  rows={3}
                   placeholder="Penjelasan topik dan tujuan komunitas..."
                   value={newGroupDesc}
                   onChange={(e) => setNewGroupDesc(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-none p-3 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors font-normal resize-none"
                 />
               </div>
 
@@ -2399,11 +2392,11 @@ function KomunitasContent() {
               {isGlobalAdmin && (
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   <div className="flex items-center justify-between">
-                    <label className="block text-slate-700 font-bold">Anggota Pilihan Batch:</label>
+                    <label className="block text-slate-700 font-bold uppercase tracking-wider text-[11px]">Anggota Batch:</label>
                     <button
                       type="button"
                       onClick={() => setBatchPickerOpen(true)}
-                      className="px-3 py-1.5 bg-blue-50 text-[#2C1EE8] border border-blue-200 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all flex items-center gap-1 cursor-pointer"
+                      className="px-3 py-1 bg-blue-50 text-[#2C1EE8] border border-blue-200 rounded-none text-xs font-bold uppercase tracking-wider hover:bg-blue-100 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
                       <span>Pilih ({selectedBatchMembers.length})</span>
@@ -2411,11 +2404,11 @@ function KomunitasContent() {
                   </div>
 
                   {selectedBatchMembers.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                    <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-2 bg-slate-50 rounded-none border border-slate-200">
                       {selectedBatchMembers.map((m) => (
                         <span
                           key={m.userId || m.id}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-white text-slate-700 border border-slate-200 rounded-lg text-[10px] font-bold shadow-2xs"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-white text-slate-700 border border-slate-200 rounded-none text-[10px] font-bold uppercase"
                         >
                           {m.fullName}
                         </span>
@@ -2425,17 +2418,17 @@ function KomunitasContent() {
                 </div>
               )}
 
-              <div className="flex gap-3 justify-end pt-3 border-t border-slate-100">
+              <div className="flex gap-2 justify-end pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer transition-all"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none font-bold uppercase tracking-wider cursor-pointer transition-colors text-xs"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer transition-all shadow-sm"
+                  className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white rounded-none font-bold uppercase tracking-wider cursor-pointer transition-colors shadow-xs text-xs"
                 >
                   Buat Komunitas
                 </button>
@@ -2484,13 +2477,13 @@ function KomunitasContent() {
 
       {/* Pin Duration Modal */}
       {showPinModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-sm w-full p-6 text-slate-900 shadow-2xl space-y-4 font-sans">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-none max-w-sm w-full p-5 text-slate-900 shadow-xl space-y-3 font-sans text-left">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Sematkan Pesan</h3>
-              <p className="text-xs text-slate-500 mt-1">Pilih berapa lama pesan ini akan disematkan:</p>
+              <h3 className="text-base font-bold text-slate-900 uppercase">Sematkan Pesan</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Pilih berapa lama pesan ini akan disematkan:</p>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5">
               {[
                 { label: "1 Jam", value: 1 * 60 * 60 * 1000 },
                 { label: "3 Jam", value: 3 * 60 * 60 * 1000 },
@@ -2505,21 +2498,21 @@ function KomunitasContent() {
                     setShowPinModal(false);
                     setPinTargetMsg(null);
                   }}
-                  className="w-full text-left px-4 py-3 hover:bg-slate-50 active:bg-slate-100 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-100 hover:border-slate-200 transition-all flex items-center justify-between cursor-pointer"
+                  className="w-full text-left px-3 py-2 hover:bg-slate-50 active:bg-slate-100 rounded-none text-xs font-semibold text-slate-700 hover:text-slate-900 border border-slate-200 transition-colors flex items-center justify-between cursor-pointer"
                 >
                   <span>{opt.label}</span>
-                  <span className="text-[10px] text-[#2C1EE8] font-bold">Pilih</span>
+                  <span className="text-[10px] text-[#2C1EE8] font-bold uppercase tracking-wider">Pilih</span>
                 </button>
               ))}
             </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-slate-100">
+            <div className="flex justify-end pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => {
                   setShowPinModal(false);
                   setPinTargetMsg(null);
                 }}
-                className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all text-center"
+                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors text-center"
               >
                 Batal
               </button>

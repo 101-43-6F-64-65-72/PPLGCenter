@@ -166,8 +166,8 @@ export function ErrorFallback({
     if (!action) return null;
 
     const baseClasses = isPrimaryAction
-      ? "w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#2c1ee8] hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm shadow-md shadow-[#2c1ee8]/20 transition-all duration-200 cursor-pointer group"
-      : "w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold text-sm border border-slate-200 transition-all duration-200 cursor-pointer group";
+      ? "w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-none bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider shadow-xs transition-colors cursor-pointer group"
+      : "w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-none bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-bold text-xs uppercase tracking-wider border border-slate-200 transition-colors cursor-pointer group";
 
     const content = (
       <>
@@ -206,59 +206,44 @@ export function ErrorFallback({
 
   const contentCard = (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className={`relative z-10 w-full max-w-lg bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-10 shadow-xl shadow-slate-900/5 text-center flex flex-col items-center gap-5 ${className}`}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className={`relative z-10 w-full max-w-lg bg-white border border-slate-200 rounded-none p-6 sm:p-8 shadow-xs text-center flex flex-col items-center gap-4 ${className}`}
     >
       {/* 1. Dynamic Prominent Stylized Error Code Badge */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.35 }}
-        className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase ring-1 shadow-xs ${getBadgeStyle(
+        transition={{ delay: 0.1, duration: 0.25 }}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-none border text-[11px] font-bold font-mono tracking-wider uppercase shadow-xs ${getBadgeStyle(
           codeBadgeText,
           numericCode
         )}`}
       >
-        <ShieldAlert className="w-4 h-4" />
+        <ShieldAlert className="w-3.5 h-3.5" />
         <span>{codeBadgeText.startsWith("ERR_") ? codeBadgeText : `HTTP ${codeBadgeText}`}</span>
       </motion.div>
 
-      {/* 2. Centered Interactive Mascot in Dark Glass Sphere Container */}
-      <motion.div
-        initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 20,
-          delay: 0.15,
-        }}
-        className="my-2 p-3.5 rounded-full bg-slate-900/95 border border-slate-700/80 shadow-xl shadow-blue-900/25 inline-flex items-center justify-center select-none"
-      >
-        <BloubMascot state={mascotState} size={180} interactiveGaze={true} />
-      </motion.div>
+      {/* 2. Centered Interactive Mascot */}
+      <div className="my-1 p-3 rounded-none bg-slate-900 border border-slate-800 shadow-xs inline-flex items-center justify-center select-none">
+        <BloubMascot state={mascotState} size={140} interactiveGaze={true} />
+      </div>
 
       {/* 3. Typography Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25, duration: 0.35 }}
-        className="space-y-2 max-w-md"
-      >
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
+      <div className="space-y-1.5 max-w-md">
+        <h1 className="text-xl sm:text-2xl font-bold uppercase text-slate-900 tracking-tight leading-snug">
           {title}
         </h1>
-        <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-normal">
+        <p className="text-slate-600 text-xs sm:text-sm leading-relaxed font-normal">
           {description}
         </p>
 
         {/* Backend Errors Details List (if present) */}
         {errorList.length > 0 && (
-          <div className="mt-3 p-3 rounded-2xl bg-rose-50 border border-rose-200/80 text-left space-y-1">
-            <span className="text-[11px] font-bold text-rose-800 flex items-center gap-1">
-              <AlertCircle className="w-3.5 h-3.5" />
+          <div className="mt-3 p-3 rounded-none bg-rose-50 border border-rose-200 text-left space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" />
               <span>Detail Kesalahan:</span>
             </span>
             <ul className="list-disc list-inside text-xs text-rose-700 space-y-0.5 font-mono">
@@ -268,18 +253,13 @@ export function ErrorFallback({
             </ul>
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* 4. Action Buttons with Hover Mascot Reactions */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.35 }}
-        className="w-full pt-2 flex flex-col sm:flex-row items-center justify-center gap-3"
-      >
+      <div className="w-full pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
         {renderButton(primary, true)}
         {renderButton(secondary, false)}
-      </motion.div>
+      </div>
     </motion.div>
   );
 
@@ -288,11 +268,9 @@ export function ErrorFallback({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/60 text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden max-w-full w-full">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white overflow-x-hidden max-w-full w-full">
       <Navbar />
-      <main className="flex-1 flex flex-col items-center justify-center pt-28 sm:pt-32 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none" />
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <main className="flex-1 flex flex-col items-center justify-center pt-24 sm:pt-28 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {contentCard}
       </main>
       <Footer />

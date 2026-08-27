@@ -91,25 +91,25 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
     }));
 
     return (
-      <aside className="w-[250px] bg-white border-r border-slate-200/60 flex flex-col h-[calc(100vh-6rem)] sticky top-24 shrink-0 overflow-hidden shadow-xs">
+      <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col h-[calc(100vh-6rem)] sticky top-24 shrink-0 overflow-hidden shadow-xs">
         {/* Title / Logo header inside Sidebar */}
-        <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-          <div className="w-9 h-9 bg-[#2c1ee8] rounded-xl flex items-center justify-center text-white font-black text-sm shadow-sm shadow-blue-500/20">
-            SC
+        <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#2C1EE8] rounded-none flex items-center justify-center text-white font-bold text-xs">
+            PPLG
           </div>
           <div>
-            <h2 className="text-xs font-black text-slate-900 leading-none">Student Center</h2>
-            <span className="text-[9px] text-[#2c1ee8] font-extrabold block mt-1.5 uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+            <h2 className="text-xs font-bold uppercase text-slate-900 leading-none">PPLG Center</h2>
+            <span className="text-[9px] text-[#2C1EE8] font-bold font-mono block mt-1 uppercase tracking-wider bg-blue-50 px-1.5 py-0.2 rounded-none border border-blue-200">
               {isPplgTeacher ? "Admin PPLG" : (role || "Admin")}
             </span>
           </div>
         </div>
 
         {/* Menu Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto scrollbar-thin">
+        <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto scrollbar-thin">
           {groupedItems.map((group) => (
-            <div key={group.category} className="space-y-1">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block px-3 mb-1.5 select-none">
+            <div key={group.category} className="space-y-0.5">
+              <span className="text-[9.5px] font-bold font-mono text-slate-400 uppercase tracking-widest block px-2.5 mb-1 select-none">
                 {group.category}
               </span>
               {group.items.map((item) => {
@@ -126,13 +126,13 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
                         onTabChange(item.tabId);
                       }
                     }}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all text-left cursor-pointer group ${
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors text-left cursor-pointer group ${
                       isActive
-                        ? "bg-[#2c1ee8] text-white shadow-xs"
+                        ? "bg-[#2C1EE8] text-white shadow-xs"
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
-                    <IconComp className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"}`} />
+                    <IconComp className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"}`} />
                     <span className="truncate">{item.name}</span>
                   </button>
                 );
@@ -148,20 +148,20 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
   const menuItems = studentMenu;
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200/60 flex flex-col h-full shrink-0 shadow-xs">
-      <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-        <div className="w-9 h-9 bg-[#2c1ee8] rounded-xl flex items-center justify-center text-white font-black text-sm shadow-sm shadow-blue-500/20">
-          SC
+    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col h-full shrink-0 shadow-xs">
+      <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+        <div className="w-8 h-8 bg-[#2C1EE8] rounded-none flex items-center justify-center text-white font-bold text-xs">
+          PPLG
         </div>
         <div>
-          <h2 className="text-sm font-black text-gray-900 leading-none">Navigation</h2>
-          <span className="text-[10px] text-[#2c1ee8] font-extrabold block mt-1 uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+          <h2 className="text-xs font-bold uppercase text-slate-900 leading-none">Navigasi</h2>
+          <span className="text-[9.5px] text-[#2C1EE8] font-bold font-mono block mt-1 uppercase tracking-wider bg-blue-50 px-1.5 py-0.2 rounded-none border border-blue-200">
             {role || "Siswa"}
           </span>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+      <nav className="flex-1 p-2.5 space-y-0.5 overflow-y-auto">
         {menuItems.map((item) => {
           const IconComp = item.icon;
           const isActive = item.path === "/" ? pathname === "/" : pathname.startsWith(item.path);
@@ -170,13 +170,13 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
             <Link
               key={item.name}
               href={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all ${
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors ${
                 isActive
-                  ? "bg-[#2c1ee8] text-white shadow-xs"
+                  ? "bg-[#2C1EE8] text-white shadow-xs"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
-              <IconComp className={`w-5 h-5 ${isActive ? "text-white" : "text-slate-400"}`} />
+              <IconComp className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`} />
               <span>{item.name}</span>
             </Link>
           );

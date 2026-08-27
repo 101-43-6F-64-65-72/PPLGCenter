@@ -16,10 +16,10 @@ export default function ChatPage() {
 
   return (
     <AuthGuard allowedRoles={[USER_ROLES.STUDENT, USER_ROLES.TEACHER, USER_ROLES.ADMIN]}>
-      <div className="min-h-screen bg-slate-50 text-gray-900 flex flex-col font-sans">
+      <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white">
         <Navbar />
 
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-24 sm:pt-28 pb-16 space-y-6">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-4 text-left">
           <PageHeader
             icon={MessageSquare}
             title="Pusat Komunikasi & Pesan Direct"
@@ -30,19 +30,19 @@ export default function ChatPage() {
                 variant="primary"
                 size="sm"
                 onClick={() => setIsOpen(true)}
-                leftIcon={<MessageSquare className="w-4 h-4" />}
+                leftIcon={<MessageSquare className="w-3.5 h-3.5" />}
               >
                 Buka Panel Chat
               </Button>
             }
           />
 
-          <div className="bg-white border border-gray-100 rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#2c1ee8] flex items-center justify-center mx-auto border border-blue-100">
-              <MessageSquare className="w-8 h-8 text-[#2c1ee8]" />
+          <div className="bg-white border border-slate-200 rounded-none p-8 sm:p-12 text-center space-y-4 shadow-xs">
+            <div className="w-12 h-12 rounded-none bg-blue-50 text-[#2C1EE8] flex items-center justify-center mx-auto border border-blue-200">
+              <MessageSquare className="w-6 h-6 text-[#2C1EE8]" />
             </div>
-            <h2 className="text-xl font-black text-gray-900">Layanan Chat & Pesan Direct</h2>
-            <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto font-medium">
+            <h2 className="text-base sm:text-lg font-bold uppercase tracking-tight text-slate-900">Layanan Chat & Pesan Direct</h2>
+            <p className="text-xs text-slate-500 max-w-md mx-auto font-normal">
               Gunakan panel pesan untuk berkirim pesan langsung dengan Guru, Pembina, atau Admin sekolah.
             </p>
             <Button

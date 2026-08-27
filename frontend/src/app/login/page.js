@@ -81,13 +81,13 @@ export default function LoginPage() {
       ref={containerRef}
       className="min-h-screen w-full flex flex-col md:flex-row bg-white text-slate-900 selection:bg-blue-100 selection:text-blue-900 font-sans overflow-hidden relative"
     >
-      {/* ─── LEFT PANEL: Pure White Background (Top-anchored layout to eliminate jumping) ─── */}
+      {/* ─── LEFT PANEL: Pure White Background (Naturally Contained, No Scroll Glitch) ─── */}
       <section
         ref={leftPanelRef}
-        className="w-full md:w-[400px] lg:w-[440px] xl:w-[470px] min-h-screen h-screen bg-white flex flex-col p-6 sm:p-8 lg:p-10 z-20 relative shrink-0 border-r border-slate-200 overflow-y-auto overflow-x-visible shadow-sm"
+        className="w-full md:w-[420px] lg:w-[460px] xl:w-[480px] min-h-screen bg-white flex flex-col justify-between p-6 sm:p-8 lg:p-10 z-20 relative shrink-0 border-r border-slate-200 shadow-sm"
       >
         {/* Top Back Navigation */}
-        <div className="w-full flex items-center justify-between mb-6 shrink-0">
+        <div className="w-full flex items-center justify-between mb-4 shrink-0">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-black transition-colors duration-200 group cursor-pointer"
@@ -97,8 +97,8 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Form Container (Fixed top anchor to prevent vertical jumping) */}
-        <div className="w-full my-auto py-2 shrink-0">
+        {/* Form Container */}
+        <div className="w-full my-auto py-1">
           <React.Suspense
             fallback={
               <div className="p-6 text-center text-xs font-medium text-slate-500 bg-slate-50 rounded animate-pulse">

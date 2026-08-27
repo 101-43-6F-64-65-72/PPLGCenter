@@ -247,15 +247,12 @@ function ProfileContent() {
   return (
     <div className="space-y-8 font-sans">
       {/* Banner Hero Header Card */}
-      <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-r from-[#2C1EE8] via-indigo-700 to-[#1e0873] p-6 sm:p-10 text-white shadow-xl shadow-blue-900/15">
-        {/* Ambient lighting glow overlays */}
-        <div className="absolute -top-24 -right-24 w-80 h-80 bg-blue-400/20 blur-3xl rounded-full pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-purple-500/20 blur-3xl rounded-full pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col md:flex-row items-center gap-6">
+      {/* Profile Header Card */}
+      <div className="bg-white border border-slate-200 rounded-none p-5 sm:p-7 shadow-xs text-slate-900 text-left space-y-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-5">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
             <div className="relative group shrink-0">
-              <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl bg-white/10 flex items-center justify-center">
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-none overflow-hidden border border-slate-200 shadow-xs bg-slate-100 flex items-center justify-center">
                 {(avatarPreview || user?.photoUrl) && !imageError ? (
                   <img
                     src={resolveImageUrl(avatarPreview || user?.photoUrl)}
@@ -264,18 +261,15 @@ function ProfileContent() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-indigo-100 text-3xl font-bold text-[#2C1EE8] sm:text-4xl">
+                  <div className="flex h-full w-full items-center justify-center bg-blue-50 text-2xl font-bold text-[#2C1EE8] sm:text-3xl">
                     {savedName.charAt(0).toUpperCase() || "U"}
                   </div>
                 )}
 
                 {isUploadingAvatar && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/65 backdrop-blur-[2px] text-white rounded-full transition-all animate-pulse">
-                    <svg className="animate-spin h-6 w-6 text-white mb-1" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    <span className="text-[9px] font-extrabold uppercase tracking-wider text-blue-200">Profil</span>
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/70 text-white rounded-none transition-all">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mb-1" />
+                    <span className="text-[9px] font-bold font-mono uppercase tracking-wider text-white">Upload...</span>
                   </div>
                 )}
 
@@ -283,14 +277,14 @@ function ProfileContent() {
                   type="button"
                   onClick={openFilePicker}
                   disabled={isUploadingAvatar}
-                  className="absolute bottom-1.5 right-1.5 z-30 flex h-9 w-9 items-center justify-center rounded-full border border-indigo-200 bg-white text-[#2C1EE8] shadow-lg transition hover:scale-110 hover:bg-[#2C1EE8] hover:text-white cursor-pointer disabled:opacity-50"
+                  className="absolute bottom-0 right-0 z-30 flex h-7 w-7 items-center justify-center rounded-none border border-slate-200 bg-white text-[#2C1EE8] shadow-xs transition hover:bg-[#2C1EE8] hover:text-white cursor-pointer disabled:opacity-50"
                   aria-label="Ubah foto profil"
                   title="Ubah foto profil"
                 >
                   {isUploadingAvatar ? (
-                    <div className="w-4 h-4 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3.5 h-3.5 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Camera className="h-4 w-4" />
+                    <Camera className="h-3.5 w-3.5" />
                   )}
                 </button>
 
@@ -304,63 +298,63 @@ function ProfileContent() {
               </div>
             </div>
 
-            <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+            <div className="flex flex-col items-center text-center sm:items-start sm:text-left space-y-1">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+                <h1 className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-slate-900">
                   {savedName}
                 </h1>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md shadow-2xs">
-                  <Shield className="h-3.5 w-3.5 text-blue-200" />
+                <span className="inline-flex items-center gap-1 rounded-none border border-blue-200 bg-blue-50 px-2 py-0.2 text-[10px] font-bold font-mono uppercase text-[#2C1EE8]">
+                  <Shield className="h-3 w-3 text-[#2C1EE8]" />
                   {roleLabel}
                 </span>
                 {/* Student: class badge */}
                 {isStudent && user?.className && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-300/40 bg-sky-500/20 px-3.5 py-1 text-xs font-bold text-sky-100 backdrop-blur-md">
-                    <GraduationCap className="h-3.5 w-3.5 text-sky-300" />
+                  <span className="inline-flex items-center gap-1 rounded-none border border-slate-200 bg-slate-100 px-2 py-0.2 text-[10px] font-bold font-mono uppercase text-slate-700">
+                    <GraduationCap className="h-3 w-3 text-slate-600" />
                     {user.className}
                   </span>
                 )}
                 {/* Teacher: NIP badge */}
                 {isTeacher && user?.nip && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-300/40 bg-teal-500/20 px-3.5 py-1 text-xs font-bold text-teal-100 backdrop-blur-md">
-                    <Hash className="h-3.5 w-3.5 text-teal-300" />
+                  <span className="inline-flex items-center gap-1 rounded-none border border-teal-200 bg-teal-50 px-2 py-0.2 text-[10px] font-bold font-mono uppercase text-teal-800">
+                    <Hash className="h-3 w-3 text-teal-700" />
                     NIP {user.nip}
                   </span>
                 )}
                 {Array.isArray(advisorFor) && advisorFor.map((ekskul) => (
                   <span
                     key={ekskul.id || ekskul.name}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/20 px-3.5 py-1 text-xs font-bold text-emerald-100 backdrop-blur-md"
+                    className="inline-flex items-center gap-1 rounded-none border border-emerald-200 bg-emerald-50 px-2 py-0.2 text-[10px] font-bold font-mono uppercase text-emerald-800"
                   >
-                    <Award className="h-3.5 w-3.5 text-emerald-300" />
+                    <Award className="h-3 w-3 text-emerald-700" />
                     Pembina {ekskul.name}
                   </span>
                 ))}
                 {Array.isArray(memberships) && memberships.map((ekskul) => (
                   <span
                     key={ekskul.extracurricularId || ekskul.id || ekskul.name}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-purple-300/40 bg-purple-500/20 px-3.5 py-1 text-xs font-bold text-purple-100 backdrop-blur-md"
+                    className="inline-flex items-center gap-1 rounded-none border border-purple-200 bg-purple-50 px-2 py-0.2 text-[10px] font-bold font-mono uppercase text-purple-800"
                   >
-                    <GraduationCap className="h-3.5 w-3.5 text-purple-300" />
+                    <GraduationCap className="h-3 w-3 text-purple-700" />
                     Anggota {ekskul.name}
                   </span>
                 ))}
               </div>
 
-              <p className="mt-2 text-sm font-medium text-blue-100 sm:text-base">
-                ID Akun: <span className="font-extrabold text-white">{savedEmail}</span>
+              <p className="text-xs text-slate-500 font-medium">
+                ID Akun: <span className="font-bold text-slate-800 font-mono">{savedEmail}</span>
               </p>
               {/* Student: department subtitle */}
               {isStudent && user?.departmentName && (
-                <p className="mt-1 text-xs text-blue-200 font-medium">
-                  <BookOpen className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
+                <p className="text-[11px] text-slate-500 font-normal">
+                  <BookOpen className="inline w-3 h-3 mr-1 -mt-0.5" />
                   {user.departmentName}
                 </p>
               )}
               {/* Teacher: position subtitle */}
               {isTeacher && user?.position && (
-                <p className="mt-1 text-xs text-teal-200 font-medium">
-                  <Award className="inline w-3.5 h-3.5 mr-1 -mt-0.5" />
+                <p className="text-[11px] text-slate-500 font-normal">
+                  <Award className="inline w-3 h-3 mr-1 -mt-0.5" />
                   {user.position}
                 </p>
               )}
@@ -368,11 +362,10 @@ function ProfileContent() {
           </div>
 
           <Button
-            variant="outline"
-            size="md"
+            variant="secondary"
+            size="sm"
             onClick={logout}
-            leftIcon={<LogOut className="h-4 w-4" />}
-            className="border-white/30 text-white hover:bg-white/15 bg-white/10 backdrop-blur-md transition-all font-bold"
+            leftIcon={<LogOut className="h-3.5 w-3.5" />}
           >
             Keluar Sesi
           </Button>
@@ -383,44 +376,44 @@ function ProfileContent() {
       <AcademicInfoCard user={user} isStudent={isStudent} isTeacher={isTeacher} isAdmin={isAdmin} />
 
       {/* Main Profile Form Card */}
-      <div className="rounded-[28px] border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8 font-sans">
+      <div className="rounded-none border border-slate-200 bg-white p-5 sm:p-6 shadow-xs font-sans text-left">
         {/* Navigation Sub-Tabs & Edit Action */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-6">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
               type="button"
               onClick={() => setActiveTab("info")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${activeTab === "info"
-                ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${activeTab === "info"
+                ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                : "bg-white text-slate-600 hover:bg-slate-100 border-slate-200"
                 }`}
             >
-              <User className="w-4 h-4" />
+              <User className="w-3.5 h-3.5" />
               <span>Informasi Profil</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("notification")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${activeTab === "notification"
-                ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${activeTab === "notification"
+                ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                : "bg-white text-slate-600 hover:bg-slate-100 border-slate-200"
                 }`}
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-3.5 h-3.5" />
               <span>Email Notifikasi</span>
               {user?.emailNotif && (user?.emailVerifiedAt || user?.isEmailNotifVerified) && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="w-1.5 h-1.5 rounded-none bg-emerald-500" />
               )}
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("password")}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${activeTab === "password"
-                ? "bg-[#2C1EE8] text-white shadow-md shadow-blue-500/20"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border ${activeTab === "password"
+                ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                : "bg-white text-slate-600 hover:bg-slate-100 border-slate-200"
                 }`}
             >
-              <KeyRound className="w-4 h-4" />
+              <KeyRound className="w-3.5 h-3.5" />
               <span>Ubah Password</span>
             </button>
           </div>
@@ -429,10 +422,10 @@ function ProfileContent() {
             <button
               type="button"
               onClick={() => setIsEditingInfo(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold border border-indigo-200 bg-indigo-50/80 text-[#2C1EE8] hover:bg-indigo-100 transition cursor-pointer self-start sm:self-auto shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-bold uppercase tracking-wider border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer self-start sm:self-auto"
             >
-              <User className="w-4 h-4" />
-              <span>Edit Informasi Profil</span>
+              <User className="w-3.5 h-3.5 text-[#2C1EE8]" />
+              <span>Edit Profil</span>
             </button>
           )}
         </div>
@@ -441,27 +434,27 @@ function ProfileContent() {
         <AnimatePresence>
           {statusMessage.text && (
             <motion.div
-              initial={{ opacity: 0, y: -8 }}
+              initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className={`mb-6 p-4 rounded-2xl border text-sm font-semibold flex items-center justify-between transition-all ${statusMessage.type === "success"
+              exit={{ opacity: 0, y: -4 }}
+              className={`mb-4 p-3 rounded-none border text-xs font-semibold flex items-center justify-between transition-colors ${statusMessage.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                 : statusMessage.type === "info"
                   ? "bg-blue-50 text-blue-800 border-blue-200"
                   : "bg-rose-50 text-rose-800 border-rose-200"
                 }`}
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {statusMessage.type === "success" ? (
-                  <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                 ) : (
-                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 )}
                 <span>{statusMessage.text}</span>
               </div>
               <button
                 onClick={() => setStatusMessage({ type: "", text: "" })}
-                className="text-xs opacity-60 hover:opacity-100 font-bold px-2 py-1"
+                className="text-xs opacity-60 hover:opacity-100 font-bold px-1.5 cursor-pointer"
               >
                 ✕
               </button>
@@ -473,46 +466,46 @@ function ProfileContent() {
         {activeTab === "info" && (
           !isEditingInfo ? (
             /* READ-ONLY DISPLAY MODE */
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Nama Lengkap</span>
-                  <p className="text-base font-extrabold text-slate-900">{fullName || savedName}</p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-none bg-slate-50 border border-slate-200 space-y-0.5">
+                  <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider block">Nama Lengkap</span>
+                  <p className="text-sm font-bold text-slate-900 uppercase">{fullName || savedName}</p>
                 </div>
 
-                <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Email / Identitas Akun</span>
-                  <p className="text-base font-extrabold text-slate-900">{email || savedEmail}</p>
+                <div className="p-3.5 rounded-none bg-slate-50 border border-slate-200 space-y-0.5">
+                  <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider block">Email / Identitas Akun</span>
+                  <p className="text-sm font-bold text-slate-900 font-mono">{email || savedEmail}</p>
                 </div>
 
-                <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Nomor Telepon / WA</span>
-                  <p className="text-base font-extrabold text-slate-900">{phone || "Belum diisi"}</p>
+                <div className="p-3.5 rounded-none bg-slate-50 border border-slate-200 space-y-0.5">
+                  <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider block">Nomor Telepon / WA</span>
+                  <p className="text-sm font-bold text-slate-900 font-mono">{phone || "Belum diisi"}</p>
                 </div>
 
-                <div className="p-4.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-                  <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Alamat Domisili</span>
-                  <p className="text-sm font-extrabold text-slate-800 leading-relaxed">{address || "Belum diisi"}</p>
+                <div className="p-3.5 rounded-none bg-slate-50 border border-slate-200 space-y-0.5">
+                  <span className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider block">Alamat Domisili</span>
+                  <p className="text-xs font-semibold text-slate-800 leading-relaxed">{address || "Belum diisi"}</p>
                 </div>
               </div>
             </div>
           ) : (
             /* EDIT FORM MODE */
-            <form onSubmit={handleSaveProfile} className="space-y-5">
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                    Nama Lengkap *
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold uppercase tracking-wider text-slate-700">
+                    Nama Lengkap <span className="text-rose-500">*</span>
                   </label>
                   {!isAdmin && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold font-mono uppercase text-amber-700 bg-amber-50 px-2 py-0.2 rounded-none border border-amber-200">
                       <Lock className="w-3 h-3 text-amber-600" />
-                      <span>Dikunci Otoritas Sekolah</span>
+                      <span>Terkunci</span>
                     </span>
                   )}
                 </div>
                 <div className="relative">
-                  <User className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-slate-400"}`} />
+                  <User className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     required
@@ -520,28 +513,28 @@ function ProfileContent() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Masukkan nama lengkap"
-                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm font-semibold shadow-2xs outline-none transition ${!isAdmin
-                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none"
-                      : "bg-white text-slate-900 border-slate-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    className={`w-full rounded-none border py-2.5 pl-9 pr-3 text-xs sm:text-sm font-semibold outline-none transition-colors ${!isAdmin
+                      ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed select-none"
+                      : "bg-white text-slate-900 border-slate-200 focus:border-[#2C1EE8]"
                       }`}
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                    Email / NIS / NIP *
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold uppercase tracking-wider text-slate-700">
+                    Email / NIS / NIP <span className="text-rose-500">*</span>
                   </label>
                   {!isAdmin && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold font-mono uppercase text-amber-700 bg-amber-50 px-2 py-0.2 rounded-none border border-amber-200">
                       <Lock className="w-3 h-3 text-amber-600" />
-                      <span>Dikunci Otoritas Sekolah</span>
+                      <span>Terkunci</span>
                     </span>
                   )}
                 </div>
                 <div className="relative">
-                  <Mail className={`w-4 h-4 absolute left-3.5 top-3.5 ${!isAdmin ? "text-slate-400" : "text-slate-400"}`} />
+                  <Mail className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     required
@@ -549,70 +542,60 @@ function ProfileContent() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Masukkan email atau NIS/NIP"
-                    className={`w-full rounded-xl border py-3 pl-10 pr-4 text-sm font-semibold shadow-2xs outline-none transition ${!isAdmin
-                      ? "bg-slate-100/90 text-slate-500 border-slate-200 cursor-not-allowed select-none"
-                      : "bg-white text-slate-900 border-slate-200 focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    className={`w-full rounded-none border py-2.5 pl-9 pr-3 text-xs sm:text-sm font-semibold outline-none transition-colors ${!isAdmin
+                      ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed select-none"
+                      : "bg-white text-slate-900 border-slate-200 focus:border-[#2C1EE8]"
                       }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
+                <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">
                   Nomor Telepon / WhatsApp
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                  <Phone className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="Contoh: 082322377070"
-                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-none border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none transition-colors focus:border-[#2C1EE8]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
+                <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">
                   Alamat Tempat Tinggal
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                  <MapPin className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                   <textarea
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     rows="3"
                     placeholder="Masukkan alamat domisili Anda"
-                    className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-none border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs sm:text-sm font-normal text-slate-900 outline-none transition-colors focus:border-[#2C1EE8]"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 pt-3">
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsEditingInfo(false)}
-                  className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition cursor-pointer"
+                  className="px-4 py-2 rounded-none border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-bold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-none bg-[#2C1EE8] px-6 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#2013ce] active:bg-[#1d129f] disabled:opacity-60 cursor-pointer"
                 >
-                  {isSaving ? (
-                    <>
-                      <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <span>Menyimpan Perubahan...</span>
-                    </>
-                  ) : (
-                    "Simpan Perubahan Profil"
-                  )}
+                  {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             </form>
@@ -621,30 +604,30 @@ function ProfileContent() {
 
         {/* Tab 2: Ubah Password Form */}
         {activeTab === "password" && (
-          <form onSubmit={handleChangePassword} className="space-y-5 font-sans">
+          <form onSubmit={handleChangePassword} className="space-y-4 font-sans text-xs">
             <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
-                Password Saat Ini *
+              <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Password Saat Ini <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                <Lock className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                 <input
                   type="password"
                   required
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
                   placeholder="Masukkan password lama"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-none border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none transition-colors focus:border-[#2C1EE8]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
-                Password Baru *
+              <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Password Baru <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                <Lock className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                 <input
                   type="password"
                   required
@@ -652,45 +635,37 @@ function ProfileContent() {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Minimal 6 karakter"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-none border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none transition-colors focus:border-[#2C1EE8]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5">
-                Konfirmasi Password Baru *
+              <label className="block font-bold uppercase tracking-wider text-slate-700 mb-1">
+                Konfirmasi Password Baru <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                <Lock className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                 <input
                   type="password"
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Ketik ulang password baru Anda"
-                  className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm font-semibold text-slate-900 shadow-2xs outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-none border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-xs sm:text-sm font-semibold text-slate-900 outline-none transition-colors focus:border-[#2C1EE8]"
                 />
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#2C1EE8] px-8 py-3 text-sm font-bold text-white shadow-md shadow-[#2C1EE8]/20 transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer"
-            >
-              {isSaving ? (
-                <>
-                  <svg className="animate-spin -ml-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Memperbarui Password...</span>
-                </>
-              ) : (
-                "Perbarui Password Akun"
-              )}
-            </button>
+            <div className="pt-2 border-t border-slate-100">
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="inline-flex items-center justify-center gap-1.5 rounded-none bg-[#2C1EE8] px-6 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition-colors hover:bg-[#2013ce] active:bg-[#1d129f] disabled:opacity-60 cursor-pointer"
+              >
+                {isSaving ? "Memperbarui..." : "Perbarui Password Akun"}
+              </button>
+            </div>
           </form>
         )}
 
@@ -734,18 +709,18 @@ function AcademicInfoCard({ user, isStudent, isTeacher, isAdmin }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs font-sans">
-      <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Informasi Akademik</h2>
-      <div className="flex flex-wrap gap-4">
+    <div className="rounded-none border border-slate-200 bg-white p-4 sm:p-5 shadow-xs font-sans text-left">
+      <h2 className="text-[10px] font-bold font-mono text-slate-400 uppercase tracking-wider mb-3">Informasi Akademik</h2>
+      <div className="flex flex-wrap gap-2.5">
         {items.map((item) => {
           const IconComp = item.icon;
           return (
-            <div key={item.label} className="flex-1 min-w-[200px] flex flex-col gap-1.5 p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+            <div key={item.label} className="w-full sm:flex-1 sm:min-w-[140px] flex flex-col gap-1 p-3 rounded-none bg-slate-50 border border-slate-200 min-w-0 overflow-hidden">
               <div className="flex items-center gap-1.5 text-slate-400">
-                <IconComp className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                <span className="text-[10px] font-extrabold uppercase tracking-wider">{item.label}</span>
+                <IconComp className="w-3.5 h-3.5 text-[#2C1EE8] shrink-0" />
+                <span className="text-[9.5px] font-bold font-mono uppercase tracking-wider truncate">{item.label}</span>
               </div>
-              <span className="text-sm font-extrabold text-slate-900 tracking-tight leading-snug break-words">
+              <span className="text-xs sm:text-sm font-bold text-slate-900 uppercase truncate">
                 {item.value || "—"}
               </span>
             </div>
@@ -767,13 +742,13 @@ function ManualGuideSettingsCard() {
   };
 
   return (
-    <div className="rounded-[24px] border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs font-sans">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="rounded-none border border-slate-200 bg-white p-4 sm:p-5 shadow-xs font-sans text-left">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
+          <h2 className="text-xs sm:text-sm font-bold uppercase text-slate-900 tracking-tight">
             Panduan Manual Replyz
           </h2>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-xs text-slate-500 font-normal mt-0.5">
             Pelajari alur dan fitur utama PPLG Center kapan saja.
           </p>
         </div>
@@ -781,7 +756,7 @@ function ManualGuideSettingsCard() {
         <button
           type="button"
           onClick={handleStartGuide}
-          className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-[#2C1EE8] hover:bg-blue-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center px-4 py-2 rounded-none bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold uppercase tracking-wider text-xs shadow-xs transition-colors cursor-pointer shrink-0"
         >
           Buka Panduan Manual
         </button>

@@ -374,11 +374,11 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/profile"
-                    className="font-bold text-xs uppercase tracking-wider py-2 px-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-black flex items-center gap-2 cursor-pointer"
+                    className="font-bold text-xs uppercase tracking-wider py-2 px-3 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-black flex items-center gap-2 cursor-pointer min-w-0"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    <User className="w-3.5 h-3.5 text-[#2c1ee8]" />
-                    <span>Profil ({user?.fullName || user?.name || "Akun"})</span>
+                    <User className="w-3.5 h-3.5 text-[#2c1ee8] shrink-0" />
+                    <span className="truncate">Profil ({user?.fullName || user?.name || "Akun"})</span>
                   </Link>
                   <button
                     onClick={() => {

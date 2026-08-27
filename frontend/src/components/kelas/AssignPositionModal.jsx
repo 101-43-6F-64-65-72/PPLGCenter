@@ -109,16 +109,16 @@ export default function AssignPositionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
-      <div className="relative w-full max-w-md bg-white border border-slate-200/90 rounded-[24px] p-6 shadow-2xl text-slate-900">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+      <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-none p-5 sm:p-6 shadow-xl text-slate-900 text-left">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-100 text-[#2C1EE8]">
-              <Shield className="w-5 h-5" />
+            <div className="p-2 rounded-none bg-blue-50 border border-blue-200 text-[#2C1EE8]">
+              <Shield className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-900 text-base">Tetapkan {positionName}</h3>
-              <p className="text-xs text-slate-500 font-medium">Kelas {schoolClass?.name}</p>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase">Tetapkan {positionName}</h3>
+              <p className="text-xs text-slate-500 font-normal">Kelas {schoolClass?.name}</p>
             </div>
           </div>
 
@@ -126,32 +126,31 @@ export default function AssignPositionModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+          <div className="mb-4 p-2.5 rounded-none bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-xs font-extrabold text-slate-700 mb-1.5">
+            <label className="block text-slate-700 font-bold uppercase tracking-wider mb-1.5">
               Pilih {positionType === "WaliKelas" ? "Guru Wali Kelas" : "Siswa Pengisi Posisi"}:
             </label>
 
             {isLoadingCandidates ? (
-              <div className="p-4 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-[#2C1EE8]" />
-                <span>Memuat daftar kandidat...</span>
+              <div className="p-3 text-center text-xs text-slate-400 font-mono">
+                Memuat daftar kandidat...
               </div>
             ) : candidates.length === 0 ? (
-              <p className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-500 text-center font-medium">
+              <p className="p-2.5 bg-slate-50 rounded-none border border-slate-200 text-xs text-slate-500 text-center font-medium">
                 Tidak ada data terdaftar untuk kelas {schoolClass?.name}.
               </p>
             ) : (
@@ -159,7 +158,7 @@ export default function AssignPositionModal({
                 value={selectedCandidateId}
                 onChange={(e) => setSelectedCandidateId(e.target.value)}
                 required
-                className="w-full bg-slate-50 border border-slate-200/90 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100 font-bold transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#2C1EE8] font-semibold transition-colors cursor-pointer"
               >
                 {candidates.map((c, idx) => {
                   const cId = c.id || c.Id;
@@ -177,19 +176,19 @@ export default function AssignPositionModal({
             )}
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isSubmitting || candidates.length === 0}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#2C1EE8] hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-none bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white text-xs font-bold uppercase tracking-wider shadow-xs transition-colors cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

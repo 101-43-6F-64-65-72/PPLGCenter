@@ -27,7 +27,7 @@ export default function ProposalUpload({
 
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-semibold text-gray-700">
+      <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
         Upload Proposal PDF
       </label>
 
@@ -36,10 +36,10 @@ export default function ProposalUpload({
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`group cursor-pointer rounded-3xl border-2 border-dashed p-6 text-center transition-all duration-200 sm:p-8 ${
+        className={`group cursor-pointer rounded-none border-2 border-dashed p-5 text-center transition-colors sm:p-6 ${
           isDragging
-            ? "border-[#2C1EE8] bg-[#EEF2FF] shadow-sm"
-            : "border-[#C7D2FE] bg-white hover:border-[#2C1EE8] hover:bg-[#EEF2FF]/70"
+            ? "border-[#2C1EE8] bg-blue-50/50"
+            : "border-slate-300 bg-slate-50/50 hover:border-[#2C1EE8] hover:bg-blue-50/30"
         }`}
       >
         <input
@@ -54,13 +54,13 @@ export default function ProposalUpload({
           }}
         />
 
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF2FF] text-[#2C1EE8]">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-none bg-blue-50 text-[#2C1EE8] border border-blue-200">
           {selectedFiles.length ? (
-            <FileText className="h-6 w-6" />
+            <FileText className="h-5 w-5" />
           ) : (
             <svg
               viewBox="0 0 24 24"
-              className="h-6 w-6"
+              className="h-5 w-5"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
@@ -79,26 +79,29 @@ export default function ProposalUpload({
           )}
         </div>
 
-        <div className="mt-4">
+        <div className="mt-3">
           {selectedFiles.length ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {selectedFiles.map((file, index) => (
                 <div
                   key={`${file.name}-${file.size}-${index}`}
-                  className="flex items-center justify-between rounded-3xl border border-gray-200 bg-white px-4 py-3 text-left"
+                  className="flex items-center justify-between rounded-none border border-slate-200 bg-white px-3.5 py-2 text-left"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-xs font-bold text-slate-900">
                       {file.name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-[11px] font-mono text-slate-400">
                       {Math.max(1, Math.round(file.size / 1024))} KB
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => onRemoveFile(index)}
-                    className="text-sm font-semibold text-[#DB2777] hover:text-[#BE185D]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveFile(index);
+                    }}
+                    className="text-xs font-bold uppercase tracking-wider text-rose-600 hover:text-rose-700 cursor-pointer"
                   >
                     Hapus
                   </button>
@@ -107,10 +110,10 @@ export default function ProposalUpload({
             </div>
           ) : (
             <>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-xs font-bold uppercase text-slate-900">
                 Drag & Drop file PDF di sini
               </p>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-1 text-[11px] text-slate-500">
                 atau klik untuk memilih file
               </p>
             </>

@@ -96,25 +96,24 @@ export default function ChatDrawer({ isOpen, onClose, currentUserId }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col font-sans">
+    <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white border-l border-slate-200 shadow-xl flex flex-col font-sans text-slate-900 text-left">
       {/* Drawer Header */}
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90 backdrop-blur">
+      <div className="p-3.5 border-b border-slate-200 flex items-center justify-between bg-white">
         <div className="flex items-center gap-2">
-          <span className="text-xl">💬</span>
-          <h2 className="text-sm font-bold text-slate-100">
+          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-tight text-slate-900">
             {activeConv ? activeConv.title || "Percakapan" : "Pesan Langsung"}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {activeConv && (
             <button
               onClick={() => setActiveConv(null)}
-              className="text-xs text-indigo-400 hover:underline px-2 py-1 bg-slate-800 rounded"
+              className="text-xs font-bold uppercase tracking-wider text-[#2C1EE8] hover:bg-blue-50 px-2 py-1 border border-blue-200 rounded-none cursor-pointer"
             >
               ← Kembali
             </button>
           )}
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-100 text-lg font-bold">
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer">
             ✕
           </button>
         </div>
@@ -123,9 +122,9 @@ export default function ChatDrawer({ isOpen, onClose, currentUserId }) {
       {/* Main Content Area */}
       {!activeConv ? (
         /* Conversation List */
-        <div className="flex-1 overflow-y-auto divide-y divide-slate-800 p-2">
+        <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-2">
           {conversations.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 text-xs">Belum ada percakapan aktif.</div>
+            <div className="p-8 text-center text-slate-400 text-xs font-medium">Belum ada percakapan aktif.</div>
           ) : (
             conversations.map((conv) => {
               const otherMember = conv.members.find((m) => m.userId !== currentUserId);
@@ -133,24 +132,24 @@ export default function ChatDrawer({ isOpen, onClose, currentUserId }) {
                 <div
                   key={conv.id}
                   onClick={() => setActiveConv(conv)}
-                  className="p-3 hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer flex items-center justify-between gap-3"
+                  className="p-3 hover:bg-slate-50 border border-transparent hover:border-slate-200 rounded-none transition-colors cursor-pointer flex items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center font-bold text-indigo-300">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-none bg-blue-50 border border-blue-200 flex items-center justify-center font-bold text-[#2C1EE8] text-xs">
                       {otherMember?.fullName?.[0] || "U"}
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-100">
+                      <h4 className="text-xs font-bold uppercase text-slate-900">
                         {conv.title || otherMember?.fullName || "Chat Direct"}
                       </h4>
-                      <p className="text-[11px] text-slate-400 line-clamp-1">
+                      <p className="text-[11px] text-slate-500 line-clamp-1 font-normal">
                         {conv.lastMessage?.text || "[Lampiran]"}
                       </p>
                     </div>
                   </div>
 
                   {conv.unreadCount > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    <span className="w-4 h-4 rounded-none bg-[#2C1EE8] text-white text-[9px] font-bold font-mono flex items-center justify-center shrink-0">
                       {conv.unreadCount}
                     </span>
                   )}
@@ -161,7 +160,7 @@ export default function ChatDrawer({ isOpen, onClose, currentUserId }) {
         </div>
       ) : (
         /* Chat Messages Window */
-        <div className="flex-1 flex flex-col justify-between overflow-hidden">
+        <div className="flex-1 flex flex-col justify-between overflow-hidden bg-slate-50/50">
           {/* Messages Scroll Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((msg) => {
@@ -171,24 +170,24 @@ export default function ChatDrawer({ isOpen, onClose, currentUserId }) {
                   key={msg.id}
                   className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                 >
-                  <span className="text-[9px] text-slate-500 mb-0.5 px-1">{msg.senderName}</span>
+                  <span className="text-[9px] font-bold font-mono uppercase text-slate-400 mb-0.5 px-1">{msg.senderName}</span>
                   <div
-                    className={`max-w-[80%] p-3 rounded-2xl text-xs ${
+                    className={`max-w-[85%] p-3 rounded-none text-xs break-words overflow-hidden ${
                       isMe
-                        ? "bg-indigo-600 text-white rounded-br-none"
-                        : "bg-slate-800 text-slate-100 border border-slate-700/60 rounded-bl-none"
+                        ? "bg-[#2C1EE8] text-white border border-[#2C1EE8]"
+                        : "bg-white text-slate-900 border border-slate-200 shadow-xs"
                     }`}
                   >
-                    {msg.text && <p>{msg.text}</p>}
+                    {msg.text && <p className="leading-relaxed font-normal break-words">{msg.text}</p>}
                     {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-white/20 space-y-1">
+                      <div className="mt-2 pt-2 border-t border-slate-200/40 space-y-1">
                         {msg.attachments.map((att) => (
                           <a
                             key={att.id}
                             href={att.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] underline font-mono text-emerald-300"
+                            className="inline-flex items-center gap-1 text-[10px] underline font-mono text-blue-200"
                           >
                             📎 {att.fileName} ({(att.fileSize / 1024).toFixed(1)} KB)
                           </a>
@@ -196,7 +195,7 @@ export default function ChatDrawer({ isOpen, onClose, currentUserId }) {
                       </div>
                     )}
                   </div>
-                  <span className="text-[8px] text-slate-500 mt-1 px-1">
+                  <span className="text-[8px] font-mono text-slate-400 mt-0.5 px-1">
                     {new Date(msg.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
@@ -206,19 +205,19 @@ export default function ChatDrawer({ isOpen, onClose, currentUserId }) {
           </div>
 
           {/* Chat Input Bar */}
-          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-800 bg-slate-900/90 text-xs space-y-2">
+          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-200 bg-white text-xs space-y-2">
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 placeholder="Tulis pesan..."
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white font-medium"
               />
               <button
                 type="submit"
                 disabled={sending}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-colors shadow"
+                className="px-4 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] text-white font-bold uppercase tracking-wider text-xs rounded-none transition-colors shadow-xs cursor-pointer disabled:opacity-50"
               >
                 Kirim
               </button>

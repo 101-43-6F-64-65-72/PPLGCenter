@@ -42,7 +42,6 @@ export default function InviteUserModal({ isOpen, onClose, group, onInviteSucces
 
     try {
       await communityService.inviteMember(group.id, userId);
-      // Update local state to show invited
       setResults((prev) =>
         prev.map((u) => (u.userId === userId ? { ...u, isAlreadyMemberOrInvited: true } : u))
       );
@@ -57,92 +56,98 @@ export default function InviteUserModal({ isOpen, onClose, group, onInviteSucces
   if (!isOpen || !group) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-[28px] border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+      <div className="bg-white rounded-none border border-slate-200 shadow-xl w-full max-w-lg overflow-hidden flex flex-col justify-between text-left">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold text-[#2C1EE8] uppercase tracking-wider bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 mb-1">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#2C1EE8] uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-none border border-blue-100 mb-1">
               <Sparkles className="w-3 h-3 text-[#2C1EE8]" />
               {group.name}
             </span>
-            <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-[#2C1EE8]" />
-              Undang Pengguna Ke Grup
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 uppercase">
+              <UserPlus className="w-4 h-4 text-[#2C1EE8]" />
+              Undang Pengguna Ke Komunitas
             </h3>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-4 flex-1">
+        <div className="p-4 sm:p-5 space-y-3.5 flex-1">
           {/* Search Input */}
           <div className="relative w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               autoFocus
               placeholder="Cari nama lengkap pengguna..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#2C1EE8] focus:ring-2 focus:ring-blue-100"
+              className="w-full bg-slate-50 border border-slate-200 rounded-none pl-9 pr-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-[#2C1EE8] focus:bg-white"
             />
           </div>
 
           {/* Results List */}
-          <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
             {isLoading ? (
-              <div className="py-8 text-center text-xs text-slate-400 font-bold">Mencari pengguna...</div>
-            ) : !query.trim() ? (
-              <div className="py-8 text-center text-xs text-slate-400 font-bold">
-                Ketik nama lengkap pengguna untuk mencari dan mengundang.
+              <div className="py-8 text-center text-xs text-slate-400 font-bold uppercase tracking-wider">
+                Mencari pengguna...
               </div>
             ) : results.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 font-bold">
-                Tidak ada pengguna yang cocok dengan nama tersebut.
+              <div className="py-8 text-center text-xs text-slate-400">
+                {query.trim().length >= 2
+                  ? "Tidak ada pengguna yang cocok."
+                  : "Ketik minimal 2 karakter untuk mencari pengguna."}
               </div>
             ) : (
-              results.map((user) => {
-                const isInviting = invitingUserIds.includes(user.userId);
+              results.map((u) => {
+                const isInvited = u.isAlreadyMemberOrInvited;
+                const isProcessing = invitingUserIds.includes(u.userId);
+
                 return (
                   <div
-                    key={user.userId}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-2xs hover:border-blue-200 transition-all"
+                    key={u.userId}
+                    className="flex items-center justify-between p-2.5 rounded-none border border-slate-200 bg-white hover:bg-slate-50 text-xs transition-colors"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-900 text-white font-black text-xs flex items-center justify-center shrink-0">
-                        {user.fullName?.charAt(0) || "U"}
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black text-slate-900 leading-snug">{user.fullName}</h4>
-                        <span className="text-[11px] text-slate-500 font-medium block">
-                          {user.role === "Student"
-                            ? `Siswa (${user.className || "Kelas PPLG"})`
-                            : `Guru (${user.position || "Pengajar"})`}
-                        </span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {u.photoUrl || u.avatarUrl ? (
+                        <img
+                          src={u.photoUrl || u.avatarUrl}
+                          alt={u.fullName}
+                          className="w-7 h-7 rounded-none object-cover border border-slate-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-none bg-blue-50 text-[#2C1EE8] font-bold text-xs flex items-center justify-center shrink-0 border border-blue-100 uppercase">
+                          {(u.fullName || "U").slice(0, 2)}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 truncate uppercase">{u.fullName}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          @{u.userName} · {u.role}
+                        </p>
                       </div>
                     </div>
 
-                    {user.isAlreadyMemberOrInvited ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
-                        <Check className="w-3.5 h-3.5" /> Terundang / Anggota
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleInvite(user.userId)}
-                        disabled={isInviting}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2C1EE8] hover:bg-blue-700 text-white text-xs font-black shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" />
-                        <span>{isInviting ? "Mengundang..." : "Undang"}</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={isInvited || isProcessing}
+                      onClick={() => handleInvite(u.userId)}
+                      className={`px-3 py-1.5 rounded-none font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shrink-0 ${
+                        isInvited
+                          ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          : "bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white shadow-xs"
+                      }`}
+                    >
+                      {isInvited ? "Telah Bergabung" : isProcessing ? "Mengirim..." : "+ Undang"}
+                    </button>
                   </div>
                 );
               })
@@ -151,12 +156,12 @@ export default function InviteUserModal({ isOpen, onClose, group, onInviteSucces
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-none cursor-pointer"
           >
-            Tutup
+            Selesai
           </button>
         </div>
       </div>

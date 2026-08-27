@@ -70,62 +70,38 @@ export const Input = React.forwardRef(
     };
 
     const labelStyles = isDark
-      ? "text-slate-100 font-medium text-sm"
-      : "text-gray-700 font-medium text-sm";
+      ? "text-slate-100 font-bold uppercase tracking-wider text-xs"
+      : "text-slate-700 font-bold uppercase tracking-wider text-xs";
 
     const baseInputStyles = isDark
-      ? "w-full rounded-2xl border bg-white/95 text-slate-950 px-4 py-3 text-sm outline-none transition-all duration-200 focus:border-[#2c1ee8] focus:ring-2 focus:ring-[#2c1ee8]/25 disabled:bg-slate-200 disabled:cursor-not-allowed"
-      : "w-full rounded-2xl border bg-white text-gray-900 px-4 py-3 text-sm outline-none transition-all duration-200 focus:border-[#2c1ee8] focus:ring-2 focus:ring-[#2c1ee8]/20 disabled:bg-gray-100 disabled:cursor-not-allowed";
+      ? "w-full rounded-none border bg-white/95 text-slate-950 px-3.5 py-2.5 text-xs sm:text-sm font-semibold outline-none transition-colors focus:border-[#2C1EE8] disabled:bg-slate-200 disabled:cursor-not-allowed"
+      : "w-full rounded-none border bg-white text-slate-900 px-3.5 py-2.5 text-xs sm:text-sm font-semibold outline-none transition-colors focus:border-[#2C1EE8] disabled:bg-slate-100 disabled:cursor-not-allowed";
 
     const borderStyles = error
-      ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+      ? "border-rose-500 focus:border-rose-500"
       : isFocused
-      ? "border-[#2c1ee8]"
+      ? "border-[#2C1EE8]"
       : isDark
       ? "border-white/20"
-      : "border-gray-200 hover:border-gray-300";
+      : "border-slate-200 hover:border-slate-300";
 
-    const leftPadding = leftIcon ? "pl-11" : "";
-    const rightPadding = rightIcon ? "pr-11" : "";
+    const leftPadding = leftIcon ? "pl-9" : "";
+    const rightPadding = rightIcon ? "pr-9" : "";
 
     return (
-      <div className={`w-full flex flex-col gap-1.5 ${className}`}>
+      <div className={`w-full flex flex-col gap-1 ${className}`}>
         {label && (
           <label htmlFor={name} className={`flex items-center gap-1 ${labelStyles}`}>
             <span>{label}</span>
-            {isRequired && <span className="text-red-500 font-bold">*</span>}
+            {isRequired && <span className="text-rose-500 font-bold">*</span>}
           </label>
         )}
 
-        <MotionDiv
-          animate={{
-            scale: isFocused ? 1.015 : 1,
-          }}
-          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-          className="relative w-full flex items-center group"
-        >
-          {/* Animated Morphing Ambient Border Glow Ring */}
-          {isFocused && (
-            <MotionDiv
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.2 }}
-              className="absolute -inset-0.5 rounded-[18px] bg-gradient-to-r from-[#2c1ee8] via-indigo-500 to-blue-400 opacity-60 blur-xs pointer-events-none"
-            />
-          )}
-
+        <div className="relative w-full flex items-center group">
           {leftIcon && (
-            <MotionDiv
-              animate={{
-                scale: isFocused || hasValue ? 1.15 : 1,
-                rotate: isFocused ? -6 : 0,
-              }}
-              transition={{ type: "spring", stiffness: 350, damping: 20 }}
-              className="absolute left-3.5 z-20 flex items-center justify-center text-slate-400 pointer-events-none"
-            >
+            <div className="absolute left-3 z-20 flex items-center justify-center text-slate-400 pointer-events-none">
               {leftIcon}
-            </MotionDiv>
+            </div>
           )}
 
           <input
@@ -143,21 +119,15 @@ export const Input = React.forwardRef(
           />
 
           {rightIcon && (
-            <MotionDiv
-              animate={{
-                scale: isFocused ? 1.08 : 1,
-              }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-3.5 z-20 flex items-center justify-center text-slate-400"
-            >
+            <div className="absolute right-3 z-20 flex items-center justify-center text-slate-400">
               {rightIcon}
-            </MotionDiv>
+            </div>
           )}
-        </MotionDiv>
+        </div>
 
-        {error && <p className="text-xs font-medium text-red-500 mt-0.5">{error}</p>}
+        {error && <p className="text-[11px] font-semibold text-rose-600 mt-0.5">{error}</p>}
         {!error && helperText && (
-          <p className={isDark ? "text-xs text-slate-300" : "text-xs text-gray-500"}>
+          <p className={isDark ? "text-[11px] text-slate-300" : "text-[11px] text-slate-500"}>
             {helperText}
           </p>
         )}

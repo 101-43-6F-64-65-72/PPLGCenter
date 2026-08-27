@@ -46,7 +46,7 @@ export default function PerpustakaanPage() {
   const [activeTab, setActiveTab] = useState("explorer"); // 'explorer' | 'myBorrowings' | 'teacherInbox'
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Navigation & Folder Stack (Google Drive Breadcrumbs)
+  // Navigation & Folder Stack (Breadcrumbs)
   const [folderStack, setFolderStack] = useState([]); // Array of { id, name }
   const currentFolder = folderStack.length > 0 ? folderStack[folderStack.length - 1] : null;
 
@@ -131,7 +131,7 @@ export default function PerpustakaanPage() {
     }
   }, [currentFolder]);
 
-  // Instant Client-Side Search (Instant matching with zero loading delay or UI flicker)
+  // Instant Client-Side Search
   const filteredBooks = books.filter((book) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
@@ -149,16 +149,23 @@ export default function PerpustakaanPage() {
     const q = search.toLowerCase();
     return (
       folder.name?.toLowerCase().includes(q) ||
-      folder.description?.toLowerCase().includes(q) ||
-      folder.creatorName?.toLowerCase().includes(q)
+      folder.creatorName?.toLowerCase().includes(q) ||
+      folder.description?.toLowerCase().includes(q)
     );
   });
 
-  const fetchMyRequests = useCallback(async () => {
+  useEffect(() => {
+    if (activeTab === "explorer") {
+      loadExplorerData();
+    }
+  }, [activeTab, loadExplorerData]);
+
+  // Fetch Student Borrow Requests
+  const fetchMyBorrowings = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
       setLoadingMyRequests(true);
-      const res = await libraryService.getStudentBorrowRequests();
+      const res = await libraryService.getMyBorrowRequests();
       setMyRequests(res?.data || res || []);
     } catch (err) {
       console.error("Failed to load student borrow requests:", err);
@@ -167,59 +174,50 @@ export default function PerpustakaanPage() {
     }
   }, [isAuthenticated]);
 
+  // Fetch Teacher Inbox Requests
   const fetchTeacherRequests = useCallback(async () => {
-    if (!isAuthenticated || !isTeacherOrAdmin) return;
+    if (!isTeacherOrAdmin) return;
     try {
       setLoadingTeacherRequests(true);
-      const res = await libraryService.getTargetedTeacherBorrowRequests();
+      const res = await libraryService.getTeacherBorrowRequests();
       setTeacherRequests(res?.data || res || []);
     } catch (err) {
       console.error("Failed to load teacher borrow requests:", err);
     } finally {
       setLoadingTeacherRequests(false);
     }
-  }, [isAuthenticated, isTeacherOrAdmin]);
+  }, [isTeacherOrAdmin]);
 
   useEffect(() => {
-    loadExplorerData();
-  }, [loadExplorerData]);
-
-  useEffect(() => {
-    if (activeTab === "myBorrowings") fetchMyRequests();
+    if (activeTab === "myBorrowings") fetchMyBorrowings();
     if (activeTab === "teacherInbox") fetchTeacherRequests();
-  }, [activeTab, fetchMyRequests, fetchTeacherRequests]);
+  }, [activeTab, fetchMyBorrowings, fetchTeacherRequests]);
 
-  // Folder Navigation Handlers
   const handleOpenFolder = (folder) => {
-    setFolderStack((prev) => [...prev, { id: folder.id, name: folder.name }]);
-    setSearch("");
+    setFolderStack([...folderStack, { id: folder.id, name: folder.name }]);
   };
 
   const handleNavigateBreadcrumb = (index) => {
     if (index === -1) {
       setFolderStack([]);
     } else {
-      setFolderStack((prev) => prev.slice(0, index + 1));
+      setFolderStack(folderStack.slice(0, index + 1));
     }
-    setSearch("");
   };
 
-  // Cloudinary Cover Image File Upload Handler
-  const handleCoverFileUpload = async (e) => {
+  const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setUploadingCover(true);
-      setAlertMessage(null);
-      const uploadedUrl = await uploadImageToCloudinary(file, "library-covers");
+      const uploadedUrl = await uploadImageToCloudinary(file);
       if (uploadedUrl) {
         setBookCoverUrl(uploadedUrl);
-        setAlertMessage({ type: "success", text: "Sampul buku berhasil diunggah!" });
       }
     } catch (err) {
-      console.error("Failed to upload book cover image:", err);
-      setAlertMessage({ type: "error", text: err?.message || "Gagal mengunggah gambar sampul buku." });
+      console.error("Failed to upload book cover:", err);
+      alert("Gagal mengunggah sampul buku. Silakan coba lagi.");
     } finally {
       setUploadingCover(false);
     }
@@ -234,9 +232,9 @@ export default function PerpustakaanPage() {
       await libraryService.createFolder({
         name: newFolderName.trim(),
         description: newFolderDesc.trim(),
-        parentFolderId: currentFolder?.id || null,
+        parentId: currentFolder?.id || null,
         visibilityType: newFolderVisibility,
-        allowedClassIds: newFolderVisibility === "TargetedClasses" ? selectedClassIds : null,
+        allowedClassIds: newFolderVisibility === "TargetedClasses" ? selectedClassIds : [],
       });
 
       setCreateFolderModalOpen(false);
@@ -244,7 +242,7 @@ export default function PerpustakaanPage() {
       setNewFolderDesc("");
       setNewFolderVisibility("Public");
       setSelectedClassIds([]);
-      setAlertMessage({ type: "success", text: "Folder/Kategori perpustakaan berhasil dibuat!" });
+      setAlertMessage({ type: "success", text: "Folder baru berhasil dibuat." });
       loadExplorerData();
     } catch (err) {
       setAlertMessage({ type: "error", text: err?.message || "Gagal membuat folder perpustakaan." });
@@ -388,86 +386,114 @@ export default function PerpustakaanPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white relative">
       <Navbar />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
-        {/* Top Header Card */}
-        <div className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
-          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Perpustakaan & Repository Modul PPLG</span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Katalog & Modul Kejuruan
-              </h1>
-              <p className="text-sm text-slate-600 max-w-2xl">
-                Repositori modul belajar, buku cetak kejuruan, dan literatur digital dengan peminjaman mandiri siswa.
-              </p>
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-5">
+        
+        {/* ── 1. Top Search, Navigation & Action Toolbar (Direct & To-The-Point) ── */}
+        <div className="bg-white border border-slate-200 rounded-none p-3.5 sm:p-4 shadow-xs space-y-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-lg">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari judul buku, modul, penulis, atau kata kunci..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-8 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] outline-none text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-colors"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 self-start md:self-auto shrink-0">
+            {/* Quick Action Buttons */}
+            <div className="flex items-center gap-2 shrink-0 self-start lg:self-auto">
+              {isTeacherOrAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setCreateFolderModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold uppercase tracking-wider rounded-none border border-slate-200 transition-colors cursor-pointer"
+                  >
+                    <FolderPlus className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                    <span>+ Folder</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setCreateBookModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#2C1EE8] hover:bg-[#2317be] active:bg-[#1d129f] text-white text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Tambah Buku</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setActiveTab("explorer")}
+              className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer border ${
+                activeTab === "explorer"
+                  ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                  : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+              }`}
+            >
+              Katalog & Modul
+            </button>
+
+            {isAuthenticated && (
               <button
                 type="button"
-                onClick={() => setActiveTab("explorer")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === "explorer"
-                    ? "bg-[#2C1EE8] text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                onClick={() => setActiveTab("myBorrowings")}
+                className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer border ${
+                  activeTab === "myBorrowings"
+                    ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                    : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
                 }`}
               >
-                📂 Repository Buku
+                Peminjaman Saya
               </button>
+            )}
 
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("myBorrowings")}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "myBorrowings"
-                      ? "bg-[#2C1EE8] text-white shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  📜 Peminjaman Saya
-                </button>
-              )}
-
-              {isTeacherOrAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("teacherInbox")}
-                  className={`relative px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === "teacherInbox"
-                      ? "bg-[#2C1EE8] text-white shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>Inbox Guru</span>
-                    {pendingTeacherRequestsCount > 0 && (
-                      <span className="w-4 h-4 rounded-full bg-rose-500 text-white font-black text-[9px] flex items-center justify-center">
-                        {pendingTeacherRequestsCount}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              )}
-            </div>
+            {isTeacherOrAdmin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("teacherInbox")}
+                className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer border flex items-center gap-1.5 ${
+                  activeTab === "teacherInbox"
+                    ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                    : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
+                }`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>Inbox Guru</span>
+                {pendingTeacherRequestsCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-none bg-rose-500 text-white font-mono font-bold text-[9.5px]">
+                    {pendingTeacherRequestsCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Global Alert Notification */}
         {alertMessage && (
           <div
-            className={`p-4 rounded-2xl text-xs sm:text-sm font-semibold border flex items-center justify-between gap-3 animate-fade-in ${
+            className={`p-3 rounded-none text-xs font-semibold border flex items-center justify-between gap-3 ${
               alertMessage.type === "success"
                 ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                 : "bg-rose-50 border-rose-200 text-rose-800"
@@ -478,34 +504,33 @@ export default function PerpustakaanPage() {
               onClick={() => setAlertMessage(null)}
               className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
 
-        {/* TAB 1: GOOGLE DRIVE REPOSITORY EXPLORER VIEW */}
+        {/* ── TAB 1: GOOGLE DRIVE REPOSITORY EXPLORER VIEW ── */}
         {activeTab === "explorer" && (
-          <div className="space-y-6">
-            {/* Top Toolbar: Breadcrumb Navigation & Action Buttons */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-              {/* Breadcrumbs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-bold text-slate-600 scrollbar-none py-1">
+          <div className="space-y-4">
+            {/* Breadcrumb Navigation Bar */}
+            <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-none border border-slate-200 shadow-xs">
+              <div className="flex items-center gap-1.5 overflow-x-auto text-xs font-bold text-slate-600 scrollbar-none py-0.5">
                 <button
                   type="button"
                   onClick={() => handleNavigateBreadcrumb(-1)}
-                  className="hover:text-[#2C1EE8] flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
+                  className="hover:text-[#2C1EE8] flex items-center gap-1.5 cursor-pointer transition-colors shrink-0 uppercase tracking-wider"
                 >
-                  <Folder className="w-4 h-4 text-[#2C1EE8]" />
-                  <span>Utama</span>
+                  <Folder className="w-3.5 h-3.5 text-[#2C1EE8]" />
+                  <span>Katalog Utama</span>
                 </button>
 
                 {folderStack.map((item, idx) => (
                   <React.Fragment key={item.id}>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
                     <button
                       type="button"
                       onClick={() => handleNavigateBreadcrumb(idx)}
-                      className={`hover:text-[#2C1EE8] cursor-pointer transition-colors shrink-0 ${
+                      className={`hover:text-[#2C1EE8] cursor-pointer transition-colors shrink-0 uppercase tracking-wider ${
                         idx === folderStack.length - 1 ? "text-[#2C1EE8] font-black" : ""
                       }`}
                     >
@@ -514,83 +539,47 @@ export default function PerpustakaanPage() {
                   </React.Fragment>
                 ))}
               </div>
-
-              {/* Controls & Creation Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative min-w-[200px] flex-1 sm:flex-initial">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    placeholder="Cari judul buku..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all"
-                  />
-                </div>
-
-                {isTeacherOrAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => setCreateFolderModalOpen(true)}
-                    className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    <FolderPlus className="w-4 h-4 text-[#2C1EE8]" />
-                    <span>+ Folder</span>
-                  </button>
-                )}
-
-                {isTeacherOrAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => setCreateBookModalOpen(true)}
-                    className="px-4 py-2 bg-[#2C1EE8] hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>+ Tambah Buku</span>
-                  </button>
-                )}
-              </div>
             </div>
 
             {loadingData ? (
-              <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 text-slate-500 text-sm font-medium">
-                <div className="w-8 h-8 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <div className="text-center py-16 bg-white rounded-none border border-slate-200 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                <div className="w-6 h-6 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                 Memuat repositori dan koleksi buku...
               </div>
             ) : (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {/* Section 1: Subfolders Directory */}
                 {filteredFolders.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-[#2C1EE8]" />
                       <span>Kategori Folder ({filteredFolders.length})</span>
                     </h3>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {filteredFolders.map((folder) => (
                         <div
                           key={folder.id}
                           onClick={() => handleOpenFolder(folder)}
-                          className="bg-white hover:bg-slate-50/80 border border-slate-200/90 hover:border-blue-300 rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between group relative shadow-2xs hover:shadow-sm"
+                          className="bg-white hover:bg-slate-50/80 border border-slate-200 hover:border-[#2C1EE8] rounded-none p-3.5 cursor-pointer transition-colors flex items-center justify-between group relative shadow-2xs"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2C1EE8] shrink-0 group-hover:scale-105 transition-transform">
-                              <Folder className="w-5 h-5 fill-blue-100" />
+                            <div className="w-9 h-9 rounded-none bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2C1EE8] shrink-0">
+                              <Folder className="w-4 h-4 fill-blue-100" />
                             </div>
                             <div className="min-w-0">
-                              <h4 className="font-extrabold text-slate-900 text-xs sm:text-sm truncate group-hover:text-[#2C1EE8] transition-colors">
+                              <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate group-hover:text-[#2C1EE8] transition-colors">
                                 {folder.name}
                               </h4>
-                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
-                                <span className="truncate max-w-[90px]">{folder.creatorName || "Guru"}</span>
-                                <span>•</span>
+                              <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono mt-0.5">
+                                <span className="truncate max-w-[80px]">{folder.creatorName || "Guru"}</span>
+                                <span>·</span>
                                 <span className="text-[#2C1EE8] font-bold">
                                   {folder.visibilityType === "Public"
-                                    ? "🌐 Publik"
+                                    ? "Publik"
                                     : folder.visibilityType === "TeachersOnly"
-                                    ? "🔒 Guru"
-                                    : "🎯 Terbatas"}
+                                    ? "Guru"
+                                    : "Terbatas"}
                                 </span>
                               </div>
                             </div>
@@ -600,10 +589,10 @@ export default function PerpustakaanPage() {
                             <button
                               type="button"
                               onClick={(e) => handleDeleteFolder(folder.id, e)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer rounded-lg hover:bg-rose-50"
+                              className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                               title="Hapus Folder"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
@@ -613,31 +602,31 @@ export default function PerpustakaanPage() {
                 )}
 
                 {/* Section 2: Books Catalog */}
-                <div className="space-y-3">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <div className="space-y-2.5">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                     <BookMarked className="w-3.5 h-3.5 text-[#2C1EE8]" />
                     <span>Daftar Buku & Modul ({filteredBooks.length})</span>
                   </h3>
 
                   {filteredBooks.length === 0 && filteredFolders.length === 0 ? (
-                    <div className="text-center py-16 bg-white rounded-3xl border border-slate-200 text-slate-500 text-sm">
-                      <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                      {search ? `Tidak ada buku atau folder yang cocok dengan "${search}".` : "Folder ini masih kosong. Belum ada folder atau buku yang ditambahkan."}
+                    <div className="text-center py-16 bg-white rounded-none border border-slate-200 text-slate-400 text-xs font-medium">
+                      <BookOpen className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      {search ? `Tidak ada buku atau folder yang cocok dengan "${search}".` : "Folder ini masih kosong. Belum ada modul atau buku yang ditambahkan."}
                     </div>
                   ) : filteredBooks.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-2xl border border-slate-200 text-slate-500 text-xs">
+                    <div className="text-center py-12 bg-white rounded-none border border-slate-200 text-slate-400 text-xs font-medium">
                       {search ? `Tidak ada buku yang cocok dengan "${search}".` : "Belum ada buku di tingkat folder ini."}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {filteredBooks.map((book) => (
                         <div
                           key={book.id}
-                          className="bg-white border border-slate-200 hover:border-blue-300 rounded-3xl p-5 flex flex-col justify-between transition-all hover:shadow-lg hover:shadow-slate-200/50 group relative"
+                          className="bg-white border border-slate-200 hover:border-[#2C1EE8] rounded-none p-3.5 flex flex-col justify-between transition-colors shadow-2xs group relative text-left"
                         >
                           <div>
                             {/* Cover Thumbnail */}
-                            <div className="h-48 bg-slate-100 rounded-2xl mb-4 overflow-hidden relative flex items-center justify-center border border-slate-100">
+                            <div className="aspect-[16/10] bg-slate-100 rounded-none mb-3 overflow-hidden relative flex items-center justify-center border border-slate-200">
                               {book.coverImageUrl ? (
                                 <img
                                   src={book.coverImageUrl}
@@ -645,18 +634,18 @@ export default function PerpustakaanPage() {
                                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                                 />
                               ) : (
-                                <div className="text-center p-4">
-                                  <BookOpen className="w-12 h-12 text-blue-300 mx-auto mb-1" />
-                                  <span className="text-[10px] font-mono text-slate-400">PPLG Literasi</span>
+                                <div className="text-center p-3">
+                                  <BookOpen className="w-8 h-8 text-blue-300 mx-auto mb-1" />
+                                  <span className="text-[10px] font-mono text-slate-400 uppercase">PPLG Modul</span>
                                 </div>
                               )}
 
                               {/* Location Badge */}
                               <span
-                                className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase flex items-center gap-1 shadow-xs ${
+                                className={`absolute top-2 left-2 px-2 py-0.5 rounded-none text-[9.5px] font-bold uppercase tracking-wider flex items-center gap-1 border ${
                                   book.locationType === "Digital"
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-emerald-600 text-white"
+                                    ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                                    : "bg-emerald-600 text-white border-emerald-700"
                                 }`}
                               >
                                 {book.locationType === "Digital" ? (
@@ -668,25 +657,25 @@ export default function PerpustakaanPage() {
                               </span>
                             </div>
 
-                            <h3 className="font-extrabold text-slate-900 text-sm sm:text-base line-clamp-2 leading-snug group-hover:text-[#2C1EE8] transition-colors">
+                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-[#2C1EE8] transition-colors uppercase">
                               {book.title}
-                            </h3>
-                            <p className="text-slate-600 text-xs mt-1 font-medium">Penulis: {book.author}</p>
+                            </h4>
+                            <p className="text-slate-600 text-[11px] mt-1 font-medium truncate">Penulis: {book.author}</p>
                             <p className="text-slate-400 text-[10px] mt-0.5 line-clamp-1 font-mono">
                               Oleh: {book.creatorName || "Pengajar PPLG"}
                             </p>
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                            <span className="text-[11px] font-bold text-slate-600">
-                              Stok: <strong className="text-slate-900">{book.availableCopies}</strong> / {book.totalCopies}
+                          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[10.5px] font-mono font-bold text-slate-600">
+                              Stok: <strong className="text-slate-900">{book.availableCopies}</strong>/{book.totalCopies}
                             </span>
 
                             <div className="flex items-center gap-1.5">
                               <button
                                 type="button"
                                 onClick={() => setSelectedBookForDetail(book)}
-                                className="px-3.5 py-1.5 bg-slate-100 hover:bg-[#2C1EE8] text-slate-700 hover:text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                                className="px-3 py-1 bg-slate-100 hover:bg-[#2C1EE8] text-slate-700 hover:text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors cursor-pointer"
                               >
                                 Detail
                               </button>
@@ -695,7 +684,7 @@ export default function PerpustakaanPage() {
                                 <button
                                   type="button"
                                   onClick={(e) => handleDeleteBook(book.id, e)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                  className="p-1 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                                   title="Hapus Buku"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -713,18 +702,18 @@ export default function PerpustakaanPage() {
           </div>
         )}
 
-        {/* TAB 2: MY BORROWINGS VIEW (STUDENT) */}
+        {/* ── TAB 2: MY BORROWINGS VIEW (STUDENT) ── */}
         {activeTab === "myBorrowings" && (
-          <div className="bg-white border border-slate-200 rounded-[32px] p-6 sm:p-8 space-y-5 shadow-xs">
+          <div className="bg-white border border-slate-200 rounded-none p-5 sm:p-6 space-y-4 shadow-xs text-left">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">📜 Riwayat Peminjaman Buku Saya</h2>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 uppercase">Riwayat Peminjaman Buku Saya</h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Daftar permohonan peminjaman buku fisik dan status persetujuan dari guru pembina.
               </p>
             </div>
 
             {loadingMyRequests ? (
-              <div className="text-center py-12 text-slate-500 text-xs font-medium">
+              <div className="text-center py-12 text-slate-400 text-xs font-bold uppercase tracking-wider">
                 Memuat riwayat peminjaman...
               </div>
             ) : myRequests.length === 0 ? (
@@ -739,37 +728,41 @@ export default function PerpustakaanPage() {
                 />
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {myRequests.map((req) => (
                   <div
                     key={req.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/90 gap-4 text-xs transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-slate-50 rounded-none border border-slate-200 gap-3 text-xs"
                   >
                     <div>
-                      <h4 className="font-extrabold text-slate-900 text-sm sm:text-base">{req.bookTitle}</h4>
-                      <p className="text-slate-600 mt-1 font-medium">
-                        Tanggal Pinjam: <strong>{new Date(req.borrowDate).toLocaleDateString("id-ID")}</strong> • Batas
-                        Kembali: <strong>{new Date(req.dueDate).toLocaleDateString("id-ID")}</strong>
+                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm uppercase">{req.bookTitle}</h4>
+                      <p className="text-slate-600 mt-0.5 font-medium">
+                        Diajukan: {new Date(req.borrowDate).toLocaleDateString("id-ID", { dateStyle: "medium" })} · Jatuh Tempo: {new Date(req.dueDate).toLocaleDateString("id-ID", { dateStyle: "medium" })}
                       </p>
-                      {req.borrowNotes && (
-                        <p className="text-slate-500 mt-1 italic">Catatan: "{req.borrowNotes}"</p>
-                      )}
-                      {req.rejectionReason && (
-                        <p className="text-rose-600 mt-1 font-semibold">Alasan Penolakan: {req.rejectionReason}</p>
-                      )}
+                      {req.notes && <p className="text-slate-500 text-[11px] mt-0.5">Catatan: {req.notes}</p>}
                     </div>
 
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-extrabold self-start sm:self-auto uppercase tracking-wider ${
-                        req.status === "Approved"
-                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                          : req.status === "Pending"
-                          ? "bg-amber-50 text-amber-700 border border-amber-200"
-                          : "bg-rose-50 text-rose-700 border border-rose-200"
-                      }`}
-                    >
-                      {req.status}
-                    </span>
+                    <div className="shrink-0 flex items-center gap-2">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-none text-[10px] font-bold uppercase tracking-wider border ${
+                          req.status === "Approved" || req.status === "1"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : req.status === "Returned" || req.status === "3"
+                            ? "bg-blue-50 text-[#2C1EE8] border-blue-200"
+                            : req.status === "Rejected" || req.status === "2"
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
+                      >
+                        {req.status === "Approved" || req.status === "1"
+                          ? "Disetujui"
+                          : req.status === "Returned" || req.status === "3"
+                          ? "Dikembalikan"
+                          : req.status === "Rejected" || req.status === "2"
+                          ? "Ditolak"
+                          : "Menunggu Persetujuan"}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -777,84 +770,73 @@ export default function PerpustakaanPage() {
           </div>
         )}
 
-        {/* TAB 3: TARGETED TEACHER BORROWING INBOX */}
+        {/* ── TAB 3: TEACHER INBOX VIEW (TEACHER / ADMIN) ── */}
         {activeTab === "teacherInbox" && isTeacherOrAdmin && (
-          <div className="bg-white border border-slate-200 rounded-[32px] p-6 sm:p-8 space-y-5 shadow-xs">
+          <div className="bg-white border border-slate-200 rounded-none p-5 sm:p-6 space-y-4 shadow-xs text-left">
             <div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-[#2C1EE8]" />
-                <h2 className="text-xl font-bold text-slate-900">Inbox Permohonan Peminjaman Siswa</h2>
-              </div>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 uppercase">Inbox Persetujuan Peminjaman Siswa</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Menampilkan permohonan peminjaman khusus untuk buku-buku yang Anda kelola di repositori.
+                Daftar permohonan pinjam buku fisik yang ditujukan ke Anda sebagai pengunggah buku.
               </p>
             </div>
 
             {loadingTeacherRequests ? (
-              <div className="text-center py-12 text-slate-500 text-xs font-medium">
-                Memuat inbox peminjaman...
+              <div className="text-center py-12 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                Memuat permohonan siswa...
               </div>
             ) : teacherRequests.length === 0 ? (
-              <div className="text-center py-16 bg-slate-50 rounded-2xl border border-slate-200/80 text-slate-500 text-xs">
-                Tidak ada permohonan peminjaman buku yang menunggu persetujuan Anda saat ini.
+              <div className="text-center py-12 text-slate-400 text-xs font-medium">
+                Belum ada permohonan peminjaman buku dari siswa.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {teacherRequests.map((req) => {
                   const isPending = req.status === "Pending" || req.status === "0";
+                  const isProcessing = processingRequestId === req.id;
 
                   return (
                     <div
                       key={req.id}
-                      className="flex flex-col lg:flex-row lg:items-center justify-between p-5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/90 gap-4 text-xs transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-slate-50 rounded-none border border-slate-200 gap-3 text-xs"
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm uppercase">{req.bookTitle}</h4>
                           <span
-                            className={`px-2.5 py-0.5 text-[10px] font-black rounded-full uppercase tracking-wider ${
+                            className={`px-2 py-0.2 rounded-none text-[9.5px] font-bold uppercase tracking-wider border ${
                               isPending
-                                ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : req.status === "Approved"
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-rose-50 text-rose-700 border border-rose-200"
+                                ? "bg-amber-50 text-amber-700 border-amber-200"
+                                : req.status === "Approved" || req.status === "1"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
                             }`}
                           >
-                            {isPending ? "Menunggu" : req.status}
+                            {isPending ? "Pending" : req.status}
                           </span>
                         </div>
-
-                        <h4 className="font-extrabold text-slate-900 text-base">{req.bookTitle}</h4>
-                        <p className="text-slate-700 font-medium">
-                          Pemohon: <strong className="text-[#2C1EE8]">{req.borrowerName}</strong> (
-                          {req.borrowerClassName || "Siswa"}) • Pinjam:{" "}
-                          <strong>{new Date(req.borrowDate).toLocaleDateString("id-ID")}</strong> s/d{" "}
-                          <strong>{new Date(req.dueDate).toLocaleDateString("id-ID")}</strong>
+                        <p className="text-slate-600 font-medium font-mono">
+                          Peminjam: {req.studentName} · Tgl Pinjam: {new Date(req.borrowDate).toLocaleDateString("id-ID")} · Tempo: {new Date(req.dueDate).toLocaleDateString("id-ID")}
                         </p>
-                        {req.borrowNotes && (
-                          <p className="text-slate-500 italic">Alasan Peminjaman: "{req.borrowNotes}"</p>
-                        )}
+                        {req.notes && <p className="text-slate-500 text-[11px]">Keperluan: {req.notes}</p>}
                       </div>
 
                       {isPending && (
-                        <div className="flex items-center gap-2 self-end lg:self-auto shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
-                            disabled={processingRequestId === req.id}
-                            onClick={() => handleRespondBorrowRequest(req.id, true)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all cursor-pointer disabled:opacity-50 shadow-xs"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Setujui</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={processingRequestId === req.id}
+                            disabled={isProcessing}
                             onClick={() => handleRespondBorrowRequest(req.id, false)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+                            className="px-3 py-1.5 bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 font-bold text-xs uppercase tracking-wider rounded-none transition-colors cursor-pointer disabled:opacity-50"
                           >
-                            <XCircle className="w-4 h-4" />
-                            <span>Tolak</span>
+                            Tolak
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isProcessing}
+                            onClick={() => handleRespondBorrowRequest(req.id, true)}
+                            className="px-4 py-1.5 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                          >
+                            Setujui
                           </button>
                         </div>
                       )}
@@ -867,87 +849,105 @@ export default function PerpustakaanPage() {
         )}
       </main>
 
-      {/* Create Folder Modal */}
+      {/* ── MODAL CREATE FOLDER ── */}
       {createFolderModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-md w-full p-6 sm:p-8 text-slate-900 shadow-2xl space-y-5">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Buat Folder / Kategori Baru</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Kelompokkan modul atau buku sesuai topik/kelas.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-none w-full max-w-lg p-5 sm:p-6 space-y-4 shadow-xl text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 uppercase">
+                <FolderPlus className="w-4 h-4 text-[#2C1EE8]" />
+                <span>Buat Folder Kategori Baru</span>
+              </h3>
+              <button
+                onClick={() => setCreateFolderModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateFolder} className="space-y-4 text-xs">
+            <form onSubmit={handleCreateFolder} className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-700 mb-1 font-bold">Nama Folder:</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Nama Folder <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="Misal: Pemrograman Web, Basis Data..."
+                  placeholder="Contoh: Modul Kelas XII - Cloud Computing"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 mb-1 font-bold">Deskripsi (Opsional):</label>
-                <textarea
-                  rows="2"
-                  placeholder="Penjelasan isi folder..."
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Deskripsi Folder
+                </label>
+                <input
+                  type="text"
+                  placeholder="Deskripsi singkat konten materi..."
                   value={newFolderDesc}
                   onChange={(e) => setNewFolderDesc(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs focus:border-[#2C1EE8] outline-none transition"
                 />
               </div>
 
-              {/* Targeted Visibility Setting */}
               <div>
-                <label className="block text-slate-700 mb-1 font-bold">Visibilitas Akses:</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Hak Akses / Visibilitas
+                </label>
                 <select
                   value={newFolderVisibility}
                   onChange={(e) => setNewFolderVisibility(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all cursor-pointer font-medium"
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition cursor-pointer"
                 >
-                  <option value="Public">🌐 Publik (Semua Siswa & Guru)</option>
-                  <option value="TeachersOnly">🔒 Hanya Guru & Admin</option>
-                  <option value="TargetedClasses">🎯 Kelas Sasaran Tertentu</option>
+                  <option value="Public">🌐 Publik (Seluruh Civitas PPLG)</option>
+                  <option value="TeachersOnly">🔒 Hanya Guru / Tenaga Pendidik</option>
+                  <option value="TargetedClasses">🎯 Kelas Spesifik Terpilih</option>
                 </select>
               </div>
 
-              {/* Class Checkboxes if TargetedClasses */}
               {newFolderVisibility === "TargetedClasses" && (
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <label className="block text-slate-700 font-bold">Pilih Kelas Sasaran:</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    {classesList.map((cls) => (
-                      <label
-                        key={cls.id}
-                        className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer font-medium"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedClassIds.includes(cls.id)}
-                          onChange={() => toggleClassSelection(cls.id)}
-                          className="rounded text-[#2C1EE8] focus:ring-blue-500"
-                        />
-                        <span>{cls.name}</span>
-                      </label>
-                    ))}
+                <div className="space-y-1.5 pt-1">
+                  <span className="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                    Pilih Kelas Sasaran:
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-none">
+                    {classesList.map((cls) => {
+                      const isSelected = selectedClassIds.includes(cls.id);
+                      return (
+                        <button
+                          key={cls.id}
+                          type="button"
+                          onClick={() => toggleClassSelection(cls.id)}
+                          className={`p-1.5 rounded-none text-[11px] font-bold uppercase tracking-wider border text-left transition-colors cursor-pointer flex items-center justify-between ${
+                            isSelected
+                              ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                          }`}
+                        >
+                          <span className="truncate">{cls.name}</span>
+                          {isSelected && <Check className="w-3 h-3" />}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              <div className="flex gap-3 justify-end pt-3">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setCreateFolderModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer transition-all"
+                  className="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer transition-all shadow-sm"
+                  className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer"
                 >
                   Buat Folder
                 </button>
@@ -957,150 +957,178 @@ export default function PerpustakaanPage() {
         </div>
       )}
 
-      {/* Create Book Modal with Cloudinary File Upload */}
+      {/* ── MODAL CREATE BOOK ── */}
       {createBookModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-lg w-full p-6 sm:p-8 text-slate-900 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Tambah Buku / Modul Baru</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Lengkapi data informasi buku untuk repositori perpustakaan.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-none w-full max-w-xl p-5 sm:p-6 space-y-4 shadow-xl text-left my-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2 uppercase">
+                <BookOpen className="w-4 h-4 text-[#2C1EE8]" />
+                <span>Tambah Buku / Modul Baru</span>
+              </h3>
+              <button
+                onClick={() => setCreateBookModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <form onSubmit={handleCreateBook} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block text-slate-700 mb-1 font-bold">Judul Buku:</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Misal: Pemrograman Web dengan Next.js..."
-                  value={bookTitle}
-                  onChange={(e) => setBookTitle(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 mb-1 font-bold">Penulis:</label>
+            <form onSubmit={handleCreateBook} className="space-y-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Judul Buku / Modul <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
-                    placeholder="Nama Penulis..."
-                    value={bookAuthor}
-                    onChange={(e) => setBookAuthor(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                    placeholder="Contoh: Belajar Pemrograman C# & .NET 8 Modern"
+                    value={bookTitle}
+                    onChange={(e) => setBookTitle(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-slate-700 mb-1 font-bold">Jumlah Stok:</label>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Penulis <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nama penulis..."
+                    value={bookAuthor}
+                    onChange={(e) => setBookAuthor(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    ISBN (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="978-602-xxx-xxx-x"
+                    value={bookIsbn}
+                    onChange={(e) => setBookIsbn(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs focus:border-[#2C1EE8] outline-none transition font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Penerbit
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Penerbit..."
+                    value={bookPublisher}
+                    onChange={(e) => setBookPublisher(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs focus:border-[#2C1EE8] outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Tahun Terbit
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="2026"
+                    value={bookPubYear}
+                    onChange={(e) => setBookPubYear(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs focus:border-[#2C1EE8] outline-none transition font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Tipe Keberadaan
+                  </label>
+                  <select
+                    value={bookLocationType}
+                    onChange={(e) => setBookLocationType(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition cursor-pointer"
+                  >
+                    <option value="Offline">📦 Buku Fisik (Rak / Perpustakaan)</option>
+                    <option value="Digital">🌐 E-Book / Literatur Digital (Link / PDF)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Jumlah Salinan (Stok)
+                  </label>
                   <input
                     type="number"
                     min="1"
                     value={bookTotalCopies}
                     onChange={(e) => setBookTotalCopies(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition font-mono"
                   />
                 </div>
-              </div>
 
-              {/* Cover Image Upload (From Computer to Cloudinary) */}
-              <div>
-                <label className="block text-slate-700 mb-1 font-bold">Sampul Buku:</label>
-                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center hover:border-blue-300 transition-colors relative">
-                  {bookCoverUrl ? (
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={bookCoverUrl}
-                          alt="Cover Preview"
-                          className="w-12 h-16 object-cover rounded-xl border border-slate-200 shrink-0 shadow-xs"
-                        />
-                        <div className="text-left min-w-0">
-                          <p className="text-emerald-700 font-bold text-xs flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Tersimpan di Cloudinary</span>
-                          </p>
-                          <p className="text-slate-400 text-[10px] truncate max-w-[220px] font-mono">{bookCoverUrl}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setBookCoverUrl("")}
-                        className="px-3 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-bold cursor-pointer transition-all"
-                      >
-                        Ganti
-                      </button>
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    {bookLocationType === "Digital" ? "Tautan / Link Akses Digital" : "Lokasi Rak / Lemari Fisik"}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={bookLocationType === "Digital" ? "https://drive.google.com/..." : "Contoh: Rak B3 - Jurusan PPLG"}
+                    value={bookLocationDetails}
+                    onChange={(e) => setBookLocationDetails(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs focus:border-[#2C1EE8] outline-none transition"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Sinopsis / Ringkasan Buku
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Ringkasan materi yang dimuat dalam buku..."
+                    value={bookSynopsis}
+                    onChange={(e) => setBookSynopsis(e.target.value)}
+                    className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs focus:border-[#2C1EE8] outline-none transition resize-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Unggah Sampul Buku
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverUpload}
+                    className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-none file:border file:border-slate-200 file:text-xs file:font-bold file:uppercase file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer"
+                  />
+                  {uploadingCover && (
+                    <p className="text-[11px] font-bold text-[#2C1EE8] mt-1">Mengunggah gambar sampul...</p>
+                  )}
+                  {bookCoverUrl && (
+                    <div className="mt-2 w-16 h-20 relative rounded-none overflow-hidden border border-slate-200">
+                      <img src={bookCoverUrl} alt="Cover Preview" className="w-full h-full object-cover" />
                     </div>
-                  ) : (
-                    <label className="cursor-pointer flex flex-col items-center justify-center py-2">
-                      <Upload className="w-6 h-6 text-[#2C1EE8] mb-1" />
-                      <span className="text-xs text-slate-700 font-bold">
-                        {uploadingCover ? "Mengunggah Gambar..." : "Klik untuk Pilih Gambar Sampul (PNG/JPG)"}
-                      </span>
-                      <span className="text-[10px] text-slate-400 mt-0.5">Otomatis disimpan di Cloudinary</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={uploadingCover}
-                        onChange={handleCoverFileUpload}
-                        className="hidden"
-                      />
-                    </label>
                   )}
                 </div>
               </div>
 
-              {/* Location Type Selector */}
-              <div>
-                <label className="block text-slate-700 mb-1 font-bold">Tipe Akses Buku:</label>
-                <select
-                  value={bookLocationType}
-                  onChange={(e) => setBookLocationType(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all cursor-pointer font-medium"
-                >
-                  <option value="Offline">📍 Offline (Perpustakaan / Rak Fisik)</option>
-                  <option value="Digital">🌐 Digital (Link E-Book / PDF)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-slate-700 mb-1 font-bold">
-                  {bookLocationType === "Digital"
-                    ? "Tautan Link E-Book (URL):"
-                    : "Lokasi Fisik (Misal: Rak A-3 Perpustakaan):"}
-                </label>
-                <input
-                  type="text"
-                  placeholder={bookLocationType === "Digital" ? "https://..." : "Perpustakaan Utama Rak A-3"}
-                  value={bookLocationDetails}
-                  onChange={(e) => setBookLocationDetails(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-700 mb-1 font-bold">Sinopsis / Deskripsi Ringkas:</label>
-                <textarea
-                  rows="3"
-                  placeholder="Penjelasan ringkas isi modul / buku..."
-                  value={bookSynopsis}
-                  onChange={(e) => setBookSynopsis(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
-                />
-              </div>
-
-              <div className="flex gap-3 justify-end pt-3 border-t border-slate-100">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setCreateBookModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer transition-all"
+                  className="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={uploadingCover}
-                  className="px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl font-bold cursor-pointer transition-all shadow-sm"
+                  className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   Simpan Buku
                 </button>
@@ -1110,91 +1138,112 @@ export default function PerpustakaanPage() {
         </div>
       )}
 
-      {/* Book Detail & Borrow Modal */}
+      {/* ── MODAL DETAIL BUKU & PEMINJAMAN ── */}
       {selectedBookForDetail && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-md w-full p-6 sm:p-8 text-slate-900 shadow-2xl space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900 leading-tight">
-                  {selectedBookForDetail.title}
-                </h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">Penulis: {selectedBookForDetail.author}</p>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-none w-full max-w-lg p-5 sm:p-6 space-y-4 shadow-xl text-left my-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase">
+                Detail Informasi Buku
+              </h3>
               <button
                 onClick={() => setSelectedBookForDetail(null)}
-                className="text-slate-400 hover:text-slate-700 cursor-pointer p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-              <p className="flex items-center justify-between text-slate-700 font-medium">
-                <span>Tipe Lokasi:</span>
-                <span className="font-extrabold text-[#2C1EE8]">{selectedBookForDetail.locationType}</span>
-              </p>
-              {selectedBookForDetail.locationDetails && (
-                <p className="flex items-center justify-between text-slate-700 font-medium">
-                  <span>Detail Lokasi:</span>
-                  {selectedBookForDetail.locationType === "Digital" ? (
-                    <a
-                      href={selectedBookForDetail.locationDetails}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#2C1EE8] font-bold hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>Buka E-Book</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  ) : (
-                    <span className="font-bold text-slate-900">{selectedBookForDetail.locationDetails}</span>
-                  )}
-                </p>
-              )}
-              <p className="flex items-center justify-between text-slate-700 font-medium">
-                <span>Pengajar Pengunggah:</span>
-                <span className="font-bold text-slate-900">{selectedBookForDetail.creatorName || "Pengajar PPLG"}</span>
-              </p>
-              <p className="flex items-center justify-between text-slate-700 font-medium">
-                <span>Ketersediaan Stok:</span>
-                <span className="font-extrabold text-emerald-700">
-                  {selectedBookForDetail.availableCopies} dari {selectedBookForDetail.totalCopies} buku
+            <div className="flex gap-4 items-start">
+              <div className="w-24 h-32 bg-slate-100 rounded-none overflow-hidden shrink-0 border border-slate-200 relative">
+                {selectedBookForDetail.coverImageUrl ? (
+                  <img
+                    src={selectedBookForDetail.coverImageUrl}
+                    alt={selectedBookForDetail.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <BookOpen className="w-8 h-8" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0 space-y-1">
+                <span
+                  className={`inline-block px-2 py-0.2 rounded-none text-[9.5px] font-bold uppercase tracking-wider border ${
+                    selectedBookForDetail.locationType === "Digital"
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                      : "bg-emerald-600 text-white border-emerald-700"
+                  }`}
+                >
+                  {selectedBookForDetail.locationType}
                 </span>
-              </p>
+
+                <h4 className="font-bold text-sm sm:text-base text-slate-900 leading-snug uppercase">
+                  {selectedBookForDetail.title}
+                </h4>
+                <p className="text-xs text-slate-600 font-medium">Penulis: {selectedBookForDetail.author}</p>
+                {selectedBookForDetail.publisher && (
+                  <p className="text-[11px] text-slate-500 font-mono">Penerbit: {selectedBookForDetail.publisher} ({selectedBookForDetail.publicationYear || "-"})</p>
+                )}
+                {selectedBookForDetail.isbn && (
+                  <p className="text-[11px] text-slate-500 font-mono">ISBN: {selectedBookForDetail.isbn}</p>
+                )}
+                <p className="text-[11px] font-bold text-slate-700 font-mono">
+                  Ketersediaan: {selectedBookForDetail.availableCopies} dari {selectedBookForDetail.totalCopies} Salinan
+                </p>
+              </div>
             </div>
 
             {selectedBookForDetail.synopsis && (
-              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50/60 p-4 rounded-2xl border border-slate-100 font-medium">
-                {selectedBookForDetail.synopsis}
-              </p>
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-none space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sinopsis:</span>
+                <p className="text-xs text-slate-700 leading-relaxed font-normal">{selectedBookForDetail.synopsis}</p>
+              </div>
             )}
 
-            <div className="flex gap-3 justify-end pt-3">
+            {selectedBookForDetail.locationDetails && (
+              <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-none text-xs text-[#2C1EE8] font-medium flex items-center justify-between">
+                <span>Lokasi: {selectedBookForDetail.locationDetails}</span>
+                {selectedBookForDetail.locationType === "Digital" && (
+                  <a
+                    href={selectedBookForDetail.locationDetails}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline font-bold flex items-center gap-1"
+                  >
+                    <span>Buka Akses</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedBookForDetail(null)}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                className="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
               >
                 Tutup
               </button>
 
-              {isAuthenticated ? (
+              {selectedBookForDetail.locationType === "Offline" && (
                 <button
                   type="button"
-                  disabled={selectedBookForDetail.availableCopies < 1}
-                  onClick={() => setBorrowModalOpen(true)}
-                  className="px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all"
+                  disabled={selectedBookForDetail.availableCopies <= 0}
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setIsLoginModalOpen(true);
+                      return;
+                    }
+                    setBorrowModalOpen(true);
+                  }}
+                  className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  Pinjam Buku Ini
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm cursor-pointer transition-all"
-                >
-                  Login untuk Meminjam
+                  {selectedBookForDetail.availableCopies > 0 ? "Ajukan Pinjam Buku" : "Stok Habis"}
                 </button>
               )}
             </div>
@@ -1202,111 +1251,114 @@ export default function PerpustakaanPage() {
         </div>
       )}
 
-      {/* Interactive Rich Borrow Request Form Modal */}
+      {/* ── MODAL BORROW FORM ── */}
       {borrowModalOpen && selectedBookForDetail && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white border border-slate-200 rounded-[32px] max-w-md w-full p-6 sm:p-8 text-slate-900 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#2C1EE8]" />
-              <h3 className="text-xl font-extrabold text-slate-900">Formulir Peminjaman Buku</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 rounded-none w-full max-w-md p-5 sm:p-6 space-y-4 shadow-xl text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 uppercase">
+                Formulir Peminjaman Buku
+              </h3>
+              <button
+                onClick={() => setBorrowModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <p className="text-xs text-slate-600">
-              Buku yang dipinjam: <strong className="text-[#2C1EE8]">{selectedBookForDetail.title}</strong>
-            </p>
 
-            <form onSubmit={handleBorrowSubmit} className="space-y-4 text-xs">
-              {/* Interactive Date Selectors */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-700 mb-1 font-bold flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-[#2C1EE8]" />
-                    <span>Tanggal Pinjam:</span>
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={borrowDate}
-                    onChange={(e) => setBorrowDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium cursor-pointer"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 mb-1 font-bold flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Batas Kembali:</span>
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium cursor-pointer"
-                  />
-                </div>
+            <form onSubmit={handleBorrowSubmit} className="space-y-3 text-xs">
+              <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-none">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Buku yang Dipinjam:</span>
+                <p className="font-bold text-slate-900 text-xs sm:text-sm uppercase mt-0.5">{selectedBookForDetail.title}</p>
+                <p className="text-[11px] text-slate-500">Penulis: {selectedBookForDetail.author}</p>
               </div>
 
-              {/* Duration Preset Selector Buttons */}
               <div>
-                <label className="block text-slate-700 mb-1.5 font-bold">Pilihan Durasi Cepat:</label>
-                <div className="grid grid-cols-3 gap-2">
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Tanggal Mulai Pinjam
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={borrowDate}
+                  onChange={(e) => setBorrowDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider">
+                    Tanggal Pengembalian (Jatuh Tempo)
+                  </label>
+                  <span className="text-[10.5px] font-bold text-[#2C1EE8] font-mono">
+                    Durasi: {calculateDurationDays()} Hari
+                  </span>
+                </div>
+                <input
+                  type="date"
+                  required
+                  value={dueDate}
+                  min={borrowDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold focus:border-[#2C1EE8] outline-none transition"
+                />
+
+                {/* Duration Presets */}
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Preset:</span>
                   <button
                     type="button"
                     onClick={() => setBorrowDurationPreset(3)}
-                    className="px-3 py-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-slate-700 hover:text-[#2C1EE8] rounded-xl font-bold transition-all cursor-pointer text-[11px]"
+                    className="px-2 py-0.5 rounded-none bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10.5px] font-bold uppercase transition-colors cursor-pointer border border-slate-200"
                   >
-                    ⚡ +3 Hari
+                    3 Hari
                   </button>
                   <button
                     type="button"
                     onClick={() => setBorrowDurationPreset(7)}
-                    className="px-3 py-2 bg-blue-50/70 hover:bg-blue-50 border border-blue-200 text-[#2C1EE8] rounded-xl font-bold transition-all cursor-pointer text-[11px]"
+                    className="px-2 py-0.5 rounded-none bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10.5px] font-bold uppercase transition-colors cursor-pointer border border-slate-200"
                   >
-                    📅 +7 Hari
+                    7 Hari (Standar)
                   </button>
                   <button
                     type="button"
                     onClick={() => setBorrowDurationPreset(14)}
-                    className="px-3 py-2 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-slate-700 hover:text-[#2C1EE8] rounded-xl font-bold transition-all cursor-pointer text-[11px]"
+                    className="px-2 py-0.5 rounded-none bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10.5px] font-bold uppercase transition-colors cursor-pointer border border-slate-200"
                   >
-                    ⏳ +14 Hari
+                    14 Hari
                   </button>
                 </div>
               </div>
 
-              {/* Calculated Duration Summary Banner */}
-              <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-3.5 text-blue-900 text-xs font-semibold flex items-center justify-between">
-                <span>Total Durasi Peminjaman:</span>
-                <span className="px-3 py-1 bg-white text-[#2C1EE8] border border-blue-200 rounded-lg font-black text-xs shadow-2xs">
-                  {calculateDurationDays()} Hari
-                </span>
-              </div>
-
               <div>
-                <label className="block text-slate-700 mb-1 font-bold">Alasan Peminjaman / Catatan:</label>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Keperluan / Catatan Tambahan (Opsional)
+                </label>
                 <textarea
-                  rows="3"
-                  placeholder="Misal: Dipinjam untuk referensi pengerjaan tugas proyek..."
+                  rows={2}
+                  placeholder="Contoh: Referensi pengerjaan tugas proyek akhir..."
                   value={borrowNotes}
                   onChange={(e) => setBorrowNotes(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs focus:border-[#2C1EE8] outline-none transition resize-none"
                 />
               </div>
 
-              <div className="flex gap-3 justify-end pt-3 border-t border-slate-100">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setBorrowModalOpen(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer transition-all"
+                  className="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submittingBorrow}
-                  className="px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 rounded-xl text-white font-bold cursor-pointer disabled:opacity-50 shadow-sm transition-all"
+                  className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {submittingBorrow ? "Mengirim..." : "Kirim Pengajuan"}
+                  {submittingBorrow ? "Mengirim..." : "Kirim Permohonan"}
                 </button>
               </div>
             </form>
@@ -1314,15 +1366,13 @@ export default function PerpustakaanPage() {
         </div>
       )}
 
-      {/* Login Modal for Guest users */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onSuccess={() => {
-          setIsLoginModalOpen(false);
-          loadExplorerData();
-        }}
-      />
+      {/* Login Modal */}
+      {isLoginModalOpen && (
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+        />
+      )}
 
       <Footer />
     </div>

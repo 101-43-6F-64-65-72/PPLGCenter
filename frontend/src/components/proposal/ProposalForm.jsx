@@ -61,7 +61,7 @@ export default function ProposalForm({
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-semibold text-gray-700">
+          <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700">
             Deskripsi Kegiatan
           </label>
           <textarea
@@ -70,14 +70,14 @@ export default function ProposalForm({
             value={formData.description}
             onChange={onFieldChange}
             placeholder="Jelaskan kegiatan secara singkat"
-            className={`w-full rounded-2xl px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-[#2C1EE8] focus:ring-2 focus:ring-[#2C1EE8]/20 ${
+            className={`w-full rounded-none px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 shadow-xs outline-none transition-colors focus:border-[#2C1EE8] font-normal leading-relaxed ${
               formErrors?.description
-                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                : "border border-gray-200 bg-white"
+                ? "border border-rose-500 focus:border-rose-500"
+                : "border border-slate-200 bg-white"
             }`}
           />
           {formErrors?.description && (
-            <p className="mt-2 text-xs font-medium text-red-500">
+            <p className="mt-1 text-[11px] font-semibold text-rose-600">
               {formErrors.description}
             </p>
           )}
@@ -97,18 +97,18 @@ export default function ProposalForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between text-xs">
         <div>
-          <p className="text-sm text-gray-500">
+          <p className="text-slate-500 font-normal">
             Hanya file PDF yang diterima.
           </p>
           {isEditing && (
-            <p className="mt-2 text-sm text-[#2C1EE8]">
+            <p className="mt-1 font-bold text-[#2C1EE8]">
               Anda sedang mengedit proposal. Klik Perbarui Proposal untuk menyimpan.
             </p>
           )}
           {uploadError && (
-            <div className="mt-3 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs text-red-700 font-semibold space-y-2">
+            <div className="mt-2 rounded-none bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700 font-semibold space-y-2">
               <p>{uploadError}</p>
               {(uploadError.includes("login") ||
                 uploadError.includes("autentikasi") ||
@@ -117,7 +117,7 @@ export default function ProposalForm({
                 uploadError.includes("Akses")) && (
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-white font-bold text-xs hover:bg-red-700 transition-colors shadow-xs"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-none bg-rose-600 text-white font-bold uppercase tracking-wider text-xs hover:bg-rose-700 transition-colors shadow-xs"
                 >
                   <span>Login Kembali</span>
                 </Link>
@@ -126,7 +126,7 @@ export default function ProposalForm({
           )}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {isEditing && (
             <Button
               type="button"
@@ -139,9 +139,15 @@ export default function ProposalForm({
               Batal
             </Button>
           )}
-          <Button type="submit" variant="primary" disabled={isSubmitting} className="w-full sm:w-auto">
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            disabled={isSubmitting}
+            className="w-full sm:w-auto"
+          >
             {isSubmitting
-              ? "Memproses & Mengunggah..."
+              ? "Menyimpan..."
               : isEditing
               ? "Perbarui Proposal"
               : "Ajukan Proposal"}

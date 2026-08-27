@@ -63,7 +63,7 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
     return () => clearInterval(intervalId);
   }, [isSubmitting, setMascotState]);
 
-  // ─── SMOOTH GSAP SLIDE TRANSFORMS (Zero Vertical Jump) ───
+  // ─── SMOOTH GSAP SLIDE TRANSFORMS (Zero Vertical Jump & Dynamic Height) ───
   const switchToForgot = () => {
     setLoginError("");
     setForgotError("");
@@ -71,24 +71,32 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
     if (setMascotState) setMascotState("thinking");
 
     if (loginViewRef.current && forgotViewRef.current) {
+      gsap.set(forgotViewRef.current, { display: "block", position: "absolute", top: 0, left: 0, width: "100%", xPercent: 105, opacity: 0 });
+      gsap.set(loginViewRef.current, { position: "relative", width: "100%" });
+
       const tl = gsap.timeline();
 
       // Animate Login inputs out to the left
       tl.to(loginViewRef.current, {
         xPercent: -105,
         opacity: 0,
-        duration: 0.35,
+        duration: 0.3,
         ease: "power2.inOut",
-        onComplete: () => {
-          setActiveMode("forgot");
-        },
       });
 
       // Animate Forgot inputs in from the right
-      tl.fromTo(
+      tl.to(
         forgotViewRef.current,
-        { xPercent: 105, opacity: 0, display: "block" },
-        { xPercent: 0, opacity: 1, duration: 0.35, ease: "power2.inOut" },
+        {
+          xPercent: 0,
+          opacity: 1,
+          duration: 0.3,
+          ease: "power2.inOut",
+          onComplete: () => {
+            setActiveMode("forgot");
+            gsap.set([loginViewRef.current, forgotViewRef.current], { clearProps: "all" });
+          },
+        },
         "-=0.15"
       );
     } else {
@@ -103,24 +111,32 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
     if (setMascotState) setMascotState("idle");
 
     if (loginViewRef.current && forgotViewRef.current) {
+      gsap.set(loginViewRef.current, { display: "block", position: "absolute", top: 0, left: 0, width: "100%", xPercent: -105, opacity: 0 });
+      gsap.set(forgotViewRef.current, { position: "relative", width: "100%" });
+
       const tl = gsap.timeline();
 
       // Animate Forgot inputs out to the right
       tl.to(forgotViewRef.current, {
         xPercent: 105,
         opacity: 0,
-        duration: 0.35,
+        duration: 0.3,
         ease: "power2.inOut",
-        onComplete: () => {
-          setActiveMode("login");
-        },
       });
 
       // Animate Login inputs in from the left
-      tl.fromTo(
+      tl.to(
         loginViewRef.current,
-        { xPercent: -105, opacity: 0, display: "block" },
-        { xPercent: 0, opacity: 1, duration: 0.35, ease: "power2.inOut" },
+        {
+          xPercent: 0,
+          opacity: 1,
+          duration: 0.3,
+          ease: "power2.inOut",
+          onComplete: () => {
+            setActiveMode("login");
+            gsap.set([loginViewRef.current, forgotViewRef.current], { clearProps: "all" });
+          },
+        },
         "-=0.15"
       );
     } else {
@@ -394,22 +410,22 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
   return (
     <div className="w-full flex flex-col font-sans text-black">
       {/* ─── SHARED STATIC HEADER (Fixed at top, never moves or jumps, unclipped logo) ─── */}
-      <div className="flex items-center gap-3.5 mb-6">
-        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-visible">
           <Image
             src="/images/logo.png"
             alt="Logo SMKN 2 Surakarta"
-            width={56}
-            height={56}
-            className="object-contain w-auto h-auto max-h-14 max-w-14"
+            width={48}
+            height={48}
+            className="object-contain w-auto h-auto max-h-12 max-w-12"
             priority
           />
         </div>
         <div className="flex flex-col justify-center">
-          <h1 className="text-xl sm:text-2xl font-black text-black tracking-wide uppercase leading-tight font-sans">
+          <h1 className="text-lg sm:text-xl font-black text-black tracking-wide uppercase leading-tight font-sans">
             PPLG CENTER
           </h1>
-          <p className="text-xs font-black text-black tracking-widest uppercase font-sans">
+          <p className="text-[11px] font-black text-black tracking-widest uppercase font-sans">
             SMKN 2 SURAKARTA
           </p>
         </div>
@@ -428,14 +444,14 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
         <option value="Admin">Admin</option>
       </select>
 
-      {/* ─── SLIDING FORM CONTAINER (Anchored Top for 0px Vertical Jitter) ─── */}
-      <div ref={slidingContainerRef} className="relative w-full overflow-hidden min-h-[340px]">
+      {/* ─── SLIDING FORM CONTAINER (Contained Overflow & Clean Flow) ─── */}
+      <div ref={slidingContainerRef} className="relative w-full overflow-hidden transition-all">
         {/* ─── 1. LOGIN FORM VIEW ─── */}
         <div
           ref={loginViewRef}
-          className={`w-full space-y-5 absolute top-0 left-0 ${activeMode === "login" ? "block" : "hidden"}`}
+          className={`w-full space-y-4 ${activeMode === "login" ? "relative block" : "hidden absolute top-0 left-0"}`}
         >
-          <form onSubmit={handleLoginSubmit} className="space-y-5" noValidate>
+          <form onSubmit={handleLoginSubmit} className="space-y-4" noValidate>
             {loginError && (
               <ErrorAlert
                 title="Login Gagal"
@@ -445,7 +461,7 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
             )}
 
             {/* Field 1: NIS/NISN/NIP */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label
                 htmlFor="identifier"
                 className="block text-xs font-black text-black tracking-wider uppercase font-sans"
@@ -461,13 +477,13 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
                   onFocus={handleIdentifierFocus}
                   onChange={handleIdentifierChange}
                   required
-                  className="w-full bg-white text-black font-semibold px-3.5 py-2.5 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm shadow-none"
+                  className="w-full bg-white text-black font-semibold px-3 py-2 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm shadow-none"
                 />
               </div>
             </div>
 
             {/* Field 2: PASSWORD */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <label
                 htmlFor="password"
                 className="block text-xs font-black text-black tracking-wider uppercase font-sans"
@@ -483,12 +499,12 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
                   onFocus={handlePasswordFocus}
                   onChange={handlePasswordChange}
                   required
-                  className="w-full bg-white text-black font-semibold px-3.5 py-2.5 pr-10 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm shadow-none"
+                  className="w-full bg-white text-black font-semibold px-3 py-2 pr-9 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm shadow-none"
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-slate-700 transition-colors focus:outline-none cursor-pointer p-1"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-black hover:text-slate-700 transition-colors focus:outline-none cursor-pointer p-1"
                   aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4 text-black" /> : <Eye className="w-4 h-4 text-black" />}
@@ -508,22 +524,22 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
             </div>
 
             {/* CTA Button: Solid Electric Royal Blue "#2c1ee8" */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-black text-base py-3 px-4 rounded-none transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center gap-2 tracking-wide font-sans shadow-none"
+                className="w-full bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-black text-sm py-2.5 px-4 rounded-none transition-all duration-200 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center gap-2 tracking-wide font-sans shadow-none"
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
-                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                     <span>Memproses...</span>
                   </div>
                 ) : (
-                  <span className="font-black text-base">Login</span>
+                  <span className="font-black text-sm uppercase tracking-wider">Login</span>
                 )}
               </button>
             </div>
@@ -533,10 +549,10 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
         {/* ─── 2. FORGOT PASSWORD FORM VIEW ─── */}
         <div
           ref={forgotViewRef}
-          className={`w-full space-y-4 absolute top-0 left-0 ${activeMode === "forgot" ? "block" : "hidden"}`}
+          className={`w-full space-y-3 ${activeMode === "forgot" ? "relative block" : "hidden absolute top-0 left-0"}`}
         >
           {/* Sub-header navigation with back link */}
-          <div className="flex items-center justify-between pb-1">
+          <div className="flex items-center justify-between pb-0.5">
             <button
               type="button"
               onClick={switchToLogin}
@@ -545,7 +561,7 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Kembali ke Login</span>
             </button>
-            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+            <span className="text-[10.5px] font-black uppercase tracking-wider text-slate-400">
               Lupa Password
             </span>
           </div>
@@ -559,7 +575,7 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
           )}
 
           {forgotMessage && (
-            <div className="p-3 rounded-none bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold flex items-center gap-2">
+            <div className="p-2.5 rounded-none bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#2c1ee8] shrink-0" />
               <span>{forgotMessage}</span>
             </div>
@@ -567,8 +583,8 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
 
           {/* STEP 1: Request Form */}
           {forgotStep === "request" && (
-            <form onSubmit={handleForgotRequest} className="space-y-3.5">
-              <div className="space-y-1.5">
+            <form onSubmit={handleForgotRequest} className="space-y-2.5">
+              <div className="space-y-1">
                 <label className="block text-xs font-black text-black tracking-wider uppercase font-sans">
                   NIS / NISN / NIP
                 </label>
@@ -579,12 +595,12 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
                     value={forgotIdentifier}
                     onChange={(e) => setForgotIdentifier(e.target.value)}
                     required
-                    className="w-full bg-white text-black font-semibold px-3.5 py-2.5 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-sm placeholder:text-slate-400"
+                    className="w-full bg-white text-black font-semibold px-3 py-2 rounded-none border border-black outline-none focus:ring-2 focus:ring-[#2c1ee8] focus:border-[#2c1ee8] transition-all text-xs placeholder:text-slate-400"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <label className="block text-xs font-black text-black tracking-wider uppercase font-sans">
                   Alasan Lupa Password (Opsional)
                 </label>
@@ -592,7 +608,7 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
                   value={forgotReason}
                   onChange={(e) => setForgotReason(e.target.value)}
                   placeholder="Contoh: Lupa kata sandi lama atau akun terkunci"
-                  className="w-full bg-white text-black font-medium border border-black rounded-none p-2.5 text-xs placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#2c1ee8] transition resize-none"
+                  className="w-full bg-white text-black font-medium border border-black rounded-none p-2 text-xs placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#2c1ee8] transition resize-none"
                   rows={2}
                 />
               </div>
@@ -600,11 +616,11 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
               <button
                 type="submit"
                 disabled={forgotLoading}
-                className="w-full bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-black py-3 text-sm rounded-none transition-all cursor-pointer disabled:opacity-75 uppercase tracking-wider mt-1 flex items-center justify-center gap-2 font-sans"
+                className="w-full bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-black py-2.5 text-xs rounded-none transition-all cursor-pointer disabled:opacity-75 uppercase tracking-wider mt-1 flex items-center justify-center gap-2 font-sans"
               >
                 {forgotLoading ? (
                   <div className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
@@ -615,11 +631,11 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
                 )}
               </button>
 
-              <div className="pt-1 text-center">
+              <div className="pt-0.5 text-center">
                 <button
                   type="button"
                   onClick={handleCheckForgotStatus}
-                  className="text-xs text-[#2c1ee8] hover:text-[#2317be] italic transition-colors cursor-pointer font-bold"
+                  className="text-[11px] text-[#2c1ee8] hover:text-[#2317be] italic transition-colors cursor-pointer font-bold"
                 >
                   Cek status persetujuan tiket sebelumnya
                 </button>

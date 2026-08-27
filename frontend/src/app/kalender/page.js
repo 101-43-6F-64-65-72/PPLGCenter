@@ -34,14 +34,14 @@ import {
 const Modal = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-[32px] border border-slate-200 shadow-2xl max-w-md w-full p-6 sm:p-8 relative z-10 text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+      <div className="bg-white rounded-none border border-slate-200 shadow-xl max-w-md w-full p-5 sm:p-6 relative z-10 text-slate-900 text-left">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+          className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
           aria-label="Tutup modal"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
         {children}
       </div>
@@ -470,68 +470,60 @@ export default function KalenderPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen bg-slate-50/50 text-slate-900 flex flex-col font-sans selection:bg-[#2C1EE8] selection:text-white">
       <Navbar />
 
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-8">
-        {/* Top Hero Section Header Card */}
-        <div className="bg-white/90 backdrop-blur-md rounded-[32px] border border-slate-200/80 p-6 sm:p-10 shadow-xs relative overflow-hidden">
-          <div className="absolute -right-12 -top-12 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-12 -bottom-12 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[#2C1EE8] text-[11px] font-mono font-extrabold uppercase tracking-wider">
-                <CalendarIcon className="w-3.5 h-3.5" />
-                <span>Kalender Akademik & Agenda SMKN 2 Surakarta</span>
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Kalender Kegiatan {year}
-              </h1>
-              <p className="text-sm text-slate-600 max-w-2xl">
-                Jadwal agenda pembelajaran, evaluasi PTS/PAS, program OSIS, ekstrakurikuler, dan hari libur sekolah.
-              </p>
-            </div>
-
-            {isAllowedToAddEvent && (
-              <button
-                onClick={() => {
-                  setNewEvent({
-                    title: "",
-                    start: formatDate(new Date()),
-                    end: formatDate(new Date()),
-                    category: "Akademik",
-                    location: "SMKN 2 Surakarta",
-                    description: ""
-                  });
-                  setShowAddModal(true);
-                }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer self-start md:self-auto shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Tambah Agenda</span>
-              </button>
-            )}
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-16 space-y-4">
+        {/* Top Direct Action Toolbar */}
+        <div className="bg-white border border-slate-200 rounded-none p-3.5 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+          <div className="space-y-0.5">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 uppercase tracking-tight flex items-center gap-2">
+              <CalendarIcon className="w-4 h-4 text-[#2C1EE8]" />
+              <span>Kalender Akademik & Agenda Kegiatan {year}</span>
+            </h1>
+            <p className="text-xs text-slate-500 font-normal">
+              Jadwal agenda pembelajaran, evaluasi PTS/PAS, program OSIS, ekstrakurikuler, dan hari libur sekolah.
+            </p>
           </div>
+
+          {isAllowedToAddEvent && (
+            <button
+              onClick={() => {
+                setNewEvent({
+                  title: "",
+                  start: formatDate(new Date()),
+                  end: formatDate(new Date()),
+                  category: "Akademik",
+                  location: "SMKN 2 Surakarta",
+                  description: ""
+                });
+                setShowAddModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors shadow-xs cursor-pointer self-start sm:self-auto shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Tambah Agenda</span>
+            </button>
+          )}
         </div>
 
         {/* Statistics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {[
-            { label: "Total Kegiatan", count: stats.total, color: "text-[#2C1EE8] bg-blue-50/70 border-blue-200" },
-            { label: "Libur Nasional", count: stats.libur, color: "text-rose-700 bg-rose-50/70 border-rose-200" },
-            { label: "Agenda Akademik", count: stats.akademik, color: "text-emerald-700 bg-emerald-50/70 border-emerald-200" },
-            { label: "Jadwal Ujian", count: stats.ujian, color: "text-amber-800 bg-amber-50/70 border-amber-200" },
-            { label: "Ekstrakurikuler", count: stats.ekskul, color: "text-purple-700 bg-purple-50/70 border-purple-200" }
+            { label: "Total Kegiatan", count: stats.total, color: "text-[#2C1EE8] bg-blue-50 border-blue-200" },
+            { label: "Libur Nasional", count: stats.libur, color: "text-rose-700 bg-rose-50 border-rose-200" },
+            { label: "Agenda Akademik", count: stats.akademik, color: "text-emerald-700 bg-emerald-50 border-emerald-200" },
+            { label: "Jadwal Ujian", count: stats.ujian, color: "text-amber-800 bg-amber-50 border-amber-200" },
+            { label: "Ekstrakurikuler", count: stats.ekskul, color: "text-purple-700 bg-purple-50 border-purple-200" }
           ].map((item, idx) => (
             <div
               key={idx}
-              className={`p-4 rounded-2xl border bg-white shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between`}
+              className="p-3.5 rounded-none border border-slate-200 bg-white shadow-xs flex flex-col justify-between text-left"
             >
-              <span className="text-xs font-bold text-slate-500">{item.label}</span>
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{item.label}</span>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-slate-900">{item.count}</span>
-                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border ${item.color}`}>
+                <span className="text-xl sm:text-2xl font-bold font-mono text-slate-900">{item.count}</span>
+                <span className={`px-1.5 py-0.2 rounded-none text-[9.5px] font-bold uppercase border font-mono ${item.color}`}>
                   Aktif
                 </span>
               </div>
@@ -543,43 +535,41 @@ export default function KalenderPage() {
           <LoginRequiredFallback featureName="Kalender Akademik" />
         ) : (
           /* Main 2-Column Workspace Grid */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start text-left">
             {/* LEFT COLUMN: Main Calendar Grid */}
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-8 space-y-4">
               {/* Search and Category Filter Toolbar */}
-              <div className="bg-white p-4 sm:p-5 rounded-[28px] border border-slate-200 shadow-xs space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Cari kegiatan atau lokasi..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+              <div className="bg-white p-3.5 sm:p-4 rounded-none border border-slate-200 shadow-xs space-y-3">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Cari nama agenda atau lokasi kegiatan..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-none pl-8 pr-7 py-1.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#2C1EE8] outline-none transition-colors"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Filter Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1">
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
                   {["All", "Akademik", "Ujian", "Libur Nasional", "Ekstrakurikuler", ...(canViewOsisCategory ? ["OSIS"] : [])].map(
                     (cat) => (
                       <button
                         key={cat}
                         onClick={() => setFilter(cat)}
-                        className={`px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-all shrink-0 cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-none text-[10.5px] font-bold uppercase tracking-wider transition-colors shrink-0 cursor-pointer border ${
                           filter === cat
-                            ? "bg-[#2C1EE8] text-white shadow-2xs"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
+                            : "bg-slate-50 text-slate-600 hover:bg-slate-100 border-slate-200"
                         }`}
                       >
                         {cat === "All" ? "Semua Kategori" : cat}
@@ -591,48 +581,48 @@ export default function KalenderPage() {
 
               {/* Instant Search Results Panel */}
               {searchQuery && (
-                <div className="bg-white p-5 rounded-[28px] border border-slate-200 shadow-xs space-y-3">
+                <div className="bg-white p-4 rounded-none border border-slate-200 shadow-xs space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                    <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
                       Hasil pencarian &quot;{searchQuery}&quot;
                     </h3>
-                    <span className="text-xs font-bold text-[#2C1EE8] bg-blue-50 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] bg-blue-50 text-[#2C1EE8] border border-blue-200 font-mono font-bold px-2 py-0.2 rounded-none">
                       {searchResults.length} kegiatan
                     </span>
                   </div>
 
                   {searchResults.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {searchResults.map((e, idx) => (
                         <div
                           key={idx}
                           onClick={() => openDetail(e.date)}
-                          className="p-3.5 rounded-2xl border border-slate-200/90 hover:border-blue-300 hover:bg-slate-50/60 transition-all cursor-pointer shadow-2xs"
+                          className="p-3 rounded-none border border-slate-200 hover:border-[#2C1EE8] hover:bg-blue-50/30 transition-colors cursor-pointer"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1">{e.title}</h4>
+                            <h4 className="font-bold text-slate-900 text-xs line-clamp-1 uppercase">{e.title}</h4>
                             <span
-                              className={`text-[10px] font-black px-2 py-0.5 rounded-md border shrink-0 ${
+                              className={`text-[9.5px] font-bold uppercase font-mono px-1.5 py-0.2 rounded-none border shrink-0 ${
                                 categoryBadgeStyles[e.category] || "bg-slate-100 text-slate-700 border-slate-200"
                               }`}
                             >
                               {e.category}
                             </span>
                           </div>
-                          <div className="mt-2 space-y-1 text-xs text-slate-500 font-medium">
+                          <div className="mt-2 space-y-1 text-[11px] text-slate-500 font-medium">
                             <div className="flex items-center gap-1.5">
-                              <CalendarIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <CalendarIcon className="w-3 h-3 text-slate-400 shrink-0" />
                               <span>{formatEventDateRange(e.date, e.end)}</span>
                             </div>
                             {e.location && (
                               <div className="flex items-center gap-1.5">
-                                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
                                 <span className="truncate">{e.location}</span>
                               </div>
                             )}
                           </div>
                           {e.description && (
-                            <p className="mt-2 text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                            <p className="mt-1.5 text-[11px] text-slate-600 line-clamp-2 leading-relaxed font-normal">
                               {e.description}
                             </p>
                           )}
@@ -640,7 +630,7 @@ export default function KalenderPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-500 text-center py-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-xs text-slate-500 text-center py-6 bg-slate-50 rounded-none border border-slate-200">
                       Tidak ada kegiatan yang sesuai dengan kata kunci pencarian.
                     </p>
                   )}
@@ -648,36 +638,36 @@ export default function KalenderPage() {
               )}
 
               {/* MAIN CALENDAR GRID */}
-              <div className="bg-white p-6 sm:p-8 rounded-[32px] border border-slate-200 shadow-xs">
+              <div className="bg-white p-4 sm:p-5 rounded-none border border-slate-200 shadow-xs">
                 {/* Month Header Controls */}
-                <div className="flex items-center justify-between pb-5 border-b border-slate-100 mb-5">
+                <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-4">
                   <div>
-                    <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
+                    <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-wider block">
                       Tahun {currentMonth.getFullYear()}
                     </span>
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight uppercase">
                       {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                     </h2>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={resetToToday}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer border border-slate-200"
                     >
                       Hari Ini
                     </button>
-                    <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                    <div className="flex items-center bg-slate-50 border border-slate-200">
                       <button
                         onClick={prevMonth}
-                        className="p-1.5 hover:bg-white rounded-lg text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
+                        className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
                         aria-label="Bulan sebelumnya"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button
                         onClick={nextMonth}
-                        className="p-1.5 hover:bg-white rounded-lg text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-2xs"
+                        className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer border-l border-slate-200"
                         aria-label="Bulan berikutnya"
                       >
                         <ChevronRight className="w-4 h-4" />
@@ -687,7 +677,7 @@ export default function KalenderPage() {
                 </div>
 
                 {/* Day of Week Labels */}
-                <div className="grid grid-cols-7 text-center text-xs font-black text-slate-400 mb-2 uppercase tracking-wider">
+                <div className="grid grid-cols-7 text-center text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-wider border-b border-slate-100 pb-1.5">
                   <div className="text-rose-600">Min</div>
                   <div>Sen</div>
                   <div>Sel</div>
@@ -698,11 +688,11 @@ export default function KalenderPage() {
                 </div>
 
                 {/* Days Monthly Grid */}
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
                   {Array.from({ length: startDay }).map((_, idx) => (
                     <div
                       key={`empty-${idx}`}
-                      className="p-2 min-h-[75px] sm:min-h-[95px] rounded-2xl bg-slate-50/50 border border-transparent"
+                      className="p-1.5 min-h-[70px] sm:min-h-[90px] rounded-none bg-slate-50/50 border border-transparent"
                     />
                   ))}
 
@@ -718,15 +708,15 @@ export default function KalenderPage() {
                       <button
                         key={dateStr}
                         onClick={() => openDetail(dateStr)}
-                        className={`group p-2 sm:p-2.5 min-h-[80px] sm:min-h-[105px] rounded-2xl flex flex-col justify-between transition-all border text-left cursor-pointer relative ${
+                        className={`group p-1.5 sm:p-2 min-h-[75px] sm:min-h-[95px] rounded-none flex flex-col justify-between transition-colors border text-left cursor-pointer relative ${
                           isToday
-                            ? "bg-[#2C1EE8] text-white border-[#2C1EE8] shadow-md shadow-blue-500/20"
-                            : "bg-white text-slate-800 border-slate-200/90 hover:border-blue-300 hover:bg-slate-50/60 shadow-2xs"
+                            ? "bg-[#2C1EE8] text-white border-[#2C1EE8] shadow-xs"
+                            : "bg-white text-slate-800 border-slate-200 hover:border-[#2C1EE8] hover:bg-blue-50/30"
                         }`}
                       >
                         <div className="flex items-center justify-between w-full">
                           <span
-                            className={`text-xs sm:text-sm font-black ${
+                            className={`text-xs font-bold font-mono ${
                               isToday ? "text-white" : "text-slate-800"
                             }`}
                           >
@@ -734,8 +724,8 @@ export default function KalenderPage() {
                           </span>
                           {hasEvents && (
                             <span
-                              className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${
-                                isToday ? "bg-white/25 text-white" : "bg-blue-50 text-[#2C1EE8]"
+                              className={`text-[9px] font-bold font-mono px-1 py-0.2 rounded-none ${
+                                isToday ? "bg-white/25 text-white" : "bg-blue-50 text-[#2C1EE8] border border-blue-200"
                               }`}
                             >
                               {dayEvents.length}
@@ -744,13 +734,13 @@ export default function KalenderPage() {
                         </div>
 
                         {hasEvents && (
-                          <div className="w-full mt-1 space-y-1">
+                          <div className="w-full mt-1 space-y-0.5">
                             {/* Mobile: Color Dots */}
                             <div className="flex flex-wrap gap-1 sm:hidden">
                               {dayEvents.map((e, i) => (
                                 <span
                                   key={i}
-                                  className={`inline-block w-1.5 h-1.5 rounded-full ${
+                                  className={`inline-block w-1.5 h-1.5 rounded-none ${
                                     isToday ? "bg-white" : getCategoryColor(e.category)
                                   }`}
                                 />
@@ -758,11 +748,11 @@ export default function KalenderPage() {
                             </div>
 
                             {/* Desktop: Event Labels */}
-                            <div className="hidden sm:block space-y-1">
+                            <div className="hidden sm:block space-y-0.5">
                               {dayEvents.slice(0, 2).map((e, i) => (
                                 <div
                                   key={i}
-                                  className={`text-[10px] font-bold leading-tight px-1.5 py-0.5 rounded-md truncate border ${
+                                  className={`text-[9.5px] font-bold leading-tight px-1 py-0.5 rounded-none truncate border ${
                                     isToday
                                       ? "bg-white/20 text-white border-white/30"
                                       : getCategoryBadgeStyle(e.category)
@@ -773,7 +763,7 @@ export default function KalenderPage() {
                               ))}
                               {dayEvents.length > 2 && (
                                 <div
-                                  className={`text-[10px] font-bold pl-0.5 ${
+                                  className={`text-[9px] font-bold font-mono pl-0.5 ${
                                     isToday ? "text-blue-100" : "text-slate-500"
                                   }`}
                                 >
@@ -789,16 +779,16 @@ export default function KalenderPage() {
                 </div>
 
                 {/* Category Legend */}
-                <div className="mt-8 pt-5 border-t border-slate-100 flex flex-wrap gap-x-5 gap-y-2 text-xs font-bold text-slate-600">
+                <div className="mt-6 pt-4 border-t border-slate-100 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 bg-[#2C1EE8] rounded-full inline-block" />
+                    <span className="w-2 h-2 bg-[#2C1EE8] rounded-none inline-block" />
                     <span>Hari Ini</span>
                   </div>
                   {Object.keys(categoryColors)
                     .filter((cat) => cat !== "OSIS" || canViewOsisCategory)
                     .map((cat) => (
                       <div key={cat} className="flex items-center gap-1.5">
-                        <span className={`w-2.5 h-2.5 rounded-full inline-block ${categoryColors[cat]}`} />
+                        <span className={`w-2 h-2 rounded-none inline-block ${categoryColors[cat]}`} />
                         <span>{cat}</span>
                       </div>
                     ))}
@@ -807,67 +797,67 @@ export default function KalenderPage() {
             </div>
 
             {/* RIGHT COLUMN: Sidebar Highlights */}
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-4 space-y-4 text-left">
               {/* Monthly Overview Card */}
-              <div className="bg-white p-6 rounded-[28px] border border-slate-200 shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+              <div className="bg-white p-4 rounded-none border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <span className="text-[10px] font-mono font-bold text-slate-500 uppercase tracking-wider">
                     Ringkasan {monthNames[currentMonth.getMonth()]}
                   </span>
-                  <Sparkles className="w-4 h-4 text-[#2C1EE8]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#2C1EE8]" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-center">
-                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                    <span className="block text-[11px] font-bold text-slate-500">Bulan Ini</span>
-                    <span className="text-xl font-black text-slate-900 block mt-0.5">
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="p-2.5 bg-slate-50 rounded-none border border-slate-200">
+                    <span className="block text-[10px] font-bold text-slate-500 uppercase">Bulan Ini</span>
+                    <span className="text-lg font-bold font-mono text-slate-900 block mt-0.5">
                       {currentMonthEventsCount} Agenda
                     </span>
                   </div>
-                  <div className="p-3 bg-blue-50/70 rounded-2xl border border-blue-100">
-                    <span className="block text-[11px] font-bold text-[#2C1EE8]">Hari Ini</span>
-                    <span className="text-xl font-black text-[#2C1EE8] block mt-0.5">
+                  <div className="p-2.5 bg-blue-50/50 rounded-none border border-blue-200">
+                    <span className="block text-[10px] font-bold text-[#2C1EE8] uppercase">Hari Ini</span>
+                    <span className="text-lg font-bold font-mono text-[#2C1EE8] block mt-0.5">
                       {todayEvents.length} Agenda
                     </span>
                   </div>
                 </div>
 
-                <p className="text-xs text-slate-500 leading-relaxed">
+                <p className="text-xs text-slate-500 leading-relaxed font-normal">
                   Pilih tanggal pada kisi kalender untuk membaca rincian lengkap kegiatan atau menambahkan agenda baru bagi pengurus.
                 </p>
               </div>
 
               {/* Agenda Hari Ini */}
-              <div className="bg-white p-6 rounded-[28px] border border-slate-200 shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#2C1EE8]" />
+              <div className="bg-white p-4 rounded-none border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Clock className="w-3.5 h-3.5 text-[#2C1EE8]" />
                     <span>Agenda Hari Ini</span>
                   </h3>
-                  <span className="text-[11px] font-mono text-slate-400 font-bold">
+                  <span className="text-[10px] font-mono text-slate-500 font-bold">
                     {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                   </span>
                 </div>
 
                 {todayEvents.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {todayEvents.map((e, idx) => (
                       <div
                         key={idx}
                         onClick={() => openDetail(e.date)}
-                        className="p-3.5 border border-slate-200/90 rounded-2xl hover:border-blue-300 hover:bg-slate-50/60 transition-all cursor-pointer shadow-2xs"
+                        className="p-3 border border-slate-200 rounded-none hover:border-[#2C1EE8] hover:bg-blue-50/30 transition-colors cursor-pointer"
                       >
                         <span
-                          className={`text-[10px] font-black px-2 py-0.5 rounded-md border inline-block mb-1.5 ${
+                          className={`text-[9.5px] font-bold font-mono uppercase px-1.5 py-0.2 rounded-none border inline-block mb-1.5 ${
                             categoryBadgeStyles[e.category] || "bg-slate-100 text-slate-700 border-slate-200"
                           }`}
                         >
                           {e.category}
                         </span>
-                        <h4 className="font-bold text-slate-900 text-xs line-clamp-1">{e.title}</h4>
+                        <h4 className="font-bold text-slate-900 text-xs line-clamp-1 uppercase">{e.title}</h4>
                         {e.location && (
-                          <div className="flex items-center gap-1 mt-1.5 text-[11px] text-slate-500 font-medium">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-500 font-medium">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
                             <span className="truncate">{e.location}</span>
                           </div>
                         )}
@@ -875,24 +865,24 @@ export default function KalenderPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100">
-                    <CalendarDays className="w-7 h-7 mx-auto text-slate-300 mb-2" />
+                  <div className="text-center py-6 bg-slate-50 rounded-none border border-slate-200">
+                    <CalendarDays className="w-6 h-6 mx-auto text-slate-300 mb-1.5" />
                     <p className="text-xs text-slate-500 font-medium">Tidak ada kegiatan sekolah hari ini.</p>
                   </div>
                 )}
               </div>
 
               {/* Kegiatan Mendatang */}
-              <div className="bg-white p-6 rounded-[28px] border border-slate-200 shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                    <ListTodo className="w-4 h-4 text-[#2C1EE8]" />
+              <div className="bg-white p-4 rounded-none border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+                    <ListTodo className="w-3.5 h-3.5 text-[#2C1EE8]" />
                     <span>Kegiatan Mendatang</span>
                   </h3>
                 </div>
 
                 {upcomingEvents.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {upcomingEvents.map((e, idx) => {
                       const eventDate = new Date(e.date);
                       const isMulti = !!e.end && e.date !== e.end;
@@ -900,27 +890,27 @@ export default function KalenderPage() {
                         <div
                           key={idx}
                           onClick={() => openDetail(e.date)}
-                          className="flex gap-3 items-start cursor-pointer p-2.5 rounded-2xl hover:bg-slate-50 transition-colors"
+                          className="flex gap-2.5 items-start cursor-pointer p-2 rounded-none hover:bg-slate-50 border border-slate-100 transition-colors"
                         >
-                          <div className="flex flex-col items-center justify-center w-11 h-11 shrink-0 rounded-2xl bg-blue-50 border border-blue-100 text-center shadow-2xs">
-                            <span className="text-[10px] font-black text-[#2C1EE8] uppercase leading-none">
+                          <div className="flex flex-col items-center justify-center w-10 h-10 shrink-0 rounded-none bg-blue-50 border border-blue-200 text-center">
+                            <span className="text-[9.5px] font-bold text-[#2C1EE8] uppercase leading-none font-mono">
                               {eventDate.toLocaleString("id-ID", { month: "short" })}
                             </span>
-                            <span className="text-sm font-black text-slate-900 leading-none mt-1">
+                            <span className="text-xs font-bold font-mono text-slate-900 leading-none mt-1">
                               {eventDate.getDate()}
                             </span>
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <span
-                              className={`text-[9px] font-black px-2 py-0.5 rounded-md border inline-block mb-1 ${
+                              className={`text-[9px] font-bold font-mono uppercase px-1 py-0.2 rounded-none border inline-block mb-0.5 ${
                                 categoryBadgeStyles[e.category] || "bg-slate-100 text-slate-700 border-slate-200"
                               }`}
                             >
                               {e.category}
                             </span>
-                            <h4 className="font-bold text-slate-900 text-xs line-clamp-1">{e.title}</h4>
-                            <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 font-medium">
+                            <h4 className="font-bold text-slate-900 text-xs line-clamp-1 uppercase">{e.title}</h4>
+                            <div className="flex items-center gap-2 mt-0.5 text-[10.5px] text-slate-500 font-medium">
                               {isMulti && (
                                 <span className="text-amber-700 font-bold flex items-center gap-0.5">
                                   <Clock className="w-3 h-3" /> Multi-hari
@@ -934,7 +924,7 @@ export default function KalenderPage() {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 text-center py-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-xs text-slate-400 text-center py-6 bg-slate-50 rounded-none border border-slate-200">
                     Belum ada kegiatan terjadwal berikutnya.
                   </p>
                 )}
@@ -946,12 +936,12 @@ export default function KalenderPage() {
         {/* MODAL: EVENT DETAIL */}
         <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)}>
           {selectedDate && (
-            <div className="space-y-4">
-              <div className="pb-3 border-b border-slate-100">
-                <span className="text-[11px] font-mono font-extrabold text-[#2C1EE8] uppercase tracking-wider">
+            <div className="space-y-3 text-left">
+              <div className="pb-2.5 border-b border-slate-100">
+                <span className="text-[10px] font-mono font-bold text-[#2C1EE8] uppercase tracking-wider block">
                   Rincian Kegiatan
                 </span>
-                <h3 className="text-lg font-black text-slate-900 mt-0.5">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 uppercase">
                   {new Date(selectedDate).toLocaleDateString("id-ID", {
                     weekday: "long",
                     day: "numeric",
@@ -962,14 +952,14 @@ export default function KalenderPage() {
               </div>
 
               {eventsForDate(selectedDate).length > 0 ? (
-                <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
                   {eventsForDate(selectedDate).map((e, idx) => (
-                    <div key={idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2">
+                    <div key={idx} className="p-3 rounded-none border border-slate-200 bg-slate-50 space-y-1.5">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-extrabold text-slate-900 text-sm">{e.title}</h4>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <h4 className="font-bold text-slate-900 text-xs uppercase">{e.title}</h4>
+                        <div className="flex items-center gap-1 shrink-0">
                           <span
-                            className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
+                            className={`text-[9.5px] font-bold font-mono uppercase px-1.5 py-0.2 rounded-none border ${
                               categoryBadgeStyles[e.category] || "bg-slate-100 text-slate-700 border-slate-200"
                             }`}
                           >
@@ -978,7 +968,7 @@ export default function KalenderPage() {
                           {isAllowedToAddEvent && e.id && (
                             <button
                               onClick={() => handleDeleteEvent(e.id)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              className="p-1 text-slate-400 hover:text-rose-600 cursor-pointer"
                               title="Hapus Kegiatan"
                               aria-label="Hapus kegiatan"
                             >
@@ -988,30 +978,30 @@ export default function KalenderPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-1 text-xs text-slate-600 font-medium">
-                        <div className="flex items-center gap-2">
-                          <CalendarIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <div className="space-y-0.5 text-[11px] text-slate-600 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <CalendarIcon className="w-3 h-3 text-slate-400 shrink-0" />
                           <span>{formatEventDateRange(e.date, e.end)}</span>
                         </div>
                         {e.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
                             <span>{e.location}</span>
                           </div>
                         )}
                       </div>
 
                       {e.description && (
-                        <div className="mt-2 pt-2 border-t border-slate-200/60">
-                          <p className="text-xs text-slate-600 leading-relaxed font-medium">{e.description}</p>
+                        <div className="mt-1.5 pt-1.5 border-t border-slate-200">
+                          <p className="text-xs text-slate-600 leading-relaxed font-normal">{e.description}</p>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="py-8 text-center bg-slate-50 rounded-2xl border border-slate-100">
-                  <CalendarIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <div className="py-6 text-center bg-slate-50 rounded-none border border-slate-200">
+                  <CalendarIcon className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
                   <p className="text-xs text-slate-500 font-medium">Tidak ada agenda kegiatan di tanggal ini.</p>
 
                   {isAllowedToAddEvent && (
@@ -1021,19 +1011,19 @@ export default function KalenderPage() {
                         setNewEvent((prev) => ({ ...prev, start: selectedDate, end: selectedDate }));
                         setShowAddModal(true);
                       }}
-                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#2C1EE8] hover:underline cursor-pointer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold uppercase text-[#2C1EE8] hover:underline cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Buat kegiatan di tanggal ini
+                      <Plus className="w-3.5 h-3.5" /> + Buat kegiatan di tanggal ini
                     </button>
                   )}
                 </div>
               )}
 
-              <div className="mt-5 flex justify-end pt-3 border-t border-slate-100">
+              <div className="mt-4 flex justify-end pt-2.5 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowDetailModal(false)}
-                  className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
                 >
                   Tutup
                 </button>
@@ -1044,56 +1034,56 @@ export default function KalenderPage() {
 
         {/* MODAL: ADD EVENT FORM */}
         <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)}>
-          <form onSubmit={submitNewEvent} className="space-y-4 text-xs">
-            <div className="pb-3 border-b border-slate-100">
-              <h3 className="text-lg font-black text-slate-900">Tambah Kegiatan Baru</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Lengkapi data agenda kalender sekolah.</p>
+          <form onSubmit={submitNewEvent} className="space-y-3 text-xs text-left">
+            <div className="pb-2.5 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900 uppercase">Tambah Kegiatan Baru</h3>
+              <p className="text-xs text-slate-500 mt-0.5 font-normal">Lengkapi data agenda kalender sekolah.</p>
             </div>
 
             <div>
-              <label className="block text-slate-700 mb-1 font-bold">Judul Kegiatan:</label>
+              <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Judul Kegiatan <span className="text-rose-500">*</span></label>
               <input
                 type="text"
                 name="title"
                 value={newEvent.title}
                 onChange={handleAddChange}
                 placeholder="Contoh: Penilaian Akhir Semester"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors font-semibold"
                 required
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               <div>
-                <label className="block text-slate-700 mb-1 font-bold">Tanggal Mulai:</label>
+                <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider text-[11px]">Tanggal Mulai <span className="text-rose-500">*</span></label>
                 <input
                   type="date"
                   name="start"
                   value={newEvent.start}
                   onChange={handleAddChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors font-mono cursor-pointer"
                   required
                 />
               </div>
               <div>
-                <label className="block text-slate-700 mb-1 font-bold">Tanggal Selesai:</label>
+                <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider text-[11px]">Tanggal Selesai</label>
                 <input
                   type="date"
                   name="end"
                   value={newEvent.end}
                   onChange={handleAddChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium cursor-pointer"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors font-mono cursor-pointer"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-700 mb-1 font-bold">Kategori Agenda:</label>
+              <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Kategori Agenda <span className="text-rose-500">*</span></label>
               <select
                 name="category"
                 value={newEvent.category}
                 onChange={handleAddChange}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all cursor-pointer font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors cursor-pointer font-semibold"
                 required
               >
                 <option value="">-- Pilih Kategori --</option>
@@ -1106,46 +1096,46 @@ export default function KalenderPage() {
             </div>
 
             <div>
-              <label className="block text-slate-700 mb-1 font-bold">Lokasi:</label>
+              <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Lokasi</label>
               <input
                 type="text"
                 name="location"
                 value={newEvent.location}
                 onChange={handleAddChange}
                 placeholder="Contoh: Aula / Lab Komputer SMKN 2 Surakarta"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-none px-3 py-2 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors font-medium"
               />
             </div>
 
             <div>
-              <label className="block text-slate-700 mb-1 font-bold">Deskripsi Ringkas:</label>
+              <label className="block text-slate-700 mb-1 font-bold uppercase tracking-wider">Deskripsi Ringkas</label>
               <textarea
                 name="description"
                 value={newEvent.description}
                 onChange={handleAddChange}
                 placeholder="Tuliskan keterangan detail kegiatan di sini..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-none p-3 text-slate-900 focus:outline-none focus:border-[#2C1EE8] focus:bg-white transition-colors font-normal resize-none"
                 rows={3}
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
                 disabled={isSubmitting}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer transition-all"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none font-bold uppercase tracking-wider cursor-pointer transition-colors text-xs"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                className="px-5 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white rounded-none font-bold uppercase tracking-wider cursor-pointer transition-colors shadow-xs flex items-center gap-1.5 disabled:opacity-50 text-xs"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Menyimpan...
                   </>
                 ) : (
                   "Simpan Agenda"

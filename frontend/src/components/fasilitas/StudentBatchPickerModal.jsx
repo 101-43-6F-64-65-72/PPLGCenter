@@ -106,12 +106,10 @@ export default function StudentBatchPickerModal({
 
   const handleToggleSelectAll = () => {
     if (isAllCurrentSelected) {
-      // Unselect all in current class list
       setSelectedUsers(
         selectedUsers.filter((u) => !currentListUserIds.includes(u.id || u.userId))
       );
     } else {
-      // Select all in current class list
       const newItems = userList.map((u) => ({
         userId: u.id,
         id: u.id,
@@ -138,14 +136,14 @@ export default function StudentBatchPickerModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-[32px] border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col justify-between text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+      <div className="bg-white rounded-none border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col justify-between text-slate-900 text-left">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#2C1EE8]" />
-              {title}
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 uppercase">
+              <Users className="w-4 h-4 text-[#2C1EE8]" />
+              <span>{title}</span>
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
               {subtitle}
@@ -154,28 +152,28 @@ export default function StudentBatchPickerModal({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 flex-1 overflow-y-auto space-y-4">
-          {/* Class Filter Bar (6 Official PPLG Classes) */}
+        <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-3.5">
+          {/* Class Filter Bar */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
               Pilih Kelas:
             </label>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
               {OFFICIAL_PPLG_CLASSES.map((cls) => (
                 <button
                   key={cls}
                   type="button"
                   onClick={() => setSelectedClass(cls)}
-                  className={`py-2 px-2 rounded-xl text-xs font-black transition-all text-center cursor-pointer border ${
+                  className={`py-1.5 px-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors text-center cursor-pointer border ${
                     selectedClass === cls
-                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8] shadow-xs"
+                      ? "bg-[#2C1EE8] text-white border-[#2C1EE8]"
                       : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
@@ -186,15 +184,15 @@ export default function StudentBatchPickerModal({
           </div>
 
           {/* Search & Select All Toolbar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder={`Cari nama siswa di ${selectedClass}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2 text-xs text-slate-900 focus:outline-hidden focus:border-[#2C1EE8] focus:bg-white transition-all font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-none pl-9 pr-3 py-1.5 text-xs text-slate-900 focus:border-[#2C1EE8] focus:bg-white outline-none transition font-medium"
               />
             </div>
 
@@ -202,7 +200,7 @@ export default function StudentBatchPickerModal({
               type="button"
               onClick={handleToggleSelectAll}
               disabled={isLoading || userList.length === 0}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+              className={`px-3 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 border ${
                 isAllCurrentSelected
                   ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
                   : "bg-blue-50 text-[#2C1EE8] border-blue-200 hover:bg-blue-100"
@@ -211,7 +209,7 @@ export default function StudentBatchPickerModal({
               {isAllCurrentSelected ? (
                 <>
                   <Square className="w-3.5 h-3.5" />
-                  <span>Batal Pilih Semua ({selectedClass})</span>
+                  <span>Batal Semua ({selectedClass})</span>
                 </>
               ) : (
                 <>
@@ -223,46 +221,46 @@ export default function StudentBatchPickerModal({
           </div>
 
           {/* Students Grid List */}
-          <div className="space-y-2 pt-1">
-            <div className="flex items-center justify-between text-xs text-slate-500 font-bold">
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between text-xs text-slate-500 font-bold uppercase tracking-wider">
               <span>Daftar Siswa ({userList.length})</span>
-              <span className="text-[#2C1EE8]">
-                {selectedUsers.length} Siswa Terpilih
+              <span className="text-[#2C1EE8] font-mono">
+                {selectedUsers.length} Terpilih
               </span>
             </div>
 
             {isLoading ? (
-              <div className="py-12 text-center text-xs text-slate-400 font-medium">
-                <div className="w-6 h-6 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                Memuat daftar siswa {selectedClass}...
+              <div className="py-10 text-center text-xs text-slate-400 font-bold uppercase tracking-wider">
+                <div className="w-5 h-5 border-2 border-[#2C1EE8] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                Memuat siswa {selectedClass}...
               </div>
             ) : userList.length === 0 ? (
-              <div className="py-10 text-center text-xs text-slate-400 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="py-8 text-center text-xs text-slate-400 bg-slate-50 rounded-none border border-slate-200">
                 Tidak ada data siswa ditemukan di kelas {selectedClass}.
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1">
                 {userList.map((student) => {
                   const selected = isUserSelected(student.id);
                   return (
                     <div
                       key={student.id}
                       onClick={() => toggleUser(student)}
-                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                      className={`p-2.5 rounded-none border transition-colors cursor-pointer flex items-center justify-between gap-2.5 ${
                         selected
-                          ? "bg-blue-50/80 border-[#2C1EE8] shadow-2xs"
-                          : "bg-slate-50/60 border-slate-200/80 hover:bg-slate-100/80"
+                          ? "bg-blue-50/80 border-[#2C1EE8]"
+                          : "bg-white border-slate-200 hover:border-slate-300"
                       }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <div
-                          className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 transition-all ${
+                          className={`w-4 h-4 rounded-none border flex items-center justify-center shrink-0 ${
                             selected
                               ? "bg-[#2C1EE8] border-[#2C1EE8] text-white"
                               : "border-slate-300 bg-white"
                           }`}
                         >
-                          {selected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                          {selected && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-slate-900 truncate">
@@ -283,14 +281,14 @@ export default function StudentBatchPickerModal({
           {/* Selected Badges Preview */}
           {selectedUsers.length > 0 && (
             <div className="pt-2 border-t border-slate-100">
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                 Siswa yang Dipilih ({selectedUsers.length}):
               </label>
-              <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2.5 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto p-2 bg-slate-50 rounded-none border border-slate-200">
                 {selectedUsers.map((u) => (
                   <span
                     key={u.id || u.userId}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white text-slate-800 border border-slate-200 rounded-xl text-[11px] font-bold shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-white text-slate-800 border border-slate-200 rounded-none text-[11px] font-medium"
                   >
                     <span>{u.fullName}</span>
                     <button
@@ -311,23 +309,23 @@ export default function StudentBatchPickerModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-6 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50/50">
+        <div className="p-3 sm:p-4 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50">
           <div className="text-xs font-bold text-slate-600">
-            Total: <span className="text-[#2C1EE8] font-black">{selectedUsers.length} Siswa</span>
+            Total: <span className="text-[#2C1EE8] font-mono font-bold">{selectedUsers.length} Siswa</span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer transition-all"
+              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-none text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors"
             >
               Batal
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-6 py-2.5 bg-[#2C1EE8] hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer transition-all"
+              className="px-5 py-1.5 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white rounded-none text-xs font-bold uppercase tracking-wider cursor-pointer transition-colors shadow-xs"
             >
               Simpan Pilihan ({selectedUsers.length})
             </button>
