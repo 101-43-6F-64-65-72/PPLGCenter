@@ -212,11 +212,11 @@ export default function AnnouncementCommentSection({ announcementId, isCommentsL
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm("Apakah Anda yakin ingin menghapus komentar ini?")) return;
     try {
-      await announcementService.deleteComment(commentId);
+      await announcementService.deleteComment(announcementId, commentId);
       await fetchComments();
     } catch (err) {
       console.error("Failed to delete comment:", err);
-      alert(err?.response?.data?.message || "Gagal menghapus komentar.");
+      alert(err?.response?.data?.message || err?.message || "Gagal menghapus komentar.");
     }
   };
 

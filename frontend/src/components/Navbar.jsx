@@ -208,6 +208,15 @@ export default function Navbar() {
                           }`}
                         >
                           <span>{item.name}</span>
+                          {item.path === "/kuis" && (
+                            <span
+                              className={`text-[8.5px] uppercase px-1.5 py-0.2 font-mono font-bold ${
+                                isActive ? "bg-white text-black" : "bg-amber-100 text-amber-900 border border-amber-300"
+                              }`}
+                            >
+                              Ditutup
+                            </span>
+                          )}
                           {isAdminItem && (
                             <span
                               className={`text-[9px] uppercase px-1.5 py-0.5 font-black ${
@@ -352,6 +361,15 @@ export default function Navbar() {
                         }`}
                       >
                         <span>{item.name}</span>
+                        {item.path === "/kuis" && (
+                          <span
+                            className={`text-[8.5px] uppercase px-1.5 py-0.2 font-mono font-bold ${
+                              isActive ? "bg-white text-black" : "bg-amber-100 text-amber-900 border border-amber-300"
+                            }`}
+                          >
+                            Ditutup
+                          </span>
+                        )}
                         {isAdminItem && (
                           <span
                             className={`text-[9px] uppercase px-1.5 py-0.5 font-black ${

@@ -102,11 +102,21 @@ export const announcementService = {
     }
   },
 
-  async addComment(announcementId, content, parentCommentId = null) {
+  async addComment(announcementId, contentOrData, parentCommentId = null) {
     try {
+      let content = "";
+      let parentId = parentCommentId;
+
+      if (typeof contentOrData === "object" && contentOrData !== null) {
+        content = contentOrData.content || "";
+        parentId = contentOrData.parentCommentId || parentCommentId || null;
+      } else {
+        content = typeof contentOrData === "string" ? contentOrData : String(contentOrData || "");
+      }
+
       const response = await apiClient.post(
         API_ROUTES.ANNOUNCEMENT_COMMENTS.BY_ANNOUNCEMENT(announcementId),
-        { content, parentCommentId }
+        { content, parentCommentId: parentId }
       );
       return response;
     } catch (error) {
@@ -115,14 +125,22 @@ export const announcementService = {
     }
   },
 
-  async deleteComment(announcementId, commentId) {
+  async deleteComment(announcementIdOrObj, commentId = null) {
     try {
+      let aId = announcementIdOrObj;
+      let cId = commentId;
+
+      if (typeof announcementIdOrObj === "object" && announcementIdOrObj !== null) {
+        aId = announcementIdOrObj.announcementId;
+        cId = announcementIdOrObj.commentId || announcementIdOrObj.id;
+      }
+
       const response = await apiClient.delete(
-        API_ROUTES.ANNOUNCEMENT_COMMENTS.DELETE(announcementId, commentId)
+        API_ROUTES.ANNOUNCEMENT_COMMENTS.DELETE(aId, cId)
       );
       return response;
     } catch (error) {
-      console.warn(`DELETE comment ${commentId} error:`, error?.message);
+      console.warn(`DELETE comment error:`, error?.message);
       throw error;
     }
   },

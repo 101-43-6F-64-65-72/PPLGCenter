@@ -17,11 +17,13 @@ public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IUserImportService _userImportService;
 
-    public UsersController(IUserService userService, ICurrentUserService currentUserService)
+    public UsersController(IUserService userService, ICurrentUserService currentUserService, IUserImportService userImportService)
     {
         _userService = userService;
         _currentUserService = currentUserService;
+        _userImportService = userImportService;
     }
 
     [Authorize]
@@ -191,5 +193,67 @@ public class UsersController : ControllerBase
         }
 
         return Ok(ApiResponse<object>.Ok("Email notifikasi berhasil dihapus."));
+    }
+
+    /// <summary>
+    /// Assign Homeroom and Advisor roles to a Teacher (Admin only)
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("assign-teacher")]
+    public async Task<IActionResult> AssignTeacher([FromBody] AssignTeacherRequest request)
+    {
+        var result = await _userService.AssignTeacherAsync(request);
+        if (result is null)
+            return NotFound(ApiResponse<object>.Fail("Guru tidak ditemukan atau penugasan gagal."));
+
+        return Ok(ApiResponse<UserResponse>.Ok("Penugasan guru berhasil diperbarui.", result));
+    }
+
+    /// <summary>
+    /// Bulk import students via CSV text/file (Admin only)
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("import-students")]
+    public async Task<IActionResult> ImportStudents()
+    {
+        using var reader = new System.IO.StreamReader(Request.Body, System.Text.Encoding.UTF8);
+        var csvContent = await reader.ReadToEndAsync();
+        if (string.IsNullOrWhiteSpace(csvContent))
+        {
+            return BadRequest(ApiResponse<object>.Fail("File atau konten CSV kosong."));
+        }
+
+        var summary = await _userImportService.ImportStudentsCsvAsync(csvContent);
+        return Ok(ApiResponse<ImportSummaryResponse>.Ok("Impor data siswa selesai diproses.", summary));
+    }
+
+    /// <summary>
+    /// Bulk import teachers via CSV text/file (Admin only)
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPost("import-teachers")]
+    public async Task<IActionResult> ImportTeachers()
+    {
+        using var reader = new System.IO.StreamReader(Request.Body, System.Text.Encoding.UTF8);
+        var csvContent = await reader.ReadToEndAsync();
+        if (string.IsNullOrWhiteSpace(csvContent))
+        {
+            return BadRequest(ApiResponse<object>.Fail("File atau konten CSV kosong."));
+        }
+
+        var summary = await _userImportService.ImportTeachersCsvAsync(csvContent);
+        return Ok(ApiResponse<ImportSummaryResponse>.Ok("Impor data guru selesai diproses.", summary));
+    }
+
+    /// <summary>
+    /// Export students list to CSV file
+    /// </summary>
+    [Authorize(Roles = "Admin,Teacher")]
+    [HttpGet("export-students")]
+    public async Task<IActionResult> ExportStudents([FromQuery] Guid? classId = null, [FromQuery] Guid? departmentId = null)
+    {
+        var bytes = await _userImportService.ExportStudentsCsvAsync(classId, departmentId);
+        var filename = $"Data_Siswa_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        return File(bytes, "text/csv", filename);
     }
 }

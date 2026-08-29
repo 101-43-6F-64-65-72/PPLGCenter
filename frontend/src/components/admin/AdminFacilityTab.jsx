@@ -694,38 +694,35 @@ export default function AdminFacilityTab({ isQuickView = false, onViewAll }) {
     <div className="space-y-6 font-sans">
       {/* ── Header (Hidden in QuickView) ── */}
       {!isQuickView && (
-        <div className="bg-white p-5 sm:p-6 rounded-[24px] border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-50 text-[#2C1EE8] border border-blue-100">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Manajemen Fasilitas & Sarpras</h2>
-              <p className="text-xs text-slate-500 font-medium">Kelola data laboratorium, aula, lapangan, dan persetujuan booking</p>
-            </div>
+        <div className="bg-white p-4 sm:p-5 rounded-none border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
+          <div className="flex items-center gap-2.5">
+            <Building2 className="w-5 h-5 text-[#2C1EE8]" />
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 uppercase tracking-tight">
+              Fasilitas Lab & Booking
+            </h2>
           </div>
 
           {/* Sub-tab Switcher */}
-          <div className="flex bg-slate-100 rounded-xl p-1.5 gap-1.5 border border-slate-200/80 shrink-0">
+          <div className="flex bg-slate-100 rounded-none p-1 gap-1 border border-slate-200 shrink-0">
             <button
               onClick={() => setSubTab("facilities")}
-              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
                 subTab === "facilities"
-                  ? "bg-white text-[#2C1EE8] shadow-xs"
+                  ? "bg-[#2C1EE8] text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Data Fasilitas
+              Fasilitas
             </button>
             <button
               onClick={() => setSubTab("bookings")}
-              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${
                 subTab === "bookings"
-                  ? "bg-white text-[#2C1EE8] shadow-xs"
+                  ? "bg-[#2C1EE8] text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Approval Booking
+              Approval Booking ({bookings.filter(b => b.status === "pending" || b.status === "Pending").length})
             </button>
           </div>
         </div>

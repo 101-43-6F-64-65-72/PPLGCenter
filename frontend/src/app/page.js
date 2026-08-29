@@ -17,11 +17,11 @@ export default function Home() {
         {/* ─── 1. Hero Section (Full Viewport Astra Sinarmas) ─── */}
         <HomeHero />
 
-        {/* ─── 2. Section: Jadwal {KELAS} hari ini ─── */}
-        <HomeTodaySchedule />
-
-        {/* ─── 3. Section: Pengumuman & Berita (Showcase Slider) ─── */}
+        {/* ─── 2. Section: Pengumuman & Berita (Showcase Slider) ─── */}
         <HomeAnnouncements />
+
+        {/* ─── 3. Section: Jadwal {KELAS} hari ini ─── */}
+        <HomeTodaySchedule />
 
         {/* ─── 4. Section: Showcase Kuis Harian (4-Stage Pinned Scroll Experience) ─── */}
         <HomeDailyQuizShowcase />

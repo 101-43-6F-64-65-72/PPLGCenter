@@ -129,109 +129,123 @@ export default function AdminAnnouncementsTab() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Search & Add Header */}
-      <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+    <div className="space-y-5 font-sans text-left">
+      {/* ─── Top Toolbar: Direct & To The Point ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200 rounded-none p-4 shadow-xs">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari pengumuman mading..."
+            placeholder="Cari pengumuman..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white focus:border-[#2c1ee8] text-sm focus:outline-none focus:ring-2 focus:ring-[#2c1ee8]/20 transition-all"
+            className="w-full pl-10 pr-4 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] text-xs font-semibold text-slate-900 outline-none transition-colors"
           />
         </div>
 
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-[#2c1ee8] text-white font-bold text-xs hover:bg-[#2218a3] transition-all shadow-md active:scale-95 cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white font-bold text-xs uppercase tracking-wider rounded-none transition-colors cursor-pointer shadow-xs"
         >
           <Plus className="w-4 h-4" />
-          <span>Buat Pengumuman Mading</span>
+          <span>Tambah Pengumuman</span>
         </button>
       </div>
 
-      {/* Announcements Table */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-            <Newspaper className="w-5 h-5 text-[#2c1ee8]" />
-            <span>Manajemen Mading Digital ({filtered.length})</span>
-          </h3>
-          <span className="text-xs text-gray-500 font-medium">Publikasi Admin</span>
+      {/* ─── Announcements List Table ─── */}
+      <div className="bg-white border border-slate-200 rounded-none shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Newspaper className="w-4 h-4 text-[#2C1EE8]" />
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Daftar Pengumuman ({filtered.length})
+            </h3>
+          </div>
         </div>
 
-        <div className="divide-y divide-gray-100">
-          {filtered.map((item) => (
-            <div key={item.id} className="p-5 hover:bg-gray-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#2c1ee8] border border-blue-100">
-                    {item.category}
-                  </span>
-                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                    {item.status}
+        <div className="divide-y divide-slate-100">
+          {filtered.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-400 font-medium">
+              Tidak ada pengumuman yang ditemukan.
+            </div>
+          ) : (
+            filtered.map((item) => (
+              <div
+                key={item.id}
+                className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+              >
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-none text-[10px] font-bold font-mono bg-blue-50 text-[#2C1EE8] border border-blue-200 uppercase">
+                      {item.category}
+                    </span>
+                    <span className="text-[10px] font-mono font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-none">
+                      {item.status}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
+                  <span className="text-[11px] text-slate-400 block font-mono">
+                    {item.author} · {item.date}
                   </span>
                 </div>
-                <h4 className="text-base font-extrabold text-gray-900">{item.title}</h4>
-                <span className="text-xs text-gray-400">Oleh: {item.author} • {item.date}</span>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                  title="Hapus Mading"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="p-2 rounded-none text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                    title="Hapus"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
-      {/* Create Modal */}
+      {/* ─── Create Modal: Direct & Clean ─── */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                <Newspaper className="w-5 h-5 text-[#2c1ee8]" />
-                <span>Buat Pengumuman Mading Baru</span>
-              </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+          <div className="bg-white w-full max-w-xl rounded-none border border-slate-200 p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-xl text-left">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Newspaper className="w-4 h-4 text-[#2C1EE8]" />
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  Tambah Pengumuman
+                </h3>
+              </div>
               <button
                 onClick={() => setIsCreateOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 cursor-pointer font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Judul Pengumuman:
+            <form onSubmit={handleCreateSubmit} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Judul
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Info Pelaksanaan Classmeeting 2026..."
+                  placeholder="Judul pengumuman..."
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white text-xs sm:text-sm focus:outline-none focus:border-[#2c1ee8]"
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#2C1EE8]"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                  Kategori Pengumuman:
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Kategori
                 </label>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 bg-gray-50/50 focus:bg-white text-xs sm:text-sm focus:outline-none focus:border-[#2c1ee8]"
+                  className="w-full px-3 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#2C1EE8]"
                 >
                   <option value="Informasi Sekolah">Informasi Sekolah</option>
                   <option value="Prestasi & Lomba">Prestasi & Lomba</option>
@@ -245,43 +259,47 @@ export default function AdminAnnouncementsTab() {
 
               {/* Image Upload with Crop */}
               <ImageCropUploader
-                label="Gambar Sampul Mading"
+                label="Sampul Gambar"
                 onCropped={handleCroppedImage}
               />
               {isUploading && (
-                <p className="text-xs text-indigo-600 font-semibold animate-pulse">Mengunggah gambar...</p>
+                <p className="text-xs text-blue-600 font-semibold animate-pulse">Mengunggah gambar...</p>
               )}
 
-              <RichTextEditor
-                label="Isi Pengumuman Lengkap"
-                required
-                value={formData.content}
-                onChange={(val) => setFormData({ ...formData, content: val })}
-                placeholder="Tuliskan pengumuman lengkap untuk seluruh siswa..."
-              />
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Isi Pengumuman
+                </label>
+                <RichTextEditor
+                  required
+                  value={formData.content}
+                  onChange={(val) => setFormData({ ...formData, content: val })}
+                  placeholder="Tuliskan isi pengumuman..."
+                />
+              </div>
 
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-none text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || isUploading}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#2c1ee8] text-white hover:bg-[#2218a3] transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-5 py-2 rounded-none text-xs font-bold uppercase tracking-wider bg-[#2C1EE8] hover:bg-[#2013ce] active:bg-[#1d129f] text-white transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
                 >
                   {isSubmitting || isUploading ? (
                     <>
                       <TwinOrbitSpinner size="xs" color="white" />
-                      <span>{isUploading ? "Mengunggah Gambar..." : "Terbitkan Mading..."}</span>
+                      <span>{isUploading ? "Mengunggah..." : "Menyimpan..."}</span>
                     </>
                   ) : (
                     <>
-                      <Send className="w-4 h-4" />
-                      <span>Terbitkan Mading</span>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Terbitkan</span>
                     </>
                   )}
                 </button>

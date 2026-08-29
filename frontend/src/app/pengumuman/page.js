@@ -212,7 +212,7 @@ export default function PengumumanPage() {
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Cari pengumuman, materi, atau topik..."
+                  placeholder="Cari pengumuman..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-8 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] outline-none text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-colors"

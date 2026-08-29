@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -25,7 +25,9 @@ import {
   KeyRound,
   Mail,
   MessageSquareHeart,
-  Zap
+  Zap,
+  Search,
+  X,
 } from "lucide-react";
 
 import useAuth from "@/hooks/useAuth";
@@ -53,42 +55,54 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
   ];
 
   const adminMenu = [
-    { name: "Dashboard", tabId: "overview", icon: LayoutDashboard, category: "OVERVIEW" },
+    { name: "Dashboard", tabId: "overview", icon: LayoutDashboard, category: "RINGKASAN" },
     
-    { name: "Master Siswa", tabId: "students", icon: GraduationCap, category: "DATA MASTER" },
-    { name: "Master Guru", tabId: "teachers", icon: BookOpen, category: "DATA MASTER" },
-    { name: "Master Jurusan", tabId: "departments", icon: Briefcase, category: "DATA MASTER" },
-    { name: "Master Kelas", tabId: "classes", icon: Layers, category: "DATA MASTER" },
-    { name: "Mata Pelajaran", tabId: "subjects", icon: BookOpen, category: "DATA MASTER" },
-    { name: "Penugasan Guru", tabId: "teacher-subjects", icon: Users, category: "DATA MASTER" },
-    { name: "Mapel Kelas", tabId: "class-subjects", icon: Layers, category: "DATA MASTER" },
-    { name: "Tahun Akademik", tabId: "academic-years", icon: CalendarDays, category: "DATA MASTER" },
-    { name: "Master Semester", tabId: "semesters", icon: Bookmark, category: "DATA MASTER" },
+    { name: "Master Siswa", tabId: "students", icon: GraduationCap, category: "MASTER & AKADEMIK" },
+    { name: "Master Guru", tabId: "teachers", icon: BookOpen, category: "MASTER & AKADEMIK" },
+    { name: "Master Jurusan", tabId: "departments", icon: Briefcase, category: "MASTER & AKADEMIK" },
+    { name: "Master Kelas", tabId: "classes", icon: Layers, category: "MASTER & AKADEMIK" },
+    { name: "Mata Pelajaran", tabId: "subjects", icon: BookOpen, category: "MASTER & AKADEMIK" },
+    { name: "Penugasan Guru", tabId: "teacher-subjects", icon: Users, category: "MASTER & AKADEMIK" },
+    { name: "Mapel Kelas", tabId: "class-subjects", icon: Layers, category: "MASTER & AKADEMIK" },
+    { name: "Jadwal Pelajaran", tabId: "schedules", icon: Calendar, category: "MASTER & AKADEMIK" },
+    { name: "Kalender Akademik", tabId: "academic-events", icon: CalendarDays, category: "MASTER & AKADEMIK" },
+    { name: "Absensi Pelajaran", tabId: "attendance", icon: CheckSquare, category: "MASTER & AKADEMIK" },
+    { name: "Materi Pelajaran", tabId: "materials", icon: FileText, category: "MASTER & AKADEMIK" },
+    { name: "Tugas & Submisi", tabId: "assignments", icon: BookOpen, category: "MASTER & AKADEMIK" },
+    { name: "Kontrol Kuis RPL", tabId: "quiz", icon: Zap, category: "MASTER & AKADEMIK" },
+    { name: "Kategori Penilaian", tabId: "grade-categories", icon: Award, category: "MASTER & AKADEMIK" },
+    { name: "Skala & Predikat", tabId: "grade-scales", icon: Award, category: "MASTER & AKADEMIK" },
+    { name: "Tahun Akademik", tabId: "academic-years", icon: CalendarDays, category: "MASTER & AKADEMIK" },
+    { name: "Master Semester", tabId: "semesters", icon: Bookmark, category: "MASTER & AKADEMIK" },
 
-    { name: "Jadwal Pelajaran", tabId: "schedules", icon: Calendar, category: "AKADEMIK" },
-    { name: "Kalender Akademik", tabId: "academic-events", icon: CalendarDays, category: "AKADEMIK" },
-    { name: "Absensi Pelajaran", tabId: "attendance", icon: CheckSquare, category: "AKADEMIK" },
-    { name: "Materi Pelajaran", tabId: "materials", icon: FileText, category: "AKADEMIK" },
-    { name: "Tugas & Submisi", tabId: "assignments", icon: BookOpen, category: "AKADEMIK" },
-    { name: "Kuis Harian RPL", path: "/kuis", icon: Zap, category: "AKADEMIK" },
-    { name: "Kategori Penilaian", tabId: "grade-categories", icon: Award, category: "AKADEMIK" },
-    { name: "Skala & Predikat", tabId: "grade-scales", icon: Award, category: "AKADEMIK" },
-
-    { name: "Kelola User", tabId: "users", icon: Users, category: "MANAJEMEN" },
-    { name: "Booking Facilities", tabId: "facilities", icon: Building2, category: "MANAJEMEN" },
-    { name: "Pengumuman Resmi", tabId: "pengumuman-link", path: "/pengumuman", icon: Bell, category: "MANAJEMEN" },
-    { name: "Umpan Balik", tabId: "feedback", icon: MessageSquareHeart, category: "MANAJEMEN" },
-    { name: "Reset Password", tabId: "password-reset", icon: KeyRound, category: "MANAJEMEN" },
-    { name: "Email Debugger", path: "/admin/email-debug", icon: Mail, category: "MANAJEMEN" },
+    { name: "Kelola Akun User", tabId: "users", icon: Users, category: "MANAJEMEN & SISTEM" },
+    { name: "Fasilitas Lab PPLG", tabId: "facilities", icon: Building2, category: "MANAJEMEN & SISTEM" },
+    { name: "Mading & Pengumuman", tabId: "announcements", icon: Bell, category: "MANAJEMEN & SISTEM" },
+    { name: "Umpan Balik Siswa", tabId: "feedback", icon: MessageSquareHeart, category: "MANAJEMEN & SISTEM" },
+    { name: "Reset Password", tabId: "password-reset", icon: KeyRound, category: "MANAJEMEN & SISTEM" },
+    { name: "Email Debugger", path: "/admin/email-debug", icon: Mail, category: "MANAJEMEN & SISTEM" },
   ];
 
+  const [menuSearch, setMenuSearch] = useState("");
+
   if (isAdminOrPplgTeacher) {
+    // Filter admin menu by search query
+    const filteredAdminMenu = menuSearch.trim()
+      ? adminMenu.filter(
+          (item) =>
+            item.name.toLowerCase().includes(menuSearch.toLowerCase()) ||
+            item.category.toLowerCase().includes(menuSearch.toLowerCase())
+        )
+      : adminMenu;
+
     // Group admin menu items by category
-    const categories = ["OVERVIEW", "DATA MASTER", "AKADEMIK", "MANAJEMEN"];
-    const groupedItems = categories.map((cat) => ({
-      category: cat,
-      items: adminMenu.filter((item) => item.category === cat),
-    }));
+    const categories = ["RINGKASAN", "MASTER & AKADEMIK", "MANAJEMEN & SISTEM"];
+    const groupedItems = categories
+      .map((cat) => ({
+        category: cat,
+        items: filteredAdminMenu.filter((item) => item.category === cat),
+      }))
+      .filter((g) => g.items.length > 0);
 
     return (
       <aside className="w-[250px] bg-white border-r border-slate-200 flex flex-col h-[calc(100vh-6rem)] sticky top-24 shrink-0 overflow-hidden shadow-xs">
@@ -105,40 +119,69 @@ export default function Sidebar({ role, activeTab, onTabChange }) {
           </div>
         </div>
 
+        {/* Instant Search Bar */}
+        <div className="px-2 pt-2.5 pb-1">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Cari menu..."
+              value={menuSearch}
+              onChange={(e) => setMenuSearch(e.target.value)}
+              className="w-full pl-7.5 pr-6 py-1.5 bg-slate-50 border border-slate-200 rounded-none text-[11px] font-semibold text-slate-800 focus:bg-white focus:border-[#2C1EE8] outline-none transition-colors placeholder:text-slate-400"
+            />
+            {menuSearch && (
+              <button
+                type="button"
+                onClick={() => setMenuSearch("")}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Menu Navigation */}
-        <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto scrollbar-thin">
-          {groupedItems.map((group) => (
-            <div key={group.category} className="space-y-0.5">
-              <span className="text-[9.5px] font-bold font-mono text-slate-400 uppercase tracking-widest block px-2.5 mb-1 select-none">
-                {group.category}
-              </span>
-              {group.items.map((item) => {
-                const IconComp = item.icon;
-                const isActive = item.tabId ? activeTab === item.tabId : pathname.startsWith(item.path || "");
-                return (
-                  <button
-                    key={item.tabId || item.path || item.name}
-                    suppressHydrationWarning={true}
-                    onClick={() => {
-                      if (item.path) {
-                        router.push(item.path);
-                      } else if (onTabChange && item.tabId) {
-                        onTabChange(item.tabId);
-                      }
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors text-left cursor-pointer group ${
-                      isActive
-                        ? "bg-[#2C1EE8] text-white shadow-xs"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
-                  >
-                    <IconComp className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"}`} />
-                    <span className="truncate">{item.name}</span>
-                  </button>
-                );
-              })}
+        <nav className="flex-1 px-2 py-2 space-y-3 overflow-y-auto scrollbar-thin">
+          {groupedItems.length === 0 ? (
+            <div className="py-6 text-center text-slate-400 text-[11px]">
+              Menu tidak ditemukan.
             </div>
-          ))}
+          ) : (
+            groupedItems.map((group) => (
+              <div key={group.category} className="space-y-0.5">
+                <span className="text-[9.5px] font-bold font-mono text-slate-400 uppercase tracking-widest block px-2.5 mb-1 select-none">
+                  {group.category}
+                </span>
+                {group.items.map((item) => {
+                  const IconComp = item.icon;
+                  const isActive = item.tabId ? activeTab === item.tabId : pathname.startsWith(item.path || "");
+                  return (
+                    <button
+                      key={item.tabId || item.path || item.name}
+                      suppressHydrationWarning={true}
+                      onClick={() => {
+                        if (item.path) {
+                          router.push(item.path);
+                        } else if (onTabChange && item.tabId) {
+                          onTabChange(item.tabId);
+                        }
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors text-left cursor-pointer group ${
+                        isActive
+                          ? "bg-[#2C1EE8] text-white shadow-xs"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      }`}
+                    >
+                      <IconComp className={`w-3.5 h-3.5 shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"}`} />
+                      <span className="truncate">{item.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          )}
         </nav>
       </aside>
     );

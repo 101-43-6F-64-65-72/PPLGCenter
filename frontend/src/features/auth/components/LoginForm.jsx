@@ -417,7 +417,8 @@ export const LoginForm = ({ onSuccess, mascotState, setMascotState }) => {
             alt="Logo SMKN 2 Surakarta"
             width={48}
             height={48}
-            className="object-contain w-auto h-auto max-h-12 max-w-12"
+            style={{ width: "auto", height: "auto" }}
+            className="object-contain max-h-12 max-w-12"
             priority
           />
         </div>

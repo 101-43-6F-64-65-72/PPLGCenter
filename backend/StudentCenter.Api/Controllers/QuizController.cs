@@ -1,14 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using StudentCenter.Application.DTOs;
 using StudentCenter.Application.Services;
 using StudentCenter.Domain.Entities;
 using StudentCenter.Infrastructure.Data;
+using StudentCenter.Infrastructure.Services;
 
 namespace StudentCenter.Api.Controllers;
 
@@ -21,17 +28,26 @@ public class QuizController : ControllerBase
     private readonly IDailyTopicService _topicService;
     private readonly IAiQuizGeneratorService _aiGenerator;
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<QuizController> _logger;
+    private readonly IGenerationStatusService _generationStatus;
 
     public QuizController(
         IQuizService quizService,
         IDailyTopicService topicService,
         IAiQuizGeneratorService aiGenerator,
-        AppDbContext context)
+        AppDbContext context,
+        IConfiguration configuration,
+        ILogger<QuizController> logger,
+        IGenerationStatusService generationStatus)
     {
         _quizService = quizService;
         _topicService = topicService;
         _aiGenerator = aiGenerator;
         _context = context;
+        _configuration = configuration;
+        _logger = logger;
+        _generationStatus = generationStatus;
     }
 
     private Guid GetCurrentUserId()
@@ -53,6 +69,21 @@ public class QuizController : ControllerBase
         // Convert UTC to WIB (UTC+7)
         var wibTime = DateTime.UtcNow.AddHours(7);
         return DateOnly.FromDateTime(wibTime);
+    }
+
+    /// <summary>
+    /// Admin: Polling status progres generasi soal AI (dipanggil tiap 2 detik dari frontend)
+    /// </summary>
+    [HttpGet("admin/generation-status")]
+    [AllowAnonymous]
+    public IActionResult GetGenerationStatus()
+    {
+        return Ok(new
+        {
+            inProgress = _generationStatus.IsRunning,
+            completed  = _generationStatus.Completed,
+            total      = _generationStatus.Total
+        });
     }
 
     /// <summary>
@@ -297,25 +328,39 @@ public class QuizController : ControllerBase
     /// </summary>
     [HttpPost("admin/refresh-topic")]
     [AllowAnonymous]
-    public async Task<IActionResult> RefreshRandomTopic()
+    public async Task<IActionResult> RefreshRandomTopic([FromBody] RefreshTopicRequest? request)
     {
         try
         {
             var today = GetWibDate();
             var newTopic = await _topicService.PickRandomTopicAsync(today);
-            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, newTopic.TopicName);
+            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, newTopic.TopicName, request?.Model, request?.Provider);
 
             return Ok(new
             {
                 success = true,
                 message = $"Topik hari ini berhasil diacak menjadi: '{newTopic.TopicName}' dengan {questions.Count} butir soal AI baru.",
                 topic = newTopic.TopicName,
-                questionsCount = questions.Count
+                questionsCount = questions.Count,
+                questions = questions.Select(q => new
+                {
+                    id = q.Id,
+                    questionNumber = q.QuestionNumber,
+                    difficulty = q.Difficulty,
+                    questionText = q.QuestionText,
+                    codeSnippet = q.CodeSnippet,
+                    options = string.IsNullOrWhiteSpace(q.OptionsJson) 
+                        ? new List<string>() 
+                        : JsonSerializer.Deserialize<List<string>>(q.OptionsJson),
+                    correctAnswerIndex = q.CorrectAnswerIndex,
+                    explanation = q.Explanation
+                })
             });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = ex.Message });
+            _logger.LogError(ex, "Error occurred in RefreshRandomTopic.");
+            return StatusCode(500, new { success = false, message = ex.Message, detail = ex.ToString() });
         }
     }
 
@@ -324,25 +369,39 @@ public class QuizController : ControllerBase
     /// </summary>
     [HttpPost("admin/refresh-questions")]
     [AllowAnonymous]
-    public async Task<IActionResult> RefreshQuestions()
+    public async Task<IActionResult> RefreshQuestions([FromBody] RefreshTopicRequest? request)
     {
         try
         {
             var today = GetWibDate();
             var currentTopic = await _topicService.GetSelectedTopicNameAsync(today);
-            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, currentTopic);
+            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, currentTopic, request?.Model, request?.Provider);
 
             return Ok(new
             {
                 success = true,
                 message = $"Berhasil men-generate ulang {questions.Count} butir soal AI baru untuk topik: '{currentTopic}'.",
                 topic = currentTopic,
-                questionsCount = questions.Count
+                questionsCount = questions.Count,
+                questions = questions.Select(q => new
+                {
+                    id = q.Id,
+                    questionNumber = q.QuestionNumber,
+                    difficulty = q.Difficulty,
+                    questionText = q.QuestionText,
+                    codeSnippet = q.CodeSnippet,
+                    options = string.IsNullOrWhiteSpace(q.OptionsJson) 
+                        ? new List<string>() 
+                        : JsonSerializer.Deserialize<List<string>>(q.OptionsJson),
+                    correctAnswerIndex = q.CorrectAnswerIndex,
+                    explanation = q.Explanation
+                })
             });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = ex.Message });
+            _logger.LogError(ex, "Error occurred in RefreshQuestions.");
+            return StatusCode(500, new { success = false, message = ex.Message, detail = ex.ToString() });
         }
     }
 
@@ -390,19 +449,34 @@ public class QuizController : ControllerBase
             _context.DailyQuizTopics.Add(newTopic);
             await _context.SaveChangesAsync();
 
-            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, newTopic.TopicName);
+            var questions = await _aiGenerator.GenerateInitialDailyPoolAsync(today, newTopic.TopicName, request.Model, request.Provider);
 
             return Ok(new
             {
                 success = true,
                 message = $"Topik berhasil diatur ke '{newTopic.TopicName}' dan {questions.Count} soal AI telah dibuat!",
                 topic = newTopic.TopicName,
-                questionsCount = questions.Count
+                questionsCount = questions.Count,
+                model = request.Model ?? "deepseek-ai/DeepSeek-V4-Flash",
+                questions = questions.Select(q => new
+                {
+                    id = q.Id,
+                    questionNumber = q.QuestionNumber,
+                    difficulty = q.Difficulty,
+                    questionText = q.QuestionText,
+                    codeSnippet = q.CodeSnippet,
+                    options = string.IsNullOrWhiteSpace(q.OptionsJson) 
+                        ? new List<string>() 
+                        : JsonSerializer.Deserialize<List<string>>(q.OptionsJson),
+                    correctAnswerIndex = q.CorrectAnswerIndex,
+                    explanation = q.Explanation
+                })
             });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = ex.Message });
+            _logger.LogError(ex, "Error occurred in SetTopicAndGenerate.");
+            return StatusCode(500, new { success = false, message = ex.Message, detail = ex.ToString() });
         }
     }
 
@@ -436,7 +510,114 @@ public class QuizController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { success = false, message = ex.Message });
+            _logger.LogError(ex, "Error occurred in ResetAllQuizData.");
+            return StatusCode(500, new { success = false, message = ex.Message, detail = ex.ToString() });
+        }
+    }
+
+    /// <summary>
+    /// Admin / Dev: Uji koneksi dan kualitas AI secara hemat token
+    /// </summary>
+    [HttpPost("admin/test-ai")]
+    [AllowAnonymous]
+    public async Task<IActionResult> TestAiConnection([FromBody] TestAiRequest? request)
+    {
+        var provider = request?.Provider?.ToLower() ?? "groq";
+        var testMode = request?.TestMode?.ToLower() ?? "ping"; // "ping" or "single_question"
+        var topic = string.IsNullOrWhiteSpace(request?.Topic) ? "Clean Code & Refactoring" : request.Topic.Trim();
+
+        var apiUrl = !string.IsNullOrWhiteSpace(request?.ApiUrl) 
+            ? request.ApiUrl.Trim() 
+            : (provider == "groq" 
+                ? "https://api.groq.com/openai/v1/chat/completions" 
+                : "https://api-inference.bitdeer.ai/v1/chat/completions");
+
+        var apiKey = !string.IsNullOrWhiteSpace(request?.ApiKey)
+            ? request.ApiKey.Trim()
+            : (provider == "groq" 
+                ? (_configuration["GROQ_API_KEY"] ?? Environment.GetEnvironmentVariable("GROQ_API_KEY") ?? "")
+                : (_configuration["AI_QUIZ_API_KEY"] ?? Environment.GetEnvironmentVariable("AI_QUIZ_API_KEY") ?? "5oLjI4spiQXfs7pBwg78"));
+
+        var model = !string.IsNullOrWhiteSpace(request?.Model)
+            ? request.Model.Trim()
+            : (provider == "groq" ? "llama-3.1-8b-instant" : "Qwen/Qwen3.8-27B");
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return BadRequest(new { success = false, message = "API Key tidak ditemukan atau kosong. Silakan masukkan API Key di formulir." });
+        }
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        object requestBody;
+        if (testMode == "ping")
+        {
+            // Super low token test (~15 tokens total)
+            requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new { role = "user", content = "Output JSON strictly: {\"status\": \"ok\", \"model\": \"" + model + "\"}" }
+                },
+                max_tokens = 60,
+                temperature = 0.1
+            };
+        }
+        else
+        {
+            // 1 question low-token test (~120 tokens total)
+            requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new { role = "system", content = "You are a SMK RPL exam author. Output strictly valid JSON object with key 'questions' containing 1 question array." },
+                    new { role = "user", content = "Buat 1 butir soal pilihan ganda standar SMK RPL topik: '" + topic + "'. Format JSON WAJIB: {\"questions\": [{\"topic\": \"" + topic + "\", \"difficulty\": \"easy\", \"question\": \"...\", \"code_snippet\": null, \"options\": [\"Opsi Benar\", \"Pengecoh 1\", \"Pengecoh 2\", \"Pengecoh 3\"], \"correct_answer_index\": 0, \"explanation\": \"...\"}]}" }
+                },
+                max_tokens = 1000,
+                temperature = 0.5
+            };
+        }
+
+        try
+        {
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(25) };
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Post, apiUrl);
+            httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            httpRequest.Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+
+            var response = await httpClient.SendAsync(httpRequest);
+            stopwatch.Stop();
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            return Ok(new
+            {
+                success = response.IsSuccessStatusCode,
+                statusCode = (int)response.StatusCode,
+                latencyMs = stopwatch.ElapsedMilliseconds,
+                provider = provider,
+                model = model,
+                apiUrl = apiUrl,
+                testMode = testMode,
+                rawResponse = responseContent
+            });
+        }
+        catch (Exception ex)
+        {
+            stopwatch.Stop();
+            return Ok(new
+            {
+                success = false,
+                statusCode = 0,
+                latencyMs = stopwatch.ElapsedMilliseconds,
+                provider = provider,
+                model = model,
+                apiUrl = apiUrl,
+                testMode = testMode,
+                error = ex.Message,
+                rawResponse = ex.ToString()
+            });
         }
     }
 }
@@ -450,4 +631,22 @@ public class SetTopicAndGenerateRequest
 {
     public string TopicName { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? Model { get; set; }
+    public string? Provider { get; set; }
+}
+
+public class RefreshTopicRequest
+{
+    public string? Model { get; set; }
+    public string? Provider { get; set; }
+}
+
+public class TestAiRequest
+{
+    public string? Provider { get; set; }
+    public string? ApiUrl { get; set; }
+    public string? ApiKey { get; set; }
+    public string? Model { get; set; }
+    public string? TestMode { get; set; }
+    public string? Topic { get; set; }
 }

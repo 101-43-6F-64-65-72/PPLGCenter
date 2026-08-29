@@ -59,8 +59,13 @@ public class DailyQuizSchedulerWorker : BackgroundService
         // 1. Ensure TODAY's topic & 30 initial questions are ready
         try
         {
-            var todayTopic = await topicService.GetSelectedTopicNameAsync(today);
-            await aiGenerator.GenerateInitialDailyPoolAsync(today, todayTopic);
+            var existingCount = await dbContext.DailyQuizQuestions.CountAsync(q => q.TargetDate == today);
+            if (existingCount == 0)
+            {
+                var todayTopic = await topicService.GetSelectedTopicNameAsync(today);
+                _logger.LogInformation("No existing questions for today ({Date}). Triggering AI generator for topic '{Topic}'...", today, todayTopic);
+                await aiGenerator.GenerateInitialDailyPoolAsync(today, todayTopic);
+            }
         }
         catch (Exception ex)
         {

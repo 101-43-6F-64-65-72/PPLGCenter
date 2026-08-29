@@ -410,10 +410,10 @@ export default function HomeDailyQuizShowcase() {
           {/* Active Topic Capsule */}
           <div className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
-              Topik Hari Ini:
+              Status Sistem:
             </span>
-            <div className="px-5 py-2.5 bg-slate-100 border border-slate-300 font-mono text-sm sm:text-base font-black text-black">
-              {dailyTopic}
+            <div className="px-5 py-2.5 bg-slate-100 border border-slate-300 font-mono text-xs sm:text-sm font-bold text-slate-800">
+              Sedang Dalam Pemeliharaan & Evaluasi Kurikulum
             </div>
           </div>
 
@@ -423,7 +423,7 @@ export default function HomeDailyQuizShowcase() {
               href="/kuis"
               className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-[#2c1ee8] hover:bg-[#2317be] active:bg-[#1d129f] text-white font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-200 shadow-md cursor-pointer group"
             >
-              <span>Menuju kuis harian</span>
+              <span>Informasi Kuis Harian</span>
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>

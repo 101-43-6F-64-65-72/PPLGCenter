@@ -122,13 +122,14 @@ export default function HomeTodaySchedule() {
   // User's own class
   const userClassName = user?.className || user?.class || user?.studentClass || (isAuthenticated ? "XII PPLG 1" : "XII PPLG 1");
 
-  // Strictly Today's Day Name
+  // Strictly Today's Day Name & Weekend Check
+  const dayIndex = typeof window !== "undefined" ? new Date().getDay() : new Date().getDay();
+  const isWeekend = dayIndex === 0 || dayIndex === 6; // 0 = Minggu, 6 = Sabtu
+
   const todayName = useMemo(() => {
-    const dayIndex = new Date().getDay();
     const dayMap = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-    const name = dayMap[dayIndex];
-    return name === "Minggu" || name === "Sabtu" ? "Kamis" : name;
-  }, []);
+    return dayMap[dayIndex] || "Senin";
+  }, [dayIndex]);
 
   const [currentTimeStr, setCurrentTimeStr] = useState("");
   const [currentMinutesFromMidnight, setCurrentMinutesFromMidnight] = useState(0);
@@ -149,12 +150,13 @@ export default function HomeTodaySchedule() {
     return () => clearInterval(interval);
   }, []);
 
-  // Today's schedule only
-  const classSchedules = SAMPLE_SCHEDULES[userClassName] || SAMPLE_SCHEDULES["XII PPLG 1"];
-  const dayScheduleList = classSchedules[todayName] || classSchedules["Kamis"] || [];
+  // Today's schedule only (no hardcoded fallback to Kamis on weekend/empty days)
+  const classSchedules = SAMPLE_SCHEDULES[userClassName] || SAMPLE_SCHEDULES["XII PPLG 1"] || {};
+  const dayScheduleList = classSchedules[todayName] || [];
 
   // Determine currently active ongoing lesson based on real-time clock
   const currentOngoingSlot = useMemo(() => {
+    if (!dayScheduleList || dayScheduleList.length === 0) return null;
     const active = dayScheduleList.find((slot) => {
       const [startH, startM] = slot.timeStart.split(":").map(Number);
       const [endH, endM] = slot.timeEnd.split(":").map(Number);
@@ -163,8 +165,13 @@ export default function HomeTodaySchedule() {
       return currentMinutesFromMidnight >= startMin && currentMinutesFromMidnight <= endMin;
     });
 
-    return active || dayScheduleList.find((s) => s.type === "lesson") || dayScheduleList[0];
+    return active || dayScheduleList.find((s) => s.type === "lesson") || dayScheduleList[0] || null;
   }, [dayScheduleList, currentMinutesFromMidnight]);
+
+  // If today is Saturday/Sunday or there is no schedule for today, remove/hide section completely
+  if (isWeekend || dayScheduleList.length === 0) {
+    return null;
+  }
 
   return (
     <section id="jadwal-hari-ini" className="w-full bg-white py-12 sm:py-16 px-6 sm:px-10 lg:px-16 font-sans text-slate-900 border-t border-slate-100">

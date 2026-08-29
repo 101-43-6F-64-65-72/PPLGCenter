@@ -232,6 +232,7 @@ export default function PerpustakaanPage() {
       await libraryService.createFolder({
         name: newFolderName.trim(),
         description: newFolderDesc.trim(),
+        parentFolderId: currentFolder?.id || null,
         parentId: currentFolder?.id || null,
         visibilityType: newFolderVisibility,
         allowedClassIds: newFolderVisibility === "TargetedClasses" ? selectedClassIds : [],

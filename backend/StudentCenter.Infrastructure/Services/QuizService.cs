@@ -39,8 +39,15 @@ public class QuizService : IQuizService
         var questionsCount = await _context.DailyQuizQuestions.CountAsync(q => q.TargetDate == date);
         if (questionsCount == 0)
         {
-            var initialPool = await _aiGenerator.GenerateInitialDailyPoolAsync(date, topicName);
-            questionsCount = initialPool.Count;
+            try
+            {
+                var initialPool = await _aiGenerator.GenerateInitialDailyPoolAsync(date, topicName);
+                questionsCount = initialPool.Count;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not auto-generate initial pool on GET /today for date {Date}. Admin can generate manually.", date);
+            }
         }
 
         var totalParticipants = await _context.QuizSessions

@@ -107,22 +107,37 @@ export const quizService = {
   /**
    * Admin: Acak topik baru hari ini & generate 30 soal AI baru
    */
-  refreshRandomTopic: async () => {
-    return await api.post("/api/quiz/admin/refresh-topic");
+  refreshRandomTopic: async (model = null, provider = null) => {
+    return await api.post("/api/quiz/admin/refresh-topic", { model, provider });
   },
 
   /**
    * Admin: Pertahankan topik saat ini tapi generate ulang 30 soal AI baru
    */
-  refreshQuestions: async () => {
-    return await api.post("/api/quiz/admin/refresh-questions");
+  refreshQuestions: async (model = null, provider = null) => {
+    return await api.post("/api/quiz/admin/refresh-questions", { model, provider });
   },
 
   /**
    * Admin: Atur topik kustom dan generate 30 soal AI baru
    */
-  setTopicAndGenerate: async (topicName, description = "") => {
-    return await api.post("/api/quiz/admin/set-topic-and-generate", { topicName, description });
+  setTopicAndGenerate: async (topicName, description = "", model = null, provider = null) => {
+    return await api.post("/api/quiz/admin/set-topic-and-generate", { topicName, description, model, provider });
+  },
+
+  /**
+   * Admin / Dev: Uji koneksi dan token AI secara hemat
+   */
+  testAiConnection: async (payload) => {
+    return await api.post("/api/quiz/admin/test-ai", payload);
+  },
+
+  /**
+   * Admin: Polling status progres generasi soal AI
+   * Returns: { inProgress: bool, completed: number, total: number }
+   */
+  getGenerationStatus: async () => {
+    return await api.get("/api/quiz/admin/generation-status");
   },
 };
 

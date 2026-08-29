@@ -132,13 +132,14 @@ builder.Services.AddScoped<ICctvService, CctvService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 
 // Daily Endless Quiz & Leaderboard Subsystem
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<StudentCenter.Infrastructure.Services.IGenerationStatusService, StudentCenter.Infrastructure.Services.GenerationStatusService>();
 builder.Services.AddScoped<IAiQuizGeneratorService, AiQuizGeneratorService>();
 builder.Services.AddScoped<IDailyTopicService, DailyTopicService>();
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddHostedService<DailyQuizSchedulerWorker>();
 
 // Email Notification Subsystem (Phase 23)
-builder.Services.AddHttpClient();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 

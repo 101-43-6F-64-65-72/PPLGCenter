@@ -44,21 +44,21 @@ const getDefaultFacilityDescription = (title = "", category = "", existingDesc =
   const text = `${title} ${category}`.toLowerCase();
 
   if (text.includes("aula") || text.includes("hall") || text.includes("auditorium")) {
-    return "Ruang serbaguna utama berkapasitas besar dengan panggung, sound system pro, pendingin ruangan (AC), dan pencahayaan panggung. Sangat ideal untuk seminar, rapat pleno, perpisahan, dan pergelaran seni siswa.";
+    return "Ruang serbaguna utama untuk seminar, rapat pleno, dan pergelaran siswa.";
   }
   if (text.includes("lapangan") || text.includes("basket") || text.includes("futsal") || text.includes("voli") || text.includes("olahraga")) {
-    return "Stadion & lapangan sarana olahraga outdoor serbaguna berlantai standar nasional dengan garis lapangan basket, voli, dan futsal. Dilengkapi tribun penonton, papan skor digital, dan pencahayaan malam.";
+    return "Lapangan olahraga serbaguna untuk basket, voli, dan futsal.";
   }
   if (text.includes("lab") || text.includes("komputer") || text.includes("laboratorium") || text.includes("pplg") || text.includes("tjkt")) {
-    return "Laboratorium komputer modern dengan 36+ PC spesifikasi tinggi, koneksi internet serat optik kecepatan tinggi, pendingin ruangan, dan proyektor presentasi untuk kebutuhan ujian berbasis komputer & workshop praktikum.";
+    return "Lab komputer dengan 36 PC, internet berkecepatan tinggi, dan proyektor.";
   }
   if (text.includes("halaman") || text.includes("taman") || text.includes("depan") || text.includes("area")) {
-    return "Area ruang terbuka hijau dan lapangan utama SMKN 2 Surakarta. Tempat serbaguna untuk pelaksanaan upacara bendera, bazar UMKM siswa, expo ekstrakurikuler, dan kegiatan outdoor.";
+    return "Area terbuka untuk upacara, bazar, dan kegiatan luar ruangan.";
   }
   if (text.includes("perpustakaan") || text.includes("baca")) {
-    return "Ruang literasi ber-AC yang nyaman dengan ribuan koleksi buku referensi akademik, literatur digital, meja belajar diskusi kelompok, serta area baca terpisah.";
+    return "Ruang literasi dan area belajar mandiri atau diskusi kelompok.";
   }
-  return "Fasilitas dan sarana prasarana resmi SMK Negeri 2 Surakarta yang dirancang mendukung kegiatan pembelajaran, keorganisasian siswa, dan kegiatan operasional sekolah secara optimal.";
+  return "Fasilitas penunjang kegiatan pembelajaran dan praktikum.";
 };
 
 const FACILITY_CATEGORIES = [
@@ -253,7 +253,7 @@ export default function FasilitasPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari sarana, laboratorium, aula, atau peralatan..."
+                placeholder="Cari fasilitas..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-8 py-2 rounded-none border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#2C1EE8] outline-none text-xs font-semibold text-slate-900 placeholder:text-slate-400 transition-colors"
